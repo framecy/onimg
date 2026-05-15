@@ -1,9 +1,11 @@
 import { renderMarkdown, extractHeadings } from './markdown.js';
 
-export async function servePage(env, slug) {
+export async function servePage(env, slug, ctx, request) {
   const page = await env.STATS.get('page:' + slug, 'json');
   if (!page) return new Response('Page Not Found', { status: 404 });
   if (!page.isPublic) return new Response('This page is private', { status: 403 });
+
+  if (ctx && request) ctx.waitUntil(recordPageAccess(env, slug, request));
 
   // Auto-detect HTML if type is ambiguous or content starts with a doctype/html tag
   const isHtml = page.type === 'html' ||
@@ -233,3 +235,25 @@ function serveHtmlPage(page) {
 }
 
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function recordPageAccess(env, slug, request) {
+  if (!env.STATS) return;
+  const cf = request.cf ?? {};
+  const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+  const statsKey = 'pstats:' + slug;
+  const existing = await env.STATS.getWithMetadata(statsKey, 'json');
+  const accesses = existing?.value ?? [];
+  const count = (existing?.metadata?.count ?? 0) + 1;
+  accesses.unshift({
+    ip,
+    country: cf.country ?? '—',
+    city: cf.city ?? '—',
+    region: cf.region ?? '—',
+    org: cf.asOrganization ?? '—',
+    ts: Date.now(),
+  });
+  if (accesses.length > 200) accesses.length = 200;
+  await env.STATS.put(statsKey, JSON.stringify(accesses), {
+    metadata: { count, lastAccess: Date.now() },
+  });
+}

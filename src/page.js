@@ -159,7 +159,6 @@ export function renderPage() {
       <button class="tab" data-tab="pages" id="tabPages">我的页面</button>
     </div>
     <div class="spacer"></div>
-    <div id="adminEntry"></div>
     <div id="userArea">
       <button class="btn-sm" id="loginTrigger">登录</button>
     </div>
@@ -240,6 +239,8 @@ export function renderPage() {
     <span>无出口流量费用</span>
     <span style="color:#2a2a2a">·</span>
     <span>全球 CDN 加速</span>
+    <div style="flex:1"></div>
+    <span id="footerAdmin"></span>
   </footer>
 </div>
 
@@ -405,21 +406,19 @@ export function renderPage() {
 
   function updateUserArea() {
     const el = document.getElementById('userArea');
-    const adminEl = document.getElementById('adminEntry');
     if (token) {
       el.innerHTML = \`<div class="user-chip"><div class="dot-green"></div>\${username}</div>
         <button class="btn-sm" id="logoutBtn">退出</button>\`;
       document.getElementById('logoutBtn').addEventListener('click', logout);
       document.getElementById('uploadBtn').disabled = !(perms?.canUpload ?? true);
-      adminEl.innerHTML = isAdminUser
-        ? \`<a href="/admin" style="font-size:.75rem;color:#444;text-decoration:none;padding:4px 10px;border:1px solid #242424;border-radius:6px;margin-right:6px">Admin</a>\`
-        : '';
     } else {
       el.innerHTML = \`<button class="btn-sm" id="loginTrigger">登录</button>\`;
       document.getElementById('loginTrigger').addEventListener('click', () => document.getElementById('loginOverlay').style.display = 'flex');
       document.getElementById('uploadBtn').disabled = true;
-      adminEl.innerHTML = '';
     }
+    document.getElementById('footerAdmin').innerHTML = isAdminUser
+      ? \`<a href="/admin" style="color:#383838;text-decoration:none;transition:color .15s" onmouseover="this.style.color='#777'" onmouseout="this.style.color='#383838'">Admin ↗</a>\`
+      : '';
   }
 
   function logout() {
