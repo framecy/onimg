@@ -159,6 +159,7 @@ export function renderPage() {
       <button class="tab" data-tab="pages" id="tabPages">我的页面</button>
     </div>
     <div class="spacer"></div>
+    <a href="/admin" style="font-size:.75rem;color:#444;text-decoration:none;padding:4px 10px;border:1px solid #242424;border-radius:6px;transition:color .15s,border-color .15s" onmouseover="this.style.color='#888';this.style.borderColor='#444'" onmouseout="this.style.color='#444';this.style.borderColor='#242424'">Admin</a>
     <div id="userArea">
       <button class="btn-sm" id="loginTrigger">登录</button>
     </div>
@@ -230,6 +231,18 @@ export function renderPage() {
       <div class="empty" id="pagesEmpty" style="display:none">暂无页面</div>
     </div>
   </main>
+  <footer style="border-top:1px solid #1a1a1a;padding:14px 24px;display:flex;align-items:center;gap:10px;font-size:.75rem;color:#444;flex-wrap:wrap">
+    <span>图片存储于</span>
+    <span style="color:#f97316;font-weight:600">Cloudflare R2</span>
+    <span style="color:#2a2a2a">·</span>
+    <span>10 GB 免费存储额度</span>
+    <span style="color:#2a2a2a">·</span>
+    <span>无出口流量费用</span>
+    <span style="color:#2a2a2a">·</span>
+    <span>全球 CDN 加速</span>
+    <div style="flex:1"></div>
+    <a href="/admin" style="color:#383838;text-decoration:none" onmouseover="this.style.color='#666'" onmouseout="this.style.color='#383838'">Admin ↗</a>
+  </footer>
 </div>
 
 <!-- Lightbox -->

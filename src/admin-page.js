@@ -5,6 +5,7 @@ export function renderAdminPage() {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Onimg Admin</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vditor/dist/index.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, -apple-system, sans-serif; background: #0a0a0a; color: #e0e0e0; min-height: 100vh; }
@@ -205,6 +206,12 @@ export function renderAdminPage() {
 
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1a1a1a; border: 1px solid #2a2a2a; color: #e0e0e0; padding: 9px 18px; border-radius: 8px; font-size: .83rem; transition: transform .25s; z-index: 300; white-space: nowrap; }
     .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* Admin page editor Vditor */
+    #apmVditor { border-radius: 8px; overflow: hidden; border: 1px solid #333; }
+    #apmVditor .vditor-outline { display: none !important; }
+    #apmVditor .vditor-content { height: calc(100% - 36px) !important; overflow-y: auto !important; overscroll-behavior: contain; }
+    #apmVditor .vditor-toolbar { position: sticky !important; top: 0 !important; z-index: 10 !important; flex-wrap: nowrap; overflow-x: auto; }
   </style>
 </head>
 <body>
@@ -476,12 +483,12 @@ export function renderAdminPage() {
 
 <!-- Admin Page Editor Modal -->
 <div class="modal-overlay" id="adminPageModal">
-  <div class="modal" style="max-width:720px">
+  <div class="modal" style="max-width:860px;max-height:96vh;display:flex;flex-direction:column">
     <div class="modal-header">
       <h3>页面编辑</h3>
       <button class="modal-close" id="apmClose">✕</button>
     </div>
-    <div class="modal-body">
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;min-height:0">
       <div class="field"><label>标题</label><input type="text" id="apmTitle" placeholder="My Page"></div>
       <div class="field">
         <label>Slug（URL 后缀）</label>
@@ -492,7 +499,11 @@ export function renderAdminPage() {
         <div class="field"><label>类型</label><select id="apmType"><option value="markdown">Markdown</option><option value="html">HTML</option></select></div>
         <div class="field"><label style="display:flex;align-items:center;gap:8px;margin-top:26px;cursor:pointer"><input type="checkbox" id="apmPublic" checked> 公开访问</label></div>
       </div>
-      <div class="field"><label>内容</label><textarea id="apmContent" rows="14" style="resize:vertical;min-height:200px;font-family:monospace;font-size:.82rem;padding:10px 12px;background:#0a0a0a;border:1px solid #222;border-radius:8px;color:#e0e0e0;outline:none;width:100%" placeholder="# Hello\n\n内容…"></textarea></div>
+      <div class="field" style="flex:1;display:flex;flex-direction:column;min-height:0">
+        <label>内容</label>
+        <div id="apmVditor" style="display:none"></div>
+        <textarea id="apmContent" rows="14" style="resize:vertical;min-height:200px;font-family:monospace;font-size:.82rem;padding:10px 12px;background:#0a0a0a;border:1px solid #222;border-radius:8px;color:#e0e0e0;outline:none;width:100%" placeholder="# Hello\n\n内容…"></textarea>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" id="apmCancel">取消</button>
@@ -556,7 +567,8 @@ export function renderAdminPage() {
   let adminToken = localStorage.getItem(TOKEN_KEY);
   let adminUser  = localStorage.getItem(USER_KEY) || 'admin';
   let allImages = [], allStats = {}, galleryCursor = null, selected = new Set(), lbKey = null;
-  let editingUser = null; // username being edited
+  let editingUser = null;
+  let apmVditorInst = null;
 
   const authH = () => ({ 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' });
 
@@ -896,6 +908,59 @@ export function renderAdminPage() {
   // ── Admin Pages ───────────────────────────────────────────────────────────────
   let adminEditingSlug = null;
 
+  function initApmVditor(initialContent) {
+    const box = document.getElementById('apmVditor');
+    box.style.display = 'block';
+    document.getElementById('apmContent').style.display = 'none';
+    if (apmVditorInst) { apmVditorInst.setValue(initialContent || ''); return; }
+    const editorH = Math.min(480, Math.max(300, window.innerHeight - 420));
+    apmVditorInst = new Vditor('apmVditor', {
+      height: editorH, mode: 'ir', lang: 'zh_CN',
+      cdn: 'https://cdn.jsdelivr.net/npm/vditor',
+      cache: { enable: false }, outline: { enable: false }, preview: { show: false },
+      toolbar: ['headings','bold','italic','strike','|','list','ordered-list','check','quote','|',
+                'code','inline-code','link','table','upload','|','undo','redo','fullscreen'],
+      toolbarConfig: { pin: false },
+      upload: {
+        url: '/upload', fieldName: 'file',
+        headers: adminToken ? { Authorization: 'Bearer ' + adminToken } : {},
+        accept: 'image/*',
+        format: (files, responseText) => {
+          try {
+            const d = JSON.parse(responseText);
+            const url = d.url || (d.items && d.items[0] && d.items[0].url);
+            if (!url) return responseText;
+            return JSON.stringify({ code: 0, data: { errFiles: [], succMap: { [files[0].name]: url } } });
+          } catch { return responseText; }
+        },
+      },
+      after() {
+        window.dispatchEvent(new Event('resize'));
+        apmVditorInst.setValue(initialContent || '');
+        apmVditorInst.focus();
+        box.addEventListener('wheel', function(e) {
+          const scroller = box.querySelector('.vditor-content');
+          if (!scroller) return;
+          const atTop = scroller.scrollTop === 0 && e.deltaY < 0;
+          const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1 && e.deltaY > 0;
+          if (!atTop && !atBottom) e.stopPropagation();
+        }, { passive: true });
+      },
+    });
+  }
+
+  function switchApmEditorToType(type, content) {
+    if (type === 'markdown') {
+      setTimeout(() => initApmVditor(content || ''), 50);
+    } else {
+      if (apmVditorInst) { apmVditorInst.destroy(); apmVditorInst = null; }
+      document.getElementById('apmVditor').style.display = 'none';
+      const ta = document.getElementById('apmContent');
+      ta.style.display = '';
+      ta.value = content || '';
+    }
+  }
+
   async function loadAdminPages() {
     document.getElementById('adminPagesBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#333;padding:24px">加载中…</td></tr>';
     const res = await fetch('/admin/pages', { headers: authH() });
@@ -936,18 +1001,21 @@ export function renderAdminPage() {
     toast('已删除'); loadAdminPages();
   }
 
-  // Reuse the same modal as user pages — create a shared inline modal
   function adminOpenPageModal(page) {
     adminEditingSlug = page?.slug ?? null;
     const modal = document.getElementById('adminPageModal');
     document.getElementById('apmTitle').value   = page?.title   ?? '';
-    document.getElementById('apmSlug').value    = page?.slug    ?? '';
-    document.getElementById('apmType').value    = page?.type    ?? 'markdown';
-    document.getElementById('apmContent').value = page?.content ?? '';
+    const slugEl = document.getElementById('apmSlug');
+    slugEl.value = page?.slug ?? '';
+    slugEl.readOnly = !!page;
+    slugEl.style.opacity = page ? '0.5' : '';
+    const type = page?.type ?? 'markdown';
+    document.getElementById('apmType').value = type;
     document.getElementById('apmPublic').checked = page?.isPublic !== false;
     document.getElementById('apmSave').textContent = page ? '保存' : '创建';
     document.getElementById('apmSlugPreview').textContent = page ? location.origin + '/p/' + page.slug : '';
     modal.classList.add('show');
+    switchApmEditorToType(type, page?.content ?? '');
   }
 
   document.getElementById('apmSlug').addEventListener('input', () => {
@@ -955,11 +1023,19 @@ export function renderAdminPage() {
     document.getElementById('apmSlugPreview').textContent = s ? location.origin + '/p/' + s : '';
   });
 
+  document.getElementById('apmType').addEventListener('change', () => {
+    const type = document.getElementById('apmType').value;
+    const currentContent = apmVditorInst ? apmVditorInst.getValue() : document.getElementById('apmContent').value;
+    switchApmEditorToType(type, currentContent);
+  });
+
   document.getElementById('apmSave').addEventListener('click', async () => {
     const slug    = document.getElementById('apmSlug').value.trim();
     const title   = document.getElementById('apmTitle').value.trim();
     const type    = document.getElementById('apmType').value;
-    const content = document.getElementById('apmContent').value;
+    const content = apmVditorInst && type === 'markdown'
+      ? apmVditorInst.getValue()
+      : document.getElementById('apmContent').value;
     const isPublic = document.getElementById('apmPublic').checked;
     if (!slug || !content) { toast('Slug 和内容不能为空'); return; }
     const isEdit = !!adminEditingSlug;
@@ -973,7 +1049,12 @@ export function renderAdminPage() {
     toast(isEdit ? '已保存' : '页面已创建');
     loadAdminPages();
   });
-  ['apmClose','apmCancel'].forEach(id => document.getElementById(id).addEventListener('click', () => document.getElementById('adminPageModal').classList.remove('show')));
+  ['apmClose','apmCancel'].forEach(id => document.getElementById(id).addEventListener('click', () => {
+    document.getElementById('adminPageModal').classList.remove('show');
+    if (apmVditorInst) { apmVditorInst.destroy(); apmVditorInst = null; }
+    document.getElementById('apmVditor').style.display = 'none';
+    document.getElementById('apmContent').style.display = '';
+  }));
 
   // ── R2 Stats ─────────────────────────────────────────────────────────────────
   async function loadR2Stats() {
@@ -1101,10 +1182,16 @@ export function renderAdminPage() {
       document.getElementById('lightbox').classList.remove('show');
       document.getElementById('statsModal').classList.remove('show');
       document.getElementById('userModal').classList.remove('show');
-      document.getElementById('adminPageModal').classList.remove('show');
+      if (document.getElementById('adminPageModal').classList.contains('show')) {
+        document.getElementById('adminPageModal').classList.remove('show');
+        if (apmVditorInst) { apmVditorInst.destroy(); apmVditorInst = null; }
+        document.getElementById('apmVditor').style.display = 'none';
+        document.getElementById('apmContent').style.display = '';
+      }
     }
   });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/vditor/dist/index.min.js" defer></script>
 </body>
 </html>`;
 }
