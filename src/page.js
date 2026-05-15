@@ -659,14 +659,9 @@ export function renderPage() {
   }
 
   // ── Pages ──
-  async function loadPages() {
-    if (!token) return;
-    const res = await fetch('/api/pages', { headers: { Authorization: 'Bearer ' + token } });
-    if (!res.ok) return;
-    const { pages } = await res.json();
-    userPages = pages;
-    document.getElementById('pagesEmpty').style.display = pages.length ? 'none' : 'block';
-    document.getElementById('pagesList').innerHTML = pages.map((p, i) => \`
+  function renderPages() {
+    document.getElementById('pagesEmpty').style.display = userPages.length ? 'none' : 'block';
+    document.getElementById('pagesList').innerHTML = userPages.map((p, i) => \`
       <div class="page-item">
         <div class="page-item-info">
           <div class="page-title">\${esc(p.title)} <span class="type-badge type-\${p.type==='markdown'?'md':'html'}">\${p.type}</span></div>
@@ -678,6 +673,15 @@ export function renderPage() {
         <button class="btn btn-danger" onclick="deletePage('\${p.slug}')">删除</button>
       </div>
     \`).join('');
+  }
+
+  async function loadPages() {
+    if (!token) return;
+    const res = await fetch('/api/pages', { headers: { Authorization: 'Bearer ' + token } });
+    if (!res.ok) return;
+    const { pages } = await res.json();
+    userPages = pages;
+    renderPages();
   }
 
   document.getElementById('pmSlug').addEventListener('input', () => {
@@ -747,8 +751,23 @@ export function renderPage() {
       if (res.status === 409) { toast('后缀已被占用，请换一个'); return; }
       toast('失败: ' + data.error); return;
     }
+
+    // Close modal and clean up editor immediately
+    destroyVditor();
     document.getElementById('pageModal').classList.remove('show');
     toast(isEdit ? '已保存' : '页面已创建');
+
+    // Optimistic update — avoid KV list eventual-consistency delay
+    const now = Date.now();
+    if (isEdit) {
+      const idx = userPages.findIndex(p => p.slug === editingSlug);
+      if (idx >= 0) Object.assign(userPages[idx], { title: title || slug, content, type, isPublic, updatedAt: now });
+    } else {
+      userPages.unshift({ slug, title: title || slug, content, type, isPublic, createdAt: now, updatedAt: now });
+    }
+    renderPages();
+
+    // Background sync to stay consistent with server
     loadPages();
   });
 
