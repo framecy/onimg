@@ -1,0 +1,19 @@
+name = "onimg"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+routes = [
+  { pattern = "img.diswant.space", custom_domain = true }
+]
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "onimg-images"
+
+[[kv_namespaces]]
+binding = "STATS"
+id = "21c715b9ac3a4fb0bba894ccacc8308f"
+
+[vars]
+MAX_FILE_SIZE = "10485760"
+ALLOWED_TYPES = "image/jpeg,image/png,image/gif,image/webp,image/svg+xml"
