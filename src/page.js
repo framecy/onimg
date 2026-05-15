@@ -125,9 +125,10 @@ export function renderPage() {
     #pmVditor { border-radius: 8px; overflow: hidden; flex-shrink: 0; border: 1px solid #333; }
     /* Force-hide outline regardless of Vditor internal state */
     #pmVditor .vditor-outline { display: none !important; }
-    /* Ensure content area scrolls with mouse wheel */
-    #pmVditor .vditor-ir__content,
-    #pmVditor .vditor-wysiwyg { overflow-y: auto !important; }
+    /* Ensure editor content area captures scroll independently */
+    #pmVditor .vditor-ir,
+    #pmVditor .vditor-wysiwyg,
+    #pmVditor .vditor-sv__editor { overflow-y: auto !important; overscroll-behavior: contain; }
     /* Toolbar: compact, no wrapping */
     #pmVditor .vditor-toolbar { flex-wrap: nowrap; overflow-x: auto; }
     .modal-header { display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid #1f1f1f; flex-shrink: 0; }
@@ -342,7 +343,18 @@ export function renderPage() {
           return JSON.stringify({ code: -1, msg: '上传失败' });
         },
       },
-      after() { vditorInst.focus(); },
+      after() {
+        vditorInst.focus();
+        // Prevent wheel events from bubbling to modal when editor can scroll internally
+        const box = document.getElementById('pmVditor');
+        box.addEventListener('wheel', function(e) {
+          const scroller = box.querySelector('.vditor-ir') || box.querySelector('.vditor-wysiwyg') || box.querySelector('.vditor-sv__editor');
+          if (!scroller) return;
+          const atTop    = scroller.scrollTop === 0 && e.deltaY < 0;
+          const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1 && e.deltaY > 0;
+          if (!atTop && !atBottom) e.stopPropagation();
+        }, { passive: true });
+      },
     });
   }
 
