@@ -1,0 +1,16 @@
+{
+  "name": "onimg",
+  "version": "1.0.0",
+  "description": "Image hosting service powered by Cloudflare Workers + R2",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "secret": "wrangler secret put AUTH_KEY"
+  },
+  "devDependencies": {
+    "wrangler": "^4.90.0"
+  },
+  "dependencies": {
+    "marked": "^18.0.3"
+  }
+}
