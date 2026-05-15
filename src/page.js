@@ -16,10 +16,27 @@ export function renderPage() {
     .tab { padding: 5px 13px; border-radius: 6px; border: none; background: transparent; color: #666; cursor: pointer; font-size: .85rem; transition: all .15s; }
     .tab.active { background: #1f1f1f; color: #fff; }
     .spacer { flex: 1; }
-    .user-chip { display: flex; align-items: center; gap: 7px; padding: 4px 12px; background: #1a1a1a; border: 1px solid #242424; border-radius: 20px; font-size: .8rem; color: #aaa; }
-    .dot-green { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; }
-    .btn-sm { padding: 5px 12px; border: 1px solid #242424; border-radius: 6px; background: transparent; color: #666; cursor: pointer; font-size: .8rem; }
+    .dot-green { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; flex-shrink: 0; }
+    .btn-sm { padding: 5px 12px; border: 1px solid #242424; border-radius: 6px; background: transparent; color: #666; cursor: pointer; font-size: .8rem; white-space: nowrap; }
     .btn-sm:hover { color: #fff; border-color: #444; }
+    /* User menu */
+    #userArea { position: relative; flex-shrink: 0; }
+    .user-chip { display: flex; align-items: center; gap: 7px; padding: 5px 12px; background: #1a1a1a; border: 1px solid #242424; border-radius: 20px; font-size: .8rem; color: #aaa; cursor: pointer; white-space: nowrap; user-select: none; transition: border-color .15s; }
+    .user-chip:hover { border-color: #444; color: #ccc; }
+    .user-chip .caret { font-size: .6rem; color: #555; margin-left: 2px; transition: transform .15s; }
+    .user-chip.open .caret { transform: rotate(180deg); }
+    .user-dropdown { position: absolute; top: calc(100% + 8px); right: 0; background: #161616; border: 1px solid #2a2a2a; border-radius: 10px; min-width: 200px; box-shadow: 0 8px 24px rgba(0,0,0,.5); z-index: 100; overflow: hidden; display: none; }
+    .user-dropdown.show { display: block; }
+    .ud-header { padding: 12px 14px 10px; border-bottom: 1px solid #222; }
+    .ud-name { font-size: .88rem; font-weight: 600; color: #e0e0e0; }
+    .ud-role { font-size: .72rem; color: #555; margin-top: 2px; }
+    .ud-perms { padding: 10px 14px; border-bottom: 1px solid #1e1e1e; display: flex; flex-wrap: wrap; gap: 5px; }
+    .ud-perm { font-size: .68rem; padding: 2px 7px; border-radius: 4px; }
+    .perm-on  { background: rgba(34,197,94,.12); color: #22c55e; }
+    .perm-off { background: rgba(100,100,100,.1); color: #444; }
+    .perm-admin { background: rgba(59,130,246,.12); color: #3b82f6; }
+    .ud-action { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 14px; background: none; border: none; color: #888; font-size: .82rem; cursor: pointer; text-align: left; transition: background .12s, color .12s; }
+    .ud-action:hover { background: #1f1f1f; color: #ef4444; }
 
     /* Login overlay */
     #loginOverlay { position: fixed; inset: 0; background: rgba(0,0,0,.75); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 24px; }
@@ -404,11 +421,40 @@ export function renderPage() {
   loadPublicGallery();
   if (token) loadQuota();
 
+  function buildPermBadges() {
+    if (!perms) return '';
+    if (isAdminUser) return '<span class="ud-perm perm-admin">超级管理员</span>';
+    const badges = [];
+    badges.push(perms.canUpload
+      ? '<span class="ud-perm perm-on">允许上传</span>'
+      : '<span class="ud-perm perm-off">禁止上传</span>');
+    if (perms.canDelete) badges.push('<span class="ud-perm perm-on">允许删除</span>');
+    if (perms.canEdit)   badges.push('<span class="ud-perm perm-on">允许编辑</span>');
+    const dl = perms.dailyUploadLimit  === -1 ? '∞' : perms.dailyUploadLimit;
+    const tl = perms.maxTotalUploads   === -1 ? '∞' : perms.maxTotalUploads;
+    badges.push(\`<span class="ud-perm perm-off" style="color:#555">每日 \${dl}</span>\`);
+    badges.push(\`<span class="ud-perm perm-off" style="color:#555">总量 \${tl}</span>\`);
+    return badges.join('');
+  }
+
   function updateUserArea() {
     const el = document.getElementById('userArea');
     if (token) {
-      el.innerHTML = \`<div class="user-chip"><div class="dot-green"></div>\${username}</div>
-        <button class="btn-sm" id="logoutBtn">退出</button>\`;
+      el.innerHTML = \`
+        <div class="user-chip" id="userChip">
+          <div class="dot-green"></div>
+          <span>\${username}</span>
+          <span class="caret">▾</span>
+        </div>
+        <div class="user-dropdown" id="userDropdown">
+          <div class="ud-header">
+            <div class="ud-name">\${username}</div>
+            <div class="ud-role">\${isAdminUser ? '管理员' : '普通用户'}</div>
+          </div>
+          <div class="ud-perms">\${buildPermBadges()}</div>
+          <button class="ud-action" id="logoutBtn">退出登录</button>
+        </div>\`;
+      document.getElementById('userChip').addEventListener('click', toggleUserMenu);
       document.getElementById('logoutBtn').addEventListener('click', logout);
       document.getElementById('uploadBtn').disabled = !(perms?.canUpload ?? true);
     } else {
@@ -420,6 +466,24 @@ export function renderPage() {
       ? \`<a href="/admin" style="color:#383838;text-decoration:none;transition:color .15s" onmouseover="this.style.color='#777'" onmouseout="this.style.color='#383838'">Admin ↗</a>\`
       : '';
   }
+
+  function toggleUserMenu() {
+    const chip = document.getElementById('userChip');
+    const drop = document.getElementById('userDropdown');
+    if (!chip || !drop) return;
+    const open = drop.classList.toggle('show');
+    chip.classList.toggle('open', open);
+  }
+
+  document.addEventListener('click', e => {
+    const area = document.getElementById('userArea');
+    if (area && !area.contains(e.target)) {
+      const drop = document.getElementById('userDropdown');
+      const chip = document.getElementById('userChip');
+      if (drop) drop.classList.remove('show');
+      if (chip) chip.classList.remove('open');
+    }
+  });
 
   function logout() {
     localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(PERM_KEY); localStorage.removeItem(USER_KEY); localStorage.removeItem(ADMIN_KEY);
