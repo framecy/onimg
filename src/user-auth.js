@@ -16,7 +16,7 @@ export async function handleUserLogin(request, env) {
     }
     const unlimitedPerms = { canUpload: true, canDelete: true, canEdit: true, maxTotalUploads: -1, dailyUploadLimit: -1 };
     const token = await createToken({ type: 'user', username, isAdmin: true }, USER_TOKEN_TTL, env.TOKEN_SECRET);
-    return Response.json({ token, username, permissions: unlimitedPerms });
+    return Response.json({ token, username, isAdmin: true, permissions: unlimitedPerms });
   }
 
   const user = await getUser(env, username);

@@ -159,7 +159,7 @@ export function renderPage() {
       <button class="tab" data-tab="pages" id="tabPages">我的页面</button>
     </div>
     <div class="spacer"></div>
-    <a href="/admin" style="font-size:.75rem;color:#444;text-decoration:none;padding:4px 10px;border:1px solid #242424;border-radius:6px;transition:color .15s,border-color .15s" onmouseover="this.style.color='#888';this.style.borderColor='#444'" onmouseout="this.style.color='#444';this.style.borderColor='#242424'">Admin</a>
+    <div id="adminEntry"></div>
     <div id="userArea">
       <button class="btn-sm" id="loginTrigger">登录</button>
     </div>
@@ -240,8 +240,6 @@ export function renderPage() {
     <span>无出口流量费用</span>
     <span style="color:#2a2a2a">·</span>
     <span>全球 CDN 加速</span>
-    <div style="flex:1"></div>
-    <a href="/admin" style="color:#383838;text-decoration:none" onmouseover="this.style.color='#666'" onmouseout="this.style.color='#383838'">Admin ↗</a>
   </footer>
 </div>
 
@@ -304,10 +302,11 @@ export function renderPage() {
 <div class="toast" id="toast"></div>
 
 <script>
-  const TOKEN_KEY = 'onimg_token', PERM_KEY = 'onimg_perms', USER_KEY = 'onimg_user';
+  const TOKEN_KEY = 'onimg_token', PERM_KEY = 'onimg_perms', USER_KEY = 'onimg_user', ADMIN_KEY = 'onimg_is_admin';
   let token = localStorage.getItem(TOKEN_KEY);
   let perms = JSON.parse(localStorage.getItem(PERM_KEY) || 'null');
   let username = localStorage.getItem(USER_KEY);
+  let isAdminUser = localStorage.getItem(ADMIN_KEY) === '1';
   let mineItems = [], lbKey = null, editingSlug = null, userPages = [], vditorInst = null;
 
   function authH() { return { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }; }
@@ -406,21 +405,26 @@ export function renderPage() {
 
   function updateUserArea() {
     const el = document.getElementById('userArea');
+    const adminEl = document.getElementById('adminEntry');
     if (token) {
       el.innerHTML = \`<div class="user-chip"><div class="dot-green"></div>\${username}</div>
         <button class="btn-sm" id="logoutBtn">退出</button>\`;
       document.getElementById('logoutBtn').addEventListener('click', logout);
       document.getElementById('uploadBtn').disabled = !(perms?.canUpload ?? true);
+      adminEl.innerHTML = isAdminUser
+        ? \`<a href="/admin" style="font-size:.75rem;color:#444;text-decoration:none;padding:4px 10px;border:1px solid #242424;border-radius:6px;margin-right:6px">Admin</a>\`
+        : '';
     } else {
       el.innerHTML = \`<button class="btn-sm" id="loginTrigger">登录</button>\`;
       document.getElementById('loginTrigger').addEventListener('click', () => document.getElementById('loginOverlay').style.display = 'flex');
       document.getElementById('uploadBtn').disabled = true;
+      adminEl.innerHTML = '';
     }
   }
 
   function logout() {
-    localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(PERM_KEY); localStorage.removeItem(USER_KEY);
-    token = null; perms = null; username = null;
+    localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(PERM_KEY); localStorage.removeItem(USER_KEY); localStorage.removeItem(ADMIN_KEY);
+    token = null; perms = null; username = null; isAdminUser = false;
     updateUserArea();
     document.getElementById('mineGrid').innerHTML = '';
     document.getElementById('pagesList').innerHTML = '';
@@ -437,8 +441,9 @@ export function renderPage() {
       const res = await fetch('/auth/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username:u,password:p}) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      token = data.token; perms = data.permissions; username = data.username;
+      token = data.token; perms = data.permissions; username = data.username; isAdminUser = !!data.isAdmin;
       localStorage.setItem(TOKEN_KEY, token); localStorage.setItem(PERM_KEY, JSON.stringify(perms)); localStorage.setItem(USER_KEY, username);
+      if (isAdminUser) localStorage.setItem(ADMIN_KEY, '1'); else localStorage.removeItem(ADMIN_KEY);
       document.getElementById('loginOverlay').style.display = 'none';
       updateUserArea(); loadQuota();
     } catch(e) { err.textContent = e.message || '登录失败'; }
