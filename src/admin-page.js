@@ -262,7 +262,9 @@ export function renderAdminPage() {
           <div class="stat-card"><div class="stat-label">图片总数</div><div class="stat-value" id="statImages">—</div><div class="stat-unit">张</div></div>
           <div class="stat-card"><div class="stat-label">存储用量</div><div class="stat-value" id="statSize">—</div><div class="stat-unit" id="statSizeUnit"></div></div>
           <div class="stat-card"><div class="stat-label">免费额度剩余</div><div class="stat-value" id="statFree">—</div><div class="stat-unit">GB / 10 GB</div></div>
-          <div class="stat-card"><div class="stat-label">总访问次数</div><div class="stat-value" id="statViews">—</div><div class="stat-unit">次</div></div>
+          <div class="stat-card"><div class="stat-label">图片访问次数</div><div class="stat-value" id="statViews">—</div><div class="stat-unit">次</div></div>
+          <div class="stat-card"><div class="stat-label">托管页面数</div><div class="stat-value" id="statPages">—</div><div class="stat-unit">个</div></div>
+          <div class="stat-card"><div class="stat-label">页面访问次数</div><div class="stat-value" id="statPageViews">—</div><div class="stat-unit">次</div></div>
         </div>
         <div class="r2-panel">
           <div class="r2-panel-hd">
@@ -305,11 +307,18 @@ export function renderAdminPage() {
             </div>
           </div>
         </div>
-        <div class="section-header"><h3>访问最多</h3></div>
-        <div style="background:#111;border:1px solid #1a1a1a;border-radius:12px;overflow:hidden">
+        <div class="section-header"><h3>图片访问最多</h3></div>
+        <div style="background:#111;border:1px solid #1a1a1a;border-radius:12px;overflow:hidden;margin-bottom:28px">
           <table class="data-table">
             <thead><tr><th>图片</th><th>文件名</th><th>访问次数</th><th>最后访问</th><th></th></tr></thead>
             <tbody id="topImagesBody"><tr><td colspan="5" style="text-align:center;color:#333;padding:24px">加载中…</td></tr></tbody>
+          </table>
+        </div>
+        <div class="section-header"><h3>页面访问最多</h3></div>
+        <div style="background:#111;border:1px solid #1a1a1a;border-radius:12px;overflow:hidden">
+          <table class="data-table">
+            <thead><tr><th>标题 / Slug</th><th>访问次数</th><th>最后访问</th><th></th></tr></thead>
+            <tbody id="topPagesBody"><tr><td colspan="4" style="text-align:center;color:#333;padding:24px">加载中…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -512,6 +521,35 @@ export function renderAdminPage() {
   </div>
 </div>
 
+<!-- Page Stats Modal -->
+<div class="modal-overlay" id="pageStatsModal">
+  <div class="modal stats-modal">
+    <div class="modal-header">
+      <h3>页面统计 <span style="font-size:.72rem;color:#555;font-weight:400" id="psmTitle"></span></h3>
+      <button class="modal-close" id="psmClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="stat-summary">
+        <div class="summary-card"><div class="val" id="psmTotal">—</div><div class="lbl">总访问次数</div></div>
+        <div class="summary-card"><div class="val" id="psmUniqueIps">—</div><div class="lbl">独立 IP 数</div></div>
+        <div class="summary-card"><div class="val" id="psmLast">—</div><div class="lbl">最后访问</div></div>
+      </div>
+      <div class="country-bars"><h4>国家 / 地区分布</h4><div id="psmCountryBars"></div></div>
+      <div style="margin-top:20px">
+        <h4 style="font-size:.82rem;color:#666;margin-bottom:10px;font-weight:500">访问 IP Top 10</h4>
+        <div id="psmIpBars"></div>
+      </div>
+      <div class="access-log">
+        <h4>最近访问记录</h4>
+        <table class="log-table">
+          <thead><tr><th>时间</th><th>IP</th><th>国家</th><th>城市</th><th>ISP</th></tr></thead>
+          <tbody id="psmLogBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Image Stats Modal -->
 <div class="modal-overlay" id="statsModal">
   <div class="modal stats-modal">
@@ -619,25 +657,36 @@ export function renderAdminPage() {
   }
 
   // ── Dashboard ──────────────────────────────────────────────────────────────
+  let allPageStats = {};
+
   async function loadDashboard() {
-    const [sRes, iRes] = await Promise.all([
+    const [sRes, iRes, pRes, psRes] = await Promise.all([
       fetch('/admin/stats', { headers: authH() }),
       fetch('/admin/all-image-stats', { headers: authH() }),
+      fetch('/admin/pages', { headers: authH() }),
+      fetch('/admin/all-page-stats', { headers: authH() }),
     ]);
     if (sRes.status === 401) { handleUnauth(); return; }
     const { totalImages, totalSize } = await sRes.json();
     const { stats } = await iRes.json();
+    const { pages } = await pRes.json();
+    const { stats: pgStats } = await psRes.json();
     allStats = stats;
+    allPageStats = pgStats;
+
     document.getElementById('statImages').textContent = totalImages.toLocaleString();
     const { val, unit } = fmtSizeParts(totalSize);
     document.getElementById('statSize').textContent = val;
     document.getElementById('statSizeUnit').textContent = unit;
     document.getElementById('statFree').textContent = Math.max(0, 10 - totalSize/1073741824).toFixed(2);
     document.getElementById('statViews').textContent = Object.values(stats).reduce((s,v) => s+(v.count??0), 0).toLocaleString();
+    document.getElementById('statPages').textContent = pages.length.toLocaleString();
+    document.getElementById('statPageViews').textContent = Object.values(pgStats).reduce((s,v) => s+(v.count??0), 0).toLocaleString();
 
-    const sorted = Object.entries(stats).sort((a,b) => (b[1].count??0)-(a[1].count??0)).slice(0,10);
-    document.getElementById('topImagesBody').innerHTML = sorted.length
-      ? sorted.map(([k,s]) => \`<tr>
+    // Top images
+    const sortedImg = Object.entries(stats).sort((a,b) => (b[1].count??0)-(a[1].count??0)).slice(0,10);
+    document.getElementById('topImagesBody').innerHTML = sortedImg.length
+      ? sortedImg.map(([k,s]) => \`<tr>
           <td><img class="top-thumb" src="\${origin}/\${k}" loading="lazy" onclick="openLightbox('\${k}')"></td>
           <td style="font-family:monospace;font-size:.78rem;color:#888">\${k}</td>
           <td class="view-count">\${(s.count??0).toLocaleString()}</td>
@@ -645,6 +694,22 @@ export function renderAdminPage() {
           <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" onclick="openStatsModal('\${k}')">详情</button></td>
         </tr>\`).join('')
       : '<tr><td colspan="5" style="text-align:center;color:#333;padding:24px">暂无访问记录</td></tr>';
+
+    // Top pages
+    const pageMap = {};
+    pages.forEach(p => pageMap[p.slug] = p.title || p.slug);
+    const sortedPg = Object.entries(pgStats).sort((a,b) => (b[1].count??0)-(a[1].count??0)).slice(0,10);
+    document.getElementById('topPagesBody').innerHTML = sortedPg.length
+      ? sortedPg.map(([slug,s]) => \`<tr>
+          <td>
+            <div style="font-weight:500;font-size:.88rem">\${esc(pageMap[slug] || slug)}</div>
+            <div style="font-family:monospace;font-size:.72rem;color:#555">/p/\${slug}</div>
+          </td>
+          <td class="view-count">\${(s.count??0).toLocaleString()}</td>
+          <td class="muted">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
+          <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" onclick="openPageStatsModal('\${slug}',\${JSON.stringify(pageMap[slug]||slug)})">详情</button></td>
+        </tr>\`).join('')
+      : '<tr><td colspan="4" style="text-align:center;color:#333;padding:24px">暂无访问记录</td></tr>';
   }
 
   // ── Gallery ─────────────────────────────────────────────────────────────────
@@ -881,6 +946,48 @@ export function renderAdminPage() {
   document.getElementById('statsModalClose').addEventListener('click', () => document.getElementById('statsModal').classList.remove('show'));
   document.getElementById('statsModal').addEventListener('click', e => { if (e.target===document.getElementById('statsModal')) document.getElementById('statsModal').classList.remove('show'); });
 
+  // ── Page Stats Modal ──────────────────────────────────────────────────────────
+  async function openPageStatsModal(slug, title) {
+    document.getElementById('psmTitle').textContent = title ? \`\${title} (/p/\${slug})\` : '/p/' + slug;
+    document.getElementById('psmTotal').textContent = '…';
+    document.getElementById('psmUniqueIps').textContent = '…';
+    document.getElementById('psmLast').textContent = '…';
+    document.getElementById('psmCountryBars').innerHTML = '';
+    document.getElementById('psmIpBars').innerHTML = '';
+    document.getElementById('psmLogBody').innerHTML = '<tr><td colspan="5" style="color:#333;text-align:center;padding:16px">加载中…</td></tr>';
+    document.getElementById('pageStatsModal').classList.add('show');
+    try {
+      const res = await fetch('/admin/page-stats/' + encodeURIComponent(slug), { headers: authH() });
+      const data = await res.json();
+      document.getElementById('psmTotal').textContent = (data.count ?? 0).toLocaleString();
+      document.getElementById('psmUniqueIps').textContent = (data.uniqueIps ?? 0).toLocaleString();
+      document.getElementById('psmLast').textContent = data.lastAccess ? timeAgo(data.lastAccess) : '—';
+
+      // Country bars
+      const cl = Object.entries(data.countries ?? {}).sort((a,b) => b[1]-a[1]);
+      const maxC = cl[0]?.[1] ?? 1;
+      document.getElementById('psmCountryBars').innerHTML = cl.slice(0,8).map(([cc,cnt]) =>
+        \`<div class="country-row"><span class="country-name">\${cc}</span><div class="bar-wrap"><div class="bar" style="width:\${(cnt/maxC*100).toFixed(1)}%"></div></div><span class="country-count">\${cnt}</span></div>\`
+      ).join('') || '<span style="color:#333;font-size:.82rem">暂无数据</span>';
+
+      // IP bars
+      const il = Object.entries(data.ips ?? {}).sort((a,b) => b[1]-a[1]).slice(0,10);
+      const maxI = il[0]?.[1] ?? 1;
+      document.getElementById('psmIpBars').innerHTML = il.map(([ip,cnt]) =>
+        \`<div class="country-row"><span style="width:120px;font-family:monospace;font-size:.75rem;color:#aaa;flex-shrink:0;overflow:hidden;text-overflow:ellipsis">\${ip}</span><div class="bar-wrap"><div class="bar" style="width:\${(cnt/maxI*100).toFixed(1)}%"></div></div><span class="country-count">\${cnt}</span></div>\`
+      ).join('') || '<span style="color:#333;font-size:.82rem">暂无数据</span>';
+
+      // Access log
+      document.getElementById('psmLogBody').innerHTML = (data.accesses ?? []).slice(0,50).map(a =>
+        \`<tr><td>\${new Date(a.ts).toLocaleString('zh-CN')}</td><td style="font-family:monospace">\${a.ip}</td><td>\${a.country}</td><td>\${[a.city,a.region].filter(x=>x&&x!=='—').join(' ')}</td><td style="color:#444">\${a.org!=='—'?a.org:''}</td></tr>\`
+      ).join('') || '<tr><td colspan="5" style="color:#333;text-align:center">暂无记录</td></tr>';
+    } catch {
+      document.getElementById('psmLogBody').innerHTML = '<tr><td colspan="5" style="color:#555;text-align:center">加载失败</td></tr>';
+    }
+  }
+  document.getElementById('psmClose').addEventListener('click', () => document.getElementById('pageStatsModal').classList.remove('show'));
+  document.getElementById('pageStatsModal').addEventListener('click', e => { if (e.target===document.getElementById('pageStatsModal')) document.getElementById('pageStatsModal').classList.remove('show'); });
+
   // ── Lightbox ─────────────────────────────────────────────────────────────────
   function openLightbox(key) {
     lbKey = key;
@@ -980,6 +1087,7 @@ export function renderAdminPage() {
           <td style="white-space:nowrap">
             <a href="/p/\${p.slug}" target="_blank" class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem;text-decoration:none">预览</a>
             <button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" onclick="adminEditPage('\${p.slug}')">编辑</button>
+            <button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" onclick="openPageStatsModal('\${p.slug}',\${JSON.stringify(p.title)})">统计</button>
             <button class="btn btn-danger" style="padding:4px 8px;font-size:.75rem" onclick="adminDeletePage('\${p.slug}')">删除</button>
           </td>
         </tr>\`).join('')
@@ -1181,6 +1289,7 @@ export function renderAdminPage() {
     if (e.key==='Escape') {
       document.getElementById('lightbox').classList.remove('show');
       document.getElementById('statsModal').classList.remove('show');
+      document.getElementById('pageStatsModal').classList.remove('show');
       document.getElementById('userModal').classList.remove('show');
       if (document.getElementById('adminPageModal').classList.contains('show')) {
         document.getElementById('adminPageModal').classList.remove('show');

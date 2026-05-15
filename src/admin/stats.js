@@ -124,6 +124,42 @@ export async function handleMemberStats(env) {
   return Response.json({ users, date: today });
 }
 
+// 返回所有页面的访问次数（KV metadata）
+export async function handleAllPageStats(env) {
+  const result = { stats: {} };
+  let cursor;
+  do {
+    const list = await env.STATS.list({ prefix: 'pstats:', cursor, limit: 1000 });
+    for (const key of list.keys) {
+      const slug = key.name.slice(7);
+      result.stats[slug] = key.metadata ?? { count: 0, lastAccess: null };
+    }
+    cursor = list.list_complete ? undefined : list.cursor;
+  } while (cursor);
+  return Response.json(result);
+}
+
+// 返回单个页面的详细访问记录
+export async function handlePageStats(env, slug) {
+  if (!slug) return Response.json({ error: 'Missing slug' }, { status: 400 });
+  const data = await env.STATS.getWithMetadata('pstats:' + slug, 'json');
+  if (!data?.value) return Response.json({ count: 0, lastAccess: null, accesses: [], countries: {}, ips: {} });
+  const accesses = data.value;
+  const countries = {}, ips = {};
+  for (const a of accesses) {
+    countries[a.country] = (countries[a.country] ?? 0) + 1;
+    ips[a.ip] = (ips[a.ip] ?? 0) + 1;
+  }
+  return Response.json({
+    count: data.metadata?.count ?? accesses.length,
+    lastAccess: data.metadata?.lastAccess ?? null,
+    uniqueIps: Object.keys(ips).length,
+    countries,
+    ips,
+    accesses: accesses.slice(0, 100),
+  });
+}
+
 // 返回单张图片的详细访问记录
 export async function handleImageStats(env, imageKey) {
   if (!imageKey) return Response.json({ error: 'Missing key' }, { status: 400 });

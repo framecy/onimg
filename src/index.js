@@ -5,7 +5,7 @@ import { handleList, handlePublicGallery, handleToggleVisibility } from './list.
 import { renderPage } from './page.js';
 import { renderAdminPage } from './admin-page.js';
 import { handleAdminLogin, verifyAdminToken } from './admin/auth.js';
-import { handleAdminStats, handleAllImageStats, handleImageStats, handleR2DetailedStats, handleMemberStats } from './admin/stats.js';
+import { handleAdminStats, handleAllImageStats, handleImageStats, handleR2DetailedStats, handleMemberStats, handleAllPageStats, handlePageStats } from './admin/stats.js';
 import { handleListUsers, handleCreateUser, handleUpdateUser, handleDeleteUser } from './admin/users.js';
 import { handleGetConfig, handleUpdateConfig } from './admin/config-handler.js';
 import { handleUserLogin, verifyUserToken, getUserQuotaInfo } from './user-auth.js';
@@ -24,7 +24,7 @@ export default {
       // ── Public page hosting ──────────────────────────────────────────────────
       if (method === 'GET' && path.startsWith('/p/')) {
         const slug = decodeURIComponent(path.slice(3));
-        return await servePage(env, slug);
+        return await servePage(env, slug, ctx, request);
       }
 
       // ── User auth ────────────────────────────────────────────────────────────
@@ -67,6 +67,8 @@ export default {
         if (method === 'POST'   && path === '/admin/config')              return withCors(await handleUpdateConfig(request, env));
         if (method === 'GET'    && path === '/admin/r2-stats')            return withCors(await handleR2DetailedStats(env));
         if (method === 'GET'    && path === '/admin/member-stats')        return withCors(await handleMemberStats(env));
+        if (method === 'GET'    && path === '/admin/all-page-stats')      return withCors(await handleAllPageStats(env));
+        if (method === 'GET'    && path.startsWith('/admin/page-stats/')) return withCors(await handlePageStats(env, decodeURIComponent(path.slice('/admin/page-stats/'.length))));
         // Admin pages
         if (method === 'GET'    && path === '/admin/pages')               return withCors(Response.json({ pages: await import('./pages/manage.js').then(m => m.listPages(env, null)) }));
         if (method === 'POST'   && path === '/admin/pages')               return withCors(await handleCreatePage(request, env, env.ADMIN_USERNAME ?? 'admin'));
