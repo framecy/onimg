@@ -125,12 +125,20 @@ export function renderPage() {
     #pmVditor { border-radius: 8px; overflow: hidden; flex-shrink: 0; border: 1px solid #333; }
     /* Force-hide outline regardless of Vditor internal state */
     #pmVditor .vditor-outline { display: none !important; }
-    /* Ensure editor content area captures scroll independently */
-    #pmVditor .vditor-ir,
-    #pmVditor .vditor-wysiwyg,
-    #pmVditor .vditor-sv__editor { overflow-y: auto !important; overscroll-behavior: contain; }
-    /* Toolbar: compact, no wrapping */
-    #pmVditor .vditor-toolbar { flex-wrap: nowrap; overflow-x: auto; }
+    /* Content area fills remaining height and owns the scroll */
+    #pmVditor .vditor-content {
+      height: calc(100% - 36px) !important;
+      overflow-y: auto !important;
+      overscroll-behavior: contain;
+    }
+    /* Toolbar stays pinned at top — works whether modal or vditor-content scrolls */
+    #pmVditor .vditor-toolbar {
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 10 !important;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+    }
     .modal-header { display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid #1f1f1f; flex-shrink: 0; }
     .modal-header h3 { flex: 1; font-size: .95rem; }
     .modal-close { background: #1a1a1a; border: 1px solid #222; color: #888; width: 30px; height: 30px; border-radius: 6px; cursor: pointer; }
@@ -344,11 +352,14 @@ export function renderPage() {
         },
       },
       after() {
+        // Force Vditor to recalculate content-area height after modal is painted
+        window.dispatchEvent(new Event('resize'));
         vditorInst.focus();
-        // Prevent wheel events from bubbling to modal when editor can scroll internally
+
+        // Stop wheel bubbling to modal-body when editor still has room to scroll
         const box = document.getElementById('pmVditor');
         box.addEventListener('wheel', function(e) {
-          const scroller = box.querySelector('.vditor-ir') || box.querySelector('.vditor-wysiwyg') || box.querySelector('.vditor-sv__editor');
+          const scroller = box.querySelector('.vditor-content');
           if (!scroller) return;
           const atTop    = scroller.scrollTop === 0 && e.deltaY < 0;
           const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1 && e.deltaY > 0;
