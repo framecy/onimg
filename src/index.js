@@ -10,7 +10,7 @@ import { handleListUsers, handleCreateUser, handleUpdateUser, handleDeleteUser }
 import { handleGetConfig, handleUpdateConfig } from './admin/config-handler.js';
 import { handleUserLogin, verifyUserToken, getUserQuotaInfo } from './user-auth.js';
 import { servePage } from './pages/handler.js';
-import { handleListPages, handleCreatePage, handleUpdatePage, handleDeletePage } from './pages/manage.js';
+import { listPages, handleListPages, handleCreatePage, handleUpdatePage, handleDeletePage } from './pages/manage.js';
 
 export default {
   async fetch(request, env, ctx) {
@@ -70,7 +70,7 @@ export default {
         if (method === 'GET'    && path === '/admin/all-page-stats')      return withCors(await handleAllPageStats(env));
         if (method === 'GET'    && path.startsWith('/admin/page-stats/')) return withCors(await handlePageStats(env, decodeURIComponent(path.slice('/admin/page-stats/'.length))));
         // Admin pages
-        if (method === 'GET'    && path === '/admin/pages')               return withCors(Response.json({ pages: await import('./pages/manage.js').then(m => m.listPages(env, null)) }));
+        if (method === 'GET'    && path === '/admin/pages')               return withCors(Response.json({ pages: await listPages(env, null) }));
         if (method === 'POST'   && path === '/admin/pages')               return withCors(await handleCreatePage(request, env, env.ADMIN_USERNAME ?? 'admin'));
         if (method === 'PATCH'  && path.startsWith('/admin/pages/'))      return withCors(await handleUpdatePage(request, env, decodeURIComponent(path.slice('/admin/pages/'.length)), env.ADMIN_USERNAME, true));
         if (method === 'DELETE' && path.startsWith('/admin/pages/'))      return withCors(await handleDeletePage(env, decodeURIComponent(path.slice('/admin/pages/'.length)), env.ADMIN_USERNAME, true));

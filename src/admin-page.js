@@ -374,8 +374,8 @@ export function renderAdminPage() {
         </div>
         <div style="background:#111;border:1px solid #1a1a1a;border-radius:12px;overflow:hidden">
           <table class="data-table">
-            <thead><tr><th>标题 / Slug</th><th>类型</th><th>作者</th><th>状态</th><th>更新</th><th></th></tr></thead>
-            <tbody id="adminPagesBody"><tr><td colspan="6" style="text-align:center;color:#333;padding:24px">加载中…</td></tr></tbody>
+            <thead><tr><th>标题 / Slug</th><th>类型</th><th>作者</th><th>状态</th><th>访问次数</th><th>更新</th><th></th></tr></thead>
+            <tbody id="adminPagesBody"><tr><td colspan="7" style="text-align:center;color:#333;padding:24px">加载中…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -660,56 +660,67 @@ export function renderAdminPage() {
   let allPageStats = {};
 
   async function loadDashboard() {
-    const [sRes, iRes, pRes, psRes] = await Promise.all([
-      fetch('/admin/stats', { headers: authH() }),
-      fetch('/admin/all-image-stats', { headers: authH() }),
-      fetch('/admin/pages', { headers: authH() }),
-      fetch('/admin/all-page-stats', { headers: authH() }),
-    ]);
-    if (sRes.status === 401) { handleUnauth(); return; }
-    const { totalImages, totalSize } = await sRes.json();
-    const { stats } = await iRes.json();
-    const { pages } = await pRes.json();
-    const { stats: pgStats } = await psRes.json();
-    allStats = stats;
-    allPageStats = pgStats;
+    try {
+      const [sRes, iRes, pRes, psRes] = await Promise.all([
+        fetch('/admin/stats', { headers: authH() }),
+        fetch('/admin/all-image-stats', { headers: authH() }),
+        fetch('/admin/pages', { headers: authH() }),
+        fetch('/admin/all-page-stats', { headers: authH() }),
+      ]);
+      if (sRes.status === 401) { handleUnauth(); return; }
 
-    document.getElementById('statImages').textContent = totalImages.toLocaleString();
-    const { val, unit } = fmtSizeParts(totalSize);
-    document.getElementById('statSize').textContent = val;
-    document.getElementById('statSizeUnit').textContent = unit;
-    document.getElementById('statFree').textContent = Math.max(0, 10 - totalSize/1073741824).toFixed(2);
-    document.getElementById('statViews').textContent = Object.values(stats).reduce((s,v) => s+(v.count??0), 0).toLocaleString();
-    document.getElementById('statPages').textContent = pages.length.toLocaleString();
-    document.getElementById('statPageViews').textContent = Object.values(pgStats).reduce((s,v) => s+(v.count??0), 0).toLocaleString();
+      const sData  = sRes.ok  ? await sRes.json()  : {};
+      const iData  = iRes.ok  ? await iRes.json()  : { stats: {} };
+      const pData  = pRes.ok  ? await pRes.json()  : { pages: [] };
+      const psData = psRes.ok ? await psRes.json() : { stats: {} };
 
-    // Top images
-    const sortedImg = Object.entries(stats).sort((a,b) => (b[1].count??0)-(a[1].count??0)).slice(0,10);
-    document.getElementById('topImagesBody').innerHTML = sortedImg.length
-      ? sortedImg.map(([k,s]) => \`<tr>
-          <td><img class="top-thumb" src="\${origin}/\${k}" loading="lazy" onclick="openLightbox('\${k}')"></td>
-          <td style="font-family:monospace;font-size:.78rem;color:#888">\${k}</td>
-          <td class="view-count">\${(s.count??0).toLocaleString()}</td>
-          <td class="muted">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
-          <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" onclick="openStatsModal('\${k}')">详情</button></td>
-        </tr>\`).join('')
-      : '<tr><td colspan="5" style="text-align:center;color:#333;padding:24px">暂无访问记录</td></tr>';
+      const { totalImages = 0, totalSize = 0 } = sData;
+      const stats   = iData.stats  ?? {};
+      const pages   = pData.pages  ?? [];
+      const pgStats = psData.stats ?? {};
 
-    // Top pages
-    const pageMap = {};
-    pages.forEach(p => pageMap[p.slug] = p.title || p.slug);
-    const sortedPg = Object.entries(pgStats).sort((a,b) => (b[1].count??0)-(a[1].count??0)).slice(0,10);
-    document.getElementById('topPagesBody').innerHTML = sortedPg.length
-      ? sortedPg.map(([slug,s]) => \`<tr>
-          <td>
-            <div style="font-weight:500;font-size:.88rem">\${esc(pageMap[slug] || slug)}</div>
-            <div style="font-family:monospace;font-size:.72rem;color:#555">/p/\${slug}</div>
-          </td>
-          <td class="view-count">\${(s.count??0).toLocaleString()}</td>
-          <td class="muted">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
-          <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" onclick="openPageStatsModal('\${slug}',\${JSON.stringify(pageMap[slug]||slug)})">详情</button></td>
-        </tr>\`).join('')
-      : '<tr><td colspan="4" style="text-align:center;color:#333;padding:24px">暂无访问记录</td></tr>';
+      allStats     = stats;
+      allPageStats = pgStats;
+
+      document.getElementById('statImages').textContent = totalImages.toLocaleString();
+      const { val, unit } = fmtSizeParts(totalSize);
+      document.getElementById('statSize').textContent = val;
+      document.getElementById('statSizeUnit').textContent = unit;
+      document.getElementById('statFree').textContent = Math.max(0, 10 - totalSize/1073741824).toFixed(2);
+      document.getElementById('statViews').textContent = Object.values(stats).reduce((s,v) => s+(v.count??0), 0).toLocaleString();
+      document.getElementById('statPages').textContent = pages.length.toLocaleString();
+      document.getElementById('statPageViews').textContent = Object.values(pgStats).reduce((s,v) => s+(v.count??0), 0).toLocaleString();
+
+      // Top images
+      const sortedImg = Object.entries(stats).sort((a,b) => (b[1].count??0)-(a[1].count??0)).slice(0,10);
+      document.getElementById('topImagesBody').innerHTML = sortedImg.length
+        ? sortedImg.map(([k,s]) => \`<tr>
+            <td><img class="top-thumb" src="\${origin}/\${k}" loading="lazy" onclick="openLightbox('\${k}')"></td>
+            <td style="font-family:monospace;font-size:.78rem;color:#888">\${k}</td>
+            <td class="view-count">\${(s.count??0).toLocaleString()}</td>
+            <td class="muted">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
+            <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" onclick="openStatsModal('\${k}')">详情</button></td>
+          </tr>\`).join('')
+        : '<tr><td colspan="5" style="text-align:center;color:#333;padding:24px">暂无访问记录</td></tr>';
+
+      // Top pages
+      const pageMap = {};
+      pages.forEach(p => pageMap[p.slug] = p.title || p.slug);
+      const sortedPg = Object.entries(pgStats).sort((a,b) => (b[1].count??0)-(a[1].count??0)).slice(0,10);
+      document.getElementById('topPagesBody').innerHTML = sortedPg.length
+        ? sortedPg.map(([slug,s]) => \`<tr>
+            <td>
+              <div style="font-weight:500;font-size:.88rem">\${esc(pageMap[slug] || slug)}</div>
+              <div style="font-family:monospace;font-size:.72rem;color:#555">/p/\${slug}</div>
+            </td>
+            <td class="view-count">\${(s.count??0).toLocaleString()}</td>
+            <td class="muted">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
+            <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" onclick="openPageStatsModal('\${esc(slug)}','\${esc(pageMap[slug]||slug)}')">详情</button></td>
+          </tr>\`).join('')
+        : '<tr><td colspan="4" style="text-align:center;color:#333;padding:24px">暂无访问记录</td></tr>';
+    } catch(e) {
+      console.error('loadDashboard error:', e);
+    }
   }
 
   // ── Gallery ─────────────────────────────────────────────────────────────────
@@ -1069,29 +1080,36 @@ export function renderAdminPage() {
   }
 
   async function loadAdminPages() {
-    document.getElementById('adminPagesBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#333;padding:24px">加载中…</td></tr>';
-    const res = await fetch('/admin/pages', { headers: authH() });
-    if (!res.ok) return;
+    document.getElementById('adminPagesBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:#333;padding:24px">加载中…</td></tr>';
+    const [res, psRes] = await Promise.all([
+      fetch('/admin/pages', { headers: authH() }),
+      fetch('/admin/all-page-stats', { headers: authH() }),
+    ]);
+    if (!res.ok) { document.getElementById('adminPagesBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:#555;padding:24px">加载失败</td></tr>'; return; }
     const { pages } = await res.json();
+    if (psRes.ok) { const d = await psRes.json(); allPageStats = d.stats ?? allPageStats; }
     const TYPE_LABEL = { markdown: '<span style="background:rgba(59,130,246,.1);color:#3b82f6;padding:2px 6px;border-radius:4px;font-size:.72rem">MD</span>', html: '<span style="background:rgba(245,158,11,.1);color:#f59e0b;padding:2px 6px;border-radius:4px;font-size:.72rem">HTML</span>' };
     document.getElementById('adminPagesBody').innerHTML = pages.length
-      ? pages.map(p => \`<tr>
+      ? pages.map(p => {
+          const views = allPageStats[p.slug]?.count ?? 0;
+          return \`<tr>
           <td>
             <div style="font-weight:500;font-size:.88rem">\${esc(p.title)}</div>
             <div style="font-family:monospace;font-size:.72rem;color:#555">/p/\${p.slug}</div>
           </td>
           <td>\${TYPE_LABEL[p.type] || p.type}</td>
-          <td class="muted">@\${p.owner}</td>
+          <td class="muted">@\${esc(p.owner)}</td>
           <td>\${p.isPublic ? '<span style="color:#22c55e;font-size:.78rem">公开</span>' : '<span style="color:#555;font-size:.78rem">私密</span>'}</td>
+          <td class="view-count">\${views ? views.toLocaleString() : '<span style="color:#333">—</span>'}</td>
           <td class="muted">\${timeAgo(p.updatedAt)}</td>
           <td style="white-space:nowrap">
             <a href="/p/\${p.slug}" target="_blank" class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem;text-decoration:none">预览</a>
-            <button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" onclick="adminEditPage('\${p.slug}')">编辑</button>
-            <button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" onclick="openPageStatsModal('\${p.slug}',\${JSON.stringify(p.title)})">统计</button>
-            <button class="btn btn-danger" style="padding:4px 8px;font-size:.75rem" onclick="adminDeletePage('\${p.slug}')">删除</button>
+            <button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" onclick="adminEditPage('\${esc(p.slug)}')">编辑</button>
+            <button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" onclick="openPageStatsModal('\${esc(p.slug)}','\${esc(p.title||p.slug)}')">统计</button>
+            <button class="btn btn-danger" style="padding:4px 8px;font-size:.75rem" onclick="adminDeletePage('\${esc(p.slug)}')">删除</button>
           </td>
-        </tr>\`).join('')
-      : '<tr><td colspan="6" style="text-align:center;color:#333;padding:24px">暂无页面</td></tr>';
+        </tr>\`;}).join('')
+      : '<tr><td colspan="7" style="text-align:center;color:#333;padding:24px">暂无页面</td></tr>';
   }
 
   document.getElementById('adminNewPageBtn').addEventListener('click', () => adminOpenPageModal(null));

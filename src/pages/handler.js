@@ -3,7 +3,26 @@ import { renderMarkdown, extractHeadings } from './markdown.js';
 export async function servePage(env, slug, ctx, request) {
   const page = await env.STATS.get('page:' + slug, 'json');
   if (!page) return new Response('Page Not Found', { status: 404 });
-  if (!page.isPublic) return new Response('This page is private', { status: 403 });
+
+  if (!page.isPublic) {
+    if (!page.accessPassword) return new Response('This page is private', { status: 403 });
+    const url = new URL(request.url);
+    const urlPwd = url.searchParams.get('pwd');
+    const cookies = parseCookies(request.headers.get('Cookie') || '');
+    const cookieName = 'onimg_p_' + slug.replace(/[^a-zA-Z0-9]/g, '_');
+    if (urlPwd !== null) {
+      if (urlPwd !== page.accessPassword) return servePasswordPrompt(slug, page, true);
+      const cleanUrl = url.origin + url.pathname;
+      return new Response(null, {
+        status: 302,
+        headers: {
+          Location: cleanUrl,
+          'Set-Cookie': `${cookieName}=${encodeURIComponent(page.accessPassword)}; Path=/; Max-Age=${7 * 86400}; SameSite=Lax`,
+        },
+      });
+    }
+    if (cookies[cookieName] !== page.accessPassword) return servePasswordPrompt(slug, page, false);
+  }
 
   if (ctx && request) ctx.waitUntil(recordPageAccess(env, slug, request));
 
@@ -235,6 +254,56 @@ function serveHtmlPage(page) {
 }
 
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function parseCookies(header) {
+  const out = {};
+  for (const part of header.split(';')) {
+    const eq = part.indexOf('=');
+    if (eq < 1) continue;
+    out[part.slice(0, eq).trim()] = decodeURIComponent(part.slice(eq + 1).trim());
+  }
+  return out;
+}
+
+function servePasswordPrompt(slug, page, wrong) {
+  const title = esc(page.title || slug);
+  return new Response(`<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${title}</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,sans-serif;background:#0a0a0a;color:#e0e0e0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{background:#111;border:1px solid #1e1e1e;border-radius:20px;padding:40px 36px;width:100%;max-width:380px}
+  .icon{font-size:2.2rem;margin-bottom:16px;line-height:1}
+  h1{font-size:1.1rem;font-weight:600;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sub{font-size:.82rem;color:#555;margin-bottom:28px}
+  .err{color:#ef4444;font-size:.82rem;margin-bottom:12px}
+  input{width:100%;padding:12px 14px;background:#0a0a0a;border:1px solid #222;border-radius:10px;color:#e0e0e0;font-size:1.1rem;letter-spacing:.25em;text-align:center;outline:none;transition:border .15s;margin-bottom:14px;font-family:monospace}
+  input:focus{border-color:#3b82f6}
+  button{width:100%;padding:12px;background:#3b82f6;color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:600;cursor:pointer;transition:background .15s}
+  button:hover{background:#2563eb}
+  .footer{margin-top:24px;text-align:center;font-size:.72rem;color:#333}
+  .footer a{color:#444;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">🔒</div>
+  <h1>${title}</h1>
+  <div class="sub">此页面已加密，请输入 6 位访问密码</div>
+  ${wrong ? '<div class="err">密码错误，请重试</div>' : ''}
+  <form action="/p/${slug}" method="get">
+    <input type="password" name="pwd" placeholder="• • • • • •" maxlength="6" autocomplete="off" autofocus>
+    <button type="submit">验证访问</button>
+  </form>
+  <div class="footer">Powered by <a href="/">Onimg</a></div>
+</div>
+</body>
+</html>`, { headers: { 'Content-Type': 'text/html; charset=utf-8' }, status: wrong ? 401 : 403 });
+}
 
 async function recordPageAccess(env, slug, request) {
   if (!env.STATS) return;
