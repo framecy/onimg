@@ -14,6 +14,7 @@ export async function listPages(env, ownerFilter) {
         content: p.content,
         owner: p.owner,
         isPublic: p.isPublic,
+        accessPassword: p.accessPassword,
         createdAt: p.createdAt,
         updatedAt: p.updatedAt,
         contentLength: p.content?.length ?? 0,
@@ -32,7 +33,7 @@ export async function handleCreatePage(request, env, owner) {
   let body;
   try { body = await request.json(); } catch { return Response.json({ error: 'Invalid JSON' }, { status: 400 }); }
 
-  const { slug, title, content, type, isPublic } = body;
+  const { slug, title, content, type, isPublic, accessPassword } = body;
   if (!slug || !SLUG_RE.test(slug)) {
     return Response.json({ error: 'Invalid slug. Use letters, numbers, - _ / (max 120 chars)' }, { status: 400 });
   }
@@ -48,11 +49,15 @@ export async function handleCreatePage(request, env, owner) {
     return Response.json({ error: msg }, { status: 409 });
   }
 
+  const pub = isPublic !== false;
   const page = {
     slug, title: title || slug, content, type,
-    isPublic: isPublic !== false,
+    isPublic: pub,
     owner, createdAt: Date.now(), updatedAt: Date.now(),
   };
+  if (!pub && accessPassword) {
+    page.accessPassword = String(accessPassword).replace(/[^A-Za-z0-9]/g, '').slice(0, 6) || undefined;
+  }
   await env.STATS.put(key, JSON.stringify(page));
   return Response.json({ slug, title: page.title, type, isPublic: page.isPublic }, { status: 201 });
 }
@@ -65,10 +70,15 @@ export async function handleUpdatePage(request, env, slug, callerUsername, isAdm
   let body;
   try { body = await request.json(); } catch { return Response.json({ error: 'Invalid JSON' }, { status: 400 }); }
 
-  if (body.title   != null) page.title   = body.title;
-  if (body.content != null) page.content = body.content;
-  if (body.type    != null) page.type    = body.type;
+  if (body.title    != null) page.title    = body.title;
+  if (body.content  != null) page.content  = body.content;
+  if (body.type     != null) page.type     = body.type;
   if (body.isPublic != null) page.isPublic = !!body.isPublic;
+  if (body.accessPassword !== undefined) {
+    page.accessPassword = body.accessPassword
+      ? String(body.accessPassword).replace(/[^A-Za-z0-9]/g, '').slice(0, 6) || undefined
+      : undefined;
+  }
   page.updatedAt = Date.now();
 
   await env.STATS.put('page:' + slug, JSON.stringify(page));
