@@ -39,7 +39,7 @@ export function renderPage() {
     .ud-action:hover { background: #1f1f1f; color: #ef4444; }
 
     /* Login overlay */
-    #loginOverlay { position: fixed; inset: 0; background: rgba(0,0,0,.75); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 24px; }
+    #loginOverlay { position: fixed; inset: 0; background: rgba(0,0,0,.82); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 24px; }
     .login-card { background: #141414; border: 1px solid #222; border-radius: 16px; padding: 36px 32px; width: 100%; max-width: 360px; }
     .login-card h2 { font-size: 1.1rem; margin-bottom: 28px; }
     .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
@@ -47,10 +47,24 @@ export function renderPage() {
     .field input, .field select, .field textarea { padding: 9px 12px; background: #0f0f0f; border: 1px solid #222; border-radius: 7px; color: #e8e8e8; font-size: .9rem; outline: none; transition: border .15s; }
     .field input:focus, .field select:focus, .field textarea:focus { border-color: #3b82f6; }
     .field textarea { resize: vertical; min-height: 120px; font-family: monospace; font-size: .82rem; }
-    .btn-full { width: 100%; padding: 10px; background: #3b82f6; color: #fff; border: none; border-radius: 7px; font-size: .9rem; font-weight: 600; cursor: pointer; margin-top: 6px; }
+    .btn-full { width: 100%; padding: 10px; background: #3b82f6; color: #fff; border: none; border-radius: 7px; font-size: .9rem; font-weight: 600; cursor: pointer; margin-top: 6px; transition: background .15s; }
     .btn-full:hover { background: #2563eb; }
     .btn-full:disabled { background: #1e3a5f; color: #4b7bb5; cursor: not-allowed; }
     .login-err { color: #ef4444; font-size: .8rem; margin-top: 8px; text-align: center; min-height: 16px; }
+    /* Login enhancements */
+    @keyframes loginSpin { to { transform: rotate(360deg); } }
+    @keyframes loginShake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+    .btn-full.loading { pointer-events: none; }
+    .btn-full.loading::before { content:''; display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:loginSpin .6s linear infinite; margin-right:8px; vertical-align:middle; }
+    .login-card.shake { animation: loginShake .35s ease; }
+    .pass-wrap { position: relative; }
+    .pass-wrap input { padding-right: 38px; width: 100%; }
+    .pass-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #555; cursor: pointer; padding: 4px; line-height: 1; font-size: .9rem; }
+    .pass-toggle:hover { color: #aaa; }
+    /* Toast types */
+    .toast.t-success { background: #052e16; border-color: #166534; color: #4ade80; }
+    .toast.t-warn    { background: #2d1b00; border-color: #92400e; color: #fcd34d; }
+    .toast.t-error   { background: #1c0505; border-color: #7f1d1d; color: #f87171; }
 
     main { flex: 1; padding: 20px 24px; max-width: 1200px; margin: 0 auto; width: 100%; }
     .panel { display: none; }
@@ -186,10 +200,10 @@ export function renderPage() {
     <div class="login-card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px">
         <h2 style="margin:0">登录 Onimg</h2>
-        <button onclick="document.getElementById('loginOverlay').style.display='none'" style="background:none;border:none;color:#555;font-size:1.2rem;cursor:pointer;line-height:1;padding:4px">✕</button>
+        <button id="loginOverlayClose" style="background:none;border:none;color:#555;font-size:1.2rem;cursor:pointer;line-height:1;padding:4px">✕</button>
       </div>
       <div class="field"><label>用户名</label><input type="text" id="lu" autocomplete="username" placeholder="username"></div>
-      <div class="field"><label>密码</label><input type="password" id="lp" autocomplete="current-password" placeholder="••••••••"></div>
+      <div class="field"><label>密码</label><div class="pass-wrap"><input type="password" id="lp" autocomplete="current-password" placeholder="••••••••"><button type="button" class="pass-toggle" id="lpToggle" title="显示/隐藏密码">👁</button></div></div>
       <button class="btn-full" id="doLogin">登录</button>
       <div class="login-err" id="loginErr"></div>
     </div>
@@ -327,6 +341,19 @@ export function renderPage() {
   let isAdminUser = localStorage.getItem(ADMIN_KEY) === '1';
   let mineItems = [], lbKey = null, editingSlug = null, userPages = [], vditorInst = null;
 
+  // Validate stored token hasn't expired
+  (function() {
+    if (!token) return;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[0]));
+      if (payload.exp && Date.now() > payload.exp * 1000) {
+        localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(PERM_KEY);
+        localStorage.removeItem(USER_KEY); localStorage.removeItem(ADMIN_KEY);
+        token = null; perms = null; username = null; isAdminUser = false;
+      }
+    } catch {}
+  })();
+
   function authH() { return { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }; }
 
   // ── Vditor editor management ──────────────────────────────────────────────
@@ -459,7 +486,7 @@ export function renderPage() {
       document.getElementById('uploadBtn').disabled = !(perms?.canUpload ?? true);
     } else {
       el.innerHTML = \`<button class="btn-sm" id="loginTrigger">登录</button>\`;
-      document.getElementById('loginTrigger').addEventListener('click', () => document.getElementById('loginOverlay').style.display = 'flex');
+      document.getElementById('loginTrigger').addEventListener('click', openLoginOverlay);
       document.getElementById('uploadBtn').disabled = true;
     }
     document.getElementById('footerAdmin').innerHTML = isAdminUser
@@ -486,6 +513,7 @@ export function renderPage() {
   });
 
   function logout() {
+    if (!confirm('确认退出登录？')) return;
     localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(PERM_KEY); localStorage.removeItem(USER_KEY); localStorage.removeItem(ADMIN_KEY);
     token = null; perms = null; username = null; isAdminUser = false;
     updateUserArea();
@@ -494,12 +522,40 @@ export function renderPage() {
   }
 
   // Login
+  const LOGIN_ERR_MAP = {
+    'Invalid credentials': '账号或密码错误',
+    'Missing credentials': '请填写账号和密码',
+  };
+  function friendlyLoginErr(msg) { return LOGIN_ERR_MAP[msg] || msg || '登录失败，请稍后重试'; }
+
+  function openLoginOverlay() {
+    document.getElementById('loginOverlay').style.display = 'flex';
+    setTimeout(() => document.getElementById('lu').focus(), 80);
+  }
+
+  document.getElementById('loginOverlayClose').addEventListener('click', () => { document.getElementById('loginOverlay').style.display = 'none'; });
+
+  document.getElementById('lpToggle').addEventListener('click', () => {
+    const inp = document.getElementById('lp');
+    const tog = document.getElementById('lpToggle');
+    if (inp.type === 'password') { inp.type = 'text'; tog.textContent = '🙈'; } else { inp.type = 'password'; tog.textContent = '👁'; }
+  });
+
+  document.getElementById('lu').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('lp').focus(); });
   document.getElementById('lp').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('doLogin').click(); });
+
   document.getElementById('doLogin').addEventListener('click', async () => {
     const u = document.getElementById('lu').value.trim(), p = document.getElementById('lp').value;
     const err = document.getElementById('loginErr');
-    if (!u || !p) { err.textContent = '请填写账号和密码'; return; }
-    document.getElementById('doLogin').disabled = true; err.textContent = '';
+    const card = document.querySelector('#loginOverlay .login-card');
+    const btn = document.getElementById('doLogin');
+    if (!u || !p) {
+      err.textContent = '请填写账号和密码';
+      card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+      card.addEventListener('animationend', () => card.classList.remove('shake'), { once: true });
+      return;
+    }
+    btn.classList.add('loading'); btn.textContent = '登录中…'; err.textContent = '';
     try {
       const res = await fetch('/auth/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username:u,password:p}) });
       const data = await res.json();
@@ -509,15 +565,19 @@ export function renderPage() {
       if (isAdminUser) localStorage.setItem(ADMIN_KEY, '1'); else localStorage.removeItem(ADMIN_KEY);
       document.getElementById('loginOverlay').style.display = 'none';
       updateUserArea(); loadQuota();
-    } catch(e) { err.textContent = e.message || '登录失败'; }
-    document.getElementById('doLogin').disabled = false;
+    } catch(e) {
+      err.textContent = friendlyLoginErr(e.message);
+      card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+      card.addEventListener('animationend', () => card.classList.remove('shake'), { once: true });
+    }
+    btn.classList.remove('loading'); btn.textContent = '登录';
   });
 
   // Tabs
   document.querySelectorAll('.tab').forEach(t => {
     t.addEventListener('click', () => {
       if (!token && ['upload','gallery-mine','pages'].includes(t.dataset.tab)) {
-        document.getElementById('loginOverlay').style.display = 'flex'; return;
+        openLoginOverlay(); return;
       }
       document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
       document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
@@ -547,7 +607,7 @@ export function renderPage() {
   const dropZone = document.getElementById('dropZone');
   const fileInput = document.getElementById('fileInput');
   let pendingFiles = [];
-  dropZone.addEventListener('click', () => { if (!token) { document.getElementById('loginOverlay').style.display='flex'; return; } fileInput.click(); });
+  dropZone.addEventListener('click', () => { if (!token) { openLoginOverlay(); return; } fileInput.click(); });
   dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
   dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
   dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('over'); setFiles([...e.dataTransfer.files].filter(f=>f.type.startsWith('image/'))); });
@@ -801,7 +861,13 @@ export function renderPage() {
 
   // ── Utils ──
   function cp(text, btn) { navigator.clipboard.writeText(text).then(() => { if(btn){const o=btn.textContent;btn.textContent='✓';setTimeout(()=>btn.textContent=o,1400);} }); }
-  function toast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2400); }
+  function toast(msg, type) {
+    const t = document.getElementById('toast');
+    t.className = 'toast show' + (type ? ' t-' + type : '');
+    t.textContent = msg;
+    clearTimeout(t._tid);
+    t._tid = setTimeout(() => t.classList.remove('show'), 2600);
+  }
   function fmtSize(b) { if(b<1024) return b+' B'; if(b<1048576) return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
   function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   document.addEventListener('keydown', e => { if (e.key === 'Escape') { document.getElementById('lightbox').classList.remove('show'); closePageModal(); document.getElementById('loginOverlay').style.display = 'none'; } });
