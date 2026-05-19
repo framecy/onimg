@@ -212,9 +212,56 @@ export function renderAdminPage() {
     #apmVditor .vditor-outline { display: none !important; }
     #apmVditor .vditor-content { height: calc(100% - 36px) !important; overflow-y: auto !important; overscroll-behavior: contain; }
     #apmVditor .vditor-toolbar { position: sticky !important; top: 0 !important; z-index: 10 !important; flex-wrap: nowrap; overflow-x: auto; }
+
+    /* Login enhancements */
+    @keyframes loginSpin { to { transform: rotate(360deg); } }
+    @keyframes loginShake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+    .btn-login.loading { pointer-events: none; }
+    .btn-login.loading::before { content:''; display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:loginSpin .6s linear infinite; margin-right:8px; vertical-align:middle; }
+    #loginScreen .login-card.shake { animation: loginShake .35s ease; }
+    .pass-wrap { position: relative; }
+    .pass-wrap input { padding-right: 38px; width: 100%; }
+    .pass-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #555; cursor: pointer; padding: 4px; line-height: 1; font-size: .9rem; }
+    .pass-toggle:hover { color: #aaa; }
+
+    /* Toast types */
+    .toast.t-success { background: #052e16; border-color: #166534; color: #4ade80; }
+    .toast.t-warn    { background: #2d1b00; border-color: #92400e; color: #fcd34d; }
+    .toast.t-error   { background: #1c0505; border-color: #7f1d1d; color: #f87171; }
+
+    /* Expiry banner */
+    #expiryBanner { display: none; background: #1c1a00; border-bottom: 1px solid #92400e; padding: 9px 24px; font-size: .82rem; color: #fcd34d; align-items: center; gap: 8px; }
+    #expiryBanner.show { display: flex; }
+
+    /* Mobile sidebar */
+    .mob-header { display: none; position: fixed; top: 0; left: 0; right: 0; height: 52px; background: #0f0f0f; border-bottom: 1px solid #1a1a1a; z-index: 20; align-items: center; gap: 14px; padding: 0 16px; }
+    .mob-hamburger { background: none; border: 1px solid #222; color: #888; width: 34px; height: 34px; border-radius: 7px; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; }
+    .mob-hamburger:hover { color: #fff; border-color: #444; }
+    .sidebar-mask { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 9; }
+    .sidebar-mask.show { display: block; }
+    @media (max-width: 768px) {
+      aside { transform: translateX(-220px); transition: transform .22s ease; }
+      aside.open { transform: translateX(0); z-index: 15; }
+      .mob-header { display: flex; }
+      .main-content { margin-left: 0 !important; padding-top: 68px; }
+    }
+    @media (min-width: 769px) { .mob-header { display: none !important; } }
+
+    /* Table horizontal scroll */
+    .users-table-wrap { overflow-x: auto; }
   </style>
 </head>
 <body>
+
+<div id="expiryBanner">
+  ⚠ 登录状态将在 <strong id="expiryCountdown"></strong> 后过期，建议重新登录以避免中断。
+  <button onclick="triggerReLogin()" style="margin-left:auto;padding:4px 10px;background:none;border:1px solid #92400e;color:#fcd34d;border-radius:6px;cursor:pointer;font-size:.78rem">重新登录</button>
+</div>
+<div class="mob-header">
+  <button class="mob-hamburger" id="sidebarToggle">☰</button>
+  <span style="font-size:.9rem;font-weight:700">Onimg Admin</span>
+</div>
+<div class="sidebar-mask" id="sidebarMask"></div>
 
 <!-- Login -->
 <div id="loginScreen">
@@ -222,7 +269,7 @@ export function renderAdminPage() {
     <div class="login-logo">Onimg <span>Admin</span></div>
     <div class="login-sub">使用管理员账号登录</div>
     <div class="field"><label>用户名</label><input type="text" id="loginUser" placeholder="admin" autocomplete="username"></div>
-    <div class="field"><label>密码</label><input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"></div>
+    <div class="field"><label>密码</label><div class="pass-wrap"><input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"><button type="button" class="pass-toggle" id="loginPassToggle" title="显示/隐藏密码">👁</button></div></div>
     <button class="btn-login" id="loginBtn">登录</button>
     <div class="login-err" id="loginErr"></div>
   </div>
@@ -607,10 +654,22 @@ export function renderAdminPage() {
   let allImages = [], allStats = {}, galleryCursor = null, selected = new Set(), lbKey = null;
   let editingUser = null;
   let apmVditorInst = null;
+  let expiryTimerId = null;
 
   const authH = () => ({ 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' });
 
-  if (adminToken) showApp(); else showLogin();
+  function parseTokenExp(tok) {
+    try { return JSON.parse(atob(tok.split('.')[0])).exp * 1000; } catch { return null; }
+  }
+
+  function checkTokenValid() {
+    if (!adminToken) return false;
+    const exp = parseTokenExp(adminToken);
+    if (exp && Date.now() > exp) { localStorage.removeItem(TOKEN_KEY); adminToken = null; return false; }
+    return true;
+  }
+
+  if (adminToken && checkTokenValid()) showApp(); else { adminToken = null; showLogin(); }
 
   function showLogin() { document.getElementById('loginScreen').style.display = 'flex'; document.getElementById('adminApp').style.display = 'none'; }
   function showApp() {
@@ -618,19 +677,68 @@ export function renderAdminPage() {
     document.getElementById('adminApp').style.display = 'block';
     document.getElementById('sidebarUsername').textContent = adminUser;
     document.getElementById('avatarLetter').textContent = adminUser[0].toUpperCase();
+    startExpiryWatch();
     loadDashboard();
     loadR2Stats();
     loadSettings();
   }
 
+  function startExpiryWatch() {
+    if (expiryTimerId) clearInterval(expiryTimerId);
+    function checkAndShow() {
+      if (!adminToken) return;
+      const exp = parseTokenExp(adminToken);
+      if (!exp) return;
+      const remaining = exp - Date.now();
+      if (remaining <= 0) { handleUnauth(); return; }
+      if (remaining < 30 * 60000) {
+        const mins = Math.floor(remaining / 60000);
+        document.getElementById('expiryBanner').classList.add('show');
+        document.getElementById('expiryCountdown').textContent = mins > 0 ? mins + ' 分钟' : '不到 1 分钟';
+      }
+    }
+    checkAndShow();
+    expiryTimerId = setInterval(checkAndShow, 60000);
+  }
+
+  function triggerReLogin() {
+    document.getElementById('expiryBanner').classList.remove('show');
+    if (expiryTimerId) { clearInterval(expiryTimerId); expiryTimerId = null; }
+    localStorage.removeItem(TOKEN_KEY); adminToken = null; showLogin();
+  }
+
   // Login
+  const LOGIN_ERR_MAP = {
+    'Invalid credentials': '账号或密码错误',
+    'Missing credentials': '请填写账号和密码',
+    'Admin not configured': '管理员账号未配置，请检查环境变量',
+  };
+  function friendlyLoginErr(msg) { return LOGIN_ERR_MAP[msg] || msg || '登录失败，请稍后重试'; }
+
   const loginBtn = document.getElementById('loginBtn');
+  const loginCard = document.querySelector('#loginScreen .login-card');
+
+  function shakeLoginCard() {
+    loginCard.classList.remove('shake');
+    void loginCard.offsetWidth;
+    loginCard.classList.add('shake');
+    loginCard.addEventListener('animationend', () => loginCard.classList.remove('shake'), { once: true });
+  }
+
+  document.getElementById('loginUser').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('loginPass').focus(); });
   document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') loginBtn.click(); });
+
+  document.getElementById('loginPassToggle').addEventListener('click', () => {
+    const inp = document.getElementById('loginPass');
+    const tog = document.getElementById('loginPassToggle');
+    if (inp.type === 'password') { inp.type = 'text'; tog.textContent = '🙈'; } else { inp.type = 'password'; tog.textContent = '👁'; }
+  });
+
   loginBtn.addEventListener('click', async () => {
     const u = document.getElementById('loginUser').value.trim(), p = document.getElementById('loginPass').value;
     const err = document.getElementById('loginErr');
-    if (!u || !p) { err.textContent = '请填写账号和密码'; return; }
-    loginBtn.disabled = true; err.textContent = '';
+    if (!u || !p) { err.textContent = '请填写账号和密码'; shakeLoginCard(); return; }
+    loginBtn.classList.add('loading'); loginBtn.textContent = '登录中…'; err.textContent = '';
     try {
       const res = await fetch('/admin/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u,password:p}) });
       const data = await res.json();
@@ -638,14 +746,36 @@ export function renderAdminPage() {
       adminToken = data.token; adminUser = data.username || u;
       localStorage.setItem(TOKEN_KEY, adminToken); localStorage.setItem(USER_KEY, adminUser);
       showApp();
-    } catch(e) { err.textContent = e.message || '登录失败'; }
-    loginBtn.disabled = false;
+    } catch(e) { err.textContent = friendlyLoginErr(e.message); shakeLoginCard(); }
+    loginBtn.classList.remove('loading'); loginBtn.textContent = '登录';
   });
-  document.getElementById('logoutBtn').addEventListener('click', () => { localStorage.removeItem(TOKEN_KEY); adminToken = null; showLogin(); });
+  setTimeout(() => document.getElementById('loginUser').focus(), 80);
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    if (!confirm('确认退出登录？')) return;
+    if (expiryTimerId) { clearInterval(expiryTimerId); expiryTimerId = null; }
+    document.getElementById('expiryBanner').classList.remove('show');
+    localStorage.removeItem(TOKEN_KEY); adminToken = null; showLogin();
+  });
 
   // Nav
+  const sidebarEl = document.querySelector('aside');
+  const sidebarMask = document.getElementById('sidebarMask');
+  document.getElementById('sidebarToggle').addEventListener('click', () => {
+    sidebarEl.classList.toggle('open');
+    sidebarMask.classList.toggle('show');
+  });
+  sidebarMask.addEventListener('click', () => {
+    sidebarEl.classList.remove('open');
+    sidebarMask.classList.remove('show');
+  });
+
   document.querySelectorAll('.nav-item[data-section]').forEach(btn => {
-    btn.addEventListener('click', () => switchSection(btn.dataset.section));
+    btn.addEventListener('click', () => {
+      switchSection(btn.dataset.section);
+      sidebarEl.classList.remove('open');
+      sidebarMask.classList.remove('show');
+    });
   });
   function switchSection(name) {
     document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.section === name));
@@ -750,10 +880,19 @@ export function renderAdminPage() {
     toast('已复制 ' + selected.size + ' 条链接');
   });
   document.getElementById('bulkDeleteBtn').addEventListener('click', async () => {
-    if (!confirm(\`确认删除选中的 \${selected.size} 张图片？\`)) return;
-    for (const k of [...selected]) await doDelete(k);
+    const keys = [...selected];
+    if (!confirm(`确认删除选中的 ${keys.length} 张图片？此操作不可撤销。`)) return;
+    const btn = document.getElementById('bulkDeleteBtn');
+    btn.disabled = true;
+    let ok = 0, fail = 0;
+    for (const k of keys) {
+      try { await doDelete(k); ok++; } catch { fail++; }
+      btn.textContent = \`删除中 (\${ok + fail}/\${keys.length})\`;
+    }
+    btn.disabled = false; btn.textContent = '批量删除';
     allImages = allImages.filter(i => !selected.has(i.key));
-    selected.clear(); updateBulkBar(); renderGallery(); toast('已删除');
+    selected.clear(); updateBulkBar(); renderGallery();
+    toast(fail ? \`删除完成：\${ok} 成功，\${fail} 失败\` : \`已删除 \${ok} 张图片\`, fail ? 'warn' : 'success');
   });
 
   function filtered() {
@@ -1297,11 +1436,23 @@ export function renderAdminPage() {
 
   // ── Utils ─────────────────────────────────────────────────────────────────────
   function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function handleUnauth() { localStorage.removeItem(TOKEN_KEY); adminToken = null; showLogin(); }
+  function handleUnauth() {
+    if (expiryTimerId) { clearInterval(expiryTimerId); expiryTimerId = null; }
+    document.getElementById('expiryBanner').classList.remove('show');
+    localStorage.removeItem(TOKEN_KEY); adminToken = null;
+    toast('登录已过期，请重新登录', 'error');
+    setTimeout(showLogin, 1200);
+  }
   function fmtSize(b) { if(b<1024) return b+' B'; if(b<1048576) return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
   function fmtSizeParts(b) { if(b<1048576) return {val:(b/1024).toFixed(1),unit:'KB'}; if(b<1073741824) return {val:(b/1048576).toFixed(1),unit:'MB'}; return {val:(b/1073741824).toFixed(2),unit:'GB'}; }
   function copyText(text, btn) { navigator.clipboard.writeText(text).then(() => { if(btn){const o=btn.textContent;btn.textContent='✓';setTimeout(()=>btn.textContent=o,1400);} }); }
-  function toast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
+  function toast(msg, type) {
+    const t = document.getElementById('toast');
+    t.className = 'toast show' + (type ? ' t-' + type : '');
+    t.textContent = msg;
+    clearTimeout(t._tid);
+    t._tid = setTimeout(() => t.classList.remove('show'), 2800);
+  }
   function timeAgo(ts) { const d=Date.now()-ts; if(d<60000) return '刚刚'; if(d<3600000) return Math.floor(d/60000)+' 分钟前'; if(d<86400000) return Math.floor(d/3600000)+' 小时前'; return Math.floor(d/86400000)+' 天前'; }
   document.addEventListener('keydown', e => {
     if (e.key==='Escape') {
