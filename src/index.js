@@ -20,7 +20,8 @@ export default {
 
     // ── 根域名重定向 ──────────────────────────────────────────────────────────
     if (url.hostname === 'diswant.space') {
-      return Response.redirect('https://ping.diswant.space' + path + url.search, 301);
+      const dest = 'https://ping.diswant.space' + (path || '/') + url.search;
+      return new Response(null, { status: 301, headers: { Location: dest } });
     }
 
     if (method === 'OPTIONS') return corsResponse(request);
