@@ -916,7 +916,7 @@ export function renderAdminPage() {
   });
   document.getElementById('bulkDeleteBtn').addEventListener('click', async () => {
     const keys = [...selected];
-    if (!confirm(`确认删除选中的 ${keys.length} 张图片？此操作不可撤销。`)) return;
+    if (!confirm(\`确认删除选中的 \${keys.length} 张图片？此操作不可撤销。\`)) return;
     const btn = document.getElementById('bulkDeleteBtn');
     btn.disabled = true;
     let ok = 0, fail = 0;
