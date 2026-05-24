@@ -1429,13 +1429,17 @@ export function renderAdminPage() {
     const w = 88, h = 26;
     const max = Math.max(...data, 1);
     const step = w / (data.length - 1);
-    const pts = data.map((v, i) => `${(i * step).toFixed(1)},${(h - (v / max) * (h - 2)).toFixed(1)}`).join(' ');
-    const fillPts = `0,${h} ` + pts + ` ${w},${h}`;
-    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
-      <defs><linearGradient id="sg${color.replace('#','')}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity=".25"/><stop offset="100%" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
-      <polygon points="${fillPts}" fill="url(#sg${color.replace('#','')})" />
-      <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-    </svg>`;
+    const pts = data.map((v, i) => (i * step).toFixed(1) + ',' + (h - (v / max) * (h - 2)).toFixed(1)).join(' ');
+    const fillPts = '0,' + h + ' ' + pts + ' ' + w + ',' + h;
+    const gid = 'sg' + color.replace('#', '');
+    return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">'
+      + '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">'
+      + '<stop offset="0%" stop-color="' + color + '" stop-opacity=".25"/>'
+      + '<stop offset="100%" stop-color="' + color + '" stop-opacity="0"/>'
+      + '</linearGradient></defs>'
+      + '<polygon points="' + fillPts + '" fill="url(#' + gid + ')" />'
+      + '<polyline points="' + pts + '" fill="none" stroke="' + color + '" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>'
+      + '</svg>';
   }
 
   function updateSparklines() {
