@@ -251,21 +251,6 @@ export function renderAdminPage() {
 
     /* Table horizontal scroll */
     .users-table-wrap { overflow-x: auto; }
-    /* Skeleton shimmer */
-    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-    .gitem img:not(.loaded) {
-      background: linear-gradient(90deg, #0d0d0d 25%, #181818 50%, #0d0d0d 75%);
-      background-size: 400% 100%;
-      animation: shimmer 1.4s ease infinite;
-    }
-    .gitem img.loaded { animation: none; background: #111; }
-    /* Sparkline */
-    .stat-spark { margin-top: 8px; height: 28px; opacity: .65; }
-    .stat-spark svg { display: block; overflow: visible; }
-    .lb-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,.5); border: 1px solid #333; color: #ccc; width: 40px; height: 60px; border-radius: 8px; cursor: pointer; font-size: 1.6rem; display: flex; align-items: center; justify-content: center; transition: background .15s, color .15s; z-index: 101; }
-    .lb-nav:hover { background: rgba(40,40,40,.9); color: #fff; }
-    .lb-nav-prev { left: 14px; }
-    .lb-nav-next { right: 14px; }
   </style>
 </head>
 <body>
@@ -359,9 +344,9 @@ export function renderAdminPage() {
           <div class="stat-card" style="--accent:#3b82f6"><div class="stat-card-glyph">🖼</div><div class="stat-label">图片总数</div><div class="stat-value" id="statImages">—</div><div class="stat-unit">张</div></div>
           <div class="stat-card" style="--accent:#8b5cf6"><div class="stat-card-glyph">💾</div><div class="stat-label">存储用量</div><div class="stat-value" id="statSize">—</div><div class="stat-unit" id="statSizeUnit"></div></div>
           <div class="stat-card" style="--accent:#22c55e"><div class="stat-card-glyph">☁</div><div class="stat-label">免费额度剩余</div><div class="stat-value" id="statFree">—</div><div class="stat-unit">GB / 10 GB</div></div>
-          <div class="stat-card" style="--accent:#f59e0b"><div class="stat-card-glyph">👁</div><div class="stat-label">图片访问次数</div><div class="stat-value" id="statViews">—</div><div class="stat-unit">次</div><div class="stat-spark" id="spark-views"></div></div>
+          <div class="stat-card" style="--accent:#f59e0b"><div class="stat-card-glyph">👁</div><div class="stat-label">图片访问次数</div><div class="stat-value" id="statViews">—</div><div class="stat-unit">次</div></div>
           <div class="stat-card" style="--accent:#ec4899"><div class="stat-card-glyph">📄</div><div class="stat-label">托管页面数</div><div class="stat-value" id="statPages">—</div><div class="stat-unit">个</div></div>
-          <div class="stat-card" style="--accent:#14b8a6"><div class="stat-card-glyph">📈</div><div class="stat-label">页面访问次数</div><div class="stat-value" id="statPageViews">—</div><div class="stat-unit">次</div><div class="stat-spark" id="spark-pages"></div></div>
+          <div class="stat-card" style="--accent:#14b8a6"><div class="stat-card-glyph">📈</div><div class="stat-label">页面访问次数</div><div class="stat-value" id="statPageViews">—</div><div class="stat-unit">次</div></div>
         </div>
         <div class="r2-panel">
           <div class="r2-panel-hd">
@@ -433,8 +418,6 @@ export function renderAdminPage() {
         <div class="bulk-bar" id="bulkBar">
           <span id="bulkCount"></span><div style="flex:1"></div>
           <button class="btn btn-ghost" id="bulkCopyBtn">批量复制</button>
-          <button class="btn btn-ghost" id="bulkPublicBtn">设为公开</button>
-          <button class="btn btn-ghost" id="bulkPrivateBtn">设为私密</button>
           <button class="btn btn-danger" id="bulkDeleteBtn">批量删除</button>
           <button class="btn btn-ghost" id="clearSelectBtn">取消</button>
         </div>
@@ -677,8 +660,6 @@ export function renderAdminPage() {
 <!-- Lightbox -->
 <div class="lightbox" id="lightbox">
   <button class="lb-close" id="lbClose">✕</button>
-  <button class="lb-nav lb-nav-prev" id="lbPrev" onclick="(()=>{const idx=allImages.findIndex(i=>i.key===lbKey);if(idx>0)openLightbox(allImages[idx-1].key)})()">‹</button>
-  <button class="lb-nav lb-nav-next" id="lbNext" onclick="(()=>{const idx=allImages.findIndex(i=>i.key===lbKey);if(idx<allImages.length-1)openLightbox(allImages[idx+1].key)})()">›</button>
   <div class="lb-inner">
     <div class="lb-img-wrap"><img id="lbImg" src="" alt=""></div>
     <div class="lb-meta">
@@ -874,7 +855,6 @@ export function renderAdminPage() {
       document.getElementById('statViews').textContent = Object.values(stats).reduce((s,v) => s+(v.count??0), 0).toLocaleString();
       document.getElementById('statPages').textContent = pages.length.toLocaleString();
       document.getElementById('statPageViews').textContent = Object.values(pgStats).reduce((s,v) => s+(v.count??0), 0).toLocaleString();
-      updateSparklines();
 
       // Top images
       const sortedImg = Object.entries(stats).sort((a,b) => (b[1].count??0)-(a[1].count??0)).slice(0,10);
@@ -934,32 +914,6 @@ export function renderAdminPage() {
     navigator.clipboard.writeText([...selected].map(k => origin+'/'+k).join('\\n'));
     toast('已复制 ' + selected.size + ' 条链接');
   });
-  async function bulkSetVisibility(makePublic) {
-    const keys = [...selected];
-    if (!keys.length) return;
-    const label = makePublic ? '公开' : '私密';
-    const btn = document.getElementById(makePublic ? 'bulkPublicBtn' : 'bulkPrivateBtn');
-    btn.disabled = true;
-    let ok = 0, fail = 0;
-    for (const k of keys) {
-      try {
-        const res = await fetch('/api/image/' + encodeURIComponent(k) + '/visibility', {
-          method: 'PATCH', headers: authH(),
-        });
-        if (!res.ok) { fail++; continue; }
-        const data = await res.json();
-        if (data.isPublic !== makePublic) {
-          // toggled to wrong state, toggle again
-          await fetch('/api/image/' + encodeURIComponent(k) + '/visibility', { method: 'PATCH', headers: authH() });
-        }
-        ok++;
-      } catch { fail++; }
-    }
-    btn.disabled = false;
-    toast(fail ? \`设置完成：\${ok} 成功，\${fail} 失败\` : \`已将 \${ok} 张图片设为\${label}\`, fail ? 'warn' : 'success');
-  }
-  document.getElementById('bulkPublicBtn').addEventListener('click', () => bulkSetVisibility(true));
-  document.getElementById('bulkPrivateBtn').addEventListener('click', () => bulkSetVisibility(false));
   document.getElementById('bulkDeleteBtn').addEventListener('click', async () => {
     const keys = [...selected];
     if (!confirm(\`确认删除选中的 \${keys.length} 张图片？此操作不可撤销。\`)) return;
@@ -987,7 +941,7 @@ export function renderAdminPage() {
       const views = allStats[item.key]?.count ?? 0;
       return \`<div class="gitem\${selected.has(item.key)?' selected':''}" onclick="handleGitem(event,'\${item.key}')">
         <div class="checkbox"><svg class="chk-svg" viewBox="0 0 12 12"><polyline points="1.5,6 5,9.5 10.5,2.5"/></svg></div>
-        <img src="\${origin}/\${item.key}" loading="lazy" onload="this.classList.add('loaded')">
+        <img src="\${origin}/\${item.key}" loading="lazy">
         <div class="gitem-info">
           <div class="gitem-key">\${item.key}</div>
           <div class="gitem-meta"><span class="gitem-size">\${fmtSize(item.size)}</span><span class="gitem-views">\${views?views+' 次':''}</span></div>
@@ -1242,16 +1196,6 @@ export function renderAdminPage() {
     document.getElementById('lightbox').classList.remove('show');
     toast('已删除');
   });
-  // Lightbox keyboard navigation
-  document.addEventListener('keydown', e => {
-    const lb = document.getElementById('lightbox');
-    if (!lb.classList.contains('show')) return;
-    if (e.key === 'Escape') { lb.classList.remove('show'); return; }
-    if (!allImages.length) return;
-    const currentIdx = allImages.findIndex(i => i.key === lbKey);
-    if (e.key === 'ArrowLeft'  && currentIdx > 0) openLightbox(allImages[currentIdx - 1].key);
-    if (e.key === 'ArrowRight' && currentIdx < allImages.length - 1) openLightbox(allImages[currentIdx + 1].key);
-  });
 
   // ── Admin Pages ───────────────────────────────────────────────────────────────
   let adminEditingSlug = null;
@@ -1411,45 +1355,6 @@ export function renderAdminPage() {
     document.getElementById('apmVditor').style.display = 'none';
     document.getElementById('apmContent').style.display = '';
   }));
-
-  // ── Sparklines ────────────────────────────────────────────────────────────────
-  function buildDayBuckets(statsObj, days) {
-    const buckets = Array(days).fill(0);
-    const now = Date.now();
-    const dayMs = 86400000;
-    for (const s of Object.values(statsObj)) {
-      if (!s.lastAccess) continue;
-      const d = Math.floor((now - s.lastAccess) / dayMs);
-      if (d >= 0 && d < days) buckets[days - 1 - d]++;
-    }
-    return buckets;
-  }
-
-  function renderSparklineSvg(data, color) {
-    const w = 88, h = 26;
-    const max = Math.max(...data, 1);
-    const step = w / (data.length - 1);
-    const pts = data.map((v, i) => (i * step).toFixed(1) + ',' + (h - (v / max) * (h - 2)).toFixed(1)).join(' ');
-    const fillPts = '0,' + h + ' ' + pts + ' ' + w + ',' + h;
-    const gid = 'sg' + color.replace('#', '');
-    return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">'
-      + '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">'
-      + '<stop offset="0%" stop-color="' + color + '" stop-opacity=".25"/>'
-      + '<stop offset="100%" stop-color="' + color + '" stop-opacity="0"/>'
-      + '</linearGradient></defs>'
-      + '<polygon points="' + fillPts + '" fill="url(#' + gid + ')" />'
-      + '<polyline points="' + pts + '" fill="none" stroke="' + color + '" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>'
-      + '</svg>';
-  }
-
-  function updateSparklines() {
-    const viewBuckets = buildDayBuckets(allStats, 14);
-    const pageBuckets = buildDayBuckets(allPageStats, 14);
-    const vs = document.getElementById('spark-views');
-    const ps = document.getElementById('spark-pages');
-    if (vs) vs.innerHTML = renderSparklineSvg(viewBuckets, '#f59e0b');
-    if (ps) ps.innerHTML = renderSparklineSvg(pageBuckets, '#14b8a6');
-  }
 
   // ── R2 Stats ─────────────────────────────────────────────────────────────────
   async function loadR2Stats() {
