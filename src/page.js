@@ -10,11 +10,15 @@ export function renderPage() {
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, -apple-system, sans-serif; background: #0f0f0f; color: #e8e8e8; min-height: 100vh; }
     .app { display: flex; flex-direction: column; min-height: 100vh; }
-    header { display: flex; align-items: center; gap: 14px; padding: 13px 24px; border-bottom: 1px solid #1f1f1f; background: #0f0f0f; position: sticky; top: 0; z-index: 10; }
-    header h1 { font-size: 1.1rem; font-weight: 700; }
-    .tab-bar { display: flex; gap: 3px; }
-    .tab { padding: 5px 13px; border-radius: 6px; border: none; background: transparent; color: #666; cursor: pointer; font-size: .85rem; transition: all .15s; }
-    .tab.active { background: #1f1f1f; color: #fff; }
+    header { display: flex; flex-direction: column; border-bottom: 1px solid #1e1e1e; background: #0d0d0d; position: sticky; top: 0; z-index: 10; }
+    .header-top { display: flex; align-items: center; gap: 14px; padding: 11px 24px; }
+    header h1 { font-size: .98rem; font-weight: 700; letter-spacing: -.01em; }
+    .tab-nav { display: flex; padding: 0 20px; }
+    .tab { padding: 9px 14px; border: none; background: transparent; color: #555; cursor: pointer; font-size: .84rem; transition: color .15s; position: relative; white-space: nowrap; }
+    .tab::after { content: ''; position: absolute; bottom: -1px; left: 8px; right: 8px; height: 2px; background: #3b82f6; border-radius: 2px 2px 0 0; transform: scaleX(0); transition: transform .2s ease; }
+    .tab:hover { color: #bbb; }
+    .tab.active { color: #e8e8e8; }
+    .tab.active::after { transform: scaleX(1); }
     .spacer { flex: 1; }
     .dot-green { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; flex-shrink: 0; }
     .btn-sm { padding: 5px 12px; border: 1px solid #242424; border-radius: 6px; background: transparent; color: #666; cursor: pointer; font-size: .8rem; white-space: nowrap; }
@@ -74,9 +78,11 @@ export function renderPage() {
     .quota-bar { background: #141414; border: 1px solid #1f1f1f; border-radius: 8px; padding: 9px 14px; font-size: .8rem; display: flex; gap: 16px; margin-bottom: 12px; }
     .quota-bar span { color: #555; }
     .quota-bar strong { color: #aaa; }
-    .drop-zone { border: 2px dashed #2a2a2a; border-radius: 12px; padding: 44px; text-align: center; cursor: pointer; color: #555; transition: all .2s; margin-bottom: 14px; }
+    .drop-zone { border: 1.5px dashed #252525; border-radius: 16px; padding: 52px 32px; text-align: center; cursor: pointer; color: #454545; transition: all .2s; margin-bottom: 14px; background: rgba(255,255,255,.008); }
     .drop-zone:hover, .drop-zone.over { border-color: #3b82f6; color: #3b82f6; background: rgba(59,130,246,.04); }
+    .drop-zone:hover .dz-icon, .drop-zone.over .dz-icon { color: #3b82f6; }
     .drop-zone input { display: none; }
+    .dz-icon { display: block; margin: 0 auto 16px; width: 40px; height: 40px; color: #2a2a2a; transition: color .2s; }
     .btn-upload { width: 100%; padding: 10px; background: #3b82f6; color: #fff; border: none; border-radius: 8px; font-size: .9rem; font-weight: 600; cursor: pointer; }
     .btn-upload:hover { background: #2563eb; }
     .btn-upload:disabled { background: #1e3a5f; color: #4b7bb5; cursor: not-allowed; }
@@ -104,9 +110,9 @@ export function renderPage() {
     /* Gallery grid */
     .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; }
     .search-input { padding: 7px 12px; background: #141414; border: 1px solid #1f1f1f; border-radius: 7px; color: #e8e8e8; font-size: .84rem; outline: none; width: 200px; }
-    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
-    .gitem { background: #141414; border: 1px solid #1a1a1a; border-radius: 10px; overflow: hidden; transition: border-color .15s; }
-    .gitem:hover { border-color: #333; }
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+    .gitem { background: #111; border: 1px solid #1a1a1a; border-radius: 12px; overflow: hidden; transition: border-color .15s, box-shadow .2s, transform .2s; }
+    .gitem:hover { border-color: #2a2a2a; box-shadow: 0 6px 24px rgba(0,0,0,.45); transform: translateY(-2px); }
     .gitem img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #1a1a1a; cursor: pointer; }
     .gitem-info { padding: 8px 10px; }
     .gitem-key { font-size: .7rem; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -126,11 +132,11 @@ export function renderPage() {
     .type-html { background: rgba(245,158,11,.1); color: #f59e0b; }
 
     /* Public gallery */
-    .pub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
-    .pub-item { border-radius: 10px; overflow: hidden; background: #141414; border: 1px solid #1a1a1a; cursor: pointer; transition: border-color .15s; }
-    .pub-item:hover { border-color: #333; }
+    .pub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; }
+    .pub-item { border-radius: 12px; overflow: hidden; background: #111; border: 1px solid #1a1a1a; cursor: pointer; transition: border-color .15s, box-shadow .2s, transform .2s; }
+    .pub-item:hover { border-color: #2a2a2a; box-shadow: 0 6px 24px rgba(0,0,0,.45); transform: translateY(-2px); }
     .pub-item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
-    .pub-item-info { padding: 7px 10px; font-size: .72rem; color: #555; }
+    .pub-item-info { padding: 8px 12px; font-size: .74rem; color: #4a4a4a; }
 
     /* Lightbox */
     .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.92); display: none; align-items: center; justify-content: center; z-index: 100; padding: 24px; }
@@ -182,17 +188,19 @@ export function renderPage() {
 <body>
 <div class="app">
   <header>
-    <h1>Onimg</h1>
-    <div class="tab-bar">
+    <div class="header-top">
+      <h1>Onimg</h1>
+      <div class="spacer"></div>
+      <div id="userArea">
+        <button class="btn-sm" id="loginTrigger">登录</button>
+      </div>
+    </div>
+    <nav class="tab-nav">
       <button class="tab active" data-tab="gallery-pub">公开图库</button>
       <button class="tab" data-tab="upload" id="tabUpload">上传</button>
       <button class="tab" data-tab="gallery-mine" id="tabMine">我的图库</button>
       <button class="tab" data-tab="pages" id="tabPages">我的页面</button>
-    </div>
-    <div class="spacer"></div>
-    <div id="userArea">
-      <button class="btn-sm" id="loginTrigger">登录</button>
-    </div>
+    </nav>
   </header>
 
   <!-- Login overlay -->
@@ -230,8 +238,13 @@ export function renderPage() {
       </div>
       <div class="drop-zone" id="dropZone">
         <input type="file" id="fileInput" accept="image/*" multiple>
-        <p>点击或拖拽图片到此处</p>
-        <small style="display:block;margin-top:6px;color:#444">支持 JPG / PNG / GIF / WebP / SVG</small>
+        <svg class="dz-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 16 12 12 8 16"></polyline>
+          <line x1="12" y1="12" x2="12" y2="21"></line>
+          <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+        </svg>
+        <p style="font-size:.9rem;font-weight:500;color:inherit">点击或拖拽图片上传</p>
+        <small style="display:block;margin-top:8px;font-size:.76rem">JPG · PNG · GIF · WebP · SVG</small>
       </div>
       <button class="btn-upload" id="uploadBtn" disabled>上传</button>
       <div class="progress" id="progress"><div class="progress-bar" id="progressBar"></div></div>
