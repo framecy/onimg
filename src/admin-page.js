@@ -31,10 +31,11 @@ export function renderAdminPage() {
     .sidebar-logo { padding: 22px 20px 16px; font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid #1a1a1a; display: flex; align-items: center; gap: 8px; }
     .sidebar-logo span { font-size: .7rem; font-weight: 400; color: #555; background: #1a1a1a; padding: 2px 6px; border-radius: 4px; }
     nav { flex: 1; padding: 12px 10px; display: flex; flex-direction: column; gap: 2px; }
-    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; cursor: pointer; font-size: .88rem; color: #666; transition: all .15s; border: none; background: none; width: 100%; text-align: left; }
-    .nav-item:hover { background: #161616; color: #ccc; }
-    .nav-item.active { background: #1a1a1a; color: #fff; }
-    .nav-icon { width: 20px; text-align: center; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 7px; cursor: pointer; font-size: .85rem; color: #575757; transition: background .15s, color .15s; border: none; background: none; width: 100%; text-align: left; position: relative; }
+    .nav-item:hover { background: #141414; color: #b0b0b0; }
+    .nav-item.active { background: rgba(59,130,246,.09); color: #60a5fa; }
+    .nav-item.active::before { content: ''; position: absolute; left: -10px; top: 5px; bottom: 5px; width: 3px; background: #3b82f6; border-radius: 0 2px 2px 0; }
+    .nav-icon { width: 16px; height: 16px; flex-shrink: 0; }
     .sidebar-footer { padding: 12px 10px; border-top: 1px solid #1a1a1a; }
     .user-badge { display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
     .avatar { width: 30px; height: 30px; background: #1e3a5f; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .85rem; color: #3b82f6; font-weight: 700; flex-shrink: 0; }
@@ -61,11 +62,12 @@ export function renderAdminPage() {
     .btn-warn:hover { background: rgba(245,158,11,.25); }
 
     /* Stats */
-    .stats-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 14px; margin-bottom: 32px; }
-    .stat-card { background: #111; border: 1px solid #1a1a1a; border-radius: 12px; padding: 20px; }
-    .stat-label { font-size: .78rem; color: #555; margin-bottom: 8px; }
-    .stat-value { font-size: 1.8rem; font-weight: 700; line-height: 1; }
-    .stat-unit { font-size: .85rem; color: #777; margin-top: 4px; }
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(195px, 1fr)); gap: 14px; margin-bottom: 32px; }
+    .stat-card { background: #0e0e0e; border: 1px solid #1e1e1e; border-left: 3px solid var(--accent,#3b82f6); border-radius: 12px; padding: 22px 20px 18px; position: relative; overflow: hidden; }
+    .stat-card-glyph { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 2rem; opacity: .07; pointer-events: none; user-select: none; }
+    .stat-label { font-size: .7rem; color: #4a4a4a; margin-bottom: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+    .stat-value { font-size: 2.1rem; font-weight: 700; line-height: 1; letter-spacing: -.03em; }
+    .stat-unit { font-size: .78rem; color: #4a4a4a; margin-top: 6px; }
 
     /* Section header */
     .section-header { display: flex; align-items: center; margin-bottom: 16px; }
@@ -88,9 +90,9 @@ export function renderAdminPage() {
     .search-input:focus { border-color: #333; }
     .bulk-bar { display: none; align-items: center; gap: 10px; padding: 10px 14px; background: #111; border: 1px solid #1e1e1e; border-radius: 8px; margin-bottom: 14px; font-size: .85rem; }
     .bulk-bar.show { display: flex; }
-    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
-    .gitem { background: #111; border: 1px solid #1a1a1a; border-radius: 10px; overflow: hidden; cursor: pointer; transition: border-color .15s; position: relative; }
-    .gitem:hover { border-color: #333; }
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 14px; }
+    .gitem { background: #111; border: 1px solid #1a1a1a; border-radius: 12px; overflow: hidden; cursor: pointer; transition: border-color .15s, box-shadow .2s, transform .2s; position: relative; }
+    .gitem:hover { border-color: #2a2a2a; box-shadow: 0 6px 24px rgba(0,0,0,.45); transform: translateY(-2px); }
     .gitem.selected { border-color: #3b82f6; }
     .gitem img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #1a1a1a; }
     .gitem-info { padding: 8px 10px; }
@@ -281,12 +283,45 @@ export function renderAdminPage() {
     <aside>
       <div class="sidebar-logo">Onimg <span>Admin</span></div>
       <nav>
-        <button class="nav-item active" data-section="dashboard"><span class="nav-icon">▦</span>概览</button>
-        <button class="nav-item" data-section="images"><span class="nav-icon">⊞</span>图库管理</button>
-        <button class="nav-item" data-section="users"><span class="nav-icon">👤</span>用户管理</button>
-        <button class="nav-item" data-section="pages"><span class="nav-icon">📄</span>页面管理</button>
-        <button class="nav-item" data-section="members"><span class="nav-icon">📊</span>成员统计</button>
-        <button class="nav-item" data-section="settings"><span class="nav-icon">⚙</span>系统设置</button>
+        <button class="nav-item active" data-section="dashboard">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/>
+            <rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/>
+          </svg>概览
+        </button>
+        <button class="nav-item" data-section="images">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="1" width="14" height="14" rx="2.5"/>
+            <circle cx="5.5" cy="5.5" r="1.5"/>
+            <polyline points="1,12 5,8 8,11 11,8 15,12"/>
+          </svg>图库管理
+        </button>
+        <button class="nav-item" data-section="users">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="8" cy="5" r="3"/>
+            <path d="M1.5 15c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/>
+          </svg>用户管理
+        </button>
+        <button class="nav-item" data-section="pages">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 1h7l4 4v10H3V1z"/>
+            <polyline points="10,1 10,5 14,5"/>
+            <line x1="4" y1="8" x2="12" y2="8"/>
+            <line x1="4" y1="11" x2="9" y2="11"/>
+          </svg>页面管理
+        </button>
+        <button class="nav-item" data-section="members">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="1,12 5,7 9,9 13,4"/>
+            <polyline points="10,4 13,4 13,7"/>
+          </svg>成员统计
+        </button>
+        <button class="nav-item" data-section="settings">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="8" cy="8" r="2.5"/>
+            <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M12.95 3.05l-1.41 1.41M4.46 11.54l-1.41 1.41"/>
+          </svg>系统设置
+        </button>
       </nav>
       <div class="sidebar-footer">
         <div class="user-badge">
@@ -306,12 +341,12 @@ export function renderAdminPage() {
         <div class="page-title">概览</div>
         <div class="page-sub">存储与访问统计</div>
         <div class="stats-row">
-          <div class="stat-card"><div class="stat-label">图片总数</div><div class="stat-value" id="statImages">—</div><div class="stat-unit">张</div></div>
-          <div class="stat-card"><div class="stat-label">存储用量</div><div class="stat-value" id="statSize">—</div><div class="stat-unit" id="statSizeUnit"></div></div>
-          <div class="stat-card"><div class="stat-label">免费额度剩余</div><div class="stat-value" id="statFree">—</div><div class="stat-unit">GB / 10 GB</div></div>
-          <div class="stat-card"><div class="stat-label">图片访问次数</div><div class="stat-value" id="statViews">—</div><div class="stat-unit">次</div></div>
-          <div class="stat-card"><div class="stat-label">托管页面数</div><div class="stat-value" id="statPages">—</div><div class="stat-unit">个</div></div>
-          <div class="stat-card"><div class="stat-label">页面访问次数</div><div class="stat-value" id="statPageViews">—</div><div class="stat-unit">次</div></div>
+          <div class="stat-card" style="--accent:#3b82f6"><div class="stat-card-glyph">🖼</div><div class="stat-label">图片总数</div><div class="stat-value" id="statImages">—</div><div class="stat-unit">张</div></div>
+          <div class="stat-card" style="--accent:#8b5cf6"><div class="stat-card-glyph">💾</div><div class="stat-label">存储用量</div><div class="stat-value" id="statSize">—</div><div class="stat-unit" id="statSizeUnit"></div></div>
+          <div class="stat-card" style="--accent:#22c55e"><div class="stat-card-glyph">☁</div><div class="stat-label">免费额度剩余</div><div class="stat-value" id="statFree">—</div><div class="stat-unit">GB / 10 GB</div></div>
+          <div class="stat-card" style="--accent:#f59e0b"><div class="stat-card-glyph">👁</div><div class="stat-label">图片访问次数</div><div class="stat-value" id="statViews">—</div><div class="stat-unit">次</div></div>
+          <div class="stat-card" style="--accent:#ec4899"><div class="stat-card-glyph">📄</div><div class="stat-label">托管页面数</div><div class="stat-value" id="statPages">—</div><div class="stat-unit">个</div></div>
+          <div class="stat-card" style="--accent:#14b8a6"><div class="stat-card-glyph">📈</div><div class="stat-label">页面访问次数</div><div class="stat-value" id="statPageViews">—</div><div class="stat-unit">次</div></div>
         </div>
         <div class="r2-panel">
           <div class="r2-panel-hd">
