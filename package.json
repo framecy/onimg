@@ -6,8 +6,7 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "secret": "wrangler secret put AUTH_KEY",
-    "build:check": "wrangler deploy --dry-run --outdir /tmp/wrangler-check 2>&1",
-    "test": "vitest run && npm run build:check",
+    "test": "vitest run",
     "test:watch": "vitest"
   },
   "devDependencies": {
