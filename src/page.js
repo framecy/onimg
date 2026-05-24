@@ -148,6 +148,10 @@ export function renderPage() {
     .lb-key { font-size: .85rem; color: #ccc; word-break: break-all; }
     .lb-actions { display: flex; gap: 7px; margin-top: 12px; }
     .lb-close { position: absolute; top: 14px; right: 14px; background: #1a1a1a; border: 1px solid #222; color: #888; width: 32px; height: 32px; border-radius: 7px; cursor: pointer; font-size: .95rem; display: flex; align-items: center; justify-content: center; }
+    .lb-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,.5); border: 1px solid #333; color: #ccc; width: 40px; height: 60px; border-radius: 8px; cursor: pointer; font-size: 1.6rem; display: flex; align-items: center; justify-content: center; transition: background .15s, color .15s; z-index: 101; }
+    .lb-nav:hover { background: rgba(40,40,40,.9); color: #fff; }
+    .lb-nav-prev { left: 14px; }
+    .lb-nav-next { right: 14px; }
     .load-more { display: flex; justify-content: center; margin-top: 20px; }
     .empty { text-align: center; padding: 48px; color: #333; font-size: .88rem; }
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1f1f1f; border: 1px solid #2a2a2a; color: #e8e8e8; padding: 8px 18px; border-radius: 8px; font-size: .82rem; transition: transform .25s; z-index: 200; white-space: nowrap; }
@@ -183,6 +187,26 @@ export function renderPage() {
     .modal-footer { padding: 12px 20px; border-top: 1px solid #1f1f1f; display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0; }
     .btn-primary { background: #3b82f6; color: #fff; }
     .btn-primary:hover { background: #2563eb; }
+    /* Skeleton shimmer */
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    .gitem img:not(.loaded), .pub-item img:not(.loaded) {
+      background: linear-gradient(90deg, #141414 25%, #1c1c1c 50%, #141414 75%);
+      background-size: 400% 100%;
+      animation: shimmer 1.4s ease infinite;
+    }
+    .gitem img.loaded, .pub-item img.loaded { animation: none; background: #1a1a1a; }
+    /* Responsive */
+    @media (max-width: 600px) {
+      main { padding: 14px 16px; }
+      .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+      .pub-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+      .header-top { padding: 9px 16px; }
+      .tab-nav { padding: 0 8px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+      .tab-nav::-webkit-scrollbar { display: none; }
+      .tab { padding: 9px 10px; font-size: .8rem; }
+      .search-input { width: 160px; }
+      .drop-zone { padding: 36px 20px; }
+    }
   </style>
 </head>
 <body>
@@ -291,6 +315,8 @@ export function renderPage() {
 <!-- Lightbox -->
 <div class="lightbox" id="lightbox">
   <button class="lb-close" id="lbClose">✕</button>
+  <button class="lb-nav lb-nav-prev" id="lbPrev">‹</button>
+  <button class="lb-nav lb-nav-next" id="lbNext">›</button>
   <div class="lb-inner">
     <div class="lb-img-wrap"><img id="lbImg" src="" alt=""></div>
     <div class="lb-meta">
@@ -298,6 +324,7 @@ export function renderPage() {
       <div class="lb-actions">
         <button class="btn btn-ghost" id="lbCopy">复制链接</button>
         <button class="btn btn-ghost" id="lbMd">复制 MD</button>
+        <button class="btn btn-ghost" id="lbBbcode">复制 BBCode</button>
         <div style="flex:1"></div>
         <button class="btn btn-danger" id="lbDelete" style="display:none">删除</button>
       </div>
@@ -353,6 +380,7 @@ export function renderPage() {
   let username = localStorage.getItem(USER_KEY);
   let isAdminUser = localStorage.getItem(ADMIN_KEY) === '1';
   let mineItems = [], lbKey = null, editingSlug = null, userPages = [], vditorInst = null;
+  let lbList = [], lbIdx = -1;
 
   // Validate stored token hasn't expired
   (function() {
@@ -608,8 +636,8 @@ export function renderPage() {
     const { items } = await res.json();
     document.getElementById('pubEmpty').style.display = items.length ? 'none' : 'block';
     document.getElementById('pubGrid').innerHTML = items.map(item =>
-      \`<div class="pub-item" onclick="openLb('\${item.key}', false)">
-        <img src="\${location.origin}/\${item.key}" loading="lazy">
+      \`<div class="pub-item" onclick="openLb('\${item.key}', false, 'pub')">
+        <img src="\${location.origin}/\${item.key}" loading="lazy" onload="this.classList.add('loaded')">
         <div class="pub-item-info">@\${item.owner || '—'}</div>
       </div>\`
     ).join('');
@@ -654,7 +682,7 @@ export function renderPage() {
     setFiles([]);
     loadQuota();
     document.getElementById('resultList').innerHTML = results.map(r => r.ok
-      ? \`<div class="result-item"><img src="\${r.url}" loading="lazy"><div class="info"><div class="name">\${r.name}</div><div class="url-row"><input class="url-input" value="\${r.url}" readonly onclick="this.select()"><button class="btn btn-ghost" onclick="cp('\${r.url}',this)" style="padding:3px 8px">复制</button><button class="btn btn-ghost" onclick="cp('![](\${r.url})',this)" style="padding:3px 8px">MD</button></div></div></div>\`
+      ? \`<div class="result-item"><img src="\${r.url}" loading="lazy"><div class="info"><div class="name">\${r.name}</div><div class="url-row"><input class="url-input" value="\${r.url}" readonly onclick="this.select()"><button class="btn btn-ghost" onclick="cp('\${r.url}',this)" style="padding:3px 8px">复制</button><button class="btn btn-ghost" onclick="cp('![](\${r.url})',this)" style="padding:3px 8px">MD</button><button class="btn btn-ghost" onclick="cp('[img]\${r.url}[/img]',this)" style="padding:3px 8px">BB</button></div></div></div>\`
       : \`<div class="result-item"><div class="info"><div class="name" style="color:#ef4444">❌ \${r.name}: \${r.error}</div></div></div>\`
     ).join('');
   });
@@ -694,7 +722,7 @@ export function renderPage() {
     document.getElementById('mineGrid').innerHTML = items.map(item => {
       const url = location.origin + '/' + item.key;
       return \`<div class="gitem">
-        <img src="\${url}" loading="lazy" onclick="openLb('\${item.key}', true)">
+        <img src="\${url}" loading="lazy" onload="this.classList.add('loaded')" onclick="openLb('\${item.key}', true, 'mine')">
         <div class="gitem-info">
           <div class="gitem-key">\${item.key}</div>
           <div class="gitem-row">
@@ -859,17 +887,47 @@ export function renderPage() {
   );
 
   // ── Lightbox ──
-  function openLb(key, showDelete) {
+  function openLb(key, showDelete, context) {
+    lbKey = key;
+    if (context === 'mine') {
+      const q = document.getElementById('mineSearch').value.toLowerCase();
+      const items = q ? mineItems.filter(i => i.key.toLowerCase().includes(q)) : mineItems;
+      lbList = items.map(i => ({ key: i.key, showDelete }));
+    } else if (context === 'pub') {
+      lbList = Array.from(document.querySelectorAll('#pubGrid .pub-item img')).map(img => ({
+        key: img.src.replace(location.origin + '/', ''), showDelete: false,
+      }));
+    } else {
+      lbList = [{ key, showDelete }];
+    }
+    lbIdx = lbList.findIndex(i => i.key === key);
+    _showLb(key, showDelete);
+  }
+  function _showLb(key, showDelete) {
     lbKey = key;
     document.getElementById('lbImg').src = location.origin + '/' + key;
     document.getElementById('lbKey').textContent = key;
     document.getElementById('lbDelete').style.display = (showDelete && perms?.canDelete) ? 'block' : 'none';
-    document.getElementById('lightbox').classList.add('show');
+    const lb = document.getElementById('lightbox');
+    lb.classList.add('show');
+    // Show/hide nav arrows
+    document.getElementById('lbPrev').style.visibility = lbIdx > 0 ? 'visible' : 'hidden';
+    document.getElementById('lbNext').style.visibility = lbIdx < lbList.length - 1 ? 'visible' : 'hidden';
+  }
+  function lbNavigate(dir) {
+    const newIdx = lbIdx + dir;
+    if (newIdx < 0 || newIdx >= lbList.length) return;
+    lbIdx = newIdx;
+    const { key, showDelete } = lbList[lbIdx];
+    _showLb(key, showDelete);
   }
   document.getElementById('lbClose').addEventListener('click', () => document.getElementById('lightbox').classList.remove('show'));
   document.getElementById('lightbox').addEventListener('click', e => { if (e.target === document.getElementById('lightbox')) document.getElementById('lightbox').classList.remove('show'); });
   document.getElementById('lbCopy').addEventListener('click', () => { cp(location.origin + '/' + lbKey); toast('已复制'); });
   document.getElementById('lbMd').addEventListener('click',   () => { cp('![](' + location.origin + '/' + lbKey + ')'); toast('已复制 MD'); });
+  document.getElementById('lbPrev').addEventListener('click', () => lbNavigate(-1));
+  document.getElementById('lbNext').addEventListener('click', () => lbNavigate(1));
+  document.getElementById('lbBbcode').addEventListener('click', () => { cp('[img]' + location.origin + '/' + lbKey + '[/img]'); toast('已复制 BBCode'); });
   document.getElementById('lbDelete').addEventListener('click', () => delMine(lbKey));
 
   // ── Utils ──
@@ -883,7 +941,28 @@ export function renderPage() {
   }
   function fmtSize(b) { if(b<1024) return b+' B'; if(b<1048576) return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
   function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') { document.getElementById('lightbox').classList.remove('show'); closePageModal(); document.getElementById('loginOverlay').style.display = 'none'; } });
+  document.addEventListener('keydown', e => {
+    const lb = document.getElementById('lightbox');
+    if (e.key === 'Escape') { lb.classList.remove('show'); closePageModal(); document.getElementById('loginOverlay').style.display = 'none'; }
+    if (!lb.classList.contains('show')) return;
+    if (e.key === 'ArrowLeft')  lbNavigate(-1);
+    if (e.key === 'ArrowRight') lbNavigate(1);
+  });
+  // Paste upload
+  document.addEventListener('paste', e => {
+    if (!token) return;
+    if (document.activeElement && ['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+    const items = [...(e.clipboardData?.items || [])];
+    const imgItems = items.filter(i => i.type.startsWith('image/'));
+    if (!imgItems.length) return;
+    const files = imgItems.map(i => i.getAsFile()).filter(Boolean);
+    if (!files.length) return;
+    // Switch to upload tab
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'upload'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-upload'));
+    setFiles(files);
+    toast('已从剪贴板粘贴 ' + files.length + ' 张图片，点击上传');
+  });
   document.getElementById('loginOverlay').addEventListener('click', e => { if (e.target === document.getElementById('loginOverlay')) document.getElementById('loginOverlay').style.display = 'none'; });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/vditor/dist/index.min.js" defer></script>
