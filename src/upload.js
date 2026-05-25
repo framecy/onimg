@@ -1,8 +1,9 @@
 import { verifyUserToken, checkAndIncrementQuota } from './user-auth.js';
 import { verifyAdminToken as checkAdmin } from './admin/auth.js';
 import { getUploadConfig } from './admin/config-handler.js';
+import { cfBump, cfMonth } from './admin/cfCounters.js';
 
-export async function handleUpload(request, env) {
+export async function handleUpload(request, env, ctx) {
   const actor = await resolveActor(request, env);
   if (!actor) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -47,8 +48,11 @@ export async function handleUpload(request, env) {
     customMetadata: { uploadedBy: actor.username },
   });
 
+  // R2 Class A 操作追踪（best-effort，不阻塞响应）
+  ctx?.waitUntil(cfBump(env.STATS, 'cf:r2a:' + cfMonth(), 1, true));
+
   // Track in KV: imgmeta + userimgs
-  await trackImage(env, actor.username, key, size, true);
+  await trackImage(env, actor.username, key, size, false); // default private
 
   const origin = new URL(request.url).origin;
   return Response.json({ url: `${origin}/${key}`, key, size, type: file.type, uploadedBy: actor.username }, { status: 201 });
