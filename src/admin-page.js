@@ -290,6 +290,35 @@ export function renderAdminPage() {
 
     /* Table horizontal scroll */
     .users-table-wrap { overflow-x: auto; }
+
+    /* CF Quota Panel */
+    .cf-panel { background: var(--bg-4); border: 1px solid var(--bd); border-radius: var(--r); padding: 18px 20px; margin-bottom: 28px; }
+    .cf-panel-hd { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .cf-panel-hd h3 { font-size: .92rem; font-weight: 600; color: var(--tx); margin: 0; }
+    .cf-badge { font-size: .68rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; border: 1px solid; white-space: nowrap; }
+    .cf-badge.api { color: var(--green); border-color: rgba(52,211,153,.3); background: rgba(52,211,153,.08); }
+    .cf-badge.self { color: var(--amber); border-color: rgba(251,191,36,.3); background: rgba(251,191,36,.06); }
+    .cf-badge.loading { color: var(--tx-3); border-color: var(--bd); background: var(--bg-3); }
+    .cf-quotas { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 12px; }
+    .cf-quota { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-sm); padding: 12px 14px; }
+    .cf-quota-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; margin-bottom: 6px; }
+    .cf-quota-lbl { font-size: .72rem; color: var(--tx-2); font-weight: 600; line-height: 1.3; }
+    .cf-quota-method { font-size: .6rem; color: var(--tx-3); background: var(--bg-5); border: 1px solid var(--bd); padding: 1px 6px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; margin-top: 1px; }
+    .cf-quota-val { font-size: 1.35rem; font-weight: 700; color: var(--tx); line-height: 1; margin-bottom: 3px; }
+    .cf-quota-sub { font-size: .65rem; color: var(--tx-3); margin-bottom: 6px; }
+    .cf-quota-sub strong { color: var(--tx-2) !important; }
+    .cf-track { height: 3px; background: var(--bd); border-radius: 2px; overflow: hidden; }
+    .cf-fill { height: 3px; border-radius: 2px; background: var(--blue); transition: width .5s ease; }
+    .cf-fill.warn { background: var(--amber); }
+    .cf-fill.full { background: var(--red); }
+    .cf-kv-row { display: flex; gap: 14px; flex-wrap: wrap; }
+    .cf-kv-item { display: flex; align-items: center; gap: 8px; background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-sm); padding: 8px 12px; flex: 1; min-width: 130px; }
+    .cf-kv-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .cf-kv-val { font-size: .95rem; font-weight: 700; color: var(--tx); line-height: 1.2; }
+    .cf-kv-lbl { font-size: .62rem; color: var(--tx-3); margin-top: 1px; }
+    .cf-note { font-size: .68rem; color: var(--tx-3); margin-top: 10px; line-height: 1.6; }
+    .cf-note a { color: var(--tx-a); text-decoration: none; }
+    .cf-note a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -410,8 +439,8 @@ export function renderAdminPage() {
               <div class="cf-quota-sub">上限 <strong style="color:#555">10 万次</strong> / 天</div>
               <div class="cf-track"><div class="cf-fill" id="cfReqBar" style="width:0%"></div></div>
               <div style="display:flex;justify-content:space-between;margin-top:3px">
-                <span style="font-size:.62rem;color:#333" id="cfReqPct">0%</span>
-                <span style="font-size:.62rem;color:#333">剩余 <span id="cfReqLeft">—</span></span>
+                <span style="font-size:.62rem;color:var(--tx-3)" id="cfReqPct">0%</span>
+                <span style="font-size:.62rem;color:var(--tx-3)">剩余 <span id="cfReqLeft">—</span></span>
               </div>
             </div>
             <!-- R2 存储 -->
@@ -424,8 +453,8 @@ export function renderAdminPage() {
               <div class="cf-quota-sub">上限 <strong style="color:#555">10 GB</strong></div>
               <div class="cf-track"><div class="cf-fill" id="cfStorageBar" style="width:0%"></div></div>
               <div style="display:flex;justify-content:space-between;margin-top:3px">
-                <span style="font-size:.62rem;color:#333" id="cfStoragePct">0%</span>
-                <span style="font-size:.62rem;color:#333">剩余 <span id="cfStorageLeft">—</span></span>
+                <span style="font-size:.62rem;color:var(--tx-3)" id="cfStoragePct">0%</span>
+                <span style="font-size:.62rem;color:var(--tx-3)">剩余 <span id="cfStorageLeft">—</span></span>
               </div>
             </div>
             <!-- R2 A 类操作 -->
@@ -438,8 +467,8 @@ export function renderAdminPage() {
               <div class="cf-quota-sub">上限 <strong style="color:#555">100 万次</strong> / 月</div>
               <div class="cf-track"><div class="cf-fill" id="cfR2ABar" style="width:0%"></div></div>
               <div style="display:flex;justify-content:space-between;margin-top:3px">
-                <span style="font-size:.62rem;color:#333" id="cfR2APct">0%</span>
-                <span style="font-size:.62rem;color:#333">剩余 <span id="cfR2ALeft">—</span></span>
+                <span style="font-size:.62rem;color:var(--tx-3)" id="cfR2APct">0%</span>
+                <span style="font-size:.62rem;color:var(--tx-3)">剩余 <span id="cfR2ALeft">—</span></span>
               </div>
             </div>
             <!-- R2 B 类操作 -->
@@ -452,13 +481,13 @@ export function renderAdminPage() {
               <div class="cf-quota-sub">上限 <strong style="color:#555">1000 万次</strong> / 月</div>
               <div class="cf-track"><div class="cf-fill" id="cfR2BBar" style="width:0%"></div></div>
               <div style="display:flex;justify-content:space-between;margin-top:3px">
-                <span style="font-size:.62rem;color:#333" id="cfR2BPct">0%</span>
-                <span style="font-size:.62rem;color:#333">剩余 <span id="cfR2BLeft">—</span></span>
+                <span style="font-size:.62rem;color:var(--tx-3)" id="cfR2BPct">0%</span>
+                <span style="font-size:.62rem;color:var(--tx-3)">剩余 <span id="cfR2BLeft">—</span></span>
               </div>
             </div>
           </div>
           <!-- KV 操作（STATS 命名空间） -->
-          <div style="font-size:.7rem;color:#444;margin:12px 0 7px;font-weight:500;letter-spacing:.03em">Workers KV <span style="color:#333">（STATS 命名空间，日限额独立计算）</span></div>
+          <div style="font-size:.7rem;color:var(--tx-2);margin:12px 0 7px;font-weight:500;letter-spacing:.03em">Workers KV <span style="color:var(--tx-3)">（STATS 命名空间，日限额独立计算）</span></div>
           <div class="cf-quotas">
             <!-- KV 读取 -->
             <div class="cf-quota">
@@ -467,11 +496,11 @@ export function renderAdminPage() {
                 <span class="cf-quota-method" id="cfKvReadsMethod">本月</span>
               </div>
               <div class="cf-quota-val" id="cfKvReads">—</div>
-              <div class="cf-quota-sub">日限 <strong style="color:#555">10 万次</strong>　今日 <span id="cfKvReadsToday" style="color:#888">—</span></div>
+              <div class="cf-quota-sub">日限 <strong style="color:#555">10 万次</strong>　今日 <span id="cfKvReadsToday" style="color:var(--tx-2)">—</span></div>
               <div class="cf-track"><div class="cf-fill" id="cfKvReadsBar" style="width:0%"></div></div>
               <div style="display:flex;justify-content:space-between;margin-top:3px">
-                <span style="font-size:.62rem;color:#333" id="cfKvReadsPct">均值/日</span>
-                <span style="font-size:.62rem;color:#333" id="cfKvReadsAvg">—</span>
+                <span style="font-size:.62rem;color:var(--tx-3)" id="cfKvReadsPct">均值/日</span>
+                <span style="font-size:.62rem;color:var(--tx-3)" id="cfKvReadsAvg">—</span>
               </div>
             </div>
             <!-- KV 写入 -->
@@ -481,11 +510,11 @@ export function renderAdminPage() {
                 <span class="cf-quota-method" id="cfKvWritesMethod">本月</span>
               </div>
               <div class="cf-quota-val" id="cfKvWrites">—</div>
-              <div class="cf-quota-sub">日限 <strong style="color:#555">1,000 次</strong>　今日 <span id="cfKvWritesToday" style="color:#888">—</span></div>
+              <div class="cf-quota-sub">日限 <strong style="color:#555">1,000 次</strong>　今日 <span id="cfKvWritesToday" style="color:var(--tx-2)">—</span></div>
               <div class="cf-track"><div class="cf-fill" id="cfKvWritesBar" style="width:0%"></div></div>
               <div style="display:flex;justify-content:space-between;margin-top:3px">
-                <span style="font-size:.62rem;color:#333" id="cfKvWritesPct">均值/日</span>
-                <span style="font-size:.62rem;color:#333" id="cfKvWritesAvg">—</span>
+                <span style="font-size:.62rem;color:var(--tx-3)" id="cfKvWritesPct">均值/日</span>
+                <span style="font-size:.62rem;color:var(--tx-3)" id="cfKvWritesAvg">—</span>
               </div>
             </div>
             <!-- KV 列表 -->
@@ -495,11 +524,11 @@ export function renderAdminPage() {
                 <span class="cf-quota-method" id="cfKvListsMethod">本月</span>
               </div>
               <div class="cf-quota-val" id="cfKvLists">—</div>
-              <div class="cf-quota-sub">日限 <strong style="color:#555">1,000 次</strong>　今日 <span id="cfKvListsToday" style="color:#888">—</span></div>
+              <div class="cf-quota-sub">日限 <strong style="color:#555">1,000 次</strong>　今日 <span id="cfKvListsToday" style="color:var(--tx-2)">—</span></div>
               <div class="cf-track"><div class="cf-fill" id="cfKvListsBar" style="width:0%"></div></div>
               <div style="display:flex;justify-content:space-between;margin-top:3px">
-                <span style="font-size:.62rem;color:#333" id="cfKvListsPct">均值/日</span>
-                <span style="font-size:.62rem;color:#333" id="cfKvListsAvg">—</span>
+                <span style="font-size:.62rem;color:var(--tx-3)" id="cfKvListsPct">均值/日</span>
+                <span style="font-size:.62rem;color:var(--tx-3)" id="cfKvListsAvg">—</span>
               </div>
             </div>
             <!-- KV 删除 -->
@@ -509,11 +538,11 @@ export function renderAdminPage() {
                 <span class="cf-quota-method" id="cfKvDeletesMethod">本月</span>
               </div>
               <div class="cf-quota-val" id="cfKvDeletes">—</div>
-              <div class="cf-quota-sub">日限 <strong style="color:#555">1,000 次</strong>　今日 <span id="cfKvDeletesToday" style="color:#888">—</span></div>
+              <div class="cf-quota-sub">日限 <strong style="color:#555">1,000 次</strong>　今日 <span id="cfKvDeletesToday" style="color:var(--tx-2)">—</span></div>
               <div class="cf-track"><div class="cf-fill" id="cfKvDeletesBar" style="width:0%"></div></div>
               <div style="display:flex;justify-content:space-between;margin-top:3px">
-                <span style="font-size:.62rem;color:#333" id="cfKvDeletesPct">均值/日</span>
-                <span style="font-size:.62rem;color:#333" id="cfKvDeletesAvg">—</span>
+                <span style="font-size:.62rem;color:var(--tx-3)" id="cfKvDeletesPct">均值/日</span>
+                <span style="font-size:.62rem;color:var(--tx-3)" id="cfKvDeletesAvg">—</span>
               </div>
             </div>
           </div>
