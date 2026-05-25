@@ -7,208 +7,248 @@ export function renderAdminPage() {
   <title>Onimg Admin</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vditor/dist/index.css">
   <style>
+    :root {
+      --bg:     #060b18; --bg-2: #09112a; --bg-3: #0d1836; --bg-4: #111f3e; --bg-5: #162548;
+      --bg-h:   #1c2e56; --bg-a: #1f3360;
+      --bd:     #1a2f50; --bd-2: #243f62; --bd-f: #4090f8;
+      --tx:     #edf3ff; --tx-2: #6e96c0; --tx-3: #3a5678; --tx-a: #7db8f8;
+      --blue:   #4090f8; --blue-d: #2468d8;
+      --blue-g: rgba(64,144,248,.11); --blue-r: rgba(64,144,248,.22);
+      --green:  #34d399; --green-g: rgba(52,211,153,.11); --green-r: rgba(52,211,153,.22);
+      --amber:  #fbbf24; --amber-g: rgba(251,191,36,.1); --amber-r: rgba(251,191,36,.2);
+      --red:    #f87171; --red-g: rgba(248,113,113,.1); --red-r: rgba(248,113,113,.2);
+      --r: 10px; --r-sm: 7px; --r-xs: 5px;
+      --shadow: 0 24px 60px rgba(0,0,0,.78); --shadow-sm: 0 8px 28px rgba(0,0,0,.5);
+      --t: all .18s ease; --t-f: all .12s ease;
+    }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, -apple-system, sans-serif; background: #0a0a0a; color: #e0e0e0; min-height: 100vh; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg-2); color: var(--tx); min-height: 100vh; }
 
     /* Login */
-    #loginScreen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
-    .login-card { width: 100%; max-width: 380px; background: #111; border: 1px solid #1e1e1e; border-radius: 16px; padding: 40px 36px; }
-    .login-logo { font-size: 1.4rem; font-weight: 700; margin-bottom: 4px; }
-    .login-sub { font-size: .85rem; color: #555; margin-bottom: 32px; }
+    #loginScreen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; background: var(--bg-2); }
+    .login-card { width: 100%; max-width: 380px; background: var(--bg-4); border: 1px solid var(--bd-2); border-radius: 16px; padding: 40px 36px; box-shadow: var(--shadow); }
+    .login-logo { font-size: 1.4rem; font-weight: 700; color: var(--tx); margin-bottom: 4px; }
+    .login-sub { font-size: .85rem; color: var(--tx-3); margin-bottom: 32px; }
     .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
-    .field label { font-size: .8rem; color: #777; font-weight: 500; }
-    .field input, .field select { padding: 10px 12px; background: #0a0a0a; border: 1px solid #222; border-radius: 8px; color: #e0e0e0; font-size: .9rem; outline: none; transition: border .15s; }
-    .field input:focus, .field select:focus { border-color: #3b82f6; }
-    .btn-login { width: 100%; padding: 11px; background: #3b82f6; color: #fff; border: none; border-radius: 8px; font-size: .95rem; font-weight: 600; cursor: pointer; margin-top: 8px; transition: background .15s; }
-    .btn-login:hover { background: #2563eb; }
-    .btn-login:disabled { background: #1e3a5f; color: #4b7bb5; cursor: not-allowed; }
-    .login-err { color: #ef4444; font-size: .82rem; margin-top: 10px; text-align: center; min-height: 18px; }
+    .field label { font-size: .78rem; color: var(--tx-2); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+    .field input, .field select { padding: 10px 12px; background: var(--bg-2); border: 1px solid var(--bd); border-radius: var(--r-sm); color: var(--tx); font-size: .9rem; outline: none; transition: var(--t); }
+    .field input:focus, .field select:focus { border-color: var(--bd-f); box-shadow: 0 0 0 3px var(--blue-g); }
+    .btn-login { width: 100%; padding: 11px; background: var(--blue); color: #fff; border: none; border-radius: var(--r-sm); font-size: .95rem; font-weight: 600; cursor: pointer; margin-top: 8px; transition: var(--t); }
+    .btn-login:hover { background: var(--blue-d); }
+    .btn-login:disabled { background: var(--bg-5); color: var(--tx-3); cursor: not-allowed; }
+    .login-err { color: var(--red); font-size: .82rem; margin-top: 10px; text-align: center; min-height: 18px; }
 
     /* Shell */
     #adminApp { display: none; }
     .shell { display: flex; min-height: 100vh; }
-    aside { width: 220px; flex-shrink: 0; background: #0f0f0f; border-right: 1px solid #1a1a1a; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 10; }
-    .sidebar-logo { padding: 22px 20px 16px; font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid #1a1a1a; display: flex; align-items: center; gap: 8px; }
-    .sidebar-logo span { font-size: .7rem; font-weight: 400; color: #555; background: #1a1a1a; padding: 2px 6px; border-radius: 4px; }
-    nav { flex: 1; padding: 12px 10px; display: flex; flex-direction: column; gap: 2px; }
-    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; cursor: pointer; font-size: .88rem; color: #666; transition: all .15s; border: none; background: none; width: 100%; text-align: left; }
-    .nav-item:hover { background: #161616; color: #ccc; }
-    .nav-item.active { background: #1a1a1a; color: #fff; }
-    .nav-icon { width: 20px; text-align: center; }
-    .sidebar-footer { padding: 12px 10px; border-top: 1px solid #1a1a1a; }
+    aside { width: 224px; flex-shrink: 0; background: var(--bg-3); border-right: 1px solid var(--bd); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 10; }
+    .sidebar-logo { padding: 22px 20px 16px; font-size: 1.1rem; font-weight: 700; color: var(--tx); border-bottom: 1px solid var(--bd); display: flex; align-items: center; gap: 8px; letter-spacing: -.01em; }
+    .sidebar-logo span { font-size: .7rem; font-weight: 500; color: var(--tx-3); background: var(--bg-2); border: 1px solid var(--bd); padding: 2px 7px; border-radius: 4px; }
+    nav { flex: 1; padding: 10px; display: flex; flex-direction: column; gap: 2px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--r-sm); cursor: pointer; font-size: .86rem; font-weight: 500; color: var(--tx-3); transition: var(--t); border: none; background: none; width: 100%; text-align: left; }
+    .nav-item:hover { background: var(--bg-h); color: var(--tx-2); }
+    .nav-item.active { background: linear-gradient(135deg, var(--bg-a) 0%, var(--bg-h) 100%); color: var(--tx); border: 1px solid var(--bd-2); }
+    .nav-item.active .nav-icon { color: var(--blue); }
+    .nav-icon { width: 20px; text-align: center; font-size: .9rem; }
+    .sidebar-footer { padding: 12px 10px; border-top: 1px solid var(--bd); }
     .user-badge { display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
-    .avatar { width: 30px; height: 30px; background: #1e3a5f; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .85rem; color: #3b82f6; font-weight: 700; flex-shrink: 0; }
+    .avatar { width: 30px; height: 30px; background: var(--bg-5); border: 1px solid var(--bd-2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .85rem; color: var(--blue); font-weight: 700; flex-shrink: 0; }
     .user-info { flex: 1; min-width: 0; }
-    .user-name { font-size: .82rem; font-weight: 500; }
-    .user-role { font-size: .72rem; color: #555; }
-    .btn-logout { padding: 6px 10px; background: none; border: 1px solid #222; border-radius: 6px; color: #555; cursor: pointer; font-size: .78rem; }
-    .btn-logout:hover { border-color: #ef4444; color: #ef4444; }
-    .main-content { flex: 1; margin-left: 220px; padding: 28px 32px; min-width: 0; }
+    .user-name { font-size: .82rem; font-weight: 600; color: var(--tx-2); }
+    .user-role { font-size: .72rem; color: var(--tx-3); margin-top: 1px; }
+    .btn-logout { padding: 5px 10px; background: none; border: 1px solid var(--bd); border-radius: 6px; color: var(--tx-3); cursor: pointer; font-size: .78rem; transition: var(--t); }
+    .btn-logout:hover { border-color: var(--red-r); color: var(--red); background: var(--red-g); }
+    .main-content { flex: 1; margin-left: 224px; padding: 28px 32px; min-width: 0; }
     .section { display: none; }
     .section.active { display: block; }
-    .page-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 6px; }
-    .page-sub { font-size: .85rem; color: #555; margin-bottom: 28px; }
+    .page-title { font-size: 1.25rem; font-weight: 700; color: var(--tx); margin-bottom: 5px; letter-spacing: -.01em; }
+    .page-sub { font-size: .85rem; color: var(--tx-3); margin-bottom: 28px; }
 
     /* Buttons */
-    .btn { padding: 7px 14px; border: none; border-radius: 7px; font-size: .82rem; font-weight: 600; cursor: pointer; transition: all .15s; }
-    .btn-ghost { background: #1a1a1a; color: #aaa; }
-    .btn-ghost:hover { background: #222; color: #fff; }
-    .btn-danger { background: rgba(239,68,68,.15); color: #ef4444; }
-    .btn-danger:hover { background: rgba(239,68,68,.25); }
-    .btn-primary { background: #3b82f6; color: #fff; }
-    .btn-primary:hover { background: #2563eb; }
-    .btn-warn { background: rgba(245,158,11,.15); color: #f59e0b; }
-    .btn-warn:hover { background: rgba(245,158,11,.25); }
+    .btn { padding: 7px 14px; border-radius: var(--r-sm); font-size: .82rem; font-weight: 600; cursor: pointer; transition: var(--t); border: 1px solid transparent; }
+    .btn-ghost { background: var(--bg-4); color: var(--tx-2); border-color: var(--bd); }
+    .btn-ghost:hover { background: var(--bg-h); color: var(--tx); border-color: var(--bd-2); }
+    .btn-danger { background: var(--red-g); color: var(--red); border-color: var(--red-r); }
+    .btn-danger:hover { background: var(--red-r); }
+    .btn-primary { background: var(--blue); color: #fff; border-color: transparent; }
+    .btn-primary:hover { background: var(--blue-d); }
+    .btn-warn { background: var(--amber-g); color: var(--amber); border-color: var(--amber-r); }
+    .btn-warn:hover { background: var(--amber-r); }
 
     /* Stats */
     .stats-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 14px; margin-bottom: 32px; }
-    .stat-card { background: #111; border: 1px solid #1a1a1a; border-radius: 12px; padding: 20px; }
-    .stat-label { font-size: .78rem; color: #555; margin-bottom: 8px; }
-    .stat-value { font-size: 1.8rem; font-weight: 700; line-height: 1; }
-    .stat-unit { font-size: .85rem; color: #777; margin-top: 4px; }
+    .stat-card { background: var(--bg-4); border: 1px solid var(--bd); border-radius: var(--r); padding: 20px; }
+    .stat-label { font-size: .72rem; color: var(--tx-3); margin-bottom: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+    .stat-value { font-size: 1.9rem; font-weight: 700; line-height: 1; color: var(--tx); }
+    .stat-unit { font-size: .82rem; color: var(--tx-2); margin-top: 5px; }
 
     /* Section header */
     .section-header { display: flex; align-items: center; margin-bottom: 16px; }
-    .section-header h3 { font-size: .95rem; font-weight: 600; }
+    .section-header h3 { font-size: .93rem; font-weight: 600; color: var(--tx-2); }
     .section-header .spacer { flex: 1; }
 
-    /* Top table */
+    /* Data table */
     .data-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
-    .data-table th { text-align: left; padding: 8px 12px; color: #555; font-weight: 500; border-bottom: 1px solid #1a1a1a; }
-    .data-table td { padding: 9px 12px; border-bottom: 1px solid #141414; vertical-align: middle; }
+    .data-table th { text-align: left; padding: 9px 14px; color: var(--tx-3); font-weight: 600; border-bottom: 1px solid var(--bd); font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
+    .data-table td { padding: 10px 14px; border-bottom: 1px solid var(--bd); vertical-align: middle; }
     .data-table tr:last-child td { border-bottom: none; }
-    .data-table tr:hover td { background: rgba(255,255,255,.015); }
-    .top-thumb { width: 36px; height: 36px; object-fit: cover; border-radius: 5px; border: 1px solid #1e1e1e; cursor: pointer; }
-    .view-count { font-weight: 700; color: #3b82f6; }
-    .muted { color: #555; font-size: .78rem; }
+    .data-table tr:hover td { background: var(--blue-g); }
+    .top-thumb { width: 36px; height: 36px; object-fit: cover; border-radius: 6px; border: 1px solid var(--bd-2); cursor: pointer; }
+    .view-count { font-weight: 700; color: var(--tx-a); }
+    .muted { color: var(--tx-3); font-size: .78rem; }
 
     /* Gallery */
     .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 18px; flex-wrap: wrap; }
-    .search-input { padding: 8px 12px; background: #111; border: 1px solid #1e1e1e; border-radius: 8px; color: #e0e0e0; font-size: .85rem; outline: none; width: 220px; }
-    .search-input:focus { border-color: #333; }
-    .bulk-bar { display: none; align-items: center; gap: 10px; padding: 10px 14px; background: #111; border: 1px solid #1e1e1e; border-radius: 8px; margin-bottom: 14px; font-size: .85rem; }
+    .search-input { padding: 8px 12px; background: var(--bg-4); border: 1px solid var(--bd); border-radius: var(--r-sm); color: var(--tx); font-size: .85rem; outline: none; width: 220px; transition: var(--t); }
+    .search-input:focus { border-color: var(--bd-f); box-shadow: 0 0 0 3px var(--blue-g); }
+    .bulk-bar { display: none; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-4); border: 1px solid var(--bd); border-radius: var(--r-sm); margin-bottom: 14px; font-size: .85rem; color: var(--tx-2); }
     .bulk-bar.show { display: flex; }
     .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
-    .gitem { background: #111; border: 1px solid #1a1a1a; border-radius: 10px; overflow: hidden; cursor: pointer; transition: border-color .15s; position: relative; }
-    .gitem:hover { border-color: #333; }
-    .gitem.selected { border-color: #3b82f6; }
-    .gitem img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #1a1a1a; }
+    .gitem { background: var(--bg-4); border: 1px solid var(--bd); border-radius: var(--r); overflow: hidden; cursor: pointer; transition: var(--t); position: relative; }
+    .gitem:hover { border-color: var(--bd-2); box-shadow: 0 4px 20px rgba(0,0,0,.4); }
+    .gitem.selected { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue); }
+    .gitem img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: var(--bg-3); }
     .gitem-info { padding: 8px 10px; }
-    .gitem-key { font-size: .72rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gitem-key { font-size: .72rem; color: var(--tx-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .gitem-meta { display: flex; justify-content: space-between; margin-top: 3px; }
-    .gitem-size { font-size: .68rem; color: #444; }
-    .gitem-views { font-size: .68rem; color: #3b82f6; font-weight: 600; }
+    .gitem-size { font-size: .68rem; color: var(--tx-3); }
+    .gitem-views { font-size: .68rem; color: var(--tx-a); font-weight: 600; }
     .gitem-actions { display: flex; gap: 4px; margin-top: 6px; }
-    .checkbox { position: absolute; top: 7px; left: 7px; width: 18px; height: 18px; border-radius: 4px; background: rgba(0,0,0,.65); border: 1.5px solid #444; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .15s; }
+    .checkbox { position: absolute; top: 7px; left: 7px; width: 18px; height: 18px; border-radius: 4px; background: rgba(0,0,0,.7); border: 1.5px solid var(--bd-2); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .15s; }
     .gitem:hover .checkbox, .gitem.selected .checkbox { opacity: 1; }
-    .gitem.selected .checkbox { background: #3b82f6; border-color: #3b82f6; }
+    .gitem.selected .checkbox { background: var(--blue); border-color: var(--blue); }
     .chk-svg { width: 10px; height: 10px; stroke: #fff; fill: none; stroke-width: 2.5; }
     .load-more-wrap { display: flex; justify-content: center; margin-top: 24px; }
-    .empty { text-align: center; padding: 60px 0; color: #333; font-size: .9rem; }
+    .empty { text-align: center; padding: 60px 0; color: var(--tx-3); font-size: .9rem; }
 
     /* User management */
-    .users-table-wrap { background: #111; border: 1px solid #1a1a1a; border-radius: 12px; overflow: hidden; }
-    .perm-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: .72rem; font-weight: 500; }
-    .perm-on  { background: rgba(34,197,94,.12); color: #22c55e; }
-    .perm-off { background: rgba(100,100,100,.1); color: #555; }
-    .perm-admin { background: rgba(59,130,246,.12); color: #3b82f6; }
-    .badge-disabled { background: rgba(239,68,68,.12); color: #ef4444; padding: 2px 8px; border-radius: 4px; font-size: .72rem; }
+    .users-table-wrap { background: var(--bg-4); border: 1px solid var(--bd); border-radius: var(--r); overflow: hidden; }
+    .perm-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: .72rem; font-weight: 600; }
+    .perm-on  { background: var(--green-g); color: var(--green); border: 1px solid var(--green-r); }
+    .perm-off { background: rgba(58,86,120,.15); color: var(--tx-3); border: 1px solid var(--bd); }
+    .perm-admin { background: var(--blue-g); color: var(--tx-a); border: 1px solid var(--blue-r); }
+    .badge-disabled { background: var(--red-g); color: var(--red); border: 1px solid var(--red-r); padding: 2px 8px; border-radius: 4px; font-size: .72rem; font-weight: 600; }
 
     /* Settings */
-    .settings-card { background: #111; border: 1px solid #1a1a1a; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
-    .settings-card h3 { font-size: .9rem; font-weight: 600; margin-bottom: 20px; color: #aaa; }
-    .setting-row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #161616; gap: 16px; }
+    .settings-card { background: var(--bg-4); border: 1px solid var(--bd); border-radius: var(--r); padding: 24px; margin-bottom: 20px; }
+    .settings-card h3 { font-size: .78rem; font-weight: 700; margin-bottom: 20px; color: var(--tx-2); text-transform: uppercase; letter-spacing: .06em; }
+    .setting-row { display: flex; align-items: center; padding: 13px 0; border-bottom: 1px solid var(--bd); gap: 16px; }
     .setting-row:last-child { border-bottom: none; }
-    .setting-label { font-size: .85rem; color: #777; width: 200px; flex-shrink: 0; }
+    .setting-label { font-size: .85rem; color: var(--tx-2); width: 200px; flex-shrink: 0; }
     .setting-ctrl { flex: 1; display: flex; align-items: center; gap: 10px; }
-    .setting-ctrl input[type="number"], .setting-ctrl input[type="text"] { padding: 7px 10px; background: #0a0a0a; border: 1px solid #222; border-radius: 7px; color: #e0e0e0; font-size: .85rem; outline: none; width: 140px; }
-    .setting-ctrl input:focus { border-color: #3b82f6; }
-    .setting-hint { font-size: .75rem; color: #444; }
+    .setting-ctrl input[type="number"], .setting-ctrl input[type="text"] { padding: 7px 10px; background: var(--bg-2); border: 1px solid var(--bd); border-radius: var(--r-sm); color: var(--tx); font-size: .85rem; outline: none; width: 140px; transition: var(--t); }
+    .setting-ctrl input:focus { border-color: var(--bd-f); box-shadow: 0 0 0 3px var(--blue-g); }
+    .setting-hint { font-size: .75rem; color: var(--tx-3); }
     .types-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-    .type-chip { display: flex; align-items: center; gap: 6px; padding: 5px 10px; background: #0f0f0f; border: 1px solid #222; border-radius: 6px; font-size: .78rem; cursor: pointer; transition: all .15s; }
-    .type-chip.on { background: rgba(59,130,246,.1); border-color: #3b82f6; color: #3b82f6; }
+    .type-chip { display: flex; align-items: center; gap: 6px; padding: 5px 10px; background: var(--bg-3); border: 1px solid var(--bd); border-radius: 6px; font-size: .78rem; cursor: pointer; transition: var(--t); color: var(--tx-2); }
+    .type-chip.on { background: var(--blue-g); border-color: var(--blue-r); color: var(--tx-a); }
     .save-row { display: flex; justify-content: flex-end; margin-top: 20px; }
 
     /* Modals */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.85); display: none; align-items: center; justify-content: center; z-index: 50; padding: 24px; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(5,8,18,.88); display: none; align-items: center; justify-content: center; z-index: 50; padding: 24px; backdrop-filter: blur(6px) saturate(1.4); }
     .modal-overlay.show { display: flex; }
-    .modal { background: #111; border: 1px solid #1e1e1e; border-radius: 16px; width: 100%; max-width: 520px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; }
-    .modal-header { display: flex; align-items: center; padding: 18px 20px; border-bottom: 1px solid #1a1a1a; flex-shrink: 0; }
-    .modal-header h3 { font-size: 1rem; font-weight: 600; flex: 1; }
-    .modal-close { background: #1a1a1a; border: 1px solid #222; color: #888; width: 32px; height: 32px; border-radius: 7px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
-    .modal-close:hover { color: #fff; }
+    .modal { background: var(--bg-4); border: 1px solid var(--bd-2); border-radius: 16px; width: 100%; max-width: 520px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: var(--shadow); }
+    .modal-header { display: flex; align-items: center; padding: 18px 20px; border-bottom: 1px solid var(--bd); flex-shrink: 0; }
+    .modal-header h3 { font-size: 1rem; font-weight: 600; flex: 1; color: var(--tx); }
+    .modal-close { background: var(--bg-5); border: 1px solid var(--bd); color: var(--tx-2); width: 32px; height: 32px; border-radius: var(--r-sm); cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: var(--t); }
+    .modal-close:hover { color: var(--tx); border-color: var(--bd-2); }
     .modal-body { overflow-y: auto; padding: 20px; flex: 1; }
-    .modal-footer { padding: 14px 20px; border-top: 1px solid #1a1a1a; display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0; }
+    .modal-footer { padding: 14px 20px; border-top: 1px solid var(--bd); display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0; }
     .perm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
-    .perm-check { display: flex; align-items: center; gap: 8px; padding: 9px 12px; background: #0f0f0f; border: 1px solid #1e1e1e; border-radius: 8px; cursor: pointer; font-size: .84rem; }
-    .perm-check input { width: 14px; height: 14px; cursor: pointer; accent-color: #3b82f6; }
+    .perm-check { display: flex; align-items: center; gap: 8px; padding: 9px 12px; background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-sm); cursor: pointer; font-size: .84rem; color: var(--tx-2); transition: var(--t); }
+    .perm-check:hover { border-color: var(--bd-2); }
+    .perm-check input { width: 14px; height: 14px; cursor: pointer; accent-color: var(--blue); }
     .perm-num-row { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
-    .perm-num-row label { font-size: .82rem; color: #777; width: 120px; flex-shrink: 0; }
-    .perm-num-row input { padding: 7px 10px; background: #0a0a0a; border: 1px solid #222; border-radius: 7px; color: #e0e0e0; font-size: .85rem; outline: none; width: 100px; }
-    .perm-hint { font-size: .72rem; color: #444; }
+    .perm-num-row label { font-size: .82rem; color: var(--tx-2); width: 120px; flex-shrink: 0; }
+    .perm-num-row input { padding: 7px 10px; background: var(--bg-2); border: 1px solid var(--bd); border-radius: var(--r-sm); color: var(--tx); font-size: .85rem; outline: none; width: 100px; transition: var(--t); }
+    .perm-num-row input:focus { border-color: var(--bd-f); box-shadow: 0 0 0 3px var(--blue-g); }
+    .perm-hint { font-size: .72rem; color: var(--tx-3); }
 
     /* Stats modal */
     .stats-modal { max-width: 680px; }
     .stat-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
-    .summary-card { background: #0f0f0f; border: 1px solid #1a1a1a; border-radius: 10px; padding: 14px; text-align: center; }
-    .summary-card .val { font-size: 1.5rem; font-weight: 700; }
-    .summary-card .lbl { font-size: .72rem; color: #555; margin-top: 4px; }
-    .country-bars h4, .access-log h4 { font-size: .82rem; color: #666; margin-bottom: 10px; font-weight: 500; }
+    .summary-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-sm); padding: 16px; text-align: center; }
+    .summary-card .val { font-size: 1.5rem; font-weight: 700; color: var(--tx); }
+    .summary-card .lbl { font-size: .72rem; color: var(--tx-3); margin-top: 5px; text-transform: uppercase; letter-spacing: .04em; }
+    .country-bars h4, .access-log h4 { font-size: .72rem; color: var(--tx-2); margin-bottom: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
     .country-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; font-size: .8rem; }
-    .country-name { width: 40px; color: #aaa; font-family: monospace; }
-    .bar-wrap { flex: 1; background: #1a1a1a; border-radius: 4px; height: 6px; }
-    .bar { background: #3b82f6; height: 6px; border-radius: 4px; transition: width .4s; }
-    .country-count { width: 30px; text-align: right; color: #555; }
+    .country-name { width: 40px; color: var(--tx-2); font-family: monospace; }
+    .bar-wrap { flex: 1; background: var(--bd); border-radius: 4px; height: 6px; }
+    .bar { background: var(--blue); height: 6px; border-radius: 4px; transition: width .4s; }
+    .country-count { width: 30px; text-align: right; color: var(--tx-3); }
     .log-table { width: 100%; border-collapse: collapse; font-size: .78rem; margin-top: 4px; }
-    .log-table th { text-align: left; padding: 6px 10px; color: #555; font-weight: 500; border-bottom: 1px solid #1a1a1a; }
-    .log-table td { padding: 7px 10px; border-bottom: 1px solid #141414; color: #888; font-family: monospace; }
+    .log-table th { text-align: left; padding: 7px 10px; color: var(--tx-3); font-weight: 600; border-bottom: 1px solid var(--bd); text-transform: uppercase; letter-spacing: .04em; font-size: .7rem; }
+    .log-table td { padding: 7px 10px; border-bottom: 1px solid var(--bd); color: var(--tx-2); font-family: monospace; }
     .access-log { margin-top: 20px; }
 
+    /* Version diff */
+    .pvm-ver-card { background: #0f0f0f; border: 1px solid #1e1e1e; border-radius: 8px; padding: 9px 10px; cursor: pointer; transition: border-color .12s; }
+    .pvm-ver-card:hover { border-color: #2a3f60; }
+    .pvm-ver-card.active { border-color: #3b82f6; background: rgba(59,130,246,.06); }
+    .pvm-ver-card.checked-a { border-color: #10b981; background: rgba(16,185,129,.06); }
+    .pvm-ver-card.checked-b { border-color: #f59e0b; background: rgba(245,158,11,.06); }
+    .pvm-ver-badge { font-size: .72rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-right: 4px; background: #1a2f50; color: #7db8f8; }
+    .pvm-ver-latest { font-size: .65rem; padding: 1px 5px; border-radius: 3px; background: rgba(34,197,94,.12); color: #22c55e; }
+    .pvm-ver-meta { font-size: .68rem; color: #444; margin-top: 4px; }
+    .pvm-ver-check { display: flex; align-items: center; gap: 4px; margin-top: 5px; font-size: .7rem; color: #555; }
+    .diff-file { display: flex; align-items: center; gap: 6px; padding: 3px 6px; border-radius: 4px; font-size: .72rem; font-family: monospace; margin-bottom: 1px; }
+    .diff-add  { background: rgba(16,185,129,.08); color: #10b981; }
+    .diff-rem  { background: rgba(239,68,68,.08);  color: #ef4444; }
+    .diff-same { color: #333; }
+    .diff-prefix { flex-shrink: 0; width: 14px; font-weight: 700; }
+    .diff-section { margin-bottom: 16px; }
+    .diff-section h4 { font-size: .72rem; font-weight: 600; margin-bottom: 6px; padding: 4px 6px; border-radius: 4px; }
+    .diff-section.add  h4 { background: rgba(16,185,129,.1);  color: #10b981; }
+    .diff-section.rem  h4 { background: rgba(239,68,68,.1);   color: #ef4444; }
+    .diff-section.same h4 { background: rgba(100,100,100,.08); color: #444; }
+    .file-row { display: flex; align-items: center; gap: 6px; padding: 3px 6px; border-radius: 4px; font-size: .72rem; font-family: monospace; margin-bottom: 1px; color: #666; }
+    .file-row:hover { background: #111; color: #aaa; }
+
     /* R2 Panel */
-    .r2-panel { background: #111; border: 1px solid #1a1a1a; border-radius: 12px; padding: 18px 20px; margin-bottom: 28px; }
+    .r2-panel { background: var(--bg-4); border: 1px solid var(--bd); border-radius: var(--r); padding: 18px 20px; margin-bottom: 28px; }
     .r2-panel-hd { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
-    .r2-panel-hd h3 { font-size: .88rem; font-weight: 600; }
-    .r2-badge { font-size: .7rem; color: #555; background: #1a1a1a; padding: 2px 7px; border-radius: 4px; }
-    .r2-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 1px; background: #1a1a1a; border-radius: 8px; overflow: hidden; }
-    .r2-cell { background: #0d0d0d; padding: 13px 15px; }
-    .r2-cell-lbl { font-size: .7rem; color: #555; margin-bottom: 5px; }
-    .r2-cell-val { font-size: 1.35rem; font-weight: 700; line-height: 1; }
-    .r2-cell-sub { font-size: .67rem; color: #444; margin-top: 3px; }
-    .r2-free-bar { height: 3px; background: #1e1e1e; border-radius: 2px; margin-top: 6px; }
-    .r2-free-fill { height: 3px; border-radius: 2px; background: #3b82f6; transition: width .5s; }
+    .r2-panel-hd h3 { font-size: .88rem; font-weight: 600; color: var(--tx-2); }
+    .r2-badge { font-size: .7rem; color: var(--tx-3); background: var(--bg-3); border: 1px solid var(--bd); padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+    .r2-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--bd); border-radius: var(--r-sm); overflow: hidden; }
+    .r2-cell { background: var(--bg-3); padding: 14px 15px; }
+    .r2-cell-lbl { font-size: .67rem; color: var(--tx-3); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+    .r2-cell-val { font-size: 1.3rem; font-weight: 700; line-height: 1; color: var(--tx); }
+    .r2-cell-sub { font-size: .67rem; color: var(--tx-3); margin-top: 4px; }
+    .r2-free-bar { height: 3px; background: var(--bd); border-radius: 2px; margin-top: 8px; }
+    .r2-free-fill { height: 3px; border-radius: 2px; background: var(--blue); transition: width .5s; }
 
     /* Quota bars */
-    .quota-bar { height: 4px; background: #1a1a1a; border-radius: 2px; margin-top: 3px; width: 90px; }
-    .quota-fill { height: 4px; border-radius: 2px; background: #3b82f6; }
-    .quota-fill.warn { background: #f59e0b; }
-    .quota-fill.full { background: #ef4444; }
+    .quota-bar { height: 4px; background: var(--bd); border-radius: 2px; margin-top: 4px; width: 90px; }
+    .quota-fill { height: 4px; border-radius: 2px; background: var(--blue); }
+    .quota-fill.warn { background: var(--amber); }
+    .quota-fill.full { background: var(--red); }
 
     /* Member Stats */
     .mb-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
-    .mb-card { background: #111; border: 1px solid #1a1a1a; border-radius: 10px; padding: 16px; }
-    .mb-card-lbl { font-size: .72rem; color: #555; margin-bottom: 6px; }
-    .mb-card-val { font-size: 1.65rem; font-weight: 700; line-height: 1; }
+    .mb-card { background: var(--bg-4); border: 1px solid var(--bd); border-radius: var(--r-sm); padding: 16px; }
+    .mb-card-lbl { font-size: .7rem; color: var(--tx-3); margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+    .mb-card-val { font-size: 1.65rem; font-weight: 700; line-height: 1; color: var(--tx); }
     .sort-th { cursor: pointer; user-select: none; }
-    .sort-th:hover { color: #aaa; }
+    .sort-th:hover { color: var(--tx-2); }
 
     /* Lightbox */
-    .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.92); display: none; align-items: center; justify-content: center; z-index: 100; padding: 24px; }
+    .lightbox { position: fixed; inset: 0; background: rgba(5,8,18,.95); display: none; align-items: center; justify-content: center; z-index: 100; padding: 24px; }
     .lightbox.show { display: flex; }
-    .lb-inner { background: #111; border: 1px solid #1e1e1e; border-radius: 14px; max-width: 760px; width: 100%; overflow: hidden; }
-    .lb-img-wrap { background: #0a0a0a; display: flex; align-items: center; justify-content: center; min-height: 280px; max-height: 55vh; }
+    .lb-inner { background: var(--bg-4); border: 1px solid var(--bd-2); border-radius: 14px; max-width: 760px; width: 100%; overflow: hidden; box-shadow: var(--shadow); }
+    .lb-img-wrap { background: var(--bg); display: flex; align-items: center; justify-content: center; min-height: 280px; max-height: 55vh; }
     .lb-img-wrap img { max-width: 100%; max-height: 55vh; object-fit: contain; display: block; }
     .lb-meta { padding: 16px 20px; }
-    .lb-key { font-size: .88rem; color: #ccc; word-break: break-all; }
-    .lb-detail { display: flex; gap: 14px; margin-top: 5px; font-size: .78rem; color: #555; }
+    .lb-key { font-size: .88rem; color: var(--tx-2); word-break: break-all; }
+    .lb-detail { display: flex; gap: 14px; margin-top: 5px; font-size: .78rem; color: var(--tx-3); }
     .lb-actions { display: flex; gap: 8px; margin-top: 14px; }
-    .lb-close { position: absolute; top: 16px; right: 16px; background: #1a1a1a; border: 1px solid #222; color: #888; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
-    .lb-close:hover { color: #fff; }
+    .lb-close { position: absolute; top: 16px; right: 16px; background: var(--bg-5); border: 1px solid var(--bd); color: var(--tx-2); width: 34px; height: 34px; border-radius: var(--r-sm); cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: var(--t); }
+    .lb-close:hover { color: var(--tx); border-color: var(--bd-2); }
 
-    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1a1a1a; border: 1px solid #2a2a2a; color: #e0e0e0; padding: 9px 18px; border-radius: 8px; font-size: .83rem; transition: transform .25s; z-index: 300; white-space: nowrap; }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--bg-5); border: 1px solid var(--bd-2); color: var(--tx); padding: 9px 20px; border-radius: var(--r-sm); font-size: .83rem; font-weight: 500; transition: transform .3s cubic-bezier(.34,1.56,.64,1); z-index: 300; white-space: nowrap; box-shadow: var(--shadow-sm); }
     .toast.show { transform: translateX(-50%) translateY(0); }
 
     /* Admin page editor Vditor */
-    #apmVditor { border-radius: 8px; overflow: hidden; border: 1px solid #333; }
+    #apmVditor { border-radius: var(--r-sm); overflow: hidden; border: 1px solid var(--bd); }
     #apmVditor .vditor-outline { display: none !important; }
     #apmVditor .vditor-content { height: calc(100% - 36px) !important; overflow-y: auto !important; overscroll-behavior: contain; }
     #apmVditor .vditor-toolbar { position: sticky !important; top: 0 !important; z-index: 10 !important; flex-wrap: nowrap; overflow-x: auto; }
@@ -238,9 +278,13 @@ export function renderAdminPage() {
         <button class="nav-item" data-section="images"><span class="nav-icon">⊞</span>图库管理</button>
         <button class="nav-item" data-section="users"><span class="nav-icon">👤</span>用户管理</button>
         <button class="nav-item" data-section="pages"><span class="nav-icon">📄</span>页面管理</button>
+        <button class="nav-item" data-section="protos"><span class="nav-icon">📐</span>原型管理</button>
         <button class="nav-item" data-section="members"><span class="nav-icon">📊</span>成员统计</button>
         <button class="nav-item" data-section="settings"><span class="nav-icon">⚙</span>系统设置</button>
       </nav>
+      <div style="padding:0 10px 8px">
+        <a href="/" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:#444;font-size:.82rem;text-decoration:none;transition:all .15s" onmouseover="this.style.color='#aaa';this.style.background='#161616'" onmouseout="this.style.color='#444';this.style.background='transparent'"><span style="width:20px;text-align:center">←</span>前台</a>
+      </div>
       <div class="sidebar-footer">
         <div class="user-badge">
           <div class="avatar" id="avatarLetter">A</div>
@@ -266,7 +310,170 @@ export function renderAdminPage() {
           <div class="stat-card"><div class="stat-label">托管页面数</div><div class="stat-value" id="statPages">—</div><div class="stat-unit">个</div></div>
           <div class="stat-card"><div class="stat-label">页面访问次数</div><div class="stat-value" id="statPageViews">—</div><div class="stat-unit">次</div></div>
         </div>
-        <div class="r2-panel">
+        <!-- CF 免费额度概览 -->
+        <div class="cf-panel">
+          <div class="cf-panel-hd">
+            <h3>☁️ Cloudflare 免费额度</h3>
+            <span class="cf-badge" id="cfSourceBadge">加载中…</span>
+            <div style="flex:1"></div>
+            <button class="btn btn-ghost" style="padding:4px 10px;font-size:.75rem" onclick="loadCfQuota()">刷新</button>
+          </div>
+          <div class="cf-quotas">
+            <!-- Workers 请求 -->
+            <div class="cf-quota">
+              <div class="cf-quota-top">
+                <span class="cf-quota-lbl">⚡ Workers 请求（今日）</span>
+                <span class="cf-quota-method" id="cfReqMethod">1% 采样 × 100</span>
+              </div>
+              <div class="cf-quota-val" id="cfReqVal">—</div>
+              <div class="cf-quota-sub">上限 <strong style="color:#555">10 万次</strong> / 天</div>
+              <div class="cf-track"><div class="cf-fill" id="cfReqBar" style="width:0%"></div></div>
+              <div style="display:flex;justify-content:space-between;margin-top:3px">
+                <span style="font-size:.62rem;color:#333" id="cfReqPct">0%</span>
+                <span style="font-size:.62rem;color:#333">剩余 <span id="cfReqLeft">—</span></span>
+              </div>
+            </div>
+            <!-- R2 存储 -->
+            <div class="cf-quota">
+              <div class="cf-quota-top">
+                <span class="cf-quota-lbl">💾 R2 存储</span>
+                <span class="cf-quota-method">精确实时</span>
+              </div>
+              <div class="cf-quota-val" id="cfStorageVal">—</div>
+              <div class="cf-quota-sub">上限 <strong style="color:#555">10 GB</strong></div>
+              <div class="cf-track"><div class="cf-fill" id="cfStorageBar" style="width:0%"></div></div>
+              <div style="display:flex;justify-content:space-between;margin-top:3px">
+                <span style="font-size:.62rem;color:#333" id="cfStoragePct">0%</span>
+                <span style="font-size:.62rem;color:#333">剩余 <span id="cfStorageLeft">—</span></span>
+              </div>
+            </div>
+            <!-- R2 A 类操作 -->
+            <div class="cf-quota">
+              <div class="cf-quota-top">
+                <span class="cf-quota-lbl">✏️ R2 A 类操作（本月）</span>
+                <span class="cf-quota-method">实时追踪</span>
+              </div>
+              <div class="cf-quota-val" id="cfR2AVal">—</div>
+              <div class="cf-quota-sub">上限 <strong style="color:#555">100 万次</strong> / 月</div>
+              <div class="cf-track"><div class="cf-fill" id="cfR2ABar" style="width:0%"></div></div>
+              <div style="display:flex;justify-content:space-between;margin-top:3px">
+                <span style="font-size:.62rem;color:#333" id="cfR2APct">0%</span>
+                <span style="font-size:.62rem;color:#333">剩余 <span id="cfR2ALeft">—</span></span>
+              </div>
+            </div>
+            <!-- R2 B 类操作 -->
+            <div class="cf-quota">
+              <div class="cf-quota-top">
+                <span class="cf-quota-lbl">📖 R2 B 类操作（本月）</span>
+                <span class="cf-quota-method">部分追踪</span>
+              </div>
+              <div class="cf-quota-val" id="cfR2BVal">—</div>
+              <div class="cf-quota-sub">上限 <strong style="color:#555">1000 万次</strong> / 月</div>
+              <div class="cf-track"><div class="cf-fill" id="cfR2BBar" style="width:0%"></div></div>
+              <div style="display:flex;justify-content:space-between;margin-top:3px">
+                <span style="font-size:.62rem;color:#333" id="cfR2BPct">0%</span>
+                <span style="font-size:.62rem;color:#333">剩余 <span id="cfR2BLeft">—</span></span>
+              </div>
+            </div>
+          </div>
+          <!-- KV 操作（STATS 命名空间） -->
+          <div style="font-size:.7rem;color:#444;margin:12px 0 7px;font-weight:500;letter-spacing:.03em">Workers KV <span style="color:#333">（STATS 命名空间，日限额独立计算）</span></div>
+          <div class="cf-quotas">
+            <!-- KV 读取 -->
+            <div class="cf-quota">
+              <div class="cf-quota-top">
+                <span class="cf-quota-lbl">📖 KV 读取</span>
+                <span class="cf-quota-method" id="cfKvReadsMethod">本月</span>
+              </div>
+              <div class="cf-quota-val" id="cfKvReads">—</div>
+              <div class="cf-quota-sub">日限 <strong style="color:#555">10 万次</strong>　今日 <span id="cfKvReadsToday" style="color:#888">—</span></div>
+              <div class="cf-track"><div class="cf-fill" id="cfKvReadsBar" style="width:0%"></div></div>
+              <div style="display:flex;justify-content:space-between;margin-top:3px">
+                <span style="font-size:.62rem;color:#333" id="cfKvReadsPct">均值/日</span>
+                <span style="font-size:.62rem;color:#333" id="cfKvReadsAvg">—</span>
+              </div>
+            </div>
+            <!-- KV 写入 -->
+            <div class="cf-quota">
+              <div class="cf-quota-top">
+                <span class="cf-quota-lbl">✍️ KV 写入</span>
+                <span class="cf-quota-method" id="cfKvWritesMethod">本月</span>
+              </div>
+              <div class="cf-quota-val" id="cfKvWrites">—</div>
+              <div class="cf-quota-sub">日限 <strong style="color:#555">1,000 次</strong>　今日 <span id="cfKvWritesToday" style="color:#888">—</span></div>
+              <div class="cf-track"><div class="cf-fill" id="cfKvWritesBar" style="width:0%"></div></div>
+              <div style="display:flex;justify-content:space-between;margin-top:3px">
+                <span style="font-size:.62rem;color:#333" id="cfKvWritesPct">均值/日</span>
+                <span style="font-size:.62rem;color:#333" id="cfKvWritesAvg">—</span>
+              </div>
+            </div>
+            <!-- KV 列表 -->
+            <div class="cf-quota">
+              <div class="cf-quota-top">
+                <span class="cf-quota-lbl">📋 KV 列表</span>
+                <span class="cf-quota-method" id="cfKvListsMethod">本月</span>
+              </div>
+              <div class="cf-quota-val" id="cfKvLists">—</div>
+              <div class="cf-quota-sub">日限 <strong style="color:#555">1,000 次</strong>　今日 <span id="cfKvListsToday" style="color:#888">—</span></div>
+              <div class="cf-track"><div class="cf-fill" id="cfKvListsBar" style="width:0%"></div></div>
+              <div style="display:flex;justify-content:space-between;margin-top:3px">
+                <span style="font-size:.62rem;color:#333" id="cfKvListsPct">均值/日</span>
+                <span style="font-size:.62rem;color:#333" id="cfKvListsAvg">—</span>
+              </div>
+            </div>
+            <!-- KV 删除 -->
+            <div class="cf-quota">
+              <div class="cf-quota-top">
+                <span class="cf-quota-lbl">🗑️ KV 删除</span>
+                <span class="cf-quota-method" id="cfKvDeletesMethod">本月</span>
+              </div>
+              <div class="cf-quota-val" id="cfKvDeletes">—</div>
+              <div class="cf-quota-sub">日限 <strong style="color:#555">1,000 次</strong>　今日 <span id="cfKvDeletesToday" style="color:#888">—</span></div>
+              <div class="cf-track"><div class="cf-fill" id="cfKvDeletesBar" style="width:0%"></div></div>
+              <div style="display:flex;justify-content:space-between;margin-top:3px">
+                <span style="font-size:.62rem;color:#333" id="cfKvDeletesPct">均值/日</span>
+                <span style="font-size:.62rem;color:#333" id="cfKvDeletesAvg">—</span>
+              </div>
+            </div>
+          </div>
+          <!-- 未配置 API Token 提示 -->
+          <div id="cfApiPrompt" style="display:none;margin-top:10px;padding:11px 14px;background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.18);border-radius:8px;font-size:.75rem;color:#888;line-height:1.6">
+            ⚠️ 未配置 CF API Token，KV 数据不可用。运行以下命令设置后重新部署：<br>
+            <code style="display:inline-block;margin-top:5px;background:#111;padding:4px 10px;border-radius:5px;color:#7aabee;font-size:.8rem">wrangler secret put CF_API_TOKEN</code><br>
+            <span style="color:#666">在 CF 控制台创建 Token，权限选 <strong style="color:#888">Account Analytics: Read</strong></span>
+          </div>
+          <!-- 次要信息行 -->
+          <div class="cf-kv-row" style="margin-top:10px">
+            <div class="cf-kv-item">
+              <div class="cf-kv-icon">🗃️</div>
+              <div>
+                <div class="cf-kv-val" id="cfKvKeys">—</div>
+                <div class="cf-kv-lbl">KV 键总数（实时）</div>
+              </div>
+            </div>
+            <div class="cf-kv-item">
+              <div class="cf-kv-icon">📅</div>
+              <div>
+                <div class="cf-kv-val" id="cfDay">—</div>
+                <div class="cf-kv-lbl">今日（UTC）</div>
+              </div>
+            </div>
+            <div class="cf-kv-item">
+              <div class="cf-kv-icon">📆</div>
+              <div>
+                <div class="cf-kv-val" id="cfMonth">—</div>
+                <div class="cf-kv-lbl">本月（UTC）</div>
+              </div>
+            </div>
+          </div>
+          <div class="cf-note">
+            ⓘ R2 存储为实时精确扫描；R2 A/B 类操作及 KV 数据需配置 CF API Token 才能获取精确值；
+            KV 限额为每日独立计算，进度条显示月均日用量占日限比例。
+            <a href="https://dash.cloudflare.com" target="_blank" rel="noopener">CF 控制台</a>
+          </div>
+        </div>
+
+        <div style="display:none"><div class="r2-panel">
           <div class="r2-panel-hd">
             <h3>R2 对象存储</h3>
             <span class="r2-badge">实时数据</span>
@@ -305,6 +512,16 @@ export function renderAdminPage() {
               <div class="r2-cell-val" id="r2Members">—</div>
               <div class="r2-cell-sub">注册用户</div>
             </div>
+            <div class="r2-cell" style="display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <div class="r2-cell-lbl" style="text-align:center">存储占用</div>
+              <svg width="56" height="56" viewBox="0 0 56 56" style="display:block;margin:4px auto 0">
+                <circle cx="28" cy="28" r="22" fill="none" stroke="#1e2a3a" stroke-width="6"/>
+                <circle cx="28" cy="28" r="22" fill="none" stroke="#3b82f6" stroke-width="6"
+                  stroke-dasharray="138.23" stroke-dashoffset="138.23" id="r2DonutArc"
+                  stroke-linecap="round" transform="rotate(-90 28 28)" style="transition:stroke-dashoffset .5s,stroke .5s"/>
+              </svg>
+              <div class="r2-cell-sub" id="r2DonutLabel" style="text-align:center;margin-top:4px">0%</div>
+            </div>
           </div>
         </div>
         <div class="section-header"><h3>图片访问最多</h3></div>
@@ -315,11 +532,18 @@ export function renderAdminPage() {
           </table>
         </div>
         <div class="section-header"><h3>页面访问最多</h3></div>
-        <div style="background:#111;border:1px solid #1a1a1a;border-radius:12px;overflow:hidden">
+        <div style="background:#111;border:1px solid #1a1a1a;border-radius:12px;overflow:hidden;margin-bottom:28px">
           <table class="data-table">
             <thead><tr><th>标题 / Slug</th><th>访问次数</th><th>最后访问</th><th></th></tr></thead>
             <tbody id="topPagesBody"><tr><td colspan="4" style="text-align:center;color:#333;padding:24px">加载中…</td></tr></tbody>
           </table>
+        </div>
+          <div id="topTabProtos" style="display:none;padding:0">
+            <table class="data-table">
+              <thead><tr><th>标题</th><th>作者</th><th>访问次数</th><th>最后访问</th><th></th></tr></thead>
+              <tbody id="topProtosBody"><tr><td colspan="5" style="text-align:center;color:#333;padding:24px">加载中…</td></tr></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -420,6 +644,24 @@ export function renderAdminPage() {
         </div>
       </div>
 
+      <!-- Protos -->
+      <div class="section" id="section-protos">
+        <div class="page-title">原型管理</div>
+        <div class="page-sub">所有用户上传的 AxureRP / HTML 原型文件</div>
+        <div class="section-header">
+          <h3>所有原型</h3>
+          <div class="spacer"></div>
+          <button class="btn btn-ghost" id="refreshAdminProtos">刷新</button>
+        </div>
+        <div style="background:#111;border:1px solid #1a1a1a;border-radius:12px;overflow:hidden">
+          <table class="data-table">
+            <thead><tr><th>名称</th><th>作者</th><th>文件数</th><th>大小</th><th>密码</th><th>创建时间</th><th></th></tr></thead>
+            <tbody id="adminProtosBody"><tr><td colspan="7" style="text-align:center;color:#333;padding:24px">加载中…</td></tr></tbody>
+          </table>
+        </div>
+        <div class="empty" id="adminProtosEmpty" style="display:none">暂无原型</div>
+      </div>
+
       <!-- Members -->
       <div class="section" id="section-members">
         <div class="page-title">成员统计</div>
@@ -462,7 +704,7 @@ export function renderAdminPage() {
       <button class="modal-close" id="userModalClose">✕</button>
     </div>
     <div class="modal-body">
-      <div class="field" id="fieldUsername"><label>用户名 <span style="color:#555">(字母/数字/_- 2-32位)</span></label><input type="text" id="umUsername" placeholder="alice"></div>
+      <div class="field" id="fieldUsername"><label>用户名 <span style="color:#5a7090">(字母/数字/_- 2-32位)</span></label><input type="text" id="umUsername" placeholder="alice"></div>
       <div class="field" id="fieldPassword"><label id="umPassLabel">密码</label><input type="password" id="umPassword" placeholder="留空则不修改"></div>
       <div class="field" style="margin-top:4px"><label style="margin-bottom:8px;display:block">权限</label>
         <div class="perm-grid">
@@ -502,16 +744,25 @@ export function renderAdminPage() {
       <div class="field">
         <label>Slug（URL 后缀）</label>
         <input type="text" id="apmSlug" placeholder="my-blog-post">
-        <span style="font-size:.72rem;color:#444;margin-top:4px">访问地址：<span id="apmSlugPreview" style="color:#3b82f6"></span></span>
+        <span style="font-size:.72rem;color:#5a7090;margin-top:4px">访问地址：<span id="apmSlugPreview" style="color:#60a5fa"></span></span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="field"><label>类型</label><select id="apmType"><option value="markdown">Markdown</option><option value="html">HTML</option></select></div>
         <div class="field"><label style="display:flex;align-items:center;gap:8px;margin-top:26px;cursor:pointer"><input type="checkbox" id="apmPublic" checked> 公开访问</label></div>
       </div>
+      <div class="field" id="apmPwdSection" style="display:none">
+        <label>访问密码</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" id="apmPassword" maxlength="6" autocomplete="off" spellcheck="false"
+            style="font-family:monospace;letter-spacing:.18em;font-size:.95rem;width:110px;padding:8px 10px;background:#0b0f1a;border:1px solid #2a3650;border-radius:7px;color:#e8edf5;outline:none">
+          <button type="button" id="apmPwdGen" class="btn btn-ghost" style="white-space:nowrap;flex-shrink:0">重新生成</button>
+        </div>
+        <span style="font-size:.7rem;color:#5a7090;margin-top:4px;display:block">6位字母+数字，访客凭密码访问私密页面</span>
+      </div>
       <div class="field" style="flex:1;display:flex;flex-direction:column;min-height:0">
         <label>内容</label>
         <div id="apmVditor" style="display:none"></div>
-        <textarea id="apmContent" rows="14" style="resize:vertical;min-height:200px;font-family:monospace;font-size:.82rem;padding:10px 12px;background:#0a0a0a;border:1px solid #222;border-radius:8px;color:#e0e0e0;outline:none;width:100%" placeholder="# Hello\n\n内容…"></textarea>
+        <textarea id="apmContent" rows="14" style="resize:vertical;min-height:200px;font-family:monospace;font-size:.82rem;padding:10px 12px;background:#0b0f1a;border:1px solid #2a3650;border-radius:8px;color:#e8edf5;outline:none;width:100%" placeholder="# Hello\n\n内容…"></textarea>
       </div>
     </div>
     <div class="modal-footer">
@@ -525,7 +776,7 @@ export function renderAdminPage() {
 <div class="modal-overlay" id="pageStatsModal">
   <div class="modal stats-modal">
     <div class="modal-header">
-      <h3>页面统计 <span style="font-size:.72rem;color:#555;font-weight:400" id="psmTitle"></span></h3>
+      <h3>页面统计 <span style="font-size:.72rem;color:#5a7090;font-weight:400" id="psmTitle"></span></h3>
       <button class="modal-close" id="psmClose">✕</button>
     </div>
     <div class="modal-body">
@@ -536,7 +787,7 @@ export function renderAdminPage() {
       </div>
       <div class="country-bars"><h4>国家 / 地区分布</h4><div id="psmCountryBars"></div></div>
       <div style="margin-top:20px">
-        <h4 style="font-size:.82rem;color:#666;margin-bottom:10px;font-weight:500">访问 IP Top 10</h4>
+        <h4 style="font-size:.8rem;color:#7a8fa8;margin-bottom:10px;font-weight:600">访问 IP Top 10</h4>
         <div id="psmIpBars"></div>
       </div>
       <div class="access-log">
@@ -554,7 +805,7 @@ export function renderAdminPage() {
 <div class="modal-overlay" id="statsModal">
   <div class="modal stats-modal">
     <div class="modal-header">
-      <h3>访问统计 <span style="font-size:.72rem;color:#555;font-weight:400" id="statsModalKey"></span></h3>
+      <h3>访问统计 <span style="font-size:.72rem;color:#5a7090;font-weight:400" id="statsModalKey"></span></h3>
       <button class="modal-close" id="statsModalClose">✕</button>
     </div>
     <div class="modal-body">
@@ -594,6 +845,59 @@ export function renderAdminPage() {
   </div>
 </div>
 
+<!-- Proto Stats Modal -->
+<div class="modal-overlay" id="protoStatsModal">
+  <div class="modal stats-modal">
+    <div class="modal-header">
+      <h3>原型统计 <span style="font-size:.72rem;color:#555;font-weight:400" id="prsTitle"></span></h3>
+      <button class="modal-close" id="prsClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="stat-summary">
+        <div class="summary-card"><div class="val" id="prsTotal">—</div><div class="lbl">总访问次数</div></div>
+        <div class="summary-card"><div class="val" id="prsUniqueIps">—</div><div class="lbl">独立 IP 数</div></div>
+        <div class="summary-card"><div class="val" id="prsLast">—</div><div class="lbl">最后访问</div></div>
+      </div>
+      <div class="country-bars"><h4>国家 / 地区分布</h4><div id="prsCountryBars"></div></div>
+      <div class="access-log">
+        <h4>最近访问记录</h4>
+        <table class="log-table">
+          <thead><tr><th>时间</th><th>IP</th><th>国家</th></tr></thead>
+          <tbody id="prsLogBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Proto Version History & Diff Modal -->
+<div class="modal-overlay" id="protoVersionModal">
+  <div class="modal" style="max-width:900px;width:95vw;max-height:85vh;height:85vh;display:flex;flex-direction:column">
+    <div class="modal-header" style="flex-shrink:0">
+      <h3>版本历史 <span style="font-size:.72rem;color:#555;font-weight:400" id="pvmTitle"></span></h3>
+      <button class="modal-close" id="pvmClose">✕</button>
+    </div>
+    <div style="display:flex;flex:1;min-height:0">
+      <!-- Left: version list -->
+      <div style="width:200px;flex-shrink:0;border-right:1px solid #1a1a1a;overflow-y:auto;padding:12px 10px;display:flex;flex-direction:column;gap:6px" id="pvmVersionList"></div>
+      <!-- Right: file view / diff -->
+      <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+        <!-- Toolbar -->
+        <div style="padding:10px 14px;border-bottom:1px solid #1a1a1a;display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap">
+          <span style="font-size:.78rem;color:#555" id="pvmMode">点击版本号查看文件列表，勾选两个版本进行对比</span>
+          <div style="flex:1"></div>
+          <input type="text" id="pvmSearch" placeholder="搜索文件…" style="padding:4px 8px;background:#111;border:1px solid #222;border-radius:6px;color:#ccc;font-size:.78rem;width:160px;outline:none">
+          <button class="btn btn-ghost" id="pvmDiffBtn" style="padding:4px 10px;font-size:.78rem;display:none">对比选中版本</button>
+        </div>
+        <!-- Content area -->
+        <div style="flex:1;overflow-y:auto;padding:14px 16px" id="pvmContent">
+          <div style="color:#333;text-align:center;padding:60px 0;font-size:.85rem">← 点击左侧版本号查看文件列表</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -620,6 +924,7 @@ export function renderAdminPage() {
     document.getElementById('avatarLetter').textContent = adminUser[0].toUpperCase();
     loadDashboard();
     loadR2Stats();
+    loadCfQuota();
     loadSettings();
   }
 
@@ -653,6 +958,7 @@ export function renderAdminPage() {
     if (name === 'images' && !allImages.length) loadGallery(true);
     if (name === 'users') loadUsers();
     if (name === 'pages') loadAdminPages();
+    if (name === 'protos') loadAdminProtos();
     if (name === 'members') loadMemberStats();
   }
 
@@ -660,67 +966,56 @@ export function renderAdminPage() {
   let allPageStats = {};
 
   async function loadDashboard() {
-    try {
-      const [sRes, iRes, pRes, psRes] = await Promise.all([
-        fetch('/admin/stats', { headers: authH() }),
-        fetch('/admin/all-image-stats', { headers: authH() }),
-        fetch('/admin/pages', { headers: authH() }),
-        fetch('/admin/all-page-stats', { headers: authH() }),
-      ]);
-      if (sRes.status === 401) { handleUnauth(); return; }
+    const [sRes, iRes, pRes, psRes] = await Promise.all([
+      fetch('/admin/stats', { headers: authH() }),
+      fetch('/admin/all-image-stats', { headers: authH() }),
+      fetch('/admin/pages', { headers: authH() }),
+      fetch('/admin/all-page-stats', { headers: authH() }),
+    ]);
+    if (sRes.status === 401) { handleUnauth(); return; }
+    const { totalImages, totalSize } = await sRes.json();
+    const { stats } = await iRes.json();
+    const { pages } = await pRes.json();
+    const { stats: pgStats } = await psRes.json();
+    allStats = stats;
+    allPageStats = pgStats;
 
-      const sData  = sRes.ok  ? await sRes.json()  : {};
-      const iData  = iRes.ok  ? await iRes.json()  : { stats: {} };
-      const pData  = pRes.ok  ? await pRes.json()  : { pages: [] };
-      const psData = psRes.ok ? await psRes.json() : { stats: {} };
+    document.getElementById('statImages').textContent = totalImages.toLocaleString();
+    const { val, unit } = fmtSizeParts(totalSize);
+    document.getElementById('statSize').textContent = val;
+    document.getElementById('statSizeUnit').textContent = unit;
+    document.getElementById('statFree').textContent = Math.max(0, 10 - totalSize/1073741824).toFixed(2);
+    document.getElementById('statViews').textContent = Object.values(stats).reduce((s,v) => s+(v.count??0), 0).toLocaleString();
+    document.getElementById('statPages').textContent = pages.length.toLocaleString();
+    document.getElementById('statPageViews').textContent = Object.values(pgStats).reduce((s,v) => s+(v.count??0), 0).toLocaleString();
 
-      const { totalImages = 0, totalSize = 0 } = sData;
-      const stats   = iData.stats  ?? {};
-      const pages   = pData.pages  ?? [];
-      const pgStats = psData.stats ?? {};
+    // Top images
+    const sortedImg = Object.entries(stats).sort((a,b) => (b[1].count??0)-(a[1].count??0)).slice(0,10);
+    document.getElementById('topImagesBody').innerHTML = sortedImg.length
+      ? sortedImg.map(([k,s]) => \`<tr>
+          <td><img class="top-thumb" src="\${origin}/\${k}" loading="lazy" onclick="openLightbox('\${k}')"></td>
+          <td style="font-family:monospace;font-size:.78rem;color:#888">\${k}</td>
+          <td class="view-count">\${(s.count??0).toLocaleString()}</td>
+          <td class="muted">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
+          <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" onclick="openStatsModal('\${k}')">详情</button></td>
+        </tr>\`).join('')
+      : '<tr><td colspan="5" style="text-align:center;color:#333;padding:24px">暂无访问记录</td></tr>';
 
-      allStats     = stats;
-      allPageStats = pgStats;
-
-      document.getElementById('statImages').textContent = totalImages.toLocaleString();
-      const { val, unit } = fmtSizeParts(totalSize);
-      document.getElementById('statSize').textContent = val;
-      document.getElementById('statSizeUnit').textContent = unit;
-      document.getElementById('statFree').textContent = Math.max(0, 10 - totalSize/1073741824).toFixed(2);
-      document.getElementById('statViews').textContent = Object.values(stats).reduce((s,v) => s+(v.count??0), 0).toLocaleString();
-      document.getElementById('statPages').textContent = pages.length.toLocaleString();
-      document.getElementById('statPageViews').textContent = Object.values(pgStats).reduce((s,v) => s+(v.count??0), 0).toLocaleString();
-
-      // Top images
-      const sortedImg = Object.entries(stats).sort((a,b) => (b[1].count??0)-(a[1].count??0)).slice(0,10);
-      document.getElementById('topImagesBody').innerHTML = sortedImg.length
-        ? sortedImg.map(([k,s]) => \`<tr>
-            <td><img class="top-thumb" src="\${origin}/\${k}" loading="lazy" onclick="openLightbox('\${k}')"></td>
-            <td style="font-family:monospace;font-size:.78rem;color:#888">\${k}</td>
-            <td class="view-count">\${(s.count??0).toLocaleString()}</td>
-            <td class="muted">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
-            <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" onclick="openStatsModal('\${k}')">详情</button></td>
-          </tr>\`).join('')
-        : '<tr><td colspan="5" style="text-align:center;color:#333;padding:24px">暂无访问记录</td></tr>';
-
-      // Top pages
-      const pageMap = {};
-      pages.forEach(p => pageMap[p.slug] = p.title || p.slug);
-      const sortedPg = Object.entries(pgStats).sort((a,b) => (b[1].count??0)-(a[1].count??0)).slice(0,10);
-      document.getElementById('topPagesBody').innerHTML = sortedPg.length
-        ? sortedPg.map(([slug,s]) => \`<tr>
-            <td>
-              <div style="font-weight:500;font-size:.88rem">\${esc(pageMap[slug] || slug)}</div>
-              <div style="font-family:monospace;font-size:.72rem;color:#555">/p/\${slug}</div>
-            </td>
-            <td class="view-count">\${(s.count??0).toLocaleString()}</td>
-            <td class="muted">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
-            <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" onclick="openPageStatsModal('\${esc(slug)}','\${esc(pageMap[slug]||slug)}')">详情</button></td>
-          </tr>\`).join('')
-        : '<tr><td colspan="4" style="text-align:center;color:#333;padding:24px">暂无访问记录</td></tr>';
-    } catch(e) {
-      console.error('loadDashboard error:', e);
-    }
+    // Top pages
+    const pageMap = {};
+    pages.forEach(p => pageMap[p.slug] = p.title || p.slug);
+    const sortedPg = Object.entries(pgStats).sort((a,b) => (b[1].count??0)-(a[1].count??0)).slice(0,10);
+    document.getElementById('topPagesBody').innerHTML = sortedPg.length
+      ? sortedPg.map(([slug,s]) => \`<tr>
+          <td>
+            <div style="font-weight:500;font-size:.88rem">\${esc(pageMap[slug] || slug)}</div>
+            <div style="font-family:monospace;font-size:.72rem;color:#555">/p/\${slug}</div>
+          </td>
+          <td class="view-count">\${(s.count??0).toLocaleString()}</td>
+          <td class="muted">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
+          <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" data-title="\${esc(pageMap[slug]||slug)}" onclick="openPageStatsModal('\${slug}',this.dataset.title)">详情</button></td>
+        </tr>\`).join('')
+      : '<tr><td colspan="4" style="text-align:center;color:#333;padding:24px">暂无访问记录</td></tr>';
   }
 
   // ── Gallery ─────────────────────────────────────────────────────────────────
@@ -999,6 +1294,233 @@ export function renderAdminPage() {
   document.getElementById('psmClose').addEventListener('click', () => document.getElementById('pageStatsModal').classList.remove('show'));
   document.getElementById('pageStatsModal').addEventListener('click', e => { if (e.target===document.getElementById('pageStatsModal')) document.getElementById('pageStatsModal').classList.remove('show'); });
 
+  // ── Proto Stats Modal ──────────────────────────────────────────────────────────
+  async function openProtoStatsModal(protoId, title) {
+    document.getElementById('prsTitle').textContent = title || protoId;
+    document.getElementById('prsTotal').textContent = '…';
+    document.getElementById('prsUniqueIps').textContent = '…';
+    document.getElementById('prsLast').textContent = '…';
+    document.getElementById('prsCountryBars').innerHTML = '';
+    document.getElementById('prsLogBody').innerHTML = '<tr><td colspan="3" style="color:#333;text-align:center">加载中…</td></tr>';
+    document.getElementById('protoStatsModal').classList.add('show');
+    try {
+      const res = await fetch('/admin/proto-stats/' + encodeURIComponent(protoId), { headers: authH() });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      document.getElementById('prsTotal').textContent = (data.count ?? 0).toLocaleString();
+      document.getElementById('prsUniqueIps').textContent = (data.uniqueIps ?? 0).toLocaleString();
+      document.getElementById('prsLast').textContent = data.lastAccess ? timeAgo(data.lastAccess) : '—';
+      const cl = Object.entries(data.countries ?? {}).sort((a,b) => b[1]-a[1]).slice(0,10);
+      const maxC = cl[0]?.[1] ?? 1;
+      document.getElementById('prsCountryBars').innerHTML = cl.map(([c,cnt]) =>
+        \`<div class="country-row"><span class="country-name">\${c}</span><div class="bar-wrap"><div class="bar" style="width:\${(cnt/maxC*100).toFixed(1)}%"></div></div><span class="country-count">\${cnt}</span></div>\`
+      ).join('') || '<span style="color:#333;font-size:.82rem">暂无数据</span>';
+      document.getElementById('prsLogBody').innerHTML = (data.accesses ?? []).slice(0,50).map(a =>
+        \`<tr><td>\${new Date(a.ts).toLocaleString('zh-CN')}</td><td style="font-family:monospace;font-size:.75rem">\${a.ip}</td><td>\${a.country}</td></tr>\`
+      ).join('') || '<tr><td colspan="3" style="color:#333;text-align:center">暂无记录</td></tr>';
+    } catch {
+      document.getElementById('prsLogBody').innerHTML = '<tr><td colspan="3" style="color:#555;text-align:center">加载失败</td></tr>';
+    }
+  }
+  document.getElementById('prsClose').addEventListener('click', () => document.getElementById('protoStatsModal').classList.remove('show'));
+  document.getElementById('protoStatsModal').addEventListener('click', e => { if (e.target===document.getElementById('protoStatsModal')) document.getElementById('protoStatsModal').classList.remove('show'); });
+
+  // ── Proto Version History & Diff Modal ───────────────────────────────────────
+  let pvmProto = null;         // current proto object
+  let pvmFileCache = {};       // { 'v3': [...paths] }
+  let pvmChecked = [];         // [vN, vM] — versions selected for diff (max 2)
+  let pvmActiveVer = null;     // single version being viewed
+
+  function openProtoVersions(idx) {
+    pvmProto    = adminProtosCache[idx] ?? {};
+    pvmFileCache = {};
+    pvmChecked   = [];
+    pvmActiveVer = null;
+
+    document.getElementById('pvmTitle').textContent = pvmProto.title || pvmProto.protoId || '';
+    document.getElementById('pvmSearch').value = '';
+    document.getElementById('pvmDiffBtn').style.display = 'none';
+    document.getElementById('pvmMode').textContent = '点击版本号查看文件列表，勾选两个版本进行对比';
+    document.getElementById('pvmContent').innerHTML = '<div style="color:#333;text-align:center;padding:60px 0;font-size:.85rem">← 点击左侧版本号查看文件列表</div>';
+
+    pvmRenderVersionList();
+    document.getElementById('protoVersionModal').classList.add('show');
+  }
+
+  function pvmRenderVersionList() {
+    const versions = [...(pvmProto.versions ?? [])].reverse(); // newest first
+    const maxVer   = pvmProto.version ?? 1;
+    document.getElementById('pvmVersionList').innerHTML = versions.map(v => {
+      const isLatest  = v.v === maxVer;
+      const isActive  = pvmActiveVer === v.v;
+      const checkIdx  = pvmChecked.indexOf(v.v);
+      const cardClass = checkIdx === 0 ? 'pvm-ver-card checked-a'
+                      : checkIdx === 1 ? 'pvm-ver-card checked-b'
+                      : isActive       ? 'pvm-ver-card active'
+                      :                  'pvm-ver-card';
+      return \`<div class="\${cardClass}" onclick="pvmSelectVersion(\${v.v})">
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+          <span class="pvm-ver-badge">v\${v.v}</span>
+          \${isLatest ? '<span class="pvm-ver-latest">最新</span>' : ''}
+          \${!isLatest ? \`<button class="btn btn-danger" style="padding:1px 6px;font-size:.62rem;margin-left:auto" onclick="event.stopPropagation();pvmDeleteVersion(\${v.v})">删除</button>\` : ''}
+        </div>
+        <div class="pvm-ver-meta">\${v.at ? new Date(v.at).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—'}</div>
+        <div class="pvm-ver-meta">\${v.files ?? '?'} 文件 · \${v.size ? fmtSize(v.size) : '—'}</div>
+        <label class="pvm-ver-check" onclick="event.stopPropagation()">
+          <input type="checkbox" \${checkIdx >= 0 ? 'checked' : ''} onchange="pvmToggleCheck(\${v.v}, this.checked)">
+          <span style="color:\${checkIdx===0?'#10b981':checkIdx===1?'#f59e0b':'#555'}">\${checkIdx===0?'对比 A':checkIdx===1?'对比 B':'加入对比'}</span>
+        </label>
+      </div>\`;
+    }).join('');
+  }
+
+  async function pvmDeleteVersion(ver) {
+    if (!confirm(\`确认删除 v\${ver}？该操作仅删除版本记录，不影响当前原型内容。\`)) return;
+    const pid = pvmProto.protoId;
+    const res = await fetch(\`/admin/proto-versions/\${encodeURIComponent(pid)}/v\${ver}\`, { method: 'DELETE', headers: authH() });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) { toast('删除失败: ' + (d.error || '')); return; }
+    // Remove from local cache & update pvmProto
+    pvmProto.versions = (pvmProto.versions ?? []).filter(v => v.v !== ver);
+    delete pvmFileCache[\`v\${ver}\`];
+    pvmChecked = pvmChecked.filter(v => v !== ver);
+    if (pvmActiveVer === ver) {
+      pvmActiveVer = null;
+      document.getElementById('pvmContent').innerHTML = '<div style="color:#333;text-align:center;padding:60px 0;font-size:.85rem">← 点击左侧版本号查看文件列表</div>';
+    }
+    // Also sync adminProtosCache
+    const cacheEntry = adminProtosCache.find(p => p.protoId === pid);
+    if (cacheEntry) cacheEntry.versions = pvmProto.versions;
+    pvmRenderVersionList();
+    toast(\`v\${ver} 已删除\`);
+  }
+
+  async function pvmSelectVersion(ver) {
+    pvmActiveVer = ver;
+    pvmRenderVersionList();
+    const files = await pvmFetchFiles(ver);
+    pvmShowFileList(files, \`v\${ver} 文件列表 (\${files?.length ?? '?'} 个)\`);
+  }
+
+  function pvmToggleCheck(ver, checked) {
+    if (checked) {
+      if (pvmChecked.length >= 2) pvmChecked.shift();
+      pvmChecked.push(ver);
+    } else {
+      pvmChecked = pvmChecked.filter(v => v !== ver);
+    }
+    pvmRenderVersionList();
+    const diffBtn = document.getElementById('pvmDiffBtn');
+    if (pvmChecked.length === 2) {
+      diffBtn.style.display = '';
+      document.getElementById('pvmMode').textContent = \`已选 v\${pvmChecked[0]}（A）与 v\${pvmChecked[1]}（B），点击"对比"查看差异\`;
+    } else {
+      diffBtn.style.display = 'none';
+      document.getElementById('pvmMode').textContent = pvmChecked.length === 1
+        ? \`已选 v\${pvmChecked[0]} 为对比 A，再勾选一个版本\`
+        : '点击版本号查看文件列表，勾选两个版本进行对比';
+    }
+  }
+
+  async function pvmFetchFiles(ver) {
+    const token = \`v\${ver}\`;
+    if (pvmFileCache[token] !== undefined) return pvmFileCache[token];
+    pvmShowLoading();
+    try {
+      const pid = pvmProto.protoId;
+      const res = await fetch(\`/admin/proto-vfiles/\${encodeURIComponent(pid)}/\${token}\`, { headers: authH() });
+      const data = res.ok ? await res.json() : {};
+      pvmFileCache[token] = data.files ?? null;
+    } catch { pvmFileCache[token] = null; }
+    return pvmFileCache[token];
+  }
+
+  function pvmShowLoading() {
+    document.getElementById('pvmContent').innerHTML = '<div style="color:#333;text-align:center;padding:40px 0">加载中…</div>';
+  }
+
+  function pvmShowFileList(files, title) {
+    const q = document.getElementById('pvmSearch').value.toLowerCase();
+    if (!files) {
+      document.getElementById('pvmContent').innerHTML = \`<div style="color:#555;font-size:.82rem;text-align:center;padding:40px 0">该版本无文件记录（旧版本上传未记录文件列表）</div>\`;
+      return;
+    }
+    const filtered = q ? files.filter(f => f.toLowerCase().includes(q)) : files;
+    document.getElementById('pvmContent').innerHTML = \`
+      <div style="font-size:.75rem;color:#555;margin-bottom:10px;font-weight:500">\${title}\${q ? \` — 过滤 "\${q}"\` : ''}</div>
+      <div>\${filtered.map(f => \`<div class="file-row">\${esc(f)}</div>\`).join('') || '<div style="color:#333;font-size:.82rem;padding:20px 0">无匹配文件</div>'}</div>\`;
+  }
+
+  document.getElementById('pvmDiffBtn').addEventListener('click', async () => {
+    if (pvmChecked.length < 2) return;
+    const [a, b] = pvmChecked;
+    pvmShowLoading();
+    const [filesA, filesB] = await Promise.all([pvmFetchFiles(a), pvmFetchFiles(b)]);
+    if (!filesA && !filesB) {
+      document.getElementById('pvmContent').innerHTML = '<div style="color:#555;text-align:center;padding:40px 0;font-size:.82rem">两个版本均无文件记录（旧版本上传未记录文件列表）</div>';
+      return;
+    }
+    if (!filesA || !filesB) {
+      const missing = !filesA ? \`v\${a}\` : \`v\${b}\`;
+      document.getElementById('pvmContent').innerHTML = \`<div style="color:#555;text-align:center;padding:40px 0;font-size:.82rem">\${missing} 无文件记录，无法对比</div>\`;
+      return;
+    }
+    pvmRenderDiff(filesA, filesB, a, b);
+  });
+
+  function pvmRenderDiff(filesA, filesB, verA, verB) {
+    const q    = document.getElementById('pvmSearch').value.toLowerCase();
+    const setA = new Set(filesA);
+    const setB = new Set(filesB);
+    let added   = filesB.filter(f => !setA.has(f));  // in B (newer) not in A
+    let removed = filesA.filter(f => !setB.has(f));  // in A (older) not in B
+    let same    = filesA.filter(f => setB.has(f));
+    if (q) {
+      added   = added.filter(f   => f.toLowerCase().includes(q));
+      removed = removed.filter(f => f.toLowerCase().includes(q));
+      same    = same.filter(f   => f.toLowerCase().includes(q));
+    }
+    const summary = \`<div style="display:flex;gap:12px;margin-bottom:16px;font-size:.78rem;flex-wrap:wrap">
+      <span>v\${verA} → v\${verB}</span>
+      <span style="color:#10b981">+\${added.length} 新增</span>
+      <span style="color:#ef4444">-\${removed.length} 删除</span>
+      <span style="color:#555">\${same.length} 不变</span>
+    </div>\`;
+
+    const mkRows = (files, cls, prefix) =>
+      files.map(f => \`<div class="diff-file \${cls}"><span class="diff-prefix">\${prefix}</span>\${esc(f)}</div>\`).join('');
+
+    let html = summary;
+    if (added.length)
+      html += \`<div class="diff-section add"><h4>✦ 新增 \${added.length} 个文件（v\${verB} 新增）</h4>\${mkRows(added,'diff-add','+')}</div>\`;
+    if (removed.length)
+      html += \`<div class="diff-section rem"><h4>✦ 删除 \${removed.length} 个文件（v\${verB} 移除）</h4>\${mkRows(removed,'diff-rem','−')}</div>\`;
+    if (same.length)
+      html += \`<div class="diff-section same"><h4>· 未变动 \${same.length} 个文件</h4>\${mkRows(same,'diff-same',' ')}</div>\`;
+    if (!added.length && !removed.length && !same.length)
+      html += '<div style="color:#333;text-align:center;padding:40px 0;font-size:.82rem">无匹配文件</div>';
+
+    document.getElementById('pvmContent').innerHTML = html;
+  }
+
+  document.getElementById('pvmSearch').addEventListener('input', () => {
+    // Re-render current view with filter
+    if (pvmChecked.length === 2 && document.getElementById('pvmContent').querySelector('.diff-section, .diff-file')) {
+      // was showing diff
+      (async () => {
+        const [a, b] = pvmChecked;
+        const [fa, fb] = await Promise.all([pvmFetchFiles(a), pvmFetchFiles(b)]);
+        if (fa && fb) pvmRenderDiff(fa, fb, a, b);
+      })();
+    } else if (pvmActiveVer !== null) {
+      const files = pvmFileCache[\`v\${pvmActiveVer}\`];
+      pvmShowFileList(files ?? null, \`v\${pvmActiveVer} 文件列表 (\${files?.length ?? '?'} 个)\`);
+    }
+  });
+
+  document.getElementById('pvmClose').addEventListener('click', () => document.getElementById('protoVersionModal').classList.remove('show'));
+  document.getElementById('protoVersionModal').addEventListener('click', e => { if (e.target===document.getElementById('protoVersionModal')) document.getElementById('protoVersionModal').classList.remove('show'); });
+
   // ── Lightbox ─────────────────────────────────────────────────────────────────
   function openLightbox(key) {
     lbKey = key;
@@ -1080,37 +1602,47 @@ export function renderAdminPage() {
   }
 
   async function loadAdminPages() {
-    document.getElementById('adminPagesBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:#333;padding:24px">加载中…</td></tr>';
-    const [res, psRes] = await Promise.all([
-      fetch('/admin/pages', { headers: authH() }),
-      fetch('/admin/all-page-stats', { headers: authH() }),
-    ]);
-    if (!res.ok) { document.getElementById('adminPagesBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:#555;padding:24px">加载失败</td></tr>'; return; }
+    document.getElementById('adminPagesBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#333;padding:24px">加载中…</td></tr>';
+    const res = await fetch('/admin/pages', { headers: authH() });
+    if (!res.ok) return;
     const { pages } = await res.json();
-    if (psRes.ok) { const d = await psRes.json(); allPageStats = d.stats ?? allPageStats; }
     const TYPE_LABEL = { markdown: '<span style="background:rgba(59,130,246,.1);color:#3b82f6;padding:2px 6px;border-radius:4px;font-size:.72rem">MD</span>', html: '<span style="background:rgba(245,158,11,.1);color:#f59e0b;padding:2px 6px;border-radius:4px;font-size:.72rem">HTML</span>' };
     document.getElementById('adminPagesBody').innerHTML = pages.length
-      ? pages.map(p => {
-          const views = allPageStats[p.slug]?.count ?? 0;
-          return \`<tr>
+      ? pages.map(p => \`<tr>
           <td>
             <div style="font-weight:500;font-size:.88rem">\${esc(p.title)}</div>
             <div style="font-family:monospace;font-size:.72rem;color:#555">/p/\${p.slug}</div>
           </td>
           <td>\${TYPE_LABEL[p.type] || p.type}</td>
-          <td class="muted">@\${esc(p.owner)}</td>
+          <td class="muted">@\${p.owner}</td>
           <td>\${p.isPublic ? '<span style="color:#22c55e;font-size:.78rem">公开</span>' : '<span style="color:#555;font-size:.78rem">私密</span>'}</td>
-          <td class="view-count">\${views ? views.toLocaleString() : '<span style="color:#333">—</span>'}</td>
           <td class="muted">\${timeAgo(p.updatedAt)}</td>
           <td style="white-space:nowrap">
             <a href="/p/\${p.slug}" target="_blank" class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem;text-decoration:none">预览</a>
-            <button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" onclick="adminEditPage('\${esc(p.slug)}')">编辑</button>
-            <button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" onclick="openPageStatsModal('\${esc(p.slug)}','\${esc(p.title||p.slug)}')">统计</button>
-            <button class="btn btn-danger" style="padding:4px 8px;font-size:.75rem" onclick="adminDeletePage('\${esc(p.slug)}')">删除</button>
+            <button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" onclick="adminEditPage('\${p.slug}')">编辑</button>
+            <button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" data-title="\${esc(p.title)}" onclick="openPageStatsModal('\${p.slug}',this.dataset.title)">统计</button>
+            <button class="btn btn-danger" style="padding:4px 8px;font-size:.75rem" onclick="adminDeletePage('\${p.slug}')">删除</button>
           </td>
-        </tr>\`;}).join('')
-      : '<tr><td colspan="7" style="text-align:center;color:#333;padding:24px">暂无页面</td></tr>';
+        </tr>\`).join('')
+      : '<tr><td colspan="6" style="text-align:center;color:#333;padding:24px">暂无页面</td></tr>';
   }
+
+  function genApmPwd() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    const arr = new Uint8Array(6);
+    crypto.getRandomValues(arr);
+    document.getElementById('apmPassword').value = Array.from(arr, b => chars[b % chars.length]).join('');
+  }
+  document.getElementById('apmPwdGen').addEventListener('click', genApmPwd);
+  document.getElementById('apmPublic').addEventListener('change', function() {
+    const sec = document.getElementById('apmPwdSection');
+    if (!this.checked) {
+      sec.style.display = '';
+      if (!document.getElementById('apmPassword').value) genApmPwd();
+    } else {
+      sec.style.display = 'none';
+    }
+  });
 
   document.getElementById('adminNewPageBtn').addEventListener('click', () => adminOpenPageModal(null));
 
@@ -1137,7 +1669,18 @@ export function renderAdminPage() {
     slugEl.style.opacity = page ? '0.5' : '';
     const type = page?.type ?? 'markdown';
     document.getElementById('apmType').value = type;
-    document.getElementById('apmPublic').checked = page?.isPublic !== false;
+    const isPublic = page?.isPublic !== false;
+    document.getElementById('apmPublic').checked = isPublic;
+    const pwdSec = document.getElementById('apmPwdSection');
+    const pwdInput = document.getElementById('apmPassword');
+    if (!isPublic) {
+      pwdSec.style.display = '';
+      pwdInput.value = page?.accessPassword || '';
+      if (!pwdInput.value) genApmPwd();
+    } else {
+      pwdSec.style.display = 'none';
+      pwdInput.value = '';
+    }
     document.getElementById('apmSave').textContent = page ? '保存' : '创建';
     document.getElementById('apmSlugPreview').textContent = page ? location.origin + '/p/' + page.slug : '';
     modal.classList.add('show');
@@ -1163,26 +1706,348 @@ export function renderAdminPage() {
       ? apmVditorInst.getValue()
       : document.getElementById('apmContent').value;
     const isPublic = document.getElementById('apmPublic').checked;
+    const accessPassword = !isPublic ? (document.getElementById('apmPassword').value.trim() || null) : null;
     if (!slug || !content) { toast('Slug 和内容不能为空'); return; }
     const isEdit = !!adminEditingSlug;
     const url  = isEdit ? '/admin/pages/' + encodeURIComponent(adminEditingSlug) : '/admin/pages';
     const meth = isEdit ? 'PATCH' : 'POST';
-    const body = isEdit ? { title, content, type, isPublic } : { slug, title, content, type, isPublic };
+    const body = isEdit ? { title, content, type, isPublic, accessPassword } : { slug, title, content, type, isPublic, accessPassword };
     const res = await fetch(url, { method:meth, headers:authH(), body:JSON.stringify(body) });
     const data = await res.json();
     if (!res.ok) { toast('失败: ' + data.error); return; }
+    if (apmVditorInst) { apmVditorInst.destroy(); apmVditorInst = null; }
+    document.getElementById('apmVditor').style.display = 'none';
+    document.getElementById('apmContent').style.display = '';
     document.getElementById('adminPageModal').classList.remove('show');
     toast(isEdit ? '已保存' : '页面已创建');
     loadAdminPages();
   });
-  ['apmClose','apmCancel'].forEach(id => document.getElementById(id).addEventListener('click', () => {
+  function closeApmModal() {
     document.getElementById('adminPageModal').classList.remove('show');
     if (apmVditorInst) { apmVditorInst.destroy(); apmVditorInst = null; }
     document.getElementById('apmVditor').style.display = 'none';
     document.getElementById('apmContent').style.display = '';
-  }));
+    document.getElementById('apmPwdSection').style.display = 'none';
+    document.getElementById('apmPassword').value = '';
+  }
+  ['apmClose','apmCancel'].forEach(id => document.getElementById(id).addEventListener('click', closeApmModal));
+
+  // ── Admin Protos ──────────────────────────────────────────────────────────────
+  async function loadAdminProtos() {
+    const tbody = document.getElementById('adminProtosBody');
+    const empty = document.getElementById('adminProtosEmpty');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#333;padding:24px">加载中…</td></tr>';
+    empty.style.display = 'none';
+    try {
+      const res = await fetch('/admin/protos', { headers: authH() });
+      if (!res.ok) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#555;padding:24px">加载失败</td></tr>'; return; }
+      const { protos } = await res.json();
+      if (!protos.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+      tbody.innerHTML = protos.map(p => {
+        const url = location.origin + '/proto/' + p.protoId + '/';
+        const lock = p.hasPassword ? '<span style="background:rgba(251,191,36,.1);color:#fbbf24;border-radius:4px;font-size:.68rem;padding:1px 5px">🔒</span>' : '';
+        return \`<tr>
+          <td>
+            <div style="font-weight:500;font-size:.88rem">\${esc(p.title || p.protoId)} \${lock}</div>
+            <div style="font-family:monospace;font-size:.68rem;color:#444">\${p.protoId}</div>
+          </td>
+          <td class="muted">@\${esc(p.owner || '—')}</td>
+          <td class="muted">\${p.fileCount ?? '—'}</td>
+          <td class="muted">\${fmtSize(p.totalSize || 0)}</td>
+          <td>\${p.hasPassword ? '<span style="color:#fbbf24;font-size:.78rem">有密码</span>' : '<span style="color:#555;font-size:.78rem">无</span>'}</td>
+          <td class="muted">\${timeAgo(p.createdAt)}</td>
+          <td style="white-space:nowrap">
+            <a href="\${url}" target="_blank" class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem;text-decoration:none">预览</a>
+            <button class="btn btn-danger" style="padding:4px 8px;font-size:.75rem" onclick="adminDeleteProto('\${esc(p.protoId)}')">删除</button>
+          </td>
+        </tr>\`;
+      }).join('');
+    } catch { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#555;padding:24px">加载失败</td></tr>'; }
+  }
+
+  async function adminDeleteProto(protoId) {
+    if (!confirm('确认删除此原型？将同时删除所有相关文件，此操作无法撤销。')) return;
+    const res = await fetch('/admin/protos/' + encodeURIComponent(protoId), { method: 'DELETE', headers: authH() });
+    if (!res.ok) { const d = await res.json().catch(()=>{}); toast('删除失败: ' + (d?.error || '')); return; }
+    toast('已删除'); loadAdminProtos();
+  }
+
+  document.getElementById('refreshAdminProtos').addEventListener('click', loadAdminProtos);
+
+  // ── Admin Proto Upload ────────────────────────────────────────────────────────
+  let adminPendingProtoFile = null;
+  const ADMIN_PROTO_BATCH = 40;
+
+  // client-side utilities (mirrors page.js / server logic)
+  function _adminProtoDetectEntry(paths) {
+    const rootHtml = paths.filter(p => !p.includes('/') && p.toLowerCase().endsWith('.html'));
+    const find = (arr, name) => arr.find(p => p.toLowerCase() === name);
+    if (find(rootHtml, 'start.html')) return 'start.html';
+    if (find(rootHtml, 'index.html')) return 'index.html';
+    if (rootHtml.length) return rootHtml[0];
+    const deep = paths.filter(p => { const s = p.split('/'); return s.length === 2 && s[1].toLowerCase().endsWith('.html'); });
+    return deep.find(p => p.toLowerCase().endsWith('start.html')) || deep.find(p => p.toLowerCase().endsWith('index.html')) || null;
+  }
+  function _adminProtoFixEnc(path) {
+    if ([...path].every(c => c.charCodeAt(0) <= 255)) {
+      try { const b = new Uint8Array([...path].map(c => c.charCodeAt(0))); const d = new TextDecoder('utf-8',{fatal:true}).decode(b); if (d !== path) return d; } catch {}
+    }
+    return path;
+  }
+  function _adminProtoStrip(files) {
+    const paths = Object.keys(files); if (!paths.length) return files;
+    const first = paths[0].split('/')[0];
+    if (paths.every(p => p.startsWith(first + '/'))) {
+      const out = {}; for (const [p,d] of Object.entries(files)) out[p.slice(first.length+1)] = d; return out;
+    }
+    return files;
+  }
+  function _adminProtoFilter(files) {
+    return Object.keys(files).filter(p => {
+      if (!p || p.startsWith('/') || p.includes('..') || p.endsWith('/')) return false;
+      if (p.startsWith('__MACOSX/') || p.includes('/.DS_Store') || p === '.DS_Store') return false;
+      return true;
+    });
+  }
+
+  async function _adminProtoChunkedUpload(zipFile) {
+    const title    = document.getElementById('adminProtoTitle').value.trim();
+    const password = document.getElementById('adminProtoPassword').value.trim().replace(/[^A-Za-z0-9]/g,'').slice(0,6);
+    const prog     = document.getElementById('adminProtoProgress');     prog.classList.add('show');
+    const bar      = document.getElementById('adminProtoProgressBar');  bar.style.width = '0%';
+    const info     = document.getElementById('adminProtoProgressInfo'); info.classList.add('show');
+    const pctEl    = document.getElementById('adminProtoProgressPct');  pctEl.textContent = '0%';
+    const statusEl = document.getElementById('adminProtoStatusText');   statusEl.style.display = ''; statusEl.textContent = '';
+    const errEl    = document.getElementById('adminProtoErr');          errEl.textContent = '';
+
+    function setStatus(msg, pct) {
+      statusEl.textContent = msg;
+      if (pct !== undefined) { bar.style.width = pct + '%'; pctEl.textContent = pct + '%'; }
+    }
+    function resetProg() {
+      setTimeout(() => {
+        prog.classList.remove('show'); bar.style.width = '0%';
+        info.classList.remove('show'); statusEl.style.display = 'none'; statusEl.textContent = '';
+      }, 1200);
+    }
+
+    try {
+      setStatus('🗜️ 正在解压 ZIP…', 3);
+      const bytes = new Uint8Array(await zipFile.arrayBuffer());
+      let files;
+      try {
+        const raw = window.fflate.unzipSync(bytes);
+        const fixed = {}; for (const [p,d] of Object.entries(raw)) fixed[_adminProtoFixEnc(p)] = d;
+        files = _adminProtoStrip(fixed);
+      } catch(e) { throw new Error('解压失败：' + e.message); }
+      setStatus(\`📋 分析文件结构… 发现 \${Object.keys(files).length} 个文件\`, 8);
+
+      const safePaths = _adminProtoFilter(files);
+      if (!safePaths.length) throw new Error('ZIP 中未找到有效文件');
+      const entryPoint = _adminProtoDetectEntry(safePaths);
+      if (!entryPoint) throw new Error('未找到入口文件（start.html 或 index.html）');
+      const totalSize = safePaths.reduce((s, p) => s + (files[p]?.byteLength ?? 0), 0);
+
+      setStatus('🔧 初始化上传会话…', 12);
+      const initRes = await fetch('/admin/proto/init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken },
+        body: JSON.stringify({ title, password, entryPoint, totalSize }),
+      });
+      const initData = await initRes.json().catch(() => ({}));
+      if (!initRes.ok) throw new Error(initData.error || '初始化失败');
+      const { protoId } = initData;
+
+      const totalBatches = Math.ceil(safePaths.length / ADMIN_PROTO_BATCH);
+      for (let b = 0; b < totalBatches; b++) {
+        const batchPaths = safePaths.slice(b * ADMIN_PROTO_BATCH, (b + 1) * ADMIN_PROTO_BATCH);
+        const from = b * ADMIN_PROTO_BATCH + 1, to = Math.min((b + 1) * ADMIN_PROTO_BATCH, safePaths.length);
+        const pct = Math.round(15 + (b / totalBatches) * 75);
+        setStatus(\`📤 上传第 \${b+1}/\${totalBatches} 批（\${from}–\${to} / \${safePaths.length} 个文件）\`, pct);
+        const fd = new FormData();
+        fd.append('protoId', protoId);
+        batchPaths.forEach(p => { fd.append('paths[]', p); fd.append('files[]', new Blob([files[p]]), p); });
+        const bRes = await fetch('/admin/proto/files', { method: 'POST', headers: { 'Authorization': 'Bearer ' + adminToken }, body: fd });
+        if (!bRes.ok) { const d = await bRes.json().catch(()=>({})); throw new Error(d.error || \`批次 \${b+1} 上传失败\`); }
+      }
+
+      setStatus('✅ 正在写入元数据…', 93);
+      const fRes = await fetch('/admin/proto/finalize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken },
+        body: JSON.stringify({ protoId, filePaths: safePaths }),
+      });
+      const fData = await fRes.json().catch(() => ({}));
+      if (!fRes.ok) throw new Error(fData.error || '最终化失败');
+      setStatus('🎉 上传完成！', 100);
+
+      setTimeout(() => {
+        bar.style.width = '0%'; resetProg();
+        document.getElementById('adminProtoTitle').value = '';
+        document.getElementById('adminProtoPassword').value = '';
+        document.getElementById('adminProtoDropText').textContent = '点击选择 ZIP 文件';
+        document.getElementById('adminProtoUploadBtn').disabled = true;
+        adminPendingProtoFile = null;
+        toast('原型上传成功');
+        loadAdminProtos();
+      }, 900);
+    } catch(e) {
+      resetProg();
+      errEl.textContent = e.message || '上传失败';
+      document.getElementById('adminProtoUploadBtn').disabled = false;
+    }
+  }
+
+  // drag-drop for admin proto
+  const adminProtoDropZone = document.getElementById('adminProtoDropZone');
+  adminProtoDropZone.addEventListener('dragover', e => { e.preventDefault(); adminProtoDropZone.style.borderColor = '#3b82f6'; adminProtoDropZone.style.color = '#3b82f6'; });
+  adminProtoDropZone.addEventListener('dragleave', () => { adminProtoDropZone.style.borderColor = ''; adminProtoDropZone.style.color = ''; });
+  adminProtoDropZone.addEventListener('drop', e => {
+    e.preventDefault(); adminProtoDropZone.style.borderColor = ''; adminProtoDropZone.style.color = '';
+    const f = e.dataTransfer.files[0];
+    if (f && (f.name.toLowerCase().endsWith('.zip') || f.type.includes('zip'))) setAdminProtoFile(f);
+    else toast('请拖拽 ZIP 文件');
+  });
+  document.getElementById('adminProtoFileInput').addEventListener('change', e => { if (e.target.files[0]) { setAdminProtoFile(e.target.files[0]); e.target.value=''; } });
+
+  function setAdminProtoFile(f) {
+    adminPendingProtoFile = f;
+    document.getElementById('adminProtoDropText').textContent = f.name + ' (' + fmtSize(f.size) + ')';
+    document.getElementById('adminProtoErr').textContent = '';
+    document.getElementById('adminProtoUploadBtn').disabled = false;
+  }
+
+  async function adminProtoPackFolder(fileList) {
+    const files = [...fileList]; if (!files.length) return;
+    document.getElementById('adminProtoDropText').textContent = '正在打包文件夹…';
+    document.getElementById('adminProtoUploadBtn').disabled = true;
+    try {
+      const filesData = {}; let topFolder = '';
+      for (const file of files) {
+        const parts = file.webkitRelativePath.split('/');
+        if (!topFolder) topFolder = parts[0];
+        const rel = parts.slice(1).join('/');
+        if (!rel || rel === '.DS_Store' || rel.endsWith('/.DS_Store')) continue;
+        const buf = await file.arrayBuffer();
+        filesData[rel] = [new Uint8Array(buf), { level: 0 }];
+      }
+      const zipped = window.fflate.zipSync(filesData);
+      const zipFile = new File([new Blob([zipped],{type:'application/zip'})], (topFolder||'prototype')+'.zip', {type:'application/zip'});
+      setAdminProtoFile(zipFile);
+      if (!document.getElementById('adminProtoTitle').value) document.getElementById('adminProtoTitle').value = topFolder || '';
+    } catch(e) {
+      document.getElementById('adminProtoDropText').textContent = '点击选择 ZIP 文件';
+      document.getElementById('adminProtoErr').textContent = '打包失败: ' + e.message;
+    }
+    document.getElementById('adminProtoFolderInput').value = '';
+  }
+
+  document.getElementById('adminProtoUploadBtn').addEventListener('click', () => {
+    if (!adminPendingProtoFile) return;
+    document.getElementById('adminProtoUploadBtn').disabled = true;
+    _adminProtoChunkedUpload(adminPendingProtoFile);
+  });
 
   // ── R2 Stats ─────────────────────────────────────────────────────────────────
+  // ── CF 额度面板 ───────────────────────────────────────────────────────────────
+  async function loadCfQuota() {
+    try {
+      const res = await fetch('/admin/cf-quota', { headers: authH() });
+      if (!res.ok) return;
+      const d = await res.json();
+
+      const isCfApi = d.source === 'cf-api';
+
+      // 数据来源标识
+      const badge = document.getElementById('cfSourceBadge');
+      if (badge) {
+        badge.textContent = isCfApi ? 'CF API 精确' : '自追踪估算';
+        badge.style.background    = isCfApi ? 'rgba(34,197,94,.12)' : 'rgba(251,191,36,.1)';
+        badge.style.color         = isCfApi ? '#22c55e' : '#f59e0b';
+        badge.style.borderColor   = isCfApi ? 'rgba(34,197,94,.25)' : 'rgba(251,191,36,.2)';
+      }
+
+      // Workers 今日请求
+      const reqToday = d.workers.reqToday ?? 0;
+      document.getElementById('cfReqVal').textContent    = fmtNum(reqToday);
+      document.getElementById('cfReqLeft').textContent   = fmtNum(Math.max(0, d.workers.limit - reqToday));
+      document.getElementById('cfReqMethod').textContent = isCfApi ? 'CF API 精确' : '1% 采样 × 100';
+      applyCfQuota('cfReqBar','cfReqPct', reqToday, d.workers.limit);
+
+      // R2 存储（始终是实时精确扫描）
+      const stBytes = d.r2.storageBytes, stLimit = d.r2.storageLimitBytes;
+      document.getElementById('cfStorageVal').textContent  = fmtSize(stBytes);
+      document.getElementById('cfStorageLeft').textContent = fmtSize(Math.max(0, stLimit - stBytes));
+      applyCfQuota('cfStorageBar','cfStoragePct', stBytes, stLimit);
+
+      // R2 Class A
+      const r2a = d.r2.classAMonth ?? 0;
+      document.getElementById('cfR2AVal').textContent  = fmtNum(r2a);
+      document.getElementById('cfR2ALeft').textContent = fmtNum(Math.max(0, d.r2.classALimit - r2a));
+      applyCfQuota('cfR2ABar','cfR2APct', r2a, d.r2.classALimit);
+
+      // R2 Class B
+      const r2b = d.r2.classBMonth ?? 0;
+      document.getElementById('cfR2BVal').textContent  = fmtNum(r2b);
+      document.getElementById('cfR2BLeft').textContent = fmtNum(Math.max(0, d.r2.classBLimit - r2b));
+      applyCfQuota('cfR2BBar','cfR2BPct', r2b, d.r2.classBLimit);
+
+      // KV 操作（CF API 精确 or 空）
+      const apiPrompt = document.getElementById('cfApiPrompt');
+      const dayOfMonth = parseInt(d.day.slice(8, 10)) || 1;  // 已过几天
+
+      const fillKv = (prefix, monthly, today, dailyLimit) => {
+        const el = (id) => document.getElementById(id);
+        if (monthly === null) {
+          if (el(prefix)) el(prefix).textContent = '—';
+          return;
+        }
+        if (el(prefix))          el(prefix).textContent = fmtNum(monthly);
+        if (el(prefix+'Today'))  el(prefix+'Today').textContent = today !== null ? fmtNum(today) : '—';
+        const avgDay = dayOfMonth > 0 ? monthly / dayOfMonth : 0;
+        if (el(prefix+'Avg'))  el(prefix+'Avg').textContent = '~' + fmtNum(Math.round(avgDay)) + '/天';
+        // 进度条：月均日用量 vs 日限
+        applyCfQuota(prefix+'Bar', prefix+'Pct', avgDay, dailyLimit);
+      };
+
+      fillKv('cfKvReads',   d.kv.readsMonth,   d.kv.readsToday,   d.kv.readDailyLimit);
+      fillKv('cfKvWrites',  d.kv.writesMonth,  d.kv.writesToday,  d.kv.writeDailyLimit);
+      fillKv('cfKvLists',   d.kv.listsMonth,   d.kv.listsToday,   d.kv.listDailyLimit);
+      fillKv('cfKvDeletes', d.kv.deletesMonth, d.kv.deletesToday, d.kv.deleteDailyLimit);
+
+      if (apiPrompt) apiPrompt.style.display = isCfApi ? 'none' : 'block';
+
+      // KV 键总数（仅自追踪模式才查）
+      if (!isCfApi && d.kv.totalKeys != null) {
+        document.getElementById('cfKvKeys').textContent = d.kv.totalKeys.toLocaleString();
+      } else {
+        const keysEl = document.getElementById('cfKvKeys');
+        if (keysEl && keysEl.textContent === '—') keysEl.textContent = 'N/A';
+      }
+
+      document.getElementById('cfDay').textContent   = d.day;
+      document.getElementById('cfMonth').textContent = d.month;
+    } catch(e) { console.error('CF quota error', e); }
+  }
+
+  function fmtNum(n) {
+    if (n === null || n === undefined) return '—';
+    if (n >= 1e6) return (n/1e6).toFixed(2) + 'M';
+    if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+    return n.toLocaleString();
+  }
+
+  function applyCfQuota(barId, pctId, used, limit) {
+    const pct   = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
+    const bar   = document.getElementById(barId);
+    const pctEl = document.getElementById(pctId);
+    if (bar) {
+      bar.style.width = pct.toFixed(1) + '%';
+      bar.className   = 'cf-fill' + (pct >= 90 ? ' alert' : pct >= 70 ? ' warn' : '');
+    }
+    if (pctEl && pctEl.tagName !== 'SPAN') pctEl.textContent = pct.toFixed(1) + '%';
+  }
+
   async function loadR2Stats() {
     try {
       const res = await fetch('/admin/r2-stats', { headers: authH() });
@@ -1198,6 +2063,12 @@ export function renderAdminPage() {
       const bar = document.getElementById('r2FreeBar');
       bar.style.width      = usedPct.toFixed(2) + '%';
       bar.style.background = usedPct >= 90 ? '#ef4444' : usedPct >= 70 ? '#f59e0b' : '#3b82f6';
+      // Donut chart (r=22, circumference ≈ 138.23)
+      const circumference = 2 * Math.PI * 22;
+      const arc = document.getElementById('r2DonutArc');
+      arc.setAttribute('stroke-dashoffset', (circumference * (1 - usedPct / 100)).toFixed(2));
+      arc.setAttribute('stroke', usedPct >= 90 ? '#ef4444' : usedPct >= 70 ? '#f59e0b' : '#3b82f6');
+      document.getElementById('r2DonutLabel').textContent = usedPct.toFixed(1) + '%';
     } catch {}
   }
 
@@ -1303,21 +2174,22 @@ export function renderAdminPage() {
   function copyText(text, btn) { navigator.clipboard.writeText(text).then(() => { if(btn){const o=btn.textContent;btn.textContent='✓';setTimeout(()=>btn.textContent=o,1400);} }); }
   function toast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
   function timeAgo(ts) { const d=Date.now()-ts; if(d<60000) return '刚刚'; if(d<3600000) return Math.floor(d/60000)+' 分钟前'; if(d<86400000) return Math.floor(d/3600000)+' 小时前'; return Math.floor(d/86400000)+' 天前'; }
+  function fmtDate(ms) { if(!ms) return '—'; return new Date(ms).toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit',year:'2-digit'}); }
   document.addEventListener('keydown', e => {
     if (e.key==='Escape') {
       document.getElementById('lightbox').classList.remove('show');
       document.getElementById('statsModal').classList.remove('show');
       document.getElementById('pageStatsModal').classList.remove('show');
+      document.getElementById('protoStatsModal').classList.remove('show');
+      document.getElementById('protoVersionModal').classList.remove('show');
       document.getElementById('userModal').classList.remove('show');
       if (document.getElementById('adminPageModal').classList.contains('show')) {
-        document.getElementById('adminPageModal').classList.remove('show');
-        if (apmVditorInst) { apmVditorInst.destroy(); apmVditorInst = null; }
-        document.getElementById('apmVditor').style.display = 'none';
-        document.getElementById('apmContent').style.display = '';
+        closeApmModal();
       }
     }
   });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/fflate/umd/index.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vditor/dist/index.min.js" defer></script>
 </body>
 </html>`;

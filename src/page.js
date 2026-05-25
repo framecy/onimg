@@ -36,7 +36,8 @@ export function renderPage() {
     .perm-off { background: rgba(100,100,100,.1); color: #444; }
     .perm-admin { background: rgba(59,130,246,.12); color: #3b82f6; }
     .ud-action { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 14px; background: none; border: none; color: #888; font-size: .82rem; cursor: pointer; text-align: left; transition: background .12s, color .12s; }
-    .ud-action:hover { background: #1f1f1f; color: #ef4444; }
+    .ud-action:hover { background: #1f1f1f; color: #ccc; }
+    .ud-action.danger:hover { color: #ef4444; }
 
     /* Login overlay */
     #loginOverlay { position: fixed; inset: 0; background: rgba(0,0,0,.75); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 24px; }
@@ -68,7 +69,11 @@ export function renderPage() {
     .btn-upload:disabled { background: #1e3a5f; color: #4b7bb5; cursor: not-allowed; }
     .progress { height: 3px; background: #1f1f1f; border-radius: 99px; margin: 10px 0; overflow: hidden; display: none; }
     .progress.show { display: block; }
-    .progress-bar { height: 100%; background: #3b82f6; width: 0%; transition: width .3s; }
+    .progress-bar { height: 100%; background: #3b82f6; width: 0%; transition: width .25s; }
+    .progress-info { display: none; align-items: center; gap: 10px; margin-top: -4px; margin-bottom: 6px; font-size: .76rem; color: #555; }
+    .progress-info.show { display: flex; }
+    .progress-info .pct { font-weight: 600; color: #3b82f6; min-width: 34px; }
+    .progress-info .bytes { color: #444; }
     .result-list { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
     .result-item { background: #141414; border: 1px solid #1f1f1f; border-radius: 9px; padding: 10px 14px; display: flex; align-items: center; gap: 12px; }
     .result-item img { width: 44px; height: 44px; object-fit: cover; border-radius: 5px; }
@@ -163,6 +168,58 @@ export function renderPage() {
     .modal-footer { padding: 12px 20px; border-top: 1px solid #1f1f1f; display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0; }
     .btn-primary { background: #3b82f6; color: #fff; }
     .btn-primary:hover { background: #2563eb; }
+
+    /* Protos — upload box */
+    .proto-upload-section { background:#111; border:1px solid #1a1a1a; border-radius:12px; margin-bottom:20px; overflow:hidden; }
+    .proto-upload-head { display:flex; align-items:center; padding:12px 16px; cursor:pointer; user-select:none; gap:8px; }
+    .proto-upload-head h3 { font-size:.88rem; font-weight:600; flex:1; }
+    .proto-upload-head .toggle-icon { font-size:.65rem; color:#555; transition:transform .2s; }
+    .proto-upload-head .toggle-icon.open { transform:rotate(180deg); }
+    .proto-upload-body { padding:16px; border-top:1px solid #1a1a1a; }
+    .proto-upload-box { border: 2px dashed #2a2a2a; border-radius: 12px; padding: 28px; text-align: center; color: #555; transition: all .2s; margin-bottom: 14px; cursor: pointer; }
+    .proto-upload-box:hover, .proto-upload-box.over { border-color: #3b82f6; color: #3b82f6; background: rgba(59,130,246,.04); }
+    .proto-upload-box input { display: none; }
+    .proto-fields { display: flex; gap: 10px; margin-bottom: 10px; }
+    .proto-fields .field { flex: 1; margin-bottom: 0; }
+    .proto-fields .field-pwd { flex: 0 0 160px; }
+    /* Protos — table */
+    .proto-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+    .proto-table th { text-align:left; padding:9px 12px; color:#555; font-weight:500; border-bottom:1px solid #1a1a1a; white-space:nowrap; }
+    .proto-table td { padding:10px 12px; border-bottom:1px solid #111; vertical-align:middle; }
+    .proto-table tr:last-child td { border-bottom:none; }
+    .proto-table tr:hover td { background:rgba(255,255,255,.02); }
+    .proto-td-name { max-width:280px; }
+    .proto-td-name .name { font-weight:500; font-size:.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .proto-td-name .id  { font-family:monospace; font-size:.65rem; color:#333; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .proto-td-actions { white-space:nowrap; text-align:right; }
+    .proto-td-actions .btn { font-size:.75rem; padding:3px 8px; }
+    .proto-muted { color:#555; font-size:.78rem; }
+    /* badges */
+    .proto-lock { font-size:.68rem; background:rgba(251,191,36,.1); color:#fbbf24; border-radius:4px; padding:1px 5px; }
+    .proto-version { font-size:.65rem; background:rgba(59,130,246,.1); color:#3b82f6; border-radius:4px; padding:1px 5px; }
+    .proto-private { font-size:.68rem; background:rgba(239,68,68,.12); color:#ef4444; border-radius:4px; padding:1px 5px; }
+    .proto-expired { font-size:.68rem; background:rgba(100,100,100,.1); color:#555; border-radius:4px; padding:1px 5px; }
+    /* version diff modal */
+    .pvm-ver-card { background:#0f0f0f; border:1px solid #1e1e1e; border-radius:8px; padding:9px 10px; cursor:pointer; transition:border-color .12s; }
+    .pvm-ver-card:hover { border-color:#2a3f60; }
+    .pvm-ver-card.active { border-color:#3b82f6; background:rgba(59,130,246,.06); }
+    .pvm-ver-card.checked-a { border-color:#10b981; background:rgba(16,185,129,.06); }
+    .pvm-ver-card.checked-b { border-color:#f59e0b; background:rgba(245,158,11,.06); }
+    .pvm-ver-badge { font-size:.72rem; font-weight:700; padding:1px 6px; border-radius:4px; margin-right:4px; background:#1a2f50; color:#7db8f8; }
+    .pvm-ver-latest { font-size:.65rem; padding:1px 5px; border-radius:3px; background:rgba(34,197,94,.12); color:#22c55e; }
+    .pvm-ver-meta { font-size:.68rem; color:#444; margin-top:4px; }
+    .pvm-ver-check { display:flex; align-items:center; gap:4px; margin-top:5px; font-size:.7rem; color:#555; }
+    .diff-file { display:flex; align-items:center; gap:6px; padding:3px 6px; border-radius:4px; font-size:.72rem; font-family:monospace; margin-bottom:1px; }
+    .diff-add  { background:rgba(16,185,129,.08); color:#10b981; }
+    .diff-rem  { background:rgba(239,68,68,.08);  color:#ef4444; }
+    .diff-prefix { flex-shrink:0; width:14px; font-weight:700; }
+    .diff-section { margin-bottom:16px; }
+    .diff-section h4 { font-size:.72rem; font-weight:600; margin-bottom:6px; padding:4px 6px; border-radius:4px; }
+    .diff-section.add  h4 { background:rgba(16,185,129,.1);  color:#10b981; }
+    .diff-section.rem  h4 { background:rgba(239,68,68,.1);   color:#ef4444; }
+    .diff-section.same h4 { background:rgba(100,100,100,.08); color:#444; }
+    .file-row { display:flex; align-items:center; padding:3px 6px; border-radius:4px; font-size:.72rem; font-family:monospace; margin-bottom:1px; color:#555; }
+    .file-row:hover { background:#111; color:#aaa; }
   </style>
 </head>
 <body>
@@ -174,6 +231,7 @@ export function renderPage() {
       <button class="tab" data-tab="upload" id="tabUpload">上传</button>
       <button class="tab" data-tab="gallery-mine" id="tabMine">我的图库</button>
       <button class="tab" data-tab="pages" id="tabPages">我的页面</button>
+      <button class="tab" data-tab="protos" id="tabProtos">我的原型</button>
     </div>
     <div class="spacer"></div>
     <div id="userArea">
@@ -219,8 +277,15 @@ export function renderPage() {
         <p>点击或拖拽图片到此处</p>
         <small style="display:block;margin-top:6px;color:#444">支持 JPG / PNG / GIF / WebP / SVG</small>
       </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:.82rem;color:#555">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none">
+          <input type="checkbox" id="uploadPublic" style="accent-color:#3b82f6">
+          <span>上传后加入公开图库</span>
+        </label>
+      </div>
       <button class="btn-upload" id="uploadBtn" disabled>上传</button>
       <div class="progress" id="progress"><div class="progress-bar" id="progressBar"></div></div>
+      <div class="progress-info" id="imgProgressInfo"><span class="pct" id="imgProgressPct">0%</span><span class="bytes" id="imgProgressBytes"></span><span class="bytes" id="imgProgressCount"></span></div>
       <div class="err" id="uploadErr"></div>
       <div class="result-list" id="resultList"></div>
     </div>
@@ -246,6 +311,54 @@ export function renderPage() {
       <div class="pages-list" id="pagesList"></div>
       <div class="empty" id="pagesEmpty" style="display:none">暂无页面</div>
     </div>
+
+    <!-- Protos -->
+    <div class="panel" id="panel-protos">
+      <!-- Upload section (collapsible) -->
+      <div class="proto-upload-section">
+        <div class="proto-upload-head" id="protoUploadToggle">
+          <h3>上传原型</h3>
+          <span class="toggle-icon open" id="protoUploadIcon">▾</span>
+        </div>
+        <div class="proto-upload-body" id="protoUploadBody">
+          <div class="proto-upload-box" id="protoDropZone">
+            <input type="file" id="protoFileInput" accept=".zip,application/zip,application/x-zip-compressed">
+            <input type="file" id="protoFolderInput" webkitdirectory multiple style="display:none">
+            <p>点击选择 <strong>ZIP 文件</strong>，或拖拽文件夹到此处</p>
+            <small style="display:block;margin-top:6px;color:#444">支持 AxureRP 导出目录（自动打包）或 ZIP 文件，最大 50 MB</small>
+            <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
+              <button type="button" onclick="event.stopPropagation();document.getElementById('protoFileInput').click()" style="padding:5px 14px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;color:#888;font-size:.78rem;cursor:pointer">选择 ZIP</button>
+              <button type="button" onclick="event.stopPropagation();document.getElementById('protoFolderInput').click()" style="padding:5px 14px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;color:#888;font-size:.78rem;cursor:pointer">选择文件夹</button>
+            </div>
+          </div>
+          <div class="proto-fields">
+            <div class="field"><label>原型名称 <span style="color:#444;font-weight:400">（可选）</span></label><input type="text" id="protoTitle" placeholder="留空自动命名" maxlength="100"></div>
+            <div class="field field-pwd"><label>访问密码（可选）</label><input type="text" id="protoPassword" placeholder="最多 6 位字母数字" maxlength="6" autocomplete="off"></div>
+          </div>
+          <button class="btn-upload" id="protoUploadBtn" disabled>上传原型</button>
+          <div class="progress" id="protoProgress"><div class="progress-bar" id="protoProgressBar"></div></div>
+          <div class="progress-info" id="protoProgressInfo"><span class="pct" id="protoProgressPct">0%</span></div>
+          <div id="protoStatusText" style="display:none;font-size:.78rem;color:#7aabee;margin-top:2px;margin-bottom:4px;min-height:1.2em"></div>
+          <div class="err" id="protoErr"></div>
+        </div>
+      </div>
+
+      <!-- Table section -->
+      <div class="pages-header" style="margin-bottom:10px">
+        <span style="font-size:.85rem;font-weight:600">我的原型</span>
+        <div class="spacer"></div>
+        <button class="btn btn-ghost" id="refreshProtos" style="font-size:.8rem">刷新</button>
+      </div>
+      <div style="background:#111;border:1px solid #1a1a1a;border-radius:12px;overflow:hidden">
+        <table class="proto-table">
+          <thead><tr>
+            <th style="width:36px;color:#333">#</th><th>名称</th><th>文件数</th><th>大小</th><th>密码</th><th>版本</th><th>访问</th><th>上传时间</th><th>更新时间</th><th></th>
+          </tr></thead>
+          <tbody id="protoTableBody"><tr><td colspan="10" style="text-align:center;color:#333;padding:32px">加载中…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="empty" id="protoEmpty" style="display:none;margin-top:12px">暂无原型，请上传 ZIP 文件</div>
+    </div>
   </main>
   <footer style="border-top:1px solid #1a1a1a;padding:14px 24px;display:flex;align-items:center;gap:10px;font-size:.75rem;color:#444;flex-wrap:wrap">
     <span>图片存储于</span>
@@ -259,6 +372,116 @@ export function renderPage() {
     <div style="flex:1"></div>
     <span id="footerAdmin"></span>
   </footer>
+</div>
+
+<!-- Proto Edit Modal -->
+<div class="modal-overlay" id="protoEditModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h3 id="protoEditTitle">编辑原型</h3>
+      <button class="modal-close" id="protoEditClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>名称</label><input type="text" id="peTitle" maxlength="100"></div>
+      <div class="field">
+        <label>访问密码（留空表示删除密码）</label>
+        <input type="text" id="pePassword" placeholder="最多 6 位字母数字" maxlength="6" autocomplete="off">
+      </div>
+      <div class="field" id="peExpiryField">
+        <label>密码有效期</label>
+        <select id="peExpiry">
+          <option value="14">14 天</option>
+          <option value="30">30 天</option>
+          <option value="90">90 天</option>
+          <option value="0">永久</option>
+        </select>
+      </div>
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="pePrivate"> 设为私有（禁止公开访问）
+        </label>
+      </div>
+      <div class="err" id="peErr"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="protoEditCancel">取消</button>
+      <button class="btn btn-primary" id="protoEditSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Proto content update modal -->
+<div class="modal-overlay" id="protoUpdateModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <h3>更新原型内容</h3>
+      <button class="modal-close" id="protoUpdateClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.82rem;color:#555;margin-bottom:14px">上传新版本将替换现有内容，URL 保持不变，版本号自动递增。</p>
+      <div class="proto-upload-box" id="puDropZone" style="padding:20px">
+        <input type="file" id="puFileInput" accept=".zip,application/zip,application/x-zip-compressed" style="display:none">
+        <input type="file" id="puFolderInput" webkitdirectory multiple style="display:none">
+        <p id="puFileName">选择 ZIP 或文件夹</p>
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:10px">
+          <button type="button" onclick="event.stopPropagation();document.getElementById('puFileInput').click()" style="padding:5px 12px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;color:#888;font-size:.78rem;cursor:pointer">选择 ZIP</button>
+          <button type="button" onclick="event.stopPropagation();document.getElementById('puFolderInput').click()" style="padding:5px 12px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;color:#888;font-size:.78rem;cursor:pointer">选择文件夹</button>
+        </div>
+      </div>
+      <div class="progress" id="puProgress"><div class="progress-bar" id="puProgressBar"></div></div>
+      <div class="progress-info" id="puProgressInfo"><span class="pct" id="puProgressPct">0%</span></div>
+      <div id="puStatusText" style="display:none;font-size:.78rem;color:#7aabee;margin-top:2px;margin-bottom:4px;min-height:1.2em"></div>
+      <div class="err" id="puErr"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="protoUpdateCancel">取消</button>
+      <button class="btn btn-primary" id="protoUpdateUpload" disabled>上传新版本</button>
+    </div>
+  </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal-overlay" id="changePwdModal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <h3>修改密码</h3>
+      <button class="modal-close" id="changePwdClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>当前密码</label><input type="password" id="cpCurrent" placeholder="当前密码" autocomplete="current-password"></div>
+      <div class="field"><label>新密码</label><input type="password" id="cpNew" placeholder="至少 6 位" autocomplete="new-password"></div>
+      <div class="field"><label>确认新密码</label><input type="password" id="cpConfirm" placeholder="再次输入新密码" autocomplete="new-password"></div>
+      <div id="cpErr" style="color:#ef4444;font-size:.78rem;min-height:16px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="changePwdCancel">取消</button>
+      <button class="btn btn-primary" id="changePwdSave">确认修改</button>
+    </div>
+  </div>
+</div>
+
+<!-- Proto Version History & Diff Modal (user) -->
+<div class="modal-overlay" id="userProtoVersionModal">
+  <div class="modal" style="max-width:860px;width:95vw;max-height:85vh;height:85vh;display:flex;flex-direction:column">
+    <div class="modal-header" style="flex-shrink:0">
+      <h3>版本历史 <span style="font-size:.72rem;color:#555;font-weight:400" id="upvmTitle"></span></h3>
+      <button class="modal-close" id="upvmClose">✕</button>
+    </div>
+    <div style="display:flex;flex:1;min-height:0">
+      <div style="width:200px;flex-shrink:0;border-right:1px solid #1a1a1a;overflow-y:auto;padding:12px 10px;display:flex;flex-direction:column;gap:6px" id="upvmVersionList"></div>
+      <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+        <div style="padding:10px 14px;border-bottom:1px solid #1a1a1a;display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap">
+          <span style="font-size:.78rem;color:#555" id="upvmMode">点击版本号查看文件列表，勾选两个版本进行对比</span>
+          <div style="flex:1"></div>
+          <input type="text" id="upvmSearch" placeholder="搜索文件…" style="padding:4px 8px;background:#111;border:1px solid #222;border-radius:6px;color:#ccc;font-size:.78rem;width:160px;outline:none">
+          <button class="btn btn-ghost" id="upvmDiffBtn" style="padding:4px 10px;font-size:.78rem;display:none">对比选中版本</button>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:14px 16px" id="upvmContent">
+          <div style="color:#333;text-align:center;padding:60px 0;font-size:.85rem">← 点击左侧版本号查看文件列表</div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Lightbox -->
@@ -325,7 +548,7 @@ export function renderPage() {
   let perms = JSON.parse(localStorage.getItem(PERM_KEY) || 'null');
   let username = localStorage.getItem(USER_KEY);
   let isAdminUser = localStorage.getItem(ADMIN_KEY) === '1';
-  let mineItems = [], lbKey = null, editingSlug = null, userPages = [], vditorInst = null;
+  let mineItems = [], lbKey = null, editingSlug = null, userPages = [], vditorInst = null, userProtos = [];
 
   function authH() { return { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }; }
 
@@ -452,10 +675,22 @@ export function renderPage() {
             <div class="ud-role">\${isAdminUser ? '管理员' : '普通用户'}</div>
           </div>
           <div class="ud-perms">\${buildPermBadges()}</div>
-          <button class="ud-action" id="logoutBtn">退出登录</button>
+          \${!isAdminUser ? '<button class="ud-action" id="changePwdBtn">🔑 修改密码</button>' : ''}
+          <button class="ud-action danger" id="logoutBtn">退出登录</button>
         </div>\`;
       document.getElementById('userChip').addEventListener('click', toggleUserMenu);
       document.getElementById('logoutBtn').addEventListener('click', logout);
+      if (!isAdminUser) {
+        document.getElementById('changePwdBtn').addEventListener('click', () => {
+          document.getElementById('userDropdown').classList.remove('show');
+          document.getElementById('userChip').classList.remove('open');
+          document.getElementById('changePwdModal').classList.add('show');
+          document.getElementById('cpCurrent').value = '';
+          document.getElementById('cpNew').value = '';
+          document.getElementById('cpConfirm').value = '';
+          document.getElementById('cpErr').textContent = '';
+        });
+      }
       document.getElementById('uploadBtn').disabled = !(perms?.canUpload ?? true);
     } else {
       el.innerHTML = \`<button class="btn-sm" id="loginTrigger">登录</button>\`;
@@ -491,6 +726,9 @@ export function renderPage() {
     updateUserArea();
     document.getElementById('mineGrid').innerHTML = '';
     document.getElementById('pagesList').innerHTML = '';
+    document.getElementById('protoTableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:#333;padding:32px">加载中…</td></tr>';
+    userProtos = [];
+    toast('已退出登录');
   }
 
   // Login
@@ -509,6 +747,7 @@ export function renderPage() {
       if (isAdminUser) localStorage.setItem(ADMIN_KEY, '1'); else localStorage.removeItem(ADMIN_KEY);
       document.getElementById('loginOverlay').style.display = 'none';
       updateUserArea(); loadQuota();
+      toast('登录成功，欢迎回来 ' + data.username + '！');
     } catch(e) { err.textContent = e.message || '登录失败'; }
     document.getElementById('doLogin').disabled = false;
   });
@@ -516,7 +755,7 @@ export function renderPage() {
   // Tabs
   document.querySelectorAll('.tab').forEach(t => {
     t.addEventListener('click', () => {
-      if (!token && ['upload','gallery-mine','pages'].includes(t.dataset.tab)) {
+      if (!token && ['upload','gallery-mine','pages','protos'].includes(t.dataset.tab)) {
         document.getElementById('loginOverlay').style.display = 'flex'; return;
       }
       document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
@@ -525,6 +764,7 @@ export function renderPage() {
       document.getElementById('panel-' + t.dataset.tab).classList.add('active');
       if (t.dataset.tab === 'gallery-mine') loadMineGallery();
       if (t.dataset.tab === 'pages') loadPages();
+      if (t.dataset.tab === 'protos') loadProtos();
     });
   });
 
@@ -562,21 +802,52 @@ export function renderPage() {
     document.getElementById('uploadBtn').disabled = true;
     document.getElementById('resultList').innerHTML = '';
     document.getElementById('uploadErr').textContent = '';
-    const prog = document.getElementById('progress'); prog.classList.add('show');
-    const bar  = document.getElementById('progressBar'); bar.style.width = '5%';
+    const prog    = document.getElementById('progress');        prog.classList.add('show');
+    const bar     = document.getElementById('progressBar');     bar.style.width = '0%';
+    const info    = document.getElementById('imgProgressInfo'); info.classList.add('show');
+    const pctEl   = document.getElementById('imgProgressPct');
+    const bytesEl = document.getElementById('imgProgressBytes');
+    const cntEl   = document.getElementById('imgProgressCount');
+    const makePublic = document.getElementById('uploadPublic').checked;
+    const total = pendingFiles.length;
     const results = [];
-    for (let i = 0; i < pendingFiles.length; i++) {
+
+    for (let i = 0; i < total; i++) {
       const file = pendingFiles[i];
+      cntEl.textContent = \`\${i + 1} / \${total} 张\`;
       const fd = new FormData(); fd.append('file', file);
-      try {
-        const res = await fetch('/upload', { method:'POST', headers:{ Authorization:'Bearer '+token }, body:fd });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
-        results.push({ ok:true, url:data.url, name:file.name });
-      } catch(e) { results.push({ ok:false, name:file.name, error:e.message }); }
-      bar.style.width = ((i+1)/pendingFiles.length*100) + '%';
+      const result = await new Promise(resolve => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/upload');
+        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+        xhr.upload.addEventListener('progress', e => {
+          if (!e.lengthComputable) return;
+          const filePct  = e.loaded / e.total;
+          const overallPct = Math.round(((i + filePct) / total) * 100);
+          bar.style.width   = overallPct + '%';
+          pctEl.textContent = overallPct + '%';
+          bytesEl.textContent = fmtSize(e.loaded) + ' / ' + fmtSize(e.total);
+        });
+        xhr.addEventListener('load', () => {
+          let data = {};
+          try { data = JSON.parse(xhr.responseText); } catch {}
+          if (xhr.status >= 400) resolve({ ok: false, name: file.name, error: data.error || '上传失败' });
+          else resolve({ ok: true, url: data.url, key: data.key, name: file.name });
+        });
+        xhr.addEventListener('error', () => resolve({ ok: false, name: file.name, error: '网络错误' }));
+        xhr.send(fd);
+      });
+
+      if (result.ok && makePublic && result.key) {
+        await fetch('/api/image/' + encodeURIComponent(result.key) + '/visibility', {
+          method: 'PATCH', headers: { Authorization: 'Bearer ' + token },
+        }).catch(() => {});
+      }
+      results.push(result);
     }
-    prog.classList.remove('show');
+
+    bar.style.width = '100%'; pctEl.textContent = '100%';
+    setTimeout(() => { prog.classList.remove('show'); bar.style.width = '0%'; info.classList.remove('show'); }, 700);
     document.getElementById('uploadBtn').disabled = false;
     setFiles([]);
     loadQuota();
@@ -799,14 +1070,774 @@ export function renderPage() {
   document.getElementById('lbMd').addEventListener('click',   () => { cp('![](' + location.origin + '/' + lbKey + ')'); toast('已复制 MD'); });
   document.getElementById('lbDelete').addEventListener('click', () => delMine(lbKey));
 
+  // ── Protos ──
+  const protoDropZone = document.getElementById('protoDropZone');
+  const protoFileInput = document.getElementById('protoFileInput');
+  let pendingProtoFile = null;
+  let pendingProtoFolderFiles = null;
+
+  protoDropZone.addEventListener('click', () => {
+    if (!token) { document.getElementById('loginOverlay').style.display = 'flex'; return; }
+    protoFileInput.click();
+  });
+  protoDropZone.addEventListener('dragover', e => { e.preventDefault(); protoDropZone.classList.add('over'); });
+  protoDropZone.addEventListener('dragleave', () => protoDropZone.classList.remove('over'));
+  protoDropZone.addEventListener('drop', async e => {
+    e.preventDefault(); protoDropZone.classList.remove('over');
+    const items = e.dataTransfer.items;
+    // Check if a folder was dropped
+    if (items && items.length && items[0].webkitGetAsEntry) {
+      const entry = items[0].webkitGetAsEntry();
+      if (entry && entry.isDirectory) {
+        await packFolderEntry(entry);
+        return;
+      }
+    }
+    const f = e.dataTransfer.files[0];
+    if (f && (f.name.toLowerCase().endsWith('.zip') || f.type.includes('zip'))) setProtoFile(f);
+    else toast('请拖拽 ZIP 文件或文件夹');
+  });
+  protoFileInput.addEventListener('change', () => { if (protoFileInput.files[0]) setProtoFile(protoFileInput.files[0]); });
+
+  // Folder picker
+  const protoFolderInput = document.getElementById('protoFolderInput');
+  protoFolderInput.addEventListener('change', async () => {
+    const files = [...protoFolderInput.files];
+    if (!files.length) return;
+    await packFilesToZip(files);
+    protoFolderInput.value = '';
+  });
+
+  async function packFilesToZip(fileList) {
+    const p = protoDropZone.querySelector('p');
+    p.textContent = '正在打包文件夹…';
+    document.getElementById('protoUploadBtn').disabled = true;
+    try {
+      const { zipSync } = window.fflate;
+      const filesData = {};
+      let topFolder = '';
+      // Collect all files
+      for (const file of fileList) {
+        const parts = file.webkitRelativePath.split('/');
+        if (!topFolder) topFolder = parts[0];
+        const rel = parts.slice(1).join('/'); // Strip top-level folder
+        if (!rel || rel === '.DS_Store' || rel.endsWith('/.DS_Store')) continue;
+        const buf = await file.arrayBuffer();
+        filesData[rel] = [new Uint8Array(buf), { level: 0 }];
+      }
+      const zipped = zipSync(filesData);
+      const blob = new Blob([zipped], { type: 'application/zip' });
+      const zipFile = new File([blob], (topFolder || 'prototype') + '.zip', { type: 'application/zip' });
+      setProtoFile(zipFile);
+      if (!document.getElementById('protoTitle').value) {
+        document.getElementById('protoTitle').value = topFolder || '';
+      }
+    } catch(e) {
+      p.textContent = '点击选择 ZIP 文件，或拖拽文件夹到此处';
+      document.getElementById('protoErr').textContent = '打包失败: ' + e.message;
+    }
+  }
+
+  async function packFolderEntry(dirEntry) {
+    const p = protoDropZone.querySelector('p');
+    p.textContent = '正在读取文件夹…';
+    document.getElementById('protoUploadBtn').disabled = true;
+    try {
+      const { zipSync } = window.fflate;
+      const filesData = {};
+      async function readDir(entry, prefix) {
+        const reader = entry.createReader();
+        const entries = await new Promise((res, rej) => {
+          const all = [];
+          function read() { reader.readEntries(e => { if (!e.length) res(all); else { all.push(...e); read(); } }, rej); }
+          read();
+        });
+        for (const e of entries) {
+          if (e.isDirectory) { await readDir(e, prefix + e.name + '/'); }
+          else {
+            if (e.name === '.DS_Store') continue;
+            const file = await new Promise((res, rej) => e.file(res, rej));
+            const buf = await file.arrayBuffer();
+            filesData[prefix + e.name] = [new Uint8Array(buf), { level: 0 }];
+          }
+        }
+      }
+      await readDir(dirEntry, '');
+      const zipped = zipSync(filesData);
+      const blob = new Blob([zipped], { type: 'application/zip' });
+      const zipFile = new File([blob], dirEntry.name + '.zip', { type: 'application/zip' });
+      setProtoFile(zipFile);
+      if (!document.getElementById('protoTitle').value) {
+        document.getElementById('protoTitle').value = dirEntry.name;
+      }
+    } catch(e) {
+      protoDropZone.querySelector('p').textContent = '点击选择 ZIP 文件，或拖拽文件夹到此处';
+      document.getElementById('protoErr').textContent = '读取文件夹失败: ' + e.message;
+    }
+  }
+
+  function setProtoFile(f) {
+    pendingProtoFile = f;
+    protoDropZone.querySelector('p').textContent = f.name + ' (' + fmtSize(f.size) + ')';
+    document.getElementById('protoErr').textContent = '';
+    document.getElementById('protoUploadBtn').disabled = !token;
+    protoFileInput.value = '';
+  }
+
+  // ── Client-side ZIP utilities (mirrors server logic) ────────────────────────
+  function _protoDetectEntry(paths) {
+    const rootHtml = paths.filter(p => !p.includes('/') && p.toLowerCase().endsWith('.html'));
+    const find = (arr, name) => arr.find(p => p.toLowerCase() === name);
+    if (find(rootHtml, 'start.html')) return 'start.html';
+    if (find(rootHtml, 'index.html')) return 'index.html';
+    if (rootHtml.length) return rootHtml[0];
+    const deep = paths.filter(p => { const s = p.split('/'); return s.length === 2 && s[1].toLowerCase().endsWith('.html'); });
+    return deep.find(p => p.toLowerCase().endsWith('start.html'))
+        || deep.find(p => p.toLowerCase().endsWith('index.html'))
+        || null;
+  }
+  function _protoFixEnc(path) {
+    if ([...path].every(c => c.charCodeAt(0) <= 255)) {
+      try { const b = new Uint8Array([...path].map(c => c.charCodeAt(0))); const d = new TextDecoder('utf-8',{fatal:true}).decode(b); if (d !== path) return d; } catch {}
+    }
+    return path;
+  }
+  function _protoStrip(files) {
+    const paths = Object.keys(files); if (!paths.length) return files;
+    const first = paths[0].split('/')[0];
+    if (paths.every(p => p.startsWith(first + '/'))) {
+      const out = {}; for (const [p,d] of Object.entries(files)) out[p.slice(first.length+1)] = d; return out;
+    }
+    return files;
+  }
+  function _protoFilter(files) {
+    return Object.keys(files).filter(p => {
+      if (!p || p.startsWith('/') || p.includes('..') || p.endsWith('/')) return false;
+      if (p.startsWith('__MACOSX/') || p.includes('/.DS_Store') || p === '.DS_Store') return false;
+      return true;
+    });
+  }
+
+  // ── Shared chunked upload engine ─────────────────────────────────────────────
+  async function _protoChunkedUpload({ zipFile, filesMap, title, password, existingProtoId, setStatus, initUrl, filesUrl, finalizeUrl }) {
+    const BATCH = 40;
+    let files;
+    if (filesMap) {
+      files = filesMap;
+      setStatus(\`📋 分析文件结构… \${Object.keys(files).length} 个文件\`, 8);
+    } else {
+      setStatus('🗜️ 正在解压 ZIP…', 3);
+      const bytes = new Uint8Array(await zipFile.arrayBuffer());
+      try {
+        const raw = window.fflate.unzipSync(bytes);
+        const fixed = {}; for (const [p,d] of Object.entries(raw)) fixed[_protoFixEnc(p)] = d;
+        files = _protoStrip(fixed);
+      } catch(e) { throw new Error('解压失败：' + e.message); }
+      setStatus(\`📋 分析文件结构… 发现 \${Object.keys(files).length} 个文件\`, 8);
+    }
+
+    const safePaths = _protoFilter(files);
+    if (!safePaths.length) throw new Error('ZIP 中未找到有效文件');
+    const entryPoint = _protoDetectEntry(safePaths);
+    if (!entryPoint) throw new Error('未找到入口文件（start.html 或 index.html）');
+    const totalSize = safePaths.reduce((s, p) => s + (files[p]?.byteLength ?? 0), 0);
+
+    // Step 1: init
+    setStatus('🔧 初始化上传会话…', 12);
+    const initRes = await fetch(initUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ title, password, entryPoint, totalSize, protoId: existingProtoId || undefined }),
+    });
+    const initData = await initRes.json().catch(() => ({}));
+    if (!initRes.ok) throw new Error(initData.error || '初始化失败');
+    const { protoId } = initData;
+
+    // Step 2: upload in batches
+    const totalBatches = Math.ceil(safePaths.length / BATCH);
+    for (let b = 0; b < totalBatches; b++) {
+      const batchPaths = safePaths.slice(b * BATCH, (b + 1) * BATCH);
+      const from = b * BATCH + 1, to = Math.min((b + 1) * BATCH, safePaths.length);
+      const pct = Math.round(15 + (b / totalBatches) * 75);
+      setStatus(\`📤 上传第 \${b+1}/\${totalBatches} 批（\${from}–\${to} / \${safePaths.length} 个文件）\`, pct);
+      const fd = new FormData();
+      fd.append('protoId', protoId);
+      batchPaths.forEach(p => { fd.append('paths[]', p); fd.append('files[]', new Blob([files[p]]), p); });
+      const bRes = await fetch(filesUrl, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+      if (!bRes.ok) { const d = await bRes.json().catch(()=>({})); throw new Error(d.error || \`批次 \${b+1} 上传失败\`); }
+    }
+
+    // Step 3: finalize
+    setStatus('✅ 正在写入元数据…', 93);
+    const fRes = await fetch(finalizeUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ protoId, filePaths: safePaths }),
+    });
+    const fData = await fRes.json().catch(() => ({}));
+    if (!fRes.ok) throw new Error(fData.error || '最终化失败');
+    setStatus('🎉 上传完成！', 100);
+    return { ...fData, protoId, safePaths, totalSize };
+  }
+
+  // ── Main proto upload button ──────────────────────────────────────────────────
+  document.getElementById('protoUploadBtn').addEventListener('click', async () => {
+    if (!token || !pendingProtoFile) return;
+    const title    = document.getElementById('protoTitle').value.trim();
+    const password = document.getElementById('protoPassword').value.trim();
+
+    // Duplicate name check
+    if (title && userProtos.some(p => p.title === title)) {
+      document.getElementById('protoErr').textContent = \`已存在同名原型「\${title}」，请修改名称后上传\`;
+      return;
+    }
+
+    document.getElementById('protoErr').textContent = '';
+    document.getElementById('protoUploadBtn').disabled = true;
+    const prog     = document.getElementById('protoProgress');    prog.classList.add('show');
+    const bar      = document.getElementById('protoProgressBar'); bar.style.width = '0%';
+    const info     = document.getElementById('protoProgressInfo'); info.classList.add('show');
+    const pctEl    = document.getElementById('protoProgressPct'); pctEl.textContent = '0%';
+    const statusEl = document.getElementById('protoStatusText');  statusEl.style.display = '';  statusEl.textContent = '';
+
+    function setStatus(msg, pct) {
+      statusEl.textContent = msg;
+      if (pct !== undefined) { bar.style.width = pct + '%'; pctEl.textContent = pct + '%'; }
+    }
+    function resetProg() {
+      setTimeout(() => {
+        prog.classList.remove('show'); bar.style.width = '0%';
+        info.classList.remove('show'); statusEl.style.display = 'none'; statusEl.textContent = '';
+      }, 1200);
+    }
+
+    try {
+      const result = await _protoChunkedUpload({
+        zipFile: pendingProtoFile, filesMap: pendingProtoFolderFiles,
+        title, password, existingProtoId: null,
+        setStatus,
+        initUrl: '/upload/proto/init', filesUrl: '/upload/proto/files', finalizeUrl: '/upload/proto/finalize',
+      });
+      resetProg(); toast('上传成功！');
+      pendingProtoFile = null; pendingProtoFolderFiles = null;
+      protoDropZone.querySelector('p').textContent = '点击选择 ZIP 文件，或拖拽文件夹到此处';
+      document.getElementById('protoTitle').value = '';
+      document.getElementById('protoPassword').value = '';
+      document.getElementById('protoUploadBtn').disabled = true;
+      const cleanPwd = password.replace(/[^A-Za-z0-9]/g,'').slice(0,6);
+      userProtos.unshift({
+        protoId: result.protoId, title: result.title || title || '未命名原型',
+        fileCount: result.fileCount ?? result.safePaths.length, totalSize: result.totalSize ?? 0,
+        version: result.version ?? 1,
+        versions: [{ v: result.version??1, at: Date.now(), files: result.fileCount??0, size: result.totalSize??0 }],
+        hasPassword: !!cleanPwd, accessPassword: cleanPwd || undefined,
+        isPrivate: false, createdAt: Date.now(), updatedAt: Date.now(), visitCount: 0,
+      });
+      renderProtos();
+    } catch(e) {
+      resetProg();
+      document.getElementById('protoErr').textContent = e.message || '上传失败';
+      document.getElementById('protoUploadBtn').disabled = false;
+    }
+  });
+
+  // ── Upload toggle ──
+  (function() {
+    const toggle = document.getElementById('protoUploadToggle');
+    const body   = document.getElementById('protoUploadBody');
+    const icon   = document.getElementById('protoUploadIcon');
+    let open = true;
+    toggle.addEventListener('click', () => {
+      open = !open;
+      body.style.display = open ? '' : 'none';
+      icon.classList.toggle('open', open);
+    });
+  })();
+
+  document.getElementById('refreshProtos').addEventListener('click', loadProtos);
+
+  async function loadProtos(silent = false) {
+    if (!token) return;
+    if (!silent) document.getElementById('protoTableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:#333;padding:32px">加载中…</td></tr>';
+    try {
+      const res = await fetch('/api/protos', { headers: { Authorization: 'Bearer ' + token } });
+      if (!res.ok) return;
+      const { protos } = await res.json();
+      userProtos = protos || [];
+      renderProtos();
+    } catch { if (!silent) document.getElementById('protoTableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:#555;padding:32px">加载失败</td></tr>'; }
+  }
+
+  function formatExpiry(ts) {
+    if (!ts) return '永久';
+    return new Date(ts).toLocaleDateString('zh-CN') + ' 到期';
+  }
+  function timeAgo(ms) {
+    if (!ms) return '—';
+    const s = Math.floor((Date.now() - ms) / 1000);
+    if (s < 60) return '刚刚';
+    if (s < 3600) return Math.floor(s/60) + ' 分钟前';
+    if (s < 86400) return Math.floor(s/3600) + ' 小时前';
+    if (s < 2592000) return Math.floor(s/86400) + ' 天前';
+    return new Date(ms).toLocaleDateString('zh-CN');
+  }
+
+  function renderProtos() {
+    const tbody = document.getElementById('protoTableBody');
+    const empty = document.getElementById('protoEmpty');
+    if (!userProtos.length) {
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#333;padding:32px">暂无原型</td></tr>';
+      empty.style.display = 'none';
+      return;
+    }
+    empty.style.display = 'none';
+    tbody.innerHTML = userProtos.map((p, idx) => {
+      const url        = location.origin + '/proto/' + p.protoId + '/';
+      const previewUrl = url + (p.accessPassword ? '?pwd=' + encodeURIComponent(p.accessPassword) : '');
+      const lock       = p.hasPassword ? \`<span class="proto-lock">🔒 密码</span>\` : '';
+      const priv       = p.isPrivate   ? \`<span class="proto-private">私有</span>\` : '';
+      const pwdInfo    = p.hasPassword ? \`<div style="font-size:.65rem;color:#555;margin-top:2px">有效期：\${formatExpiry(p.passwordExpiry)}</div>\` : '<span class="proto-muted">无</span>';
+      const verCount   = (p.versions ?? []).length;
+      const verBadge   = \`<span class="proto-version" style="cursor:pointer;text-decoration:underline" onclick="upvmOpen(\${idx})">v\${p.version||1}\${verCount>1?' ('+verCount+')':''} ↗</span>\`;
+      const visits = p.visitCount ?? 0;
+      return \`<tr>
+        <td class="proto-muted" style="font-size:.75rem;text-align:center">\${idx+1}</td>
+        <td class="proto-td-name">
+          <div class="name">\${esc(p.title || p.protoId)}</div>
+          <div style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap">\${lock}\${priv}</div>
+          <div class="id">\${p.protoId}</div>
+        </td>
+        <td class="proto-muted">\${p.fileCount ?? '—'}</td>
+        <td class="proto-muted">\${fmtSize(p.totalSize || 0)}</td>
+        <td>\${pwdInfo}</td>
+        <td>\${verBadge}</td>
+        <td class="proto-muted">\${visits > 0 ? visits.toLocaleString() : '—'}</td>
+        <td class="proto-muted" style="white-space:nowrap">\${fmtDate(p.createdAt)}</td>
+        <td class="proto-muted" style="white-space:nowrap">\${timeAgo(p.updatedAt || p.createdAt)}</td>
+        <td class="proto-td-actions">
+          <a href="\${previewUrl}" target="_blank" class="btn btn-ghost">预览</a>
+          <button class="btn btn-ghost" onclick="cpProto(userProtos[\${idx}]._copyText,this)">复制</button>
+          <button class="btn btn-ghost" onclick="upvmOpen(\${idx})">版本</button>
+          <button class="btn btn-ghost" onclick="openProtoEdit('\${esc(p.protoId)}')">编辑</button>
+          <button class="btn btn-ghost" onclick="openProtoUpdate('\${esc(p.protoId)}')">更新</button>
+          <button class="btn btn-danger" onclick="deleteProto('\${esc(p.protoId)}')">删除</button>
+        </td>
+      </tr>\`;
+    }).join('');
+    // attach copy text to cache
+    userProtos.forEach(p => {
+      const url = location.origin + '/proto/' + p.protoId + '/';
+      p._copyText = p.accessPassword ? \`内容：\${url}\n密码：\${p.accessPassword}\` : url;
+    });
+  }
+
+  function cpProto(text, btn) {
+    cp(text, btn);
+    toast('链接已复制');
+  }
+
+  async function deleteProto(protoId) {
+    if (!confirm('确认删除此原型？此操作无法撤销。')) return;
+    // Optimistic: remove row immediately for instant feedback
+    const backup = [...userProtos];
+    userProtos = userProtos.filter(p => p.protoId !== protoId);
+    renderProtos();
+    toast('删除中…');
+    try {
+      const res = await fetch('/api/protos/' + encodeURIComponent(protoId), { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        userProtos = backup; renderProtos(); toast('删除失败: ' + (d.error || ''));
+        return;
+      }
+      toast('已删除');
+    } catch { userProtos = backup; renderProtos(); toast('删除失败'); }
+  }
+
+  // ── Proto Version Modal (user) ────────────────────────────────────────────
+  let upvmProto = null, upvmFileCache = {}, upvmChecked = [], upvmActiveVer = null;
+
+  function upvmOpen(idx) {
+    upvmProto     = userProtos[idx] ?? {};
+    upvmFileCache = {}; upvmChecked = []; upvmActiveVer = null;
+    document.getElementById('upvmTitle').textContent = upvmProto.title || upvmProto.protoId || '';
+    document.getElementById('upvmSearch').value = '';
+    document.getElementById('upvmDiffBtn').style.display = 'none';
+    document.getElementById('upvmMode').textContent = '点击版本号查看文件列表，勾选两个版本进行对比';
+    document.getElementById('upvmContent').innerHTML = '<div style="color:#333;text-align:center;padding:60px 0;font-size:.85rem">← 点击左侧版本号查看文件列表</div>';
+    upvmRenderList();
+    document.getElementById('userProtoVersionModal').classList.add('show');
+  }
+
+  function upvmRenderList() {
+    const versions = [...(upvmProto.versions ?? [])].reverse();
+    const maxVer   = upvmProto.version ?? 1;
+    document.getElementById('upvmVersionList').innerHTML = versions.map(v => {
+      const isLatest = v.v === maxVer;
+      const isActive = upvmActiveVer === v.v;
+      const ci       = upvmChecked.indexOf(v.v);
+      const cls      = ci===0?'pvm-ver-card checked-a':ci===1?'pvm-ver-card checked-b':isActive?'pvm-ver-card active':'pvm-ver-card';
+      return \`<div class="\${cls}" onclick="upvmSelectVer(\${v.v})">
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+          <span class="pvm-ver-badge">v\${v.v}</span>
+          \${isLatest?'<span class="pvm-ver-latest">最新</span>':''}
+          \${!isLatest?'<button class="btn btn-danger" style="padding:1px 6px;font-size:.62rem;margin-left:auto" onclick="event.stopPropagation();upvmDeleteVer(\${v.v})">删除</button>':''}
+        </div>
+        <div class="pvm-ver-meta">\${v.at?new Date(v.at).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}</div>
+        <div class="pvm-ver-meta">\${v.files??'?'} 文件 · \${v.size?fmtSize(v.size):'—'}</div>
+        <label class="pvm-ver-check" onclick="event.stopPropagation()">
+          <input type="checkbox" \${ci>=0?'checked':''} onchange="upvmToggleCheck(\${v.v},this.checked)">
+          <span style="color:\${ci===0?'#10b981':ci===1?'#f59e0b':'#555'}">\${ci===0?'对比 A':ci===1?'对比 B':'加入对比'}</span>
+        </label>
+      </div>\`;
+    }).join('');
+  }
+
+  async function upvmSelectVer(ver) {
+    upvmActiveVer = ver; upvmRenderList();
+    const files = await upvmFetch(ver);
+    upvmShowFileList(files, \`v\${ver} 文件列表 (\${files?.length??'?'} 个)\`);
+  }
+
+  function upvmToggleCheck(ver, checked) {
+    if (checked) { if (upvmChecked.length >= 2) upvmChecked.shift(); upvmChecked.push(ver); }
+    else upvmChecked = upvmChecked.filter(v => v !== ver);
+    upvmRenderList();
+    const btn = document.getElementById('upvmDiffBtn');
+    const modeEl = document.getElementById('upvmMode');
+    if (upvmChecked.length === 2) { btn.style.display=''; modeEl.textContent=\`已选 v\${upvmChecked[0]}（A）与 v\${upvmChecked[1]}（B），点击"对比"查看差异\`; }
+    else { btn.style.display='none'; modeEl.textContent = upvmChecked.length===1?\`已选 v\${upvmChecked[0]} 为对比 A，再勾选一个版本\`:'点击版本号查看文件列表，勾选两个版本进行对比'; }
+  }
+
+  async function upvmFetch(ver) {
+    const key = \`v\${ver}\`;
+    if (upvmFileCache[key] !== undefined) return upvmFileCache[key];
+    document.getElementById('upvmContent').innerHTML = '<div style="color:#333;text-align:center;padding:40px 0">加载中…</div>';
+    try {
+      const pid = upvmProto.protoId;
+      const res = await fetch(\`/api/proto-vfiles/\${encodeURIComponent(pid)}/\${key}\`, { headers: { Authorization: 'Bearer ' + token } });
+      upvmFileCache[key] = res.ok ? (await res.json()).files ?? null : null;
+    } catch { upvmFileCache[key] = null; }
+    return upvmFileCache[key];
+  }
+
+  function upvmShowFileList(files, title) {
+    const q = document.getElementById('upvmSearch').value.toLowerCase();
+    if (!files) { document.getElementById('upvmContent').innerHTML = '<div style="color:#555;text-align:center;padding:40px 0;font-size:.82rem">该版本无文件记录（旧版本上传未记录文件列表）</div>'; return; }
+    const fl = q ? files.filter(f => f.toLowerCase().includes(q)) : files;
+    document.getElementById('upvmContent').innerHTML = \`<div style="font-size:.75rem;color:#555;margin-bottom:10px;font-weight:500">\${title}\${q?' — 过滤 "'+q+'"':''}</div><div>\${fl.map(f=>\`<div class="file-row">\${esc(f)}</div>\`).join('')||'<div style="color:#333;font-size:.82rem;padding:20px 0">无匹配文件</div>'}</div>\`;
+  }
+
+  document.getElementById('upvmDiffBtn').addEventListener('click', async () => {
+    if (upvmChecked.length < 2) return;
+    const [a,b] = upvmChecked;
+    document.getElementById('upvmContent').innerHTML = '<div style="color:#333;text-align:center;padding:40px 0">加载中…</div>';
+    const [fa,fb] = await Promise.all([upvmFetch(a), upvmFetch(b)]);
+    if (!fa || !fb) { document.getElementById('upvmContent').innerHTML = '<div style="color:#555;text-align:center;padding:40px 0;font-size:.82rem">版本无文件记录，无法对比</div>'; return; }
+    upvmRenderDiff(fa, fb, a, b);
+  });
+
+  function upvmRenderDiff(fa, fb, a, b) {
+    const q = document.getElementById('upvmSearch').value.toLowerCase();
+    const sa = new Set(fa), sb = new Set(fb);
+    let added   = fb.filter(f => !sa.has(f));
+    let removed = fa.filter(f => !sb.has(f));
+    let same    = fa.filter(f => sb.has(f));
+    if (q) { added=added.filter(f=>f.toLowerCase().includes(q)); removed=removed.filter(f=>f.toLowerCase().includes(q)); same=same.filter(f=>f.toLowerCase().includes(q)); }
+    const mkRows = (files, cls, pfx) => files.map(f=>\`<div class="diff-file \${cls}"><span class="diff-prefix">\${pfx}</span>\${esc(f)}</div>\`).join('');
+    let html = \`<div style="display:flex;gap:12px;margin-bottom:16px;font-size:.78rem;flex-wrap:wrap"><span>v\${a} → v\${b}</span><span style="color:#10b981">+\${added.length} 新增</span><span style="color:#ef4444">-\${removed.length} 删除</span><span style="color:#555">\${same.length} 不变</span></div>\`;
+    if (added.length)   html += \`<div class="diff-section add"><h4>✦ 新增 \${added.length} 个文件（v\${b} 新增）</h4>\${mkRows(added,'diff-add','+')}</div>\`;
+    if (removed.length) html += \`<div class="diff-section rem"><h4>✦ 删除 \${removed.length} 个文件（v\${b} 移除）</h4>\${mkRows(removed,'diff-rem','−')}</div>\`;
+    if (same.length)    html += \`<div class="diff-section same"><h4>· 未变动 \${same.length} 个文件</h4>\${mkRows(same,'','·')}</div>\`;
+    document.getElementById('upvmContent').innerHTML = html || '<div style="color:#333;text-align:center;padding:40px 0;font-size:.82rem">无匹配文件</div>';
+  }
+
+  document.getElementById('upvmSearch').addEventListener('input', () => {
+    if (upvmChecked.length===2 && document.getElementById('upvmContent').querySelector('.diff-section')) {
+      (async()=>{ const [fa,fb]=await Promise.all([upvmFetch(upvmChecked[0]),upvmFetch(upvmChecked[1])]); if(fa&&fb) upvmRenderDiff(fa,fb,upvmChecked[0],upvmChecked[1]); })();
+    } else if (upvmActiveVer !== null) {
+      upvmShowFileList(upvmFileCache[\`v\${upvmActiveVer}\`]??null, \`v\${upvmActiveVer} 文件列表\`);
+    }
+  });
+
+  async function upvmDeleteVer(ver) {
+    if (!confirm(\`确认删除 v\${ver}？该操作仅删除版本记录，不影响当前原型内容。\`)) return;
+    const res = await fetch(\`/api/proto-versions/\${encodeURIComponent(upvmProto.protoId)}/v\${ver}\`, { method:'DELETE', headers:{ Authorization:'Bearer '+token } });
+    const d = await res.json().catch(()=>({}));
+    if (!res.ok) { toast('删除失败: '+(d.error||'')); return; }
+    upvmProto.versions = (upvmProto.versions??[]).filter(v=>v.v!==ver);
+    delete upvmFileCache[\`v\${ver}\`];
+    upvmChecked = upvmChecked.filter(v=>v!==ver);
+    if (upvmActiveVer===ver) { upvmActiveVer=null; document.getElementById('upvmContent').innerHTML='<div style="color:#333;text-align:center;padding:60px 0;font-size:.85rem">← 点击左侧版本号查看文件列表</div>'; }
+    const cp = userProtos.find(p=>p.protoId===upvmProto.protoId);
+    if (cp) cp.versions = upvmProto.versions;
+    upvmRenderList(); toast(\`v\${ver} 已删除\`);
+  }
+
+  document.getElementById('upvmClose').addEventListener('click', () => document.getElementById('userProtoVersionModal').classList.remove('show'));
+  document.getElementById('userProtoVersionModal').addEventListener('click', e => { if (e.target===document.getElementById('userProtoVersionModal')) document.getElementById('userProtoVersionModal').classList.remove('show'); });
+
+  // ── Proto Edit / Update ───────────────────────────────────────────────────
+  let editingProtoId = null;
+  let pendingUpdateFile = null;
+
+  function openProtoEdit(protoId) {
+    const p = userProtos.find(x => x.protoId === protoId);
+    if (!p) return;
+    editingProtoId = protoId;
+    document.getElementById('peTitle').value = p.title || '';
+    document.getElementById('pePassword').value = p.accessPassword || '';
+    const sel = document.getElementById('peExpiry');
+    if (!p.passwordExpiry) sel.value = '0';
+    else {
+      const daysLeft = Math.round((p.passwordExpiry - Date.now()) / 86400000);
+      sel.value = daysLeft > 60 ? '90' : daysLeft > 20 ? '30' : '14';
+    }
+    document.getElementById('pePrivate').checked = !!p.isPrivate;
+    document.getElementById('peErr').textContent = '';
+    document.getElementById('protoEditModal').classList.add('show');
+  }
+
+  document.getElementById('protoEditSave').addEventListener('click', async () => {
+    if (!editingProtoId) return;
+    const title       = document.getElementById('peTitle').value.trim();
+    const password    = document.getElementById('pePassword').value.trim().replace(/[^A-Za-z0-9]/g,'').slice(0,6);
+    const expiryDays  = parseInt(document.getElementById('peExpiry').value);
+    const isPrivate   = document.getElementById('pePrivate').checked;
+    const passwordExpiry = password && expiryDays > 0 ? Date.now() + expiryDays * 86400 * 1000 : null;
+    const updates = { title, password, passwordExpiry, isPrivate };
+    const res = await fetch('/api/protos/' + encodeURIComponent(editingProtoId), {
+      method: 'PATCH', headers: authH(), body: JSON.stringify(updates)
+    });
+    const data = await res.json();
+    if (!res.ok) { document.getElementById('peErr').textContent = data.error || '保存失败'; return; }
+    document.getElementById('protoEditModal').classList.remove('show');
+    toast('已保存');
+    // Optimistic local update — no full reload needed
+    const idx = userProtos.findIndex(p => p.protoId === editingProtoId);
+    if (idx >= 0) {
+      const p = userProtos[idx];
+      if (title) p.title = title;
+      p.isPrivate   = isPrivate;
+      p.hasPassword = !!password;
+      if (password) { p.accessPassword = password; p.passwordExpiry = passwordExpiry; }
+      else { delete p.accessPassword; p.passwordExpiry = null; }
+      p.updatedAt = data.updatedAt || Date.now();
+    }
+    renderProtos();
+  });
+
+  ['protoEditClose','protoEditCancel'].forEach(id =>
+    document.getElementById(id).addEventListener('click', () => document.getElementById('protoEditModal').classList.remove('show'))
+  );
+
+  function openProtoUpdate(protoId) {
+    editingProtoId = protoId;
+    pendingUpdateFile = null;
+    document.getElementById('puFileName').textContent = '选择 ZIP 或文件夹';
+    document.getElementById('puErr').textContent = '';
+    document.getElementById('puProgress').classList.remove('show');
+    document.getElementById('protoUpdateUpload').disabled = true;
+    document.getElementById('protoUpdateModal').classList.add('show');
+  }
+
+  // puDropZone handlers
+  const puDropZone = document.getElementById('puDropZone');
+  const puFileInput = document.getElementById('puFileInput');
+  const puFolderInput = document.getElementById('puFolderInput');
+
+  puDropZone.addEventListener('click', () => puFileInput.click());
+  puDropZone.addEventListener('dragover', e => { e.preventDefault(); puDropZone.classList.add('over'); });
+  puDropZone.addEventListener('dragleave', () => puDropZone.classList.remove('over'));
+  puDropZone.addEventListener('drop', async e => {
+    e.preventDefault(); puDropZone.classList.remove('over');
+    const items = e.dataTransfer.items;
+    if (items && items.length && items[0].webkitGetAsEntry) {
+      const entry = items[0].webkitGetAsEntry();
+      if (entry && entry.isDirectory) { await puPackFolderEntry(entry); return; }
+    }
+    const f = e.dataTransfer.files[0];
+    if (f && (f.name.toLowerCase().endsWith('.zip') || f.type.includes('zip'))) setPuFile(f);
+    else toast('请拖拽 ZIP 文件或文件夹');
+  });
+  puFileInput.addEventListener('change', () => { if (puFileInput.files[0]) { setPuFile(puFileInput.files[0]); puFileInput.value = ''; } });
+  puFolderInput.addEventListener('change', async () => {
+    const files = [...puFolderInput.files];
+    if (!files.length) return;
+    await puPackFilesToZip(files);
+    puFolderInput.value = '';
+  });
+
+  function setPuFile(f) {
+    pendingUpdateFile = f;
+    document.getElementById('puFileName').textContent = f.name + ' (' + fmtSize(f.size) + ')';
+    document.getElementById('puErr').textContent = '';
+    document.getElementById('protoUpdateUpload').disabled = false;
+  }
+
+  async function puPackFilesToZip(fileList) {
+    document.getElementById('puFileName').textContent = '正在打包…';
+    document.getElementById('protoUpdateUpload').disabled = true;
+    try {
+      const { zipSync } = window.fflate;
+      const filesData = {};
+      let topFolder = '';
+      for (const file of fileList) {
+        const parts = file.webkitRelativePath.split('/');
+        if (!topFolder) topFolder = parts[0];
+        const rel = parts.slice(1).join('/');
+        if (!rel || rel === '.DS_Store' || rel.endsWith('/.DS_Store')) continue;
+        const buf = await file.arrayBuffer();
+        filesData[rel] = [new Uint8Array(buf), { level: 0 }];
+      }
+      const zipped = zipSync(filesData);
+      const blob = new Blob([zipped], { type: 'application/zip' });
+      const zipFile = new File([blob], (topFolder || 'prototype') + '.zip', { type: 'application/zip' });
+      setPuFile(zipFile);
+    } catch(e) {
+      document.getElementById('puFileName').textContent = '选择 ZIP 或文件夹';
+      document.getElementById('puErr').textContent = '打包失败: ' + e.message;
+    }
+  }
+
+  async function puPackFolderEntry(dirEntry) {
+    document.getElementById('puFileName').textContent = '正在读取…';
+    document.getElementById('protoUpdateUpload').disabled = true;
+    try {
+      const { zipSync } = window.fflate;
+      const filesData = {};
+      async function readDir(entry, prefix) {
+        const reader = entry.createReader();
+        const entries = await new Promise((res, rej) => {
+          const all = [];
+          function read() { reader.readEntries(e => { if (!e.length) res(all); else { all.push(...e); read(); } }, rej); }
+          read();
+        });
+        for (const e of entries) {
+          if (e.isDirectory) { await readDir(e, prefix + e.name + '/'); }
+          else {
+            if (e.name === '.DS_Store') continue;
+            const file = await new Promise((res, rej) => e.file(res, rej));
+            const buf = await file.arrayBuffer();
+            filesData[prefix + e.name] = [new Uint8Array(buf), { level: 0 }];
+          }
+        }
+      }
+      await readDir(dirEntry, '');
+      const zipped = window.fflate.zipSync(filesData);
+      const blob = new Blob([zipped], { type: 'application/zip' });
+      const zipFile = new File([blob], dirEntry.name + '.zip', { type: 'application/zip' });
+      setPuFile(zipFile);
+    } catch(e) {
+      document.getElementById('puFileName').textContent = '选择 ZIP 或文件夹';
+      document.getElementById('puErr').textContent = '读取失败: ' + e.message;
+    }
+  }
+
+  document.getElementById('protoUpdateUpload').addEventListener('click', async () => {
+    if (!pendingUpdateFile || !editingProtoId) return;
+    document.getElementById('protoUpdateUpload').disabled = true;
+    document.getElementById('puErr').textContent = '';
+
+    const prog     = document.getElementById('puProgress');     prog.classList.add('show');
+    const bar      = document.getElementById('puProgressBar');  bar.style.width = '0%';
+    const info     = document.getElementById('puProgressInfo'); info.classList.add('show');
+    const pctEl    = document.getElementById('puProgressPct');  pctEl.textContent = '0%';
+    const statusEl = document.getElementById('puStatusText');   statusEl.style.display = ''; statusEl.textContent = '';
+
+    function setStatus(msg, pct) {
+      statusEl.textContent = msg;
+      if (pct !== undefined) { bar.style.width = pct + '%'; pctEl.textContent = pct + '%'; }
+    }
+    function resetProg() {
+      setTimeout(() => {
+        prog.classList.remove('show'); bar.style.width = '0%';
+        info.classList.remove('show'); statusEl.style.display = 'none'; statusEl.textContent = '';
+      }, 1200);
+    }
+
+    try {
+      const result = await _protoChunkedUpload({
+        zipFile: pendingUpdateFile, filesMap: null,
+        title: undefined, password: undefined,
+        existingProtoId: editingProtoId,
+        setStatus,
+        initUrl: '/upload/proto/init', filesUrl: '/upload/proto/files', finalizeUrl: '/upload/proto/finalize',
+      });
+      bar.style.width = '100%'; pctEl.textContent = '100%';
+      resetProg();
+      document.getElementById('protoUpdateModal').classList.remove('show');
+      toast('版本已更新！');
+      pendingUpdateFile = null;
+      // Optimistic local update for the updated proto
+      const idx = userProtos.findIndex(p => p.protoId === editingProtoId);
+      if (idx >= 0) {
+        const p = userProtos[idx];
+        const newVer = { v: result.version ?? (p.version ?? 1) + 1, at: Date.now(), files: result.fileCount ?? result.safePaths?.length ?? 0, size: result.totalSize ?? 0 };
+        p.version    = newVer.v;
+        p.fileCount  = result.fileCount ?? result.safePaths?.length ?? p.fileCount;
+        p.totalSize  = result.totalSize ?? p.totalSize;
+        p.updatedAt  = Date.now();
+        p.versions   = [...(p.versions ?? []), newVer];
+        if (p.versions.length > 20) p.versions = p.versions.slice(p.versions.length - 20);
+        if (result.entryPoint) p.entryPoint = result.entryPoint;
+      }
+      renderProtos();
+    } catch(e) {
+      resetProg();
+      document.getElementById('puErr').textContent = e.message || '上传失败';
+      document.getElementById('protoUpdateUpload').disabled = false;
+    }
+  });
+
+  ['protoUpdateClose','protoUpdateCancel'].forEach(id =>
+    document.getElementById(id).addEventListener('click', () => document.getElementById('protoUpdateModal').classList.remove('show'))
+  );
+
+  // ── Change Password ──
+  function closeChangePwdModal() { document.getElementById('changePwdModal').classList.remove('show'); }
+  ['changePwdClose','changePwdCancel'].forEach(id =>
+    document.getElementById(id).addEventListener('click', closeChangePwdModal)
+  );
+  document.getElementById('changePwdModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('changePwdModal')) closeChangePwdModal();
+  });
+  document.getElementById('changePwdSave').addEventListener('click', async () => {
+    const cur = document.getElementById('cpCurrent').value;
+    const nw  = document.getElementById('cpNew').value;
+    const cf  = document.getElementById('cpConfirm').value;
+    const errEl = document.getElementById('cpErr');
+    errEl.textContent = '';
+    if (!cur || !nw || !cf) { errEl.textContent = '请填写所有字段'; return; }
+    if (nw.length < 6)      { errEl.textContent = '新密码至少 6 位'; return; }
+    if (nw !== cf)          { errEl.textContent = '两次输入的新密码不一致'; return; }
+    const btn = document.getElementById('changePwdSave');
+    btn.disabled = true; btn.textContent = '保存中…';
+    try {
+      const res = await fetch('/auth/password', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ currentPassword: cur, newPassword: nw }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { errEl.textContent = d.error || '修改失败'; return; }
+      toast('密码已修改');
+      closeChangePwdModal();
+    } finally {
+      btn.disabled = false; btn.textContent = '确认修改';
+    }
+  });
+
   // ── Utils ──
   function cp(text, btn) { navigator.clipboard.writeText(text).then(() => { if(btn){const o=btn.textContent;btn.textContent='✓';setTimeout(()=>btn.textContent=o,1400);} }); }
   function toast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2400); }
   function fmtSize(b) { if(b<1024) return b+' B'; if(b<1048576) return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
+  function fmtDate(ms) { if(!ms) return '—'; return new Date(ms).toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit',year:'2-digit'}); }
   function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') { document.getElementById('lightbox').classList.remove('show'); closePageModal(); document.getElementById('loginOverlay').style.display = 'none'; } });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { document.getElementById('lightbox').classList.remove('show'); closePageModal(); document.getElementById('protoEditModal').classList.remove('show'); document.getElementById('protoUpdateModal').classList.remove('show'); document.getElementById('userProtoVersionModal').classList.remove('show'); closeChangePwdModal(); document.getElementById('loginOverlay').style.display = 'none'; } });
   document.getElementById('loginOverlay').addEventListener('click', e => { if (e.target === document.getElementById('loginOverlay')) document.getElementById('loginOverlay').style.display = 'none'; });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/fflate/umd/index.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vditor/dist/index.min.js" defer></script>
 </body>
 </html>`;
