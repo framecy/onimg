@@ -1011,6 +1011,10 @@ export function renderAdminPage() {
 <div class="toast" id="toast"></div>
 
 <script>
+  function _fflate() {
+    if (!window.fflate) throw new Error('压缩库未加载，请刷新页面后重试');
+    return window.fflate;
+  }
   const TOKEN_KEY = 'onimg_admin_token';
   const USER_KEY  = 'onimg_admin_user';
   const ALL_TYPES = ['image/jpeg','image/png','image/gif','image/webp','image/svg+xml','image/avif','image/bmp','image/tiff'];
@@ -2038,7 +2042,7 @@ export function renderAdminPage() {
       const bytes = new Uint8Array(await zipFile.arrayBuffer());
       let files;
       try {
-        const raw = window.fflate.unzipSync(bytes);
+        const raw = _fflate().unzipSync(bytes);
         const fixed = {}; for (const [p,d] of Object.entries(raw)) fixed[_adminProtoFixEnc(p)] = d;
         files = _adminProtoStrip(fixed);
       } catch(e) { throw new Error('解压失败：' + e.message); }
@@ -2133,7 +2137,7 @@ export function renderAdminPage() {
         const buf = await file.arrayBuffer();
         filesData[rel] = [new Uint8Array(buf), { level: 0 }];
       }
-      const zipped = window.fflate.zipSync(filesData);
+      const zipped = _fflate().zipSync(filesData);
       const zipFile = new File([new Blob([zipped],{type:'application/zip'})], (topFolder||'prototype')+'.zip', {type:'application/zip'});
       setAdminProtoFile(zipFile);
       if (!document.getElementById('adminProtoTitle').value) document.getElementById('adminProtoTitle').value = topFolder || '';
@@ -2403,7 +2407,7 @@ export function renderAdminPage() {
     }
   });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/fflate/umd/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fflate@0.8.3/umd/index.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vditor/dist/index.min.js" defer></script>
 </body>
 </html>`;
