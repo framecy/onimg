@@ -597,6 +597,10 @@ export function renderPage() {
 <div class="toast" id="toast"></div>
 
 <script>
+  function _fflate() {
+    if (!window.fflate) throw new Error('压缩库未加载，请刷新页面后重试');
+    return window.fflate;
+  }
   const TOKEN_KEY = 'onimg_token', PERM_KEY = 'onimg_perms', USER_KEY = 'onimg_user', ADMIN_KEY = 'onimg_is_admin';
   let token = localStorage.getItem(TOKEN_KEY);
   let perms = JSON.parse(localStorage.getItem(PERM_KEY) || 'null');
@@ -1245,7 +1249,7 @@ export function renderPage() {
     p.textContent = '正在打包文件夹…';
     document.getElementById('protoUploadBtn').disabled = true;
     try {
-      const { zipSync } = window.fflate;
+      const { zipSync } = _fflate();
       const filesData = {};
       let topFolder = '';
       // Collect all files
@@ -1275,7 +1279,7 @@ export function renderPage() {
     p.textContent = '正在读取文件夹…';
     document.getElementById('protoUploadBtn').disabled = true;
     try {
-      const { zipSync } = window.fflate;
+      const { zipSync } = _fflate();
       const filesData = {};
       async function readDir(entry, prefix) {
         const reader = entry.createReader();
@@ -1361,7 +1365,7 @@ export function renderPage() {
       setStatus('🗜️ 正在解压 ZIP…', 3);
       const bytes = new Uint8Array(await zipFile.arrayBuffer());
       try {
-        const raw = window.fflate.unzipSync(bytes);
+        const raw = _fflate().unzipSync(bytes);
         const fixed = {}; for (const [p,d] of Object.entries(raw)) fixed[_protoFixEnc(p)] = d;
         files = _protoStrip(fixed);
       } catch(e) { throw new Error('解压失败：' + e.message); }
@@ -1811,7 +1815,7 @@ export function renderPage() {
     document.getElementById('puFileName').textContent = '正在打包…';
     document.getElementById('protoUpdateUpload').disabled = true;
     try {
-      const { zipSync } = window.fflate;
+      const { zipSync } = _fflate();
       const filesData = {};
       let topFolder = '';
       for (const file of fileList) {
@@ -1836,7 +1840,7 @@ export function renderPage() {
     document.getElementById('puFileName').textContent = '正在读取…';
     document.getElementById('protoUpdateUpload').disabled = true;
     try {
-      const { zipSync } = window.fflate;
+      const { zipSync } = _fflate();
       const filesData = {};
       async function readDir(entry, prefix) {
         const reader = entry.createReader();
@@ -1856,7 +1860,7 @@ export function renderPage() {
         }
       }
       await readDir(dirEntry, '');
-      const zipped = window.fflate.zipSync(filesData);
+      const zipped = _fflate().zipSync(filesData);
       const blob = new Blob([zipped], { type: 'application/zip' });
       const zipFile = new File([blob], dirEntry.name + '.zip', { type: 'application/zip' });
       setPuFile(zipFile);
@@ -2002,7 +2006,7 @@ export function renderPage() {
   });
   document.getElementById('loginOverlay').addEventListener('click', e => { if (e.target === document.getElementById('loginOverlay')) document.getElementById('loginOverlay').style.display = 'none'; });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/fflate/umd/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fflate@0.8.3/umd/index.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vditor/dist/index.min.js" defer></script>
 </body>
 </html>`;
