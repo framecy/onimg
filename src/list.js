@@ -5,13 +5,15 @@ export async function handleList(request, env) {
   const isAdmin = await verifyAdminToken(request, env);
 
   if (isAdmin) {
-    // Admin: full R2 list
+    // Admin: full R2 list — exclude proto/ objects (they are prototype files, not images)
     const url = new URL(request.url);
     const cursor = url.searchParams.get('cursor') ?? undefined;
     const limit  = Math.min(parseInt(url.searchParams.get('limit') ?? '50'), 200);
     const result = await env.BUCKET.list({ limit, cursor });
     return Response.json({
-      items: result.objects.map(o => ({ key: o.key, size: o.size, uploaded: o.uploaded, etag: o.etag })),
+      items: result.objects
+        .filter(o => !o.key.startsWith('proto/'))
+        .map(o => ({ key: o.key, size: o.size, uploaded: o.uploaded, etag: o.etag })),
       cursor: result.truncated ? result.cursor : null,
       truncated: result.truncated,
     });

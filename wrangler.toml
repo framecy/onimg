@@ -17,3 +17,9 @@ id = "21c715b9ac3a4fb0bba894ccacc8308f"
 [vars]
 MAX_FILE_SIZE = "10485760"
 ALLOWED_TYPES = "image/jpeg,image/png,image/gif,image/webp,image/svg+xml"
+PROTO_MAX_SIZE = "52428800"
+# Cloudflare Analytics API（精确额度数据）
+CF_ACCOUNT_ID = "4b3e52d77f00844be839e553cf7c343e"
+CF_KV_STATS_ID = "21c715b9ac3a4fb0bba894ccacc8308f"
+CF_R2_BUCKET = "onimg-images"
+CF_WORKER_NAME = "onimg"
