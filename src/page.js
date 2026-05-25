@@ -1,3 +1,4 @@
+import { FFLATE_UMD } from './fflate-inline.js';
 export function renderPage() {
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -2006,7 +2007,7 @@ export function renderPage() {
   });
   document.getElementById('loginOverlay').addEventListener('click', e => { if (e.target === document.getElementById('loginOverlay')) document.getElementById('loginOverlay').style.display = 'none'; });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/fflate@0.8.3/umd/index.js"></script>
+<script>${FFLATE_UMD}</script>
 <script src="https://cdn.jsdelivr.net/npm/vditor/dist/index.min.js" defer></script>
 </body>
 </html>`;

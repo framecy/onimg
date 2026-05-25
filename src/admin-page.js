@@ -1,3 +1,4 @@
+import { FFLATE_UMD } from './fflate-inline.js';
 export function renderAdminPage() {
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -2407,7 +2408,7 @@ export function renderAdminPage() {
     }
   });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/fflate@0.8.3/umd/index.js"></script>
+<script>${FFLATE_UMD}</script>
 <script src="https://cdn.jsdelivr.net/npm/vditor/dist/index.min.js" defer></script>
 </body>
 </html>`;
