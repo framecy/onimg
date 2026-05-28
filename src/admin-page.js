@@ -1342,14 +1342,21 @@ export function renderAdminPage() {
     const protoMap = {};
     protos.forEach(p => protoMap[p.protoId] = p);
     const sortedPr = Object.entries(protoStats).sort((a,b) => (b[1].count??0)-(a[1].count??0)).slice(0,10);
+    const protoTitleCell = (id, pm) => {
+      const title = pm.title || id;
+      const lock  = pm.hasPassword ? ' <span title="已加密" style="color:var(--amber);font-size:.78rem">🔒</span>' : '';
+      const ver   = (pm.version ?? 1) > 0
+        ? \` <span style="font-family:var(--mono);font-size:.66rem;font-weight:600;padding:1px 5px;border-radius:3px;background:rgba(255,255,255,.06);color:var(--tx-2);border:1px solid var(--bd)">v\${pm.version ?? 1}</span>\`
+        : '';
+      return \`
+        <div style="font-weight:500;font-size:.84rem;color:var(--tx);display:flex;align-items:center;gap:2px;flex-wrap:wrap">\${esc(title)}\${lock}\${ver}</div>
+        <div style="font-family:var(--mono);font-size:.7rem;color:var(--tx-3);margin-top:2px">/proto/\${esc(id)}/</div>\`;
+    };
     const prRows = sortedPr.length
       ? sortedPr.map(([id,s]) => {
           const pm = protoMap[id] || { title: id, owner: '—' };
           return \`<tr>
-            <td>
-              <div style="font-weight:500;font-size:.84rem;color:var(--tx)">\${esc(pm.title||id)}</div>
-              <div style="font-family:var(--mono);font-size:.7rem;color:var(--tx-3);margin-top:2px">/proto/\${esc(id)}/</div>
-            </td>
+            <td>\${protoTitleCell(id, pm)}</td>
             <td>\${TYPE_PT}</td>
             <td class="muted">\${esc(pm.owner||'—')}</td>
             <td class="view-count">\${(s.count??0).toLocaleString()}</td>
@@ -1358,10 +1365,7 @@ export function renderAdminPage() {
           </tr>\`;
         }).join('')
       : protos.slice(0,10).map(pm => \`<tr>
-          <td>
-            <div style="font-weight:500;font-size:.84rem;color:var(--tx)">\${esc(pm.title||pm.protoId)}</div>
-            <div style="font-family:var(--mono);font-size:.7rem;color:var(--tx-3);margin-top:2px">/proto/\${esc(pm.protoId)}/</div>
-          </td>
+          <td>\${protoTitleCell(pm.protoId, pm)}</td>
           <td>\${TYPE_PT}</td>
           <td class="muted">\${esc(pm.owner||'—')}</td>
           <td class="view-count">0</td>
