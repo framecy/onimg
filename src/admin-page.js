@@ -1273,12 +1273,14 @@ export function renderAdminPage() {
       fetch('/admin/protos',          { headers: authH() }),
       fetch('/admin/all-proto-stats', { headers: authH() }),
     ]);
-    if (sRes.status === 401) { handleUnauth(); return; }
+    // 任一并行请求返回 401 都视为登录失效
+    if ([sRes, iRes, pRes, psRes, prRes, prsRes].some(r => r.status === 401)) { handleUnauth(); return; }
+    if (!sRes.ok) { console.error('loadDashboard stats failed', sRes.status); return; }
     const { totalImages, totalSize } = await sRes.json();
-    const { stats } = await iRes.json();
-    const { pages } = await pRes.json();
-    const { stats: pgStats } = await psRes.json();
-    const { protos = [] } = prRes.ok ? await prRes.json() : {};
+    const { stats }   = iRes.ok  ? await iRes.json()  : { stats: {} };
+    const { pages }   = pRes.ok  ? await pRes.json()  : { pages: [] };
+    const { stats: pgStats } = psRes.ok ? await psRes.json() : { stats: {} };
+    const { protos = [] }    = prRes.ok  ? await prRes.json()  : {};
     const { stats: protoStats = {} } = prsRes.ok ? await prsRes.json() : {};
     allStats = stats;
     allPageStats = pgStats;
@@ -1340,8 +1342,6 @@ export function renderAdminPage() {
     const protoMap = {};
     protos.forEach(p => protoMap[p.protoId] = p);
     const sortedPr = Object.entries(protoStats).sort((a,b) => (b[1].count??0)-(a[1].count??0)).slice(0,10);
-    // also include protos with 0 visits not yet in protoStats
-    const allProtoIds = [...new Set([...sortedPr.map(([id]) => id), ...protos.map(p => p.protoId)])].slice(0,10);
     const prRows = sortedPr.length
       ? sortedPr.map(([id,s]) => {
           const pm = protoMap[id] || { title: id, owner: '—' };

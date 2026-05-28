@@ -329,7 +329,15 @@ function addSecurityHeaders(response) {
   res.headers.set('Permissions-Policy', 'geolocation=(), camera=(), microphone=()');
   res.headers.set(
     'Content-Security-Policy',
-    "default-src 'self'; img-src 'self' blob: data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'",
+    [
+      "default-src 'self'",
+      "img-src 'self' blob: data:",
+      "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
+      "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net",
+      "connect-src 'self' https://cdn.jsdelivr.net",
+      "frame-ancestors 'none'",
+    ].join('; '),
   );
   return res;
 }
