@@ -354,6 +354,25 @@ export function renderAdminPage() {
     #expiryBanner { display: none; background: #1a1200; border-bottom: 1px solid rgba(251,191,36,.22); padding: 8px 22px; font-size: .79rem; color: #fcd34d; align-items: center; gap: 8px; }
     #expiryBanner.show { display: flex; }
 
+    /* ── Dashboard Stats Tabs ── */
+    .dash-tabs-panel { border: 1px solid var(--bd); border-radius: 10px; overflow: hidden; margin-top: 24px; }
+    .dash-tabs-hd { display: flex; align-items: stretch; padding: 0 12px; border-bottom: 1px solid var(--bd); background: rgba(255,255,255,.018); }
+    .dash-tabs-nav { display: flex; align-items: stretch; gap: 0; }
+    .dash-tab { display: flex; align-items: center; gap: 6px; padding: 10px 14px; font-size: .79rem; font-weight: 500; color: var(--tx-3); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-family: var(--font); transition: var(--t); margin-bottom: -1px; white-space: nowrap; }
+    .dash-tab:hover { color: var(--tx-2); background: rgba(255,255,255,.03); }
+    .dash-tab.active { color: var(--tx); border-bottom-color: rgba(255,255,255,.4); }
+    .dash-tab-count { font-size: .62rem; font-weight: 700; padding: 1px 6px; border-radius: 8px; background: var(--bg-5); color: var(--tx-3); font-family: var(--mono); line-height: 1.5; transition: var(--t); }
+    .dash-tab.active .dash-tab-count { background: rgba(255,255,255,.1); color: var(--tx-2); }
+    .dash-tab-hint { font-size: .64rem; color: var(--tx-3); margin-left: auto; align-self: center; padding-right: 4px; }
+    .dash-tab-pane { display: none; }
+    .dash-tab-pane.active { display: block; }
+
+    /* ── Sidebar nav click feedback ── */
+    .nav-item { overflow: hidden; }
+    .nav-item:active { transform: scale(0.972); }
+    @keyframes navRipple { to { transform: translate(-50%,-50%) scale(4); opacity: 0; } }
+    .nav-ripple { position: absolute; width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,.08); transform: translate(-50%,-50%) scale(0); animation: navRipple .55s ease-out forwards; pointer-events: none; }
+
     /* ── Mobile sidebar ── */
     .mob-header { display: none; position: fixed; top: 0; left: 0; right: 0; height: 50px; background: var(--bg-2); border-bottom: 1px solid var(--bd); z-index: 20; align-items: center; gap: 14px; padding: 0 16px; }
     .mob-hamburger { background: none; border: 1px solid var(--bd); color: var(--tx-3); width: 32px; height: 32px; border-radius: 7px; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; }
@@ -610,11 +629,7 @@ export function renderAdminPage() {
                 </div>
               </div>
             </div>
-            <div class="cf-kv-row">
-              <div class="cf-kv-item"><div class="cf-kv-icon">🗃️</div><div><div class="cf-kv-val" id="cfKvKeys">—</div><div class="cf-kv-lbl">KV 键总数（实时）</div></div></div>
-              <div class="cf-kv-item"><div class="cf-kv-icon">📅</div><div><div class="cf-kv-val" id="cfDay">—</div><div class="cf-kv-lbl">今日（UTC）</div></div></div>
-              <div class="cf-kv-item"><div class="cf-kv-icon">📆</div><div><div class="cf-kv-val" id="cfMonth">—</div><div class="cf-kv-lbl">本月（UTC）</div></div></div>
-            </div>
+            <div style="display:none"><span id="cfKvKeys"></span><span id="cfDay"></span><span id="cfMonth"></span></div>
             <div id="cfApiPrompt" style="display:none;margin-top:10px;padding:10px 13px;background:var(--amber-g);border:1px solid var(--amber-r);border-radius:7px;font-size:.73rem;color:var(--tx-2);line-height:1.6">
               ⚠ 未配置 CF API Token，KV 数据不可用。运行以下命令设置后重新部署：<br>
               <code style="display:inline-block;margin-top:4px;background:var(--bg);padding:3px 8px;border-radius:4px;color:var(--tx-a);font-family:var(--mono);font-size:.75rem">wrangler secret put CF_API_TOKEN</code><br>
@@ -627,50 +642,56 @@ export function renderAdminPage() {
           </div>
         </div>
 
-        <div style="display:none"><div class="r2-panel">
-          <div class="r2-panel-hd">
-            <h3>R2 对象存储</h3>
-            <span class="r2-badge">实时数据</span>
-            <div style="flex:1"></div>
-            <button class="btn btn-ghost" style="padding:4px 10px;font-size:.74rem" onclick="loadR2Stats()">↺ 刷新</button>
+        <!-- hidden R2 DOM nodes kept for JS compatibility -->
+        <div style="display:none">
+          <span id="r2Storage"></span><span id="r2Objects"></span><span id="r2Writes"></span>
+          <span id="r2Reads"></span><span id="r2FreeGb"></span><span id="r2Members"></span>
+          <span id="r2FreeBar"></span><span id="r2DonutArc"></span><span id="r2DonutLabel"></span>
+        </div>
+
+        <!-- ── 访问统计 Tabs ── -->
+        <div class="dash-tabs-panel">
+          <div class="dash-tabs-hd">
+            <div class="dash-tabs-nav">
+              <button class="dash-tab active" data-dash-tab="images">
+                🖼 图片 <span class="dash-tab-count" id="dashImgCount">—</span>
+              </button>
+              <button class="dash-tab" data-dash-tab="pages">
+                📄 页面 <span class="dash-tab-count" id="dashPgCount">—</span>
+              </button>
+              <button class="dash-tab" data-dash-tab="protos">
+                📐 原型 <span class="dash-tab-count" id="dashProtoCount">—</span>
+              </button>
+            </div>
+            <span class="dash-tab-hint">Top 10 · 按访问量排序</span>
           </div>
-          <div class="r2-grid">
-            <div class="r2-cell"><div class="r2-cell-lbl">存储用量</div><div class="r2-cell-val" id="r2Storage">—</div><div class="r2-cell-sub">标准存储</div></div>
-            <div class="r2-cell"><div class="r2-cell-lbl">对象数量</div><div class="r2-cell-val" id="r2Objects">—</div><div class="r2-cell-sub">张</div></div>
-            <div class="r2-cell"><div class="r2-cell-lbl">A 类操作</div><div class="r2-cell-val" id="r2Writes">—</div><div class="r2-cell-sub">写入总计</div></div>
-            <div class="r2-cell"><div class="r2-cell-lbl">B 类操作</div><div class="r2-cell-val" id="r2Reads">—</div><div class="r2-cell-sub">读取总计</div></div>
-            <div class="r2-cell"><div class="r2-cell-lbl">免费额度</div><div class="r2-cell-val" id="r2FreeGb">—</div><div class="r2-cell-sub">/ 10 GB</div><div class="r2-free-bar"><div class="r2-free-fill" id="r2FreeBar" style="width:0%"></div></div></div>
-            <div class="r2-cell"><div class="r2-cell-lbl">成员账号</div><div class="r2-cell-val" id="r2Members">—</div><div class="r2-cell-sub">注册用户</div></div>
-            <div class="r2-cell" style="display:flex;flex-direction:column;align-items:center;justify-content:center">
-              <div class="r2-cell-lbl" style="text-align:center">存储占用</div>
-              <svg width="56" height="56" viewBox="0 0 56 56" style="display:block;margin:4px auto 0">
-                <circle cx="28" cy="28" r="22" fill="none" stroke="#1e2a3a" stroke-width="6"/>
-                <circle cx="28" cy="28" r="22" fill="none" stroke="#3b82f6" stroke-width="6" stroke-dasharray="138.23" stroke-dashoffset="138.23" id="r2DonutArc" stroke-linecap="round" transform="rotate(-90 28 28)" style="transition:stroke-dashoffset .5s,stroke .5s"/>
-              </svg>
-              <div class="r2-cell-sub" id="r2DonutLabel" style="text-align:center;margin-top:4px">0%</div>
+
+          <div class="dash-tab-pane active" id="dashTabImages">
+            <div class="table-wrap" style="border-radius:0;border:none">
+              <table class="data-table">
+                <thead><tr><th>图片</th><th>文件名</th><th>类型</th><th>总访问</th><th>最后访问</th><th></th></tr></thead>
+                <tbody id="topImagesBody"><tr><td colspan="6" style="text-align:center;color:var(--tx-3);padding:32px">加载中…</td></tr></tbody>
+              </table>
             </div>
           </div>
-        </div>
-        <div class="section-header"><h3>图片访问最多</h3></div>
-        <div class="table-wrap" style="margin-bottom:24px">
-          <table class="data-table">
-            <thead><tr><th>图片</th><th>文件名</th><th>访问次数</th><th>最后访问</th><th></th></tr></thead>
-            <tbody id="topImagesBody"><tr><td colspan="5" style="text-align:center;color:var(--tx-3);padding:24px">加载中…</td></tr></tbody>
-          </table>
-        </div>
-        <div class="section-header"><h3>页面访问最多</h3></div>
-        <div class="table-wrap" style="margin-bottom:24px">
-          <table class="data-table">
-            <thead><tr><th>标题 / Slug</th><th>访问次数</th><th>最后访问</th><th></th></tr></thead>
-            <tbody id="topPagesBody"><tr><td colspan="4" style="text-align:center;color:var(--tx-3);padding:24px">加载中…</td></tr></tbody>
-          </table>
-        </div>
-        <div id="topTabProtos" style="display:none">
-          <table class="data-table">
-            <thead><tr><th>标题</th><th>作者</th><th>访问次数</th><th>最后访问</th><th></th></tr></thead>
-            <tbody id="topProtosBody"><tr><td colspan="5" style="text-align:center;color:var(--tx-3);padding:24px">加载中…</td></tr></tbody>
-          </table>
-        </div>
+
+          <div class="dash-tab-pane" id="dashTabPages">
+            <div class="table-wrap" style="border-radius:0;border:none">
+              <table class="data-table">
+                <thead><tr><th>标题 / Slug</th><th>类型</th><th>总访问</th><th>最后访问</th><th></th></tr></thead>
+                <tbody id="topPagesBody"><tr><td colspan="5" style="text-align:center;color:var(--tx-3);padding:32px">加载中…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="dash-tab-pane" id="dashTabProtos">
+            <div class="table-wrap" style="border-radius:0;border:none">
+              <table class="data-table">
+                <thead><tr><th>名称</th><th>类型</th><th>作者</th><th>总访问</th><th>最后访问</th><th></th></tr></thead>
+                <tbody id="topProtosBody"><tr><td colspan="6" style="text-align:center;color:var(--tx-3);padding:32px">加载中…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1215,21 +1236,50 @@ export function renderAdminPage() {
     if (name === 'members') loadMemberStats();
   }
 
+  // ── Dashboard stats tab switching ────────────────────────────────────────────
+  document.querySelectorAll('[data-dash-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const t = btn.dataset.dashTab;
+      document.querySelectorAll('[data-dash-tab]').forEach(b => b.classList.toggle('active', b === btn));
+      document.querySelectorAll('.dash-tab-pane').forEach(p => {
+        const id = 'dashTab' + t.charAt(0).toUpperCase() + t.slice(1);
+        p.classList.toggle('active', p.id === id);
+      });
+    });
+  });
+
+  // ── Sidebar nav ripple ────────────────────────────────────────────────────────
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      const r = document.createElement('span');
+      r.className = 'nav-ripple';
+      const rect = this.getBoundingClientRect();
+      r.style.left = (e.clientX - rect.left) + 'px';
+      r.style.top  = (e.clientY - rect.top)  + 'px';
+      this.appendChild(r);
+      r.addEventListener('animationend', () => r.remove());
+    });
+  });
+
   // ── Dashboard ──────────────────────────────────────────────────────────────
   let allPageStats = {};
 
   async function loadDashboard() {
-    const [sRes, iRes, pRes, psRes] = await Promise.all([
-      fetch('/admin/stats', { headers: authH() }),
+    const [sRes, iRes, pRes, psRes, prRes, prsRes] = await Promise.all([
+      fetch('/admin/stats',           { headers: authH() }),
       fetch('/admin/all-image-stats', { headers: authH() }),
-      fetch('/admin/pages', { headers: authH() }),
-      fetch('/admin/all-page-stats', { headers: authH() }),
+      fetch('/admin/pages',           { headers: authH() }),
+      fetch('/admin/all-page-stats',  { headers: authH() }),
+      fetch('/admin/protos',          { headers: authH() }),
+      fetch('/admin/all-proto-stats', { headers: authH() }),
     ]);
     if (sRes.status === 401) { handleUnauth(); return; }
     const { totalImages, totalSize } = await sRes.json();
     const { stats } = await iRes.json();
     const { pages } = await pRes.json();
     const { stats: pgStats } = await psRes.json();
+    const { protos = [] } = prRes.ok ? await prRes.json() : {};
+    const { stats: protoStats = {} } = prsRes.ok ? await prsRes.json() : {};
     allStats = stats;
     allPageStats = pgStats;
 
@@ -1242,33 +1292,83 @@ export function renderAdminPage() {
     document.getElementById('statPages').textContent = pages.length.toLocaleString();
     document.getElementById('statPageViews').textContent = Object.values(pgStats).reduce((s,v) => s+(v.count??0), 0).toLocaleString();
 
-    // Top images
+    // Tab count badges
+    const imgWithViews = Object.values(stats).filter(s => (s.count??0) > 0).length;
+    const pgWithViews  = Object.values(pgStats).filter(s => (s.count??0) > 0).length;
+    const prWithViews  = Object.values(protoStats).filter(s => (s.count??0) > 0).length;
+    document.getElementById('dashImgCount').textContent   = imgWithViews || Object.keys(stats).length;
+    document.getElementById('dashPgCount').textContent    = pgWithViews  || pages.length;
+    document.getElementById('dashProtoCount').textContent = prWithViews  || protos.length;
+
+    // ── 图片 Tab ──
+    const TYPE_IMG = \`<span style="font-size:.62rem;font-weight:600;padding:1px 6px;border-radius:4px;background:rgba(52,211,153,.1);color:#34d399;border:1px solid rgba(52,211,153,.2)">图片</span>\`;
     const sortedImg = Object.entries(stats).sort((a,b) => (b[1].count??0)-(a[1].count??0)).slice(0,10);
     document.getElementById('topImagesBody').innerHTML = sortedImg.length
       ? sortedImg.map(([k,s]) => \`<tr>
           <td><img class="top-thumb" src="\${origin}/\${k}" loading="lazy" onclick="openLightbox('\${k}')"></td>
-          <td style="font-family:monospace;font-size:.78rem;color:#888">\${k}</td>
+          <td style="font-family:var(--mono);font-size:.77rem;color:var(--tx-3);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">\${esc(k)}</td>
+          <td>\${TYPE_IMG}</td>
           <td class="view-count">\${(s.count??0).toLocaleString()}</td>
           <td class="muted">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
-          <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" onclick="openStatsModal('\${k}')">详情</button></td>
+          <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:.73rem" onclick="openStatsModal('\${esc(k)}')">详情</button></td>
         </tr>\`).join('')
-      : '<tr><td colspan="5" style="text-align:center;color:#333;padding:24px">暂无访问记录</td></tr>';
+      : '<tr><td colspan="6" style="text-align:center;color:var(--tx-3);padding:32px">暂无访问记录</td></tr>';
 
-    // Top pages
+    // ── 页面 Tab ──
+    const TYPE_PG = \`<span style="font-size:.62rem;font-weight:600;padding:1px 6px;border-radius:4px;background:rgba(251,191,36,.08);color:#fbbf24;border:1px solid rgba(251,191,36,.2)">页面</span>\`;
     const pageMap = {};
-    pages.forEach(p => pageMap[p.slug] = p.title || p.slug);
+    pages.forEach(p => pageMap[p.slug] = { title: p.title || p.slug, type: p.type || 'markdown' });
     const sortedPg = Object.entries(pgStats).sort((a,b) => (b[1].count??0)-(a[1].count??0)).slice(0,10);
     document.getElementById('topPagesBody').innerHTML = sortedPg.length
-      ? sortedPg.map(([slug,s]) => \`<tr>
+      ? sortedPg.map(([slug,s]) => {
+          const pm = pageMap[slug] || { title: slug, type: '' };
+          return \`<tr>
+            <td>
+              <div style="font-weight:500;font-size:.84rem;color:var(--tx)">\${esc(pm.title)}</div>
+              <div style="font-family:var(--mono);font-size:.7rem;color:var(--tx-3);margin-top:2px">/p/\${esc(slug)}</div>
+            </td>
+            <td>\${TYPE_PG}</td>
+            <td class="view-count">\${(s.count??0).toLocaleString()}</td>
+            <td class="muted">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
+            <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:.73rem" data-title="\${esc(pm.title)}" onclick="openPageStatsModal('\${esc(slug)}',this.dataset.title)">详情</button></td>
+          </tr>\`;
+        }).join('')
+      : '<tr><td colspan="5" style="text-align:center;color:var(--tx-3);padding:32px">暂无访问记录</td></tr>';
+
+    // ── 原型 Tab ──
+    const TYPE_PT = \`<span style="font-size:.62rem;font-weight:600;padding:1px 6px;border-radius:4px;background:rgba(200,200,200,.08);color:var(--tx-a);border:1px solid rgba(200,200,200,.15)">原型</span>\`;
+    const protoMap = {};
+    protos.forEach(p => protoMap[p.protoId] = p);
+    const sortedPr = Object.entries(protoStats).sort((a,b) => (b[1].count??0)-(a[1].count??0)).slice(0,10);
+    // also include protos with 0 visits not yet in protoStats
+    const allProtoIds = [...new Set([...sortedPr.map(([id]) => id), ...protos.map(p => p.protoId)])].slice(0,10);
+    const prRows = sortedPr.length
+      ? sortedPr.map(([id,s]) => {
+          const pm = protoMap[id] || { title: id, owner: '—' };
+          return \`<tr>
+            <td>
+              <div style="font-weight:500;font-size:.84rem;color:var(--tx)">\${esc(pm.title||id)}</div>
+              <div style="font-family:var(--mono);font-size:.7rem;color:var(--tx-3);margin-top:2px">/proto/\${esc(id)}/</div>
+            </td>
+            <td>\${TYPE_PT}</td>
+            <td class="muted">\${esc(pm.owner||'—')}</td>
+            <td class="view-count">\${(s.count??0).toLocaleString()}</td>
+            <td class="muted">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
+            <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:.73rem" data-title="\${esc(pm.title||id)}" onclick="openProtoStatsModal('\${esc(id)}',this.dataset.title)">详情</button></td>
+          </tr>\`;
+        }).join('')
+      : protos.slice(0,10).map(pm => \`<tr>
           <td>
-            <div style="font-weight:500;font-size:.88rem">\${esc(pageMap[slug] || slug)}</div>
-            <div style="font-family:monospace;font-size:.72rem;color:#555">/p/\${slug}</div>
+            <div style="font-weight:500;font-size:.84rem;color:var(--tx)">\${esc(pm.title||pm.protoId)}</div>
+            <div style="font-family:var(--mono);font-size:.7rem;color:var(--tx-3);margin-top:2px">/proto/\${esc(pm.protoId)}/</div>
           </td>
-          <td class="view-count">\${(s.count??0).toLocaleString()}</td>
-          <td class="muted">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
-          <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" data-title="\${esc(pageMap[slug]||slug)}" onclick="openPageStatsModal('\${slug}',this.dataset.title)">详情</button></td>
-        </tr>\`).join('')
-      : '<tr><td colspan="4" style="text-align:center;color:#333;padding:24px">暂无访问记录</td></tr>';
+          <td>\${TYPE_PT}</td>
+          <td class="muted">\${esc(pm.owner||'—')}</td>
+          <td class="view-count">0</td>
+          <td class="muted">—</td>
+          <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:.73rem" data-title="\${esc(pm.title||pm.protoId)}" onclick="openProtoStatsModal('\${esc(pm.protoId)}',this.dataset.title)">详情</button></td>
+        </tr>\`).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--tx-3);padding:32px">暂无原型</td></tr>';
+    document.getElementById('topProtosBody').innerHTML = prRows;
   }
 
   // ── Gallery ─────────────────────────────────────────────────────────────────
