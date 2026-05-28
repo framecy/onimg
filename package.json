@@ -5,9 +5,12 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "secret": "wrangler secret put AUTH_KEY"
+    "secret": "wrangler secret put AUTH_KEY",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
+    "vitest": "^4.1.6",
     "wrangler": "^4.90.0"
   },
   "dependencies": {

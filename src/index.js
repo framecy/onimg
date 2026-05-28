@@ -22,7 +22,13 @@ export default {
     const { method } = request;
     const path = url.pathname;
 
-    if (method === 'OPTIONS') return corsResponse();
+    // ── 根域名重定向 ──────────────────────────────────────────────────────────
+    if (url.hostname === 'diswant.space') {
+      const dest = 'https://ping.diswant.space' + (path || '/') + url.search;
+      return new Response(null, { status: 301, headers: { Location: dest } });
+    }
+
+    if (method === 'OPTIONS') return corsResponse(request);
 
     // Workers 请求计数 — 1% 采样，展示时 × 100
     if (Math.random() < 0.01) {
@@ -46,107 +52,106 @@ export default {
       }
 
       // ── User auth ────────────────────────────────────────────────────────────
-      if (method === 'POST'  && path === '/auth/login')           return withCors(await handleUserLogin(request, env));
-      if (method === 'PATCH' && path === '/auth/password')        return withCors(await handleChangePassword(request, env));
+      if (method === 'POST'  && path === '/auth/login')           return withCors(await handleUserLogin(request, env), request);
+      if (method === 'PATCH' && path === '/auth/password')        return withCors(await handleChangePassword(request, env), request);
       if (method === 'GET'   && path === '/auth/quota') {
         const user = await verifyUserToken(request, env);
-        if (!user) return withCors(Response.json({ error: 'Unauthorized' }, { status: 401 }));
-        return withCors(Response.json(await getUserQuotaInfo(env, user.username)));
+        if (!user) return withCors(Response.json({ error: 'Unauthorized' }, { status: 401 }), request);
+        return withCors(Response.json(await getUserQuotaInfo(env, user.username)), request);
       }
 
       // ── User API ─────────────────────────────────────────────────────────────
-      if (method === 'GET'    && path === '/api/gallery')          return withCors(await handlePublicGallery(env));
+      if (method === 'GET'    && path === '/api/gallery')          return withCors(await handlePublicGallery(env), request);
       if (method === 'PATCH'  && path.startsWith('/api/image/') && path.endsWith('/visibility')) {
         const key = decodeURIComponent(path.slice('/api/image/'.length, -'/visibility'.length));
-        return withCors(await handleToggleVisibility(request, env, key));
+        return withCors(await handleToggleVisibility(request, env, key), request);
       }
       // User pages
-      if (method === 'GET'    && path === '/api/pages')            return withCors(await userPagesHandler(request, env));
-      if (method === 'POST'   && path === '/api/pages')            return withCors(await userPageCreate(request, env));
-      if (method === 'PATCH'  && path.startsWith('/api/pages/'))   return withCors(await userPageUpdate(request, env, path.slice('/api/pages/'.length)));
-      if (method === 'DELETE' && path.startsWith('/api/pages/'))   return withCors(await userPageDelete(request, env, path.slice('/api/pages/'.length)));
+      if (method === 'GET'    && path === '/api/pages')            return withCors(await userPagesHandler(request, env), request);
+      if (method === 'POST'   && path === '/api/pages')            return withCors(await userPageCreate(request, env), request);
+      if (method === 'PATCH'  && path.startsWith('/api/pages/'))   return withCors(await userPageUpdate(request, env, path.slice('/api/pages/'.length)), request);
+      if (method === 'DELETE' && path.startsWith('/api/pages/'))   return withCors(await userPageDelete(request, env, path.slice('/api/pages/'.length)), request);
       // User prototypes
-      if (method === 'POST'   && path === '/upload/proto')              return withCors(await protoUploadHandler(request, env));
-      if (method === 'POST'   && path === '/upload/proto/init')         return withCors(await protoUploadInitHandler(request, env));
-      if (method === 'POST'   && path === '/upload/proto/files')        return withCors(await protoFileBatchHandler(request, env));
-      if (method === 'POST'   && path === '/upload/proto/finalize')     return withCors(await protoFinalizeHandler(request, env));
-      if (method === 'GET'    && path === '/api/protos')                return withCors(await protoListHandler(request, env));
-      if (method === 'DELETE' && path.startsWith('/api/protos/'))       return withCors(await protoDeleteHandler(request, env, path.slice('/api/protos/'.length)));
-      if (method === 'PATCH'  && path.startsWith('/api/protos/'))       return withCors(await protoUpdateMetaHandler(request, env, path.slice('/api/protos/'.length)));
+      if (method === 'POST'   && path === '/upload/proto')              return withCors(await protoUploadHandler(request, env), request);
+      if (method === 'POST'   && path === '/upload/proto/init')         return withCors(await protoUploadInitHandler(request, env), request);
+      if (method === 'POST'   && path === '/upload/proto/files')        return withCors(await protoFileBatchHandler(request, env), request);
+      if (method === 'POST'   && path === '/upload/proto/finalize')     return withCors(await protoFinalizeHandler(request, env), request);
+      if (method === 'GET'    && path === '/api/protos')                return withCors(await protoListHandler(request, env), request);
+      if (method === 'DELETE' && path.startsWith('/api/protos/'))       return withCors(await protoDeleteHandler(request, env, path.slice('/api/protos/'.length)), request);
+      if (method === 'PATCH'  && path.startsWith('/api/protos/'))       return withCors(await protoUpdateMetaHandler(request, env, path.slice('/api/protos/'.length)), request);
       // User proto version files (for diff viewer)
-      if (method === 'GET'    && path.startsWith('/api/proto-vfiles/')) return withCors(await protoVfilesHandler(request, env, path.slice('/api/proto-vfiles/'.length)));
+      if (method === 'GET'    && path.startsWith('/api/proto-vfiles/')) return withCors(await protoVfilesHandler(request, env, path.slice('/api/proto-vfiles/'.length)), request);
       // User proto version delete
-      if (method === 'DELETE' && path.startsWith('/api/proto-versions/')) return withCors(await protoVersionDeleteHandler(request, env, path.slice('/api/proto-versions/'.length)));
+      if (method === 'DELETE' && path.startsWith('/api/proto-versions/')) return withCors(await protoVersionDeleteHandler(request, env, path.slice('/api/proto-versions/'.length)), request);
 
       // ── Admin panel ──────────────────────────────────────────────────────────
-      if (path === '/admin' || path === '/admin/') return new Response(renderAdminPage(), { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
-      if (method === 'POST' && path === '/admin/login') return withCors(await handleAdminLogin(request, env));
+      if (path === '/admin' || path === '/admin/') return addSecurityHeaders(new Response(renderAdminPage(), { headers: { 'Content-Type': 'text/html; charset=utf-8' } }));
+      if (method === 'POST' && path === '/admin/login') return withCors(await handleAdminLogin(request, env), request);
 
       if (path.startsWith('/admin/')) {
-        if (!await verifyAdminToken(request, env)) return withCors(Response.json({ error: 'Unauthorized' }, { status: 401 }));
+        if (!await verifyAdminToken(request, env)) return withCors(Response.json({ error: 'Unauthorized' }, { status: 401 }), request);
 
-        if (method === 'GET'  && path === '/admin/cf-quota')         return withCors(await handleCfQuota(env));
-        if (method === 'GET'  && path === '/admin/stats')           return withCors(await handleAdminStats(env));
-        if (method === 'GET'  && path === '/admin/all-image-stats') return withCors(await handleAllImageStats(env));
+        if (method === 'GET'  && path === '/admin/cf-quota')         return withCors(await handleCfQuota(env), request);
+        if (method === 'GET'  && path === '/admin/stats')           return withCors(await handleAdminStats(env), request);
+        if (method === 'GET'  && path === '/admin/all-image-stats') return withCors(await handleAllImageStats(env), request);
         if (method === 'GET'  && path.startsWith('/admin/image-stats/')) {
-          return withCors(await handleImageStats(env, decodeURIComponent(path.slice('/admin/image-stats/'.length))));
+          return withCors(await handleImageStats(env, decodeURIComponent(path.slice('/admin/image-stats/'.length))), request);
         }
-        if (method === 'GET'    && path === '/admin/users')               return withCors(await handleListUsers(env));
-        if (method === 'POST'   && path === '/admin/users')               return withCors(await handleCreateUser(request, env));
-        if (method === 'PATCH'  && path.startsWith('/admin/users/'))      return withCors(await handleUpdateUser(request, env, decodeURIComponent(path.slice('/admin/users/'.length))));
-        if (method === 'DELETE' && path.startsWith('/admin/users/'))      return withCors(await handleDeleteUser(env, decodeURIComponent(path.slice('/admin/users/'.length))));
-        if (method === 'GET'    && path === '/admin/config')              return withCors(await handleGetConfig(env));
-        if (method === 'POST'   && path === '/admin/config')              return withCors(await handleUpdateConfig(request, env));
-        if (method === 'GET'    && path === '/admin/r2-stats')            return withCors(await handleR2DetailedStats(env));
-        if (method === 'GET'    && path === '/admin/member-stats')        return withCors(await handleMemberStats(env));
-        if (method === 'GET'    && path === '/admin/all-page-stats')       return withCors(await handleAllPageStats(env));
-        if (method === 'GET'    && path.startsWith('/admin/page-stats/'))  return withCors(await handlePageStats(env, decodeURIComponent(path.slice('/admin/page-stats/'.length))));
+        if (method === 'GET'    && path === '/admin/users')               return withCors(await handleListUsers(env), request);
+        if (method === 'POST'   && path === '/admin/users')               return withCors(await handleCreateUser(request, env), request);
+        if (method === 'PATCH'  && path.startsWith('/admin/users/'))      return withCors(await handleUpdateUser(request, env, decodeURIComponent(path.slice('/admin/users/'.length))), request);
+        if (method === 'DELETE' && path.startsWith('/admin/users/'))      return withCors(await handleDeleteUser(env, decodeURIComponent(path.slice('/admin/users/'.length))), request);
+        if (method === 'GET'    && path === '/admin/config')              return withCors(await handleGetConfig(env), request);
+        if (method === 'POST'   && path === '/admin/config')              return withCors(await handleUpdateConfig(request, env), request);
+        if (method === 'GET'    && path === '/admin/r2-stats')            return withCors(await handleR2DetailedStats(env), request);
+        if (method === 'GET'    && path === '/admin/member-stats')        return withCors(await handleMemberStats(env), request);
+        if (method === 'GET'    && path === '/admin/all-page-stats')      return withCors(await handleAllPageStats(env), request);
+        if (method === 'GET'    && path.startsWith('/admin/page-stats/')) return withCors(await handlePageStats(env, decodeURIComponent(path.slice('/admin/page-stats/'.length))), request);
         // DELETE /admin/proto-versions/{protoId}/v{n}
         if (method === 'DELETE' && path.startsWith('/admin/proto-versions/')) {
           const rest       = decodeURIComponent(path.slice('/admin/proto-versions/'.length));
           const lastSlash  = rest.lastIndexOf('/v');
           const protoId    = rest.slice(0, lastSlash);
           const versionNum = rest.slice(lastSlash + 2); // strip '/v'
-          return withCors(await deleteProtoVersion(env, protoId, versionNum, null, true));
+          return withCors(await deleteProtoVersion(env, protoId, versionNum, null, true), request);
         }
-        if (method === 'GET'    && path === '/admin/all-proto-stats')      return withCors(await handleAllProtoStats(env));
-        if (method === 'GET'    && path.startsWith('/admin/proto-stats/')) return withCors(await handleProtoStats(env, decodeURIComponent(path.slice('/admin/proto-stats/'.length))));
+        if (method === 'GET'    && path === '/admin/all-proto-stats')      return withCors(await handleAllProtoStats(env), request);
+        if (method === 'GET'    && path.startsWith('/admin/proto-stats/')) return withCors(await handleProtoStats(env, decodeURIComponent(path.slice('/admin/proto-stats/'.length))), request);
         if (method === 'GET'    && path.startsWith('/admin/proto-vfiles/')) {
-          // /admin/proto-vfiles/{protoId}/v{n}  — last segment is the version token "v{n}"
           const rest = decodeURIComponent(path.slice('/admin/proto-vfiles/'.length));
           const lastSlash = rest.lastIndexOf('/');
           const protoId   = rest.slice(0, lastSlash);
-          const verToken  = rest.slice(lastSlash + 1);          // e.g. "v3"
+          const verToken  = rest.slice(lastSlash + 1);
           const files = await env.STATS.get(`proto:vfiles:${protoId}:${verToken}`, 'json');
-          return withCors(Response.json({ files: files ?? null, version: verToken }));
+          return withCors(Response.json({ files: files ?? null, version: verToken }), request);
         }
-        // Admin prototype upload (chunked — same endpoints, admin token used as auth)
-        if (method === 'POST'   && path === '/admin/proto/init')           return withCors(await handleProtoUploadInit(request, env, env.ADMIN_USERNAME ?? 'admin'));
-        if (method === 'POST'   && path === '/admin/proto/files')          return withCors(await handleProtoFileBatch(request, env, env.ADMIN_USERNAME ?? 'admin'));
-        if (method === 'POST'   && path === '/admin/proto/finalize')       return withCors(await handleProtoFinalize(request, env, env.ADMIN_USERNAME ?? 'admin'));
+        // Admin prototype upload (chunked)
+        if (method === 'POST'   && path === '/admin/proto/init')           return withCors(await handleProtoUploadInit(request, env, env.ADMIN_USERNAME ?? 'admin'), request);
+        if (method === 'POST'   && path === '/admin/proto/files')          return withCors(await handleProtoFileBatch(request, env, env.ADMIN_USERNAME ?? 'admin'), request);
+        if (method === 'POST'   && path === '/admin/proto/finalize')       return withCors(await handleProtoFinalize(request, env, env.ADMIN_USERNAME ?? 'admin'), request);
         // Admin prototypes
-        if (method === 'GET'    && path === '/admin/protos')               return withCors(Response.json({ protos: await listProtos(env, null, true) }));
-        if (method === 'DELETE' && path.startsWith('/admin/protos/'))      return withCors(await deleteProto(env, decodeURIComponent(path.slice('/admin/protos/'.length)), null, true));
-        if (method === 'PATCH'  && path.startsWith('/admin/protos/'))      return withCors(await updateProtoMeta(env, decodeURIComponent(path.slice('/admin/protos/'.length)), null, true, await request.json()));
+        if (method === 'GET'    && path === '/admin/protos')               return withCors(Response.json({ protos: await listProtos(env, null, true) }), request);
+        if (method === 'DELETE' && path.startsWith('/admin/protos/'))      return withCors(await deleteProto(env, decodeURIComponent(path.slice('/admin/protos/'.length)), null, true), request);
+        if (method === 'PATCH'  && path.startsWith('/admin/protos/'))      return withCors(await updateProtoMeta(env, decodeURIComponent(path.slice('/admin/protos/'.length)), null, true, await request.json()), request);
         // Admin pages
-        if (method === 'GET'    && path === '/admin/pages')               return withCors(Response.json({ pages: await listPages(env, null) }));
-        if (method === 'POST'   && path === '/admin/pages')               return withCors(await handleCreatePage(request, env, env.ADMIN_USERNAME ?? 'admin'));
-        if (method === 'PATCH'  && path.startsWith('/admin/pages/'))      return withCors(await handleUpdatePage(request, env, decodeURIComponent(path.slice('/admin/pages/'.length)), env.ADMIN_USERNAME, true));
-        if (method === 'DELETE' && path.startsWith('/admin/pages/'))      return withCors(await handleDeletePage(env, decodeURIComponent(path.slice('/admin/pages/'.length)), env.ADMIN_USERNAME, true));
+        if (method === 'GET'    && path === '/admin/pages')               return withCors(Response.json({ pages: await listPages(env, null) }), request);
+        if (method === 'POST'   && path === '/admin/pages')               return withCors(await handleCreatePage(request, env, env.ADMIN_USERNAME ?? 'admin'), request);
+        if (method === 'PATCH'  && path.startsWith('/admin/pages/'))      return withCors(await handleUpdatePage(request, env, decodeURIComponent(path.slice('/admin/pages/'.length)), env.ADMIN_USERNAME, true), request);
+        if (method === 'DELETE' && path.startsWith('/admin/pages/'))      return withCors(await handleDeletePage(env, decodeURIComponent(path.slice('/admin/pages/'.length)), env.ADMIN_USERNAME, true), request);
 
-        return withCors(new Response('Not Found', { status: 404 }));
+        return withCors(new Response('Not Found', { status: 404 }), request);
       }
 
       // ── Core image routes ────────────────────────────────────────────────────
-      if (method === 'POST'   && path === '/upload')           return withCors(await handleUpload(request, env, ctx));
-      if (method === 'DELETE' && path.startsWith('/delete/'))  return withCors(await handleDelete(request, env, path.slice(8), ctx));
-      if (method === 'GET'    && path === '/list')             return withCors(await handleList(request, env));
-      if (method === 'GET'    && path === '/')                 return new Response(renderPage(), { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
-      if (method === 'GET'    && path.startsWith('/'))         return withCors(await handleGet(env, ctx, path.slice(1), request));
+      if (method === 'POST'   && path === '/upload')           return withCors(await handleUpload(request, env, ctx), request);
+      if (method === 'DELETE' && path.startsWith('/delete/'))  return withCors(await handleDelete(request, env, path.slice(8), ctx), request);
+      if (method === 'GET'    && path === '/list')             return withCors(await handleList(request, env), request);
+      if (method === 'GET'    && path === '/')                 return addSecurityHeaders(new Response(renderPage(), { headers: { 'Content-Type': 'text/html; charset=utf-8' } }));
+      if (method === 'GET'    && path.startsWith('/'))         return withCors(await handleGet(env, ctx, path.slice(1), request), request);
 
-      return withCors(new Response('Not Found', { status: 404 }));
+      return withCors(new Response('Not Found', { status: 404 }), request);
     } catch (err) {
-      return withCors(Response.json({ error: err.message }, { status: 500 }));
+      return withCors(Response.json({ error: err.message }, { status: 500 }), request);
     }
   }
 };
@@ -291,20 +296,58 @@ async function handleChangePassword(request, env) {
   return Response.json({ ok: true });
 }
 
-// ── CORS helpers ─────────────────────────────────────────────────────────────
+// ── CORS + Security helpers ───────────────────────────────────────────────────
 
-function corsResponse() {
+const ALLOWED_ORIGINS = [
+  'https://img.diswant.space',
+  'https://ping.diswant.space',
+  'https://diswant.space',
+];
+
+function getAllowedOrigin(req) {
+  const origin = req?.headers?.get('Origin') ?? '';
+  return ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+}
+
+function corsResponse(req) {
   return new Response(null, {
     status: 204,
     headers: {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': getAllowedOrigin(req),
       'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    }
+      'Vary': 'Origin',
+    },
   });
 }
-function withCors(response) {
+
+function addSecurityHeaders(response) {
   const res = new Response(response.body, response);
-  res.headers.set('Access-Control-Allow-Origin', '*');
+  res.headers.set('X-Content-Type-Options', 'nosniff');
+  res.headers.set('X-Frame-Options', 'DENY');
+  res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.headers.set('Permissions-Policy', 'geolocation=(), camera=(), microphone=()');
+  res.headers.set(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      "img-src 'self' blob: data:",
+      "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
+      "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net",
+      "connect-src 'self' https://cdn.jsdelivr.net",
+      "frame-ancestors 'none'",
+    ].join('; '),
+  );
+  return res;
+}
+
+function withCors(response, req) {
+  const res = new Response(response.body, response);
+  res.headers.set('Access-Control-Allow-Origin', getAllowedOrigin(req));
+  res.headers.set('Vary', 'Origin');
+  res.headers.set('X-Content-Type-Options', 'nosniff');
+  res.headers.set('X-Frame-Options', 'DENY');
+  res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   return res;
 }

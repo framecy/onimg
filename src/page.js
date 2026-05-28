@@ -1,3 +1,4 @@
+import { FFLATE_UMD } from './fflate-inline.js';
 export function renderPage() {
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -10,11 +11,15 @@ export function renderPage() {
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, -apple-system, sans-serif; background: #0f0f0f; color: #e8e8e8; min-height: 100vh; }
     .app { display: flex; flex-direction: column; min-height: 100vh; }
-    header { display: flex; align-items: center; gap: 14px; padding: 13px 24px; border-bottom: 1px solid #1f1f1f; background: #0f0f0f; position: sticky; top: 0; z-index: 10; }
-    header h1 { font-size: 1.1rem; font-weight: 700; }
-    .tab-bar { display: flex; gap: 3px; }
-    .tab { padding: 5px 13px; border-radius: 6px; border: none; background: transparent; color: #666; cursor: pointer; font-size: .85rem; transition: all .15s; }
-    .tab.active { background: #1f1f1f; color: #fff; }
+    header { display: flex; flex-direction: column; border-bottom: 1px solid #1e1e1e; background: #0d0d0d; position: sticky; top: 0; z-index: 10; }
+    .header-top { display: flex; align-items: center; gap: 14px; padding: 11px 24px; }
+    header h1 { font-size: .98rem; font-weight: 700; letter-spacing: -.01em; }
+    .tab-nav { display: flex; padding: 0 20px; }
+    .tab { padding: 9px 14px; border: none; background: transparent; color: #555; cursor: pointer; font-size: .84rem; transition: color .15s; position: relative; white-space: nowrap; }
+    .tab::after { content: ''; position: absolute; bottom: -1px; left: 8px; right: 8px; height: 2px; background: #3b82f6; border-radius: 2px 2px 0 0; transform: scaleX(0); transition: transform .2s ease; }
+    .tab:hover { color: #bbb; }
+    .tab.active { color: #e8e8e8; }
+    .tab.active::after { transform: scaleX(1); }
     .spacer { flex: 1; }
     .dot-green { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; flex-shrink: 0; }
     .btn-sm { padding: 5px 12px; border: 1px solid #242424; border-radius: 6px; background: transparent; color: #666; cursor: pointer; font-size: .8rem; white-space: nowrap; }
@@ -40,7 +45,7 @@ export function renderPage() {
     .ud-action.danger:hover { color: #ef4444; }
 
     /* Login overlay */
-    #loginOverlay { position: fixed; inset: 0; background: rgba(0,0,0,.75); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 24px; }
+    #loginOverlay { position: fixed; inset: 0; background: rgba(0,0,0,.82); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 24px; }
     .login-card { background: #141414; border: 1px solid #222; border-radius: 16px; padding: 36px 32px; width: 100%; max-width: 360px; }
     .login-card h2 { font-size: 1.1rem; margin-bottom: 28px; }
     .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
@@ -48,10 +53,24 @@ export function renderPage() {
     .field input, .field select, .field textarea { padding: 9px 12px; background: #0f0f0f; border: 1px solid #222; border-radius: 7px; color: #e8e8e8; font-size: .9rem; outline: none; transition: border .15s; }
     .field input:focus, .field select:focus, .field textarea:focus { border-color: #3b82f6; }
     .field textarea { resize: vertical; min-height: 120px; font-family: monospace; font-size: .82rem; }
-    .btn-full { width: 100%; padding: 10px; background: #3b82f6; color: #fff; border: none; border-radius: 7px; font-size: .9rem; font-weight: 600; cursor: pointer; margin-top: 6px; }
+    .btn-full { width: 100%; padding: 10px; background: #3b82f6; color: #fff; border: none; border-radius: 7px; font-size: .9rem; font-weight: 600; cursor: pointer; margin-top: 6px; transition: background .15s; }
     .btn-full:hover { background: #2563eb; }
     .btn-full:disabled { background: #1e3a5f; color: #4b7bb5; cursor: not-allowed; }
     .login-err { color: #ef4444; font-size: .8rem; margin-top: 8px; text-align: center; min-height: 16px; }
+    /* Login enhancements */
+    @keyframes loginSpin { to { transform: rotate(360deg); } }
+    @keyframes loginShake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+    .btn-full.loading { pointer-events: none; }
+    .btn-full.loading::before { content:''; display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:loginSpin .6s linear infinite; margin-right:8px; vertical-align:middle; }
+    .login-card.shake { animation: loginShake .35s ease; }
+    .pass-wrap { position: relative; }
+    .pass-wrap input { padding-right: 38px; width: 100%; }
+    .pass-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #555; cursor: pointer; padding: 4px; line-height: 1; font-size: .9rem; }
+    .pass-toggle:hover { color: #aaa; }
+    /* Toast types */
+    .toast.t-success { background: #052e16; border-color: #166534; color: #4ade80; }
+    .toast.t-warn    { background: #2d1b00; border-color: #92400e; color: #fcd34d; }
+    .toast.t-error   { background: #1c0505; border-color: #7f1d1d; color: #f87171; }
 
     main { flex: 1; padding: 20px 24px; max-width: 1200px; margin: 0 auto; width: 100%; }
     .panel { display: none; }
@@ -61,9 +80,11 @@ export function renderPage() {
     .quota-bar { background: #141414; border: 1px solid #1f1f1f; border-radius: 8px; padding: 9px 14px; font-size: .8rem; display: flex; gap: 16px; margin-bottom: 12px; }
     .quota-bar span { color: #555; }
     .quota-bar strong { color: #aaa; }
-    .drop-zone { border: 2px dashed #2a2a2a; border-radius: 12px; padding: 44px; text-align: center; cursor: pointer; color: #555; transition: all .2s; margin-bottom: 14px; }
+    .drop-zone { border: 1.5px dashed #252525; border-radius: 16px; padding: 52px 32px; text-align: center; cursor: pointer; color: #454545; transition: all .2s; margin-bottom: 14px; background: rgba(255,255,255,.008); }
     .drop-zone:hover, .drop-zone.over { border-color: #3b82f6; color: #3b82f6; background: rgba(59,130,246,.04); }
+    .drop-zone:hover .dz-icon, .drop-zone.over .dz-icon { color: #3b82f6; }
     .drop-zone input { display: none; }
+    .dz-icon { display: block; margin: 0 auto 16px; width: 40px; height: 40px; color: #2a2a2a; transition: color .2s; }
     .btn-upload { width: 100%; padding: 10px; background: #3b82f6; color: #fff; border: none; border-radius: 8px; font-size: .9rem; font-weight: 600; cursor: pointer; }
     .btn-upload:hover { background: #2563eb; }
     .btn-upload:disabled { background: #1e3a5f; color: #4b7bb5; cursor: not-allowed; }
@@ -95,9 +116,9 @@ export function renderPage() {
     /* Gallery grid */
     .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; }
     .search-input { padding: 7px 12px; background: #141414; border: 1px solid #1f1f1f; border-radius: 7px; color: #e8e8e8; font-size: .84rem; outline: none; width: 200px; }
-    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
-    .gitem { background: #141414; border: 1px solid #1a1a1a; border-radius: 10px; overflow: hidden; transition: border-color .15s; }
-    .gitem:hover { border-color: #333; }
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+    .gitem { background: #111; border: 1px solid #1a1a1a; border-radius: 12px; overflow: hidden; transition: border-color .15s, box-shadow .2s, transform .2s; }
+    .gitem:hover { border-color: #2a2a2a; box-shadow: 0 6px 24px rgba(0,0,0,.45); transform: translateY(-2px); }
     .gitem img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #1a1a1a; cursor: pointer; }
     .gitem-info { padding: 8px 10px; }
     .gitem-key { font-size: .7rem; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -117,11 +138,11 @@ export function renderPage() {
     .type-html { background: rgba(245,158,11,.1); color: #f59e0b; }
 
     /* Public gallery */
-    .pub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
-    .pub-item { border-radius: 10px; overflow: hidden; background: #141414; border: 1px solid #1a1a1a; cursor: pointer; transition: border-color .15s; }
-    .pub-item:hover { border-color: #333; }
+    .pub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; }
+    .pub-item { border-radius: 12px; overflow: hidden; background: #111; border: 1px solid #1a1a1a; cursor: pointer; transition: border-color .15s, box-shadow .2s, transform .2s; }
+    .pub-item:hover { border-color: #2a2a2a; box-shadow: 0 6px 24px rgba(0,0,0,.45); transform: translateY(-2px); }
     .pub-item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
-    .pub-item-info { padding: 7px 10px; font-size: .72rem; color: #555; }
+    .pub-item-info { padding: 8px 12px; font-size: .74rem; color: #4a4a4a; }
 
     /* Lightbox */
     .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.92); display: none; align-items: center; justify-content: center; z-index: 100; padding: 24px; }
@@ -133,6 +154,10 @@ export function renderPage() {
     .lb-key { font-size: .85rem; color: #ccc; word-break: break-all; }
     .lb-actions { display: flex; gap: 7px; margin-top: 12px; }
     .lb-close { position: absolute; top: 14px; right: 14px; background: #1a1a1a; border: 1px solid #222; color: #888; width: 32px; height: 32px; border-radius: 7px; cursor: pointer; font-size: .95rem; display: flex; align-items: center; justify-content: center; }
+    .lb-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,.5); border: 1px solid #333; color: #ccc; width: 40px; height: 60px; border-radius: 8px; cursor: pointer; font-size: 1.6rem; display: flex; align-items: center; justify-content: center; transition: background .15s, color .15s; z-index: 101; }
+    .lb-nav:hover { background: rgba(40,40,40,.9); color: #fff; }
+    .lb-nav-prev { left: 14px; }
+    .lb-nav-next { right: 14px; }
     .load-more { display: flex; justify-content: center; margin-top: 20px; }
     .empty { text-align: center; padding: 48px; color: #333; font-size: .88rem; }
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1f1f1f; border: 1px solid #2a2a2a; color: #e8e8e8; padding: 8px 18px; border-radius: 8px; font-size: .82rem; transition: transform .25s; z-index: 200; white-space: nowrap; }
@@ -168,6 +193,26 @@ export function renderPage() {
     .modal-footer { padding: 12px 20px; border-top: 1px solid #1f1f1f; display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0; }
     .btn-primary { background: #3b82f6; color: #fff; }
     .btn-primary:hover { background: #2563eb; }
+    /* Skeleton shimmer */
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    .gitem img:not(.loaded), .pub-item img:not(.loaded) {
+      background: linear-gradient(90deg, #141414 25%, #1c1c1c 50%, #141414 75%);
+      background-size: 400% 100%;
+      animation: shimmer 1.4s ease infinite;
+    }
+    .gitem img.loaded, .pub-item img.loaded { animation: none; background: #1a1a1a; }
+    /* Responsive */
+    @media (max-width: 600px) {
+      main { padding: 14px 16px; }
+      .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+      .pub-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+      .header-top { padding: 9px 16px; }
+      .tab-nav { padding: 0 8px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+      .tab-nav::-webkit-scrollbar { display: none; }
+      .tab { padding: 9px 10px; font-size: .8rem; }
+      .search-input { width: 160px; }
+      .drop-zone { padding: 36px 20px; }
+    }
 
     /* Protos — upload box */
     .proto-upload-section { background:#111; border:1px solid #1a1a1a; border-radius:12px; margin-bottom:20px; overflow:hidden; }
@@ -225,18 +270,20 @@ export function renderPage() {
 <body>
 <div class="app">
   <header>
-    <h1>Onimg</h1>
-    <div class="tab-bar">
+    <div class="header-top">
+      <h1>Onimg</h1>
+      <div class="spacer"></div>
+      <div id="userArea">
+        <button class="btn-sm" id="loginTrigger">登录</button>
+      </div>
+    </div>
+    <nav class="tab-nav">
       <button class="tab active" data-tab="gallery-pub">公开图库</button>
       <button class="tab" data-tab="upload" id="tabUpload">上传</button>
       <button class="tab" data-tab="gallery-mine" id="tabMine">我的图库</button>
       <button class="tab" data-tab="pages" id="tabPages">我的页面</button>
       <button class="tab" data-tab="protos" id="tabProtos">我的原型</button>
-    </div>
-    <div class="spacer"></div>
-    <div id="userArea">
-      <button class="btn-sm" id="loginTrigger">登录</button>
-    </div>
+    </nav>
   </header>
 
   <!-- Login overlay -->
@@ -244,10 +291,10 @@ export function renderPage() {
     <div class="login-card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px">
         <h2 style="margin:0">登录 Onimg</h2>
-        <button onclick="document.getElementById('loginOverlay').style.display='none'" style="background:none;border:none;color:#555;font-size:1.2rem;cursor:pointer;line-height:1;padding:4px">✕</button>
+        <button id="loginOverlayClose" style="background:none;border:none;color:#555;font-size:1.2rem;cursor:pointer;line-height:1;padding:4px">✕</button>
       </div>
       <div class="field"><label>用户名</label><input type="text" id="lu" autocomplete="username" placeholder="username"></div>
-      <div class="field"><label>密码</label><input type="password" id="lp" autocomplete="current-password" placeholder="••••••••"></div>
+      <div class="field"><label>密码</label><div class="pass-wrap"><input type="password" id="lp" autocomplete="current-password" placeholder="••••••••"><button type="button" class="pass-toggle" id="lpToggle" title="显示/隐藏密码">👁</button></div></div>
       <button class="btn-full" id="doLogin">登录</button>
       <div class="login-err" id="loginErr"></div>
     </div>
@@ -274,8 +321,13 @@ export function renderPage() {
       </div>
       <div class="drop-zone" id="dropZone">
         <input type="file" id="fileInput" accept="image/*" multiple>
-        <p>点击或拖拽图片到此处</p>
-        <small style="display:block;margin-top:6px;color:#444">支持 JPG / PNG / GIF / WebP / SVG</small>
+        <svg class="dz-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 16 12 12 8 16"></polyline>
+          <line x1="12" y1="12" x2="12" y2="21"></line>
+          <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+        </svg>
+        <p style="font-size:.9rem;font-weight:500;color:inherit">点击或拖拽图片上传</p>
+        <small style="display:block;margin-top:8px;font-size:.76rem">JPG · PNG · GIF · WebP · SVG</small>
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:.82rem;color:#555">
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none">
@@ -487,6 +539,8 @@ export function renderPage() {
 <!-- Lightbox -->
 <div class="lightbox" id="lightbox">
   <button class="lb-close" id="lbClose">✕</button>
+  <button class="lb-nav lb-nav-prev" id="lbPrev">‹</button>
+  <button class="lb-nav lb-nav-next" id="lbNext">›</button>
   <div class="lb-inner">
     <div class="lb-img-wrap"><img id="lbImg" src="" alt=""></div>
     <div class="lb-meta">
@@ -494,6 +548,7 @@ export function renderPage() {
       <div class="lb-actions">
         <button class="btn btn-ghost" id="lbCopy">复制链接</button>
         <button class="btn btn-ghost" id="lbMd">复制 MD</button>
+        <button class="btn btn-ghost" id="lbBbcode">复制 BBCode</button>
         <div style="flex:1"></div>
         <button class="btn btn-danger" id="lbDelete" style="display:none">删除</button>
       </div>
@@ -543,12 +598,30 @@ export function renderPage() {
 <div class="toast" id="toast"></div>
 
 <script>
+  function _fflate() {
+    if (!window.fflate) throw new Error('压缩库未加载，请刷新页面后重试');
+    return window.fflate;
+  }
   const TOKEN_KEY = 'onimg_token', PERM_KEY = 'onimg_perms', USER_KEY = 'onimg_user', ADMIN_KEY = 'onimg_is_admin';
   let token = localStorage.getItem(TOKEN_KEY);
   let perms = JSON.parse(localStorage.getItem(PERM_KEY) || 'null');
   let username = localStorage.getItem(USER_KEY);
   let isAdminUser = localStorage.getItem(ADMIN_KEY) === '1';
   let mineItems = [], lbKey = null, editingSlug = null, userPages = [], vditorInst = null, userProtos = [];
+  let lbList = [], lbIdx = -1;
+
+  // Validate stored token hasn't expired
+  (function() {
+    if (!token) return;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[0]));
+      if (payload.exp && Date.now() > payload.exp * 1000) {
+        localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(PERM_KEY);
+        localStorage.removeItem(USER_KEY); localStorage.removeItem(ADMIN_KEY);
+        token = null; perms = null; username = null; isAdminUser = false;
+      }
+    } catch {}
+  })();
 
   function authH() { return { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }; }
 
@@ -694,7 +767,7 @@ export function renderPage() {
       document.getElementById('uploadBtn').disabled = !(perms?.canUpload ?? true);
     } else {
       el.innerHTML = \`<button class="btn-sm" id="loginTrigger">登录</button>\`;
-      document.getElementById('loginTrigger').addEventListener('click', () => document.getElementById('loginOverlay').style.display = 'flex');
+      document.getElementById('loginTrigger').addEventListener('click', openLoginOverlay);
       document.getElementById('uploadBtn').disabled = true;
     }
     document.getElementById('footerAdmin').innerHTML = isAdminUser
@@ -721,6 +794,7 @@ export function renderPage() {
   });
 
   function logout() {
+    if (!confirm('确认退出登录？')) return;
     localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(PERM_KEY); localStorage.removeItem(USER_KEY); localStorage.removeItem(ADMIN_KEY);
     token = null; perms = null; username = null; isAdminUser = false;
     updateUserArea();
@@ -732,12 +806,40 @@ export function renderPage() {
   }
 
   // Login
+  const LOGIN_ERR_MAP = {
+    'Invalid credentials': '账号或密码错误',
+    'Missing credentials': '请填写账号和密码',
+  };
+  function friendlyLoginErr(msg) { return LOGIN_ERR_MAP[msg] || msg || '登录失败，请稍后重试'; }
+
+  function openLoginOverlay() {
+    document.getElementById('loginOverlay').style.display = 'flex';
+    setTimeout(() => document.getElementById('lu').focus(), 80);
+  }
+
+  document.getElementById('loginOverlayClose').addEventListener('click', () => { document.getElementById('loginOverlay').style.display = 'none'; });
+
+  document.getElementById('lpToggle').addEventListener('click', () => {
+    const inp = document.getElementById('lp');
+    const tog = document.getElementById('lpToggle');
+    if (inp.type === 'password') { inp.type = 'text'; tog.textContent = '🙈'; } else { inp.type = 'password'; tog.textContent = '👁'; }
+  });
+
+  document.getElementById('lu').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('lp').focus(); });
   document.getElementById('lp').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('doLogin').click(); });
+
   document.getElementById('doLogin').addEventListener('click', async () => {
     const u = document.getElementById('lu').value.trim(), p = document.getElementById('lp').value;
     const err = document.getElementById('loginErr');
-    if (!u || !p) { err.textContent = '请填写账号和密码'; return; }
-    document.getElementById('doLogin').disabled = true; err.textContent = '';
+    const card = document.querySelector('#loginOverlay .login-card');
+    const btn = document.getElementById('doLogin');
+    if (!u || !p) {
+      err.textContent = '请填写账号和密码';
+      card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+      card.addEventListener('animationend', () => card.classList.remove('shake'), { once: true });
+      return;
+    }
+    btn.classList.add('loading'); btn.textContent = '登录中…'; err.textContent = '';
     try {
       const res = await fetch('/auth/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username:u,password:p}) });
       const data = await res.json();
@@ -748,7 +850,12 @@ export function renderPage() {
       document.getElementById('loginOverlay').style.display = 'none';
       updateUserArea(); loadQuota();
       toast('登录成功，欢迎回来 ' + data.username + '！');
-    } catch(e) { err.textContent = e.message || '登录失败'; }
+    } catch(e) {
+      err.textContent = friendlyLoginErr(e.message);
+      card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+      card.addEventListener('animationend', () => card.classList.remove('shake'), { once: true });
+    }
+    btn.classList.remove('loading'); btn.textContent = '登录';
     document.getElementById('doLogin').disabled = false;
   });
 
@@ -756,7 +863,7 @@ export function renderPage() {
   document.querySelectorAll('.tab').forEach(t => {
     t.addEventListener('click', () => {
       if (!token && ['upload','gallery-mine','pages','protos'].includes(t.dataset.tab)) {
-        document.getElementById('loginOverlay').style.display = 'flex'; return;
+        openLoginOverlay(); return;
       }
       document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
       document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
@@ -775,8 +882,8 @@ export function renderPage() {
     const { items } = await res.json();
     document.getElementById('pubEmpty').style.display = items.length ? 'none' : 'block';
     document.getElementById('pubGrid').innerHTML = items.map(item =>
-      \`<div class="pub-item" onclick="openLb('\${item.key}', false)">
-        <img src="\${location.origin}/\${item.key}" loading="lazy">
+      \`<div class="pub-item" onclick="openLb('\${item.key}', false, 'pub')">
+        <img src="\${location.origin}/\${item.key}" loading="lazy" onload="this.classList.add('loaded')">
         <div class="pub-item-info">@\${item.owner || '—'}</div>
       </div>\`
     ).join('');
@@ -787,7 +894,7 @@ export function renderPage() {
   const dropZone = document.getElementById('dropZone');
   const fileInput = document.getElementById('fileInput');
   let pendingFiles = [];
-  dropZone.addEventListener('click', () => { if (!token) { document.getElementById('loginOverlay').style.display='flex'; return; } fileInput.click(); });
+  dropZone.addEventListener('click', () => { if (!token) { openLoginOverlay(); return; } fileInput.click(); });
   dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
   dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
   dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('over'); setFiles([...e.dataTransfer.files].filter(f=>f.type.startsWith('image/'))); });
@@ -852,7 +959,7 @@ export function renderPage() {
     setFiles([]);
     loadQuota();
     document.getElementById('resultList').innerHTML = results.map(r => r.ok
-      ? \`<div class="result-item"><img src="\${r.url}" loading="lazy"><div class="info"><div class="name">\${r.name}</div><div class="url-row"><input class="url-input" value="\${r.url}" readonly onclick="this.select()"><button class="btn btn-ghost" onclick="cp('\${r.url}',this)" style="padding:3px 8px">复制</button><button class="btn btn-ghost" onclick="cp('![](\${r.url})',this)" style="padding:3px 8px">MD</button></div></div></div>\`
+      ? \`<div class="result-item"><img src="\${r.url}" loading="lazy"><div class="info"><div class="name">\${r.name}</div><div class="url-row"><input class="url-input" value="\${r.url}" readonly onclick="this.select()"><button class="btn btn-ghost" onclick="cp('\${r.url}',this)" style="padding:3px 8px">复制</button><button class="btn btn-ghost" onclick="cp('![](\${r.url})',this)" style="padding:3px 8px">MD</button><button class="btn btn-ghost" onclick="cp('[img]\${r.url}[/img]',this)" style="padding:3px 8px">BB</button></div></div></div>\`
       : \`<div class="result-item"><div class="info"><div class="name" style="color:#ef4444">❌ \${r.name}: \${r.error}</div></div></div>\`
     ).join('');
   });
@@ -892,7 +999,7 @@ export function renderPage() {
     document.getElementById('mineGrid').innerHTML = items.map(item => {
       const url = location.origin + '/' + item.key;
       return \`<div class="gitem">
-        <img src="\${url}" loading="lazy" onclick="openLb('\${item.key}', true)">
+        <img src="\${url}" loading="lazy" onload="this.classList.add('loaded')" onclick="openLb('\${item.key}', true, 'mine')">
         <div class="gitem-info">
           <div class="gitem-key">\${item.key}</div>
           <div class="gitem-row">
@@ -1057,17 +1164,47 @@ export function renderPage() {
   );
 
   // ── Lightbox ──
-  function openLb(key, showDelete) {
+  function openLb(key, showDelete, context) {
+    lbKey = key;
+    if (context === 'mine') {
+      const q = document.getElementById('mineSearch').value.toLowerCase();
+      const items = q ? mineItems.filter(i => i.key.toLowerCase().includes(q)) : mineItems;
+      lbList = items.map(i => ({ key: i.key, showDelete }));
+    } else if (context === 'pub') {
+      lbList = Array.from(document.querySelectorAll('#pubGrid .pub-item img')).map(img => ({
+        key: img.src.replace(location.origin + '/', ''), showDelete: false,
+      }));
+    } else {
+      lbList = [{ key, showDelete }];
+    }
+    lbIdx = lbList.findIndex(i => i.key === key);
+    _showLb(key, showDelete);
+  }
+  function _showLb(key, showDelete) {
     lbKey = key;
     document.getElementById('lbImg').src = location.origin + '/' + key;
     document.getElementById('lbKey').textContent = key;
     document.getElementById('lbDelete').style.display = (showDelete && perms?.canDelete) ? 'block' : 'none';
-    document.getElementById('lightbox').classList.add('show');
+    const lb = document.getElementById('lightbox');
+    lb.classList.add('show');
+    // Show/hide nav arrows
+    document.getElementById('lbPrev').style.visibility = lbIdx > 0 ? 'visible' : 'hidden';
+    document.getElementById('lbNext').style.visibility = lbIdx < lbList.length - 1 ? 'visible' : 'hidden';
+  }
+  function lbNavigate(dir) {
+    const newIdx = lbIdx + dir;
+    if (newIdx < 0 || newIdx >= lbList.length) return;
+    lbIdx = newIdx;
+    const { key, showDelete } = lbList[lbIdx];
+    _showLb(key, showDelete);
   }
   document.getElementById('lbClose').addEventListener('click', () => document.getElementById('lightbox').classList.remove('show'));
   document.getElementById('lightbox').addEventListener('click', e => { if (e.target === document.getElementById('lightbox')) document.getElementById('lightbox').classList.remove('show'); });
   document.getElementById('lbCopy').addEventListener('click', () => { cp(location.origin + '/' + lbKey); toast('已复制'); });
   document.getElementById('lbMd').addEventListener('click',   () => { cp('![](' + location.origin + '/' + lbKey + ')'); toast('已复制 MD'); });
+  document.getElementById('lbPrev').addEventListener('click', () => lbNavigate(-1));
+  document.getElementById('lbNext').addEventListener('click', () => lbNavigate(1));
+  document.getElementById('lbBbcode').addEventListener('click', () => { cp('[img]' + location.origin + '/' + lbKey + '[/img]'); toast('已复制 BBCode'); });
   document.getElementById('lbDelete').addEventListener('click', () => delMine(lbKey));
 
   // ── Protos ──
@@ -1113,7 +1250,7 @@ export function renderPage() {
     p.textContent = '正在打包文件夹…';
     document.getElementById('protoUploadBtn').disabled = true;
     try {
-      const { zipSync } = window.fflate;
+      const { zipSync } = _fflate();
       const filesData = {};
       let topFolder = '';
       // Collect all files
@@ -1143,7 +1280,7 @@ export function renderPage() {
     p.textContent = '正在读取文件夹…';
     document.getElementById('protoUploadBtn').disabled = true;
     try {
-      const { zipSync } = window.fflate;
+      const { zipSync } = _fflate();
       const filesData = {};
       async function readDir(entry, prefix) {
         const reader = entry.createReader();
@@ -1229,7 +1366,7 @@ export function renderPage() {
       setStatus('🗜️ 正在解压 ZIP…', 3);
       const bytes = new Uint8Array(await zipFile.arrayBuffer());
       try {
-        const raw = window.fflate.unzipSync(bytes);
+        const raw = _fflate().unzipSync(bytes);
         const fixed = {}; for (const [p,d] of Object.entries(raw)) fixed[_protoFixEnc(p)] = d;
         files = _protoStrip(fixed);
       } catch(e) { throw new Error('解压失败：' + e.message); }
@@ -1679,7 +1816,7 @@ export function renderPage() {
     document.getElementById('puFileName').textContent = '正在打包…';
     document.getElementById('protoUpdateUpload').disabled = true;
     try {
-      const { zipSync } = window.fflate;
+      const { zipSync } = _fflate();
       const filesData = {};
       let topFolder = '';
       for (const file of fileList) {
@@ -1704,7 +1841,7 @@ export function renderPage() {
     document.getElementById('puFileName').textContent = '正在读取…';
     document.getElementById('protoUpdateUpload').disabled = true;
     try {
-      const { zipSync } = window.fflate;
+      const { zipSync } = _fflate();
       const filesData = {};
       async function readDir(entry, prefix) {
         const reader = entry.createReader();
@@ -1724,7 +1861,7 @@ export function renderPage() {
         }
       }
       await readDir(dirEntry, '');
-      const zipped = window.fflate.zipSync(filesData);
+      const zipped = _fflate().zipSync(filesData);
       const blob = new Blob([zipped], { type: 'application/zip' });
       const zipFile = new File([blob], dirEntry.name + '.zip', { type: 'application/zip' });
       setPuFile(zipFile);
@@ -1830,14 +1967,47 @@ export function renderPage() {
 
   // ── Utils ──
   function cp(text, btn) { navigator.clipboard.writeText(text).then(() => { if(btn){const o=btn.textContent;btn.textContent='✓';setTimeout(()=>btn.textContent=o,1400);} }); }
-  function toast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2400); }
+  function toast(msg, type) {
+    const t = document.getElementById('toast');
+    t.className = 'toast show' + (type ? ' t-' + type : '');
+    t.textContent = msg;
+    clearTimeout(t._tid);
+    t._tid = setTimeout(() => t.classList.remove('show'), 2600);
+  }
   function fmtSize(b) { if(b<1024) return b+' B'; if(b<1048576) return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
   function fmtDate(ms) { if(!ms) return '—'; return new Date(ms).toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit',year:'2-digit'}); }
   function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') { document.getElementById('lightbox').classList.remove('show'); closePageModal(); document.getElementById('protoEditModal').classList.remove('show'); document.getElementById('protoUpdateModal').classList.remove('show'); document.getElementById('userProtoVersionModal').classList.remove('show'); closeChangePwdModal(); document.getElementById('loginOverlay').style.display = 'none'; } });
+  document.addEventListener('keydown', e => {
+    const lb = document.getElementById('lightbox');
+    if (e.key === 'Escape') {
+      lb.classList.remove('show'); closePageModal();
+      ['protoEditModal','protoUpdateModal','userProtoVersionModal'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.classList.remove('show');
+      });
+      closeChangePwdModal();
+      document.getElementById('loginOverlay').style.display = 'none';
+    }
+    if (!lb.classList.contains('show')) return;
+    if (e.key === 'ArrowLeft')  lbNavigate(-1);
+    if (e.key === 'ArrowRight') lbNavigate(1);
+  });
+  // Paste upload
+  document.addEventListener('paste', e => {
+    if (!token) return;
+    if (document.activeElement && ['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+    const items = [...(e.clipboardData?.items || [])];
+    const imgItems = items.filter(i => i.type.startsWith('image/'));
+    if (!imgItems.length) return;
+    const files = imgItems.map(i => i.getAsFile()).filter(Boolean);
+    if (!files.length) return;
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'upload'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-upload'));
+    setFiles(files);
+    toast('已从剪贴板粘贴 ' + files.length + ' 张图片，点击上传');
+  });
   document.getElementById('loginOverlay').addEventListener('click', e => { if (e.target === document.getElementById('loginOverlay')) document.getElementById('loginOverlay').style.display = 'none'; });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/fflate/umd/index.js"></script>
+<script>${FFLATE_UMD}</script>
 <script src="https://cdn.jsdelivr.net/npm/vditor/dist/index.min.js" defer></script>
 </body>
 </html>`;
