@@ -190,6 +190,15 @@ export function renderPage() {
     .gitem-key { font-size: .72rem; color: var(--tx-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--mono); font-weight: 500; }
     .gitem-row { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; }
     .gitem-actions { display: flex; gap: 4px; margin-top: 6px; }
+    /* Batch selection */
+    .batch-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding: 9px 14px; background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: 9px; flex-wrap: wrap; }
+    .batch-check { display: flex; align-items: center; gap: 6px; font-size: .82rem; color: var(--tx-2); cursor: pointer; user-select: none; }
+    .batch-count { font-size: .8rem; color: var(--tx-3); font-family: var(--mono); }
+    .gitem { position: relative; }
+    .gitem-sel { position: absolute; top: 8px; left: 8px; z-index: 3; width: 20px; height: 20px; cursor: pointer; accent-color: #e0e0e0; display: none; }
+    .gallery-grid.selecting .gitem-sel { display: block; }
+    .gallery-grid.selecting .gitem img { cursor: pointer; }
+    .gitem.selected { border-color: var(--tx-2); box-shadow: 0 0 0 2px var(--tx-2) inset; }
 
     /* Pages */
     .pages-header { display: flex; align-items: center; margin-bottom: 16px; }
@@ -443,7 +452,16 @@ export function renderPage() {
       <div class="toolbar">
         <input class="search-input" id="mineSearch" type="text" placeholder="搜索…">
         <div class="spacer"></div>
+        <button class="btn btn-ghost" id="mineSelectToggle">选择</button>
         <button class="btn btn-ghost" id="refreshMine">刷新</button>
+      </div>
+      <div class="batch-bar" id="mineBatchBar" style="display:none">
+        <label class="batch-check"><input type="checkbox" id="mineSelectAll"> 全选</label>
+        <span class="batch-count" id="mineSelCount">已选 0</span>
+        <div class="spacer"></div>
+        <button class="btn btn-ghost" id="batchPublic">设为公开</button>
+        <button class="btn btn-ghost" id="batchPrivate">设为私密</button>
+        <button class="btn btn-danger" id="batchDelete">删除选中</button>
       </div>
       <div class="gallery-grid" id="mineGrid"></div>
       <div class="empty" id="mineEmpty" style="display:none">暂无图片，去上传吧</div>
@@ -706,6 +724,7 @@ export function renderPage() {
   let username = localStorage.getItem(USER_KEY);
   let isAdminUser = localStorage.getItem(ADMIN_KEY) === '1';
   let mineItems = [], lbKey = null, editingSlug = null, userPages = [], vditorInst = null, userProtos = [];
+  let mineSelectMode = false; const mineSelected = new Set();
   let lbList = [], lbIdx = -1;
 
   // Validate stored token hasn't expired
@@ -1146,10 +1165,15 @@ export function renderPage() {
     const q = document.getElementById('mineSearch').value.toLowerCase();
     const items = q ? mineItems.filter(i => i.key.toLowerCase().includes(q)) : mineItems;
     document.getElementById('mineEmpty').style.display = items.length ? 'none' : 'block';
-    document.getElementById('mineGrid').innerHTML = items.map(item => {
+    const grid = document.getElementById('mineGrid');
+    grid.classList.toggle('selecting', mineSelectMode);
+    grid.innerHTML = items.map(item => {
       const url = location.origin + '/' + item.key;
-      return \`<div class="gitem">
-        <img src="\${url}" loading="lazy" onload="this.classList.add('loaded')" onclick="openLb('\${item.key}', true, 'mine')">
+      const sel = mineSelected.has(item.key);
+      const clickAttr = mineSelectMode ? \`onclick="toggleSel('\${item.key}')"\` : \`onclick="openLb('\${item.key}', true, 'mine')"\`;
+      return \`<div class="gitem\${sel?' selected':''}" data-key="\${item.key}">
+        <input type="checkbox" class="gitem-sel" \${sel?'checked':''} onchange="toggleSel('\${item.key}')">
+        <img src="\${url}" loading="lazy" onload="this.classList.add('loaded')" \${clickAttr}>
         <div class="gitem-info">
           <div class="gitem-key">\${item.key}</div>
           <div class="gitem-row">
@@ -1163,7 +1187,94 @@ export function renderPage() {
         </div>
       </div>\`;
     }).join('');
+    updateBatchUI();
   }
+
+  // ── Batch selection ──
+  function toggleSel(key) {
+    if (mineSelected.has(key)) mineSelected.delete(key); else mineSelected.add(key);
+    const card = document.querySelector('.gitem[data-key="' + key + '"]');
+    if (card) {
+      card.classList.toggle('selected', mineSelected.has(key));
+      const cb = card.querySelector('.gitem-sel'); if (cb) cb.checked = mineSelected.has(key);
+    }
+    updateBatchUI();
+  }
+  window.toggleSel = toggleSel;
+
+  function visibleMineKeys() {
+    const q = document.getElementById('mineSearch').value.toLowerCase();
+    return (q ? mineItems.filter(i => i.key.toLowerCase().includes(q)) : mineItems).map(i => i.key);
+  }
+  function updateBatchUI() {
+    document.getElementById('mineSelCount').textContent = '已选 ' + mineSelected.size;
+    const vis = visibleMineKeys();
+    const allSel = vis.length > 0 && vis.every(k => mineSelected.has(k));
+    const sa = document.getElementById('mineSelectAll'); if (sa) sa.checked = allSel;
+  }
+  document.getElementById('mineSelectToggle').addEventListener('click', () => {
+    mineSelectMode = !mineSelectMode;
+    if (!mineSelectMode) mineSelected.clear();
+    document.getElementById('mineBatchBar').style.display = mineSelectMode ? 'flex' : 'none';
+    document.getElementById('mineSelectToggle').textContent = mineSelectMode ? '退出选择' : '选择';
+    document.getElementById('mineSelectToggle').classList.toggle('btn-primary', mineSelectMode);
+    renderMineGallery();
+  });
+  document.getElementById('mineSelectAll').addEventListener('change', e => {
+    const vis = visibleMineKeys();
+    if (e.target.checked) vis.forEach(k => mineSelected.add(k));
+    else vis.forEach(k => mineSelected.delete(k));
+    renderMineGallery();
+  });
+
+  // Run async tasks with a concurrency cap
+  async function runPool(items, limit, worker) {
+    const queue = [...items]; let ok = 0, fail = 0;
+    async function next() {
+      while (queue.length) {
+        const it = queue.shift();
+        try { await worker(it); ok++; } catch { fail++; }
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(limit, items.length) }, next));
+    return { ok, fail };
+  }
+
+  document.getElementById('batchDelete').addEventListener('click', async () => {
+    const keys = [...mineSelected];
+    if (!keys.length) { toast('未选择图片'); return; }
+    if (!confirm('确认删除选中的 ' + keys.length + ' 张图片？此操作不可恢复。')) return;
+    toast('删除中…');
+    const { ok, fail } = await runPool(keys, 6, async key => {
+      const r = await fetch('/delete/' + key, { method:'DELETE', headers:{ Authorization:'Bearer '+token } });
+      if (!r.ok) throw new Error();
+      mineItems = mineItems.filter(i => i.key !== key);
+      mineSelected.delete(key);
+    });
+    renderMineGallery();
+    toast('已删除 ' + ok + ' 张' + (fail ? '，' + fail + ' 张失败' : ''), fail ? 'warn' : 'success');
+  });
+
+  async function batchSetVisibility(makePublic) {
+    const keys = [...mineSelected].filter(k => {
+      const it = mineItems.find(i => i.key === k);
+      return it && it.isPublic !== makePublic; // only flip those that differ
+    });
+    if (!keys.length) { toast('选中图片已是目标状态'); return; }
+    toast('处理中…');
+    const { ok, fail } = await runPool(keys, 6, async key => {
+      const r = await fetch('/api/image/' + encodeURIComponent(key) + '/visibility', { method:'PATCH', headers:{ Authorization:'Bearer '+token } });
+      if (!r.ok) throw new Error();
+      const { isPublic } = await r.json();
+      const idx = mineItems.findIndex(i => i.key === key);
+      if (idx !== -1) mineItems[idx].isPublic = isPublic;
+    });
+    renderMineGallery();
+    loadPublicGallery();
+    toast('已更新 ' + ok + ' 张' + (fail ? '，' + fail + ' 张失败' : ''), fail ? 'warn' : 'success');
+  }
+  document.getElementById('batchPublic').addEventListener('click', () => batchSetVisibility(true));
+  document.getElementById('batchPrivate').addEventListener('click', () => batchSetVisibility(false));
 
   async function toggleVis(key, btn) {
     const res = await fetch('/api/image/' + encodeURIComponent(key) + '/visibility', { method:'PATCH', headers:{ Authorization:'Bearer '+token } });
