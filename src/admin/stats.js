@@ -431,7 +431,7 @@ export async function handleAllProtoStats(env) {
   do {
     const list = await env.STATS.list({ prefix: 'prstats:', cursor, limit: 1000 });
     for (const key of list.keys) {
-      const protoId = key.name.slice(9); // strip 'prstats:'
+      const protoId = key.name.slice(8); // strip 'prstats:'（8 字符，原 slice(9) 会误删 ID 首字符）
       result.stats[protoId] = key.metadata ?? { count: 0, lastAccess: null };
     }
     cursor = list.list_complete ? undefined : list.cursor;

@@ -840,8 +840,8 @@ export function renderAdminPage() {
         </div>
         <div class="table-wrap">
           <table class="data-table">
-            <thead><tr><th>名称</th><th>作者</th><th>文件数</th><th>大小</th><th>密码</th><th>创建时间</th><th></th></tr></thead>
-            <tbody id="adminProtosBody"><tr><td colspan="7" style="text-align:center;color:var(--tx-3);padding:24px">加载中…</td></tr></tbody>
+            <thead><tr><th>名称</th><th>作者</th><th>文件数</th><th>大小</th><th>密码</th><th>版本</th><th>访问</th><th>创建时间</th><th>更新时间</th><th></th></tr></thead>
+            <tbody id="adminProtosBody"><tr><td colspan="10" style="text-align:center;color:var(--tx-3);padding:24px">加载中…</td></tr></tbody>
           </table>
         </div>
         <div class="empty" id="adminProtosEmpty" style="display:none">暂无原型</div>
@@ -1363,6 +1363,15 @@ export function renderAdminPage() {
         <div style="font-weight:500;font-size:.84rem;color:var(--tx);display:flex;align-items:center;gap:2px;flex-wrap:wrap">\${esc(title)}\${lock}\${ver}</div>
         <div style="font-family:var(--mono);font-size:.7rem;color:var(--tx-3);margin-top:2px">/proto/\${esc(id)}/</div>\`;
     };
+    const protoActions = (id, pm) => {
+      const url = location.origin + '/proto/' + id + '/';
+      const previewUrl = url + (pm.accessPassword ? '?pwd=' + encodeURIComponent(pm.accessPassword) : '');
+      return \`<div style="display:flex;gap:4px;flex-wrap:wrap">
+        <button class="btn btn-ghost" style="padding:4px 8px;font-size:.73rem" data-url="\${url}" onclick="copyText(this.dataset.url,this)">复制地址</button>
+        <a href="\${previewUrl}" target="_blank" class="btn btn-ghost" style="padding:4px 8px;font-size:.73rem;text-decoration:none">预览</a>
+        <button class="btn btn-ghost" style="padding:4px 8px;font-size:.73rem" data-title="\${esc(pm.title||id)}" onclick="openProtoStatsModal('\${esc(id)}',this.dataset.title)">统计数据</button>
+      </div>\`;
+    };
     const prRows = sortedPr.length
       ? sortedPr.map(([id,s]) => {
           const pm = protoMap[id] || { title: id, owner: '—' };
@@ -1372,7 +1381,7 @@ export function renderAdminPage() {
             <td class="muted">\${esc(pm.owner||'—')}</td>
             <td class="view-count">\${(s.count??0).toLocaleString()}</td>
             <td class="muted">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
-            <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:.73rem" data-title="\${esc(pm.title||id)}" onclick="openProtoStatsModal('\${esc(id)}',this.dataset.title)">详情</button></td>
+            <td>\${protoActions(id, pm)}</td>
           </tr>\`;
         }).join('')
       : protos.slice(0,10).map(pm => \`<tr>
@@ -1381,7 +1390,7 @@ export function renderAdminPage() {
           <td class="muted">\${esc(pm.owner||'—')}</td>
           <td class="view-count">0</td>
           <td class="muted">—</td>
-          <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:.73rem" data-title="\${esc(pm.title||pm.protoId)}" onclick="openProtoStatsModal('\${esc(pm.protoId)}',this.dataset.title)">详情</button></td>
+          <td>\${protoActions(pm.protoId, pm)}</td>
         </tr>\`).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--tx-3);padding:32px">暂无原型</td></tr>';
     document.getElementById('topProtosBody').innerHTML = prRows;
   }
@@ -2140,33 +2149,44 @@ export function renderAdminPage() {
   async function loadAdminProtos() {
     const tbody = document.getElementById('adminProtosBody');
     const empty = document.getElementById('adminProtosEmpty');
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#333;padding:24px">加载中…</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#333;padding:24px">加载中…</td></tr>';
     empty.style.display = 'none';
     try {
       const res = await fetch('/admin/protos', { headers: authH() });
-      if (!res.ok) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#555;padding:24px">加载失败</td></tr>'; return; }
+      if (!res.ok) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#555;padding:24px">加载失败</td></tr>'; return; }
       const { protos } = await res.json();
       if (!protos.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
       tbody.innerHTML = protos.map(p => {
         const url = location.origin + '/proto/' + p.protoId + '/';
+        const previewUrl = url + (p.accessPassword ? '?pwd=' + encodeURIComponent(p.accessPassword) : '');
         const lock = p.hasPassword ? '<span style="background:rgba(251,191,36,.1);color:#fbbf24;border-radius:4px;font-size:.68rem;padding:1px 5px">🔒</span>' : '';
+        const priv = p.isPrivate ? '<span style="background:rgba(255,255,255,.06);color:var(--tx-2);border-radius:4px;font-size:.68rem;padding:1px 5px">私有</span>' : '';
+        const pwdCell = p.hasPassword
+          ? \`<div style="font-family:var(--mono);font-size:.78rem;color:var(--amber)">\${esc(p.accessPassword || '••••••')}</div><div style="font-size:.65rem;color:var(--tx-3);margin-top:2px">有效期：\${formatExpiry(p.passwordExpiry)}</div>\`
+          : '<span style="color:var(--tx-3);font-size:.78rem">无</span>';
+        const verCount = (p.versions ?? []).length;
+        const verBadge = \`<span style="font-family:var(--mono);font-size:.72rem;color:var(--tx-2)">v\${p.version || 1}\${verCount > 1 ? ' ('+verCount+')' : ''}</span>\`;
+        const visits = p.visitCount ?? 0;
         return \`<tr>
           <td>
-            <div style="font-weight:500;font-size:.88rem">\${esc(p.title || p.protoId)} \${lock}</div>
+            <div style="font-weight:500;font-size:.88rem;display:flex;align-items:center;gap:4px;flex-wrap:wrap">\${esc(p.title || p.protoId)} \${lock}\${priv}</div>
             <div style="font-family:monospace;font-size:.68rem;color:#444">\${p.protoId}</div>
           </td>
           <td class="muted">@\${esc(p.owner || '—')}</td>
           <td class="muted">\${p.fileCount ?? '—'}</td>
           <td class="muted">\${fmtSize(p.totalSize || 0)}</td>
-          <td>\${p.hasPassword ? '<span style="color:#fbbf24;font-size:.78rem">有密码</span>' : '<span style="color:#555;font-size:.78rem">无</span>'}</td>
-          <td class="muted">\${timeAgo(p.createdAt)}</td>
+          <td>\${pwdCell}</td>
+          <td>\${verBadge}</td>
+          <td class="view-count">\${visits > 0 ? visits.toLocaleString() : '—'}</td>
+          <td class="muted" style="white-space:nowrap">\${fmtDate(p.createdAt)}</td>
+          <td class="muted" style="white-space:nowrap">\${timeAgo(p.updatedAt || p.createdAt)}</td>
           <td style="white-space:nowrap">
-            <a href="\${url}" target="_blank" class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem;text-decoration:none">预览</a>
+            <a href="\${previewUrl}" target="_blank" class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem;text-decoration:none">预览</a>
             <button class="btn btn-danger" style="padding:4px 8px;font-size:.75rem" onclick="adminDeleteProto('\${esc(p.protoId)}')">删除</button>
           </td>
         </tr>\`;
       }).join('');
-    } catch { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#555;padding:24px">加载失败</td></tr>'; }
+    } catch { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#555;padding:24px">加载失败</td></tr>'; }
   }
 
   async function adminDeleteProto(protoId) {
@@ -2591,6 +2611,7 @@ export function renderAdminPage() {
   }
   function timeAgo(ts) { const d=Date.now()-ts; if(d<60000) return '刚刚'; if(d<3600000) return Math.floor(d/60000)+' 分钟前'; if(d<86400000) return Math.floor(d/3600000)+' 小时前'; return Math.floor(d/86400000)+' 天前'; }
   function fmtDate(ms) { if(!ms) return '—'; return new Date(ms).toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit',year:'2-digit'}); }
+  function formatExpiry(ts) { if(!ts) return '永久'; return new Date(ts).toLocaleDateString('zh-CN') + ' 到期'; }
   document.addEventListener('keydown', e => {
     if (e.key==='Escape') {
       document.getElementById('lightbox').classList.remove('show');

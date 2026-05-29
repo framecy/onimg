@@ -131,7 +131,7 @@ export default {
         if (method === 'POST'   && path === '/admin/proto/files')          return withCors(await handleProtoFileBatch(request, env, env.ADMIN_USERNAME ?? 'admin'), request);
         if (method === 'POST'   && path === '/admin/proto/finalize')       return withCors(await handleProtoFinalize(request, env, env.ADMIN_USERNAME ?? 'admin'), request);
         // Admin prototypes
-        if (method === 'GET'    && path === '/admin/protos')               return withCors(Response.json({ protos: await listProtos(env, null, true) }), request);
+        if (method === 'GET'    && path === '/admin/protos')               return withCors(await adminProtoListHandler(env), request);
         if (method === 'DELETE' && path.startsWith('/admin/protos/'))      return withCors(await deleteProto(env, decodeURIComponent(path.slice('/admin/protos/'.length)), null, true), request);
         if (method === 'PATCH'  && path.startsWith('/admin/protos/'))      return withCors(await updateProtoMeta(env, decodeURIComponent(path.slice('/admin/protos/'.length)), null, true, await request.json()), request);
         // Admin pages
@@ -204,7 +204,16 @@ async function protoListHandler(request, env) {
   // Merge visit counts from KV metadata (single list call, no per-item reads)
   const statsList = await env.STATS.list({ prefix: 'prstats:' });
   const statsMap = {};
-  for (const k of statsList.keys) statsMap[k.name.slice(9)] = k.metadata?.count ?? 0;
+  for (const k of statsList.keys) statsMap[k.name.slice(8)] = k.metadata?.count ?? 0; // 'prstats:' = 8 字符
+  protos.forEach(p => { p.visitCount = statsMap[p.protoId] ?? 0; });
+  return Response.json({ protos });
+}
+
+async function adminProtoListHandler(env) {
+  const protos = await listProtos(env, null, true);
+  const statsList = await env.STATS.list({ prefix: 'prstats:' });
+  const statsMap = {};
+  for (const k of statsList.keys) statsMap[k.name.slice(8)] = k.metadata?.count ?? 0; // 'prstats:' = 8 字符
   protos.forEach(p => { p.visitCount = statsMap[p.protoId] ?? 0; });
   return Response.json({ protos });
 }
