@@ -2,6 +2,7 @@ import { verifyUserToken, checkAndIncrementQuota } from './user-auth.js';
 import { verifyAdminToken as checkAdmin } from './admin/auth.js';
 import { getUploadConfig } from './admin/config-handler.js';
 import { cfBump, cfMonth } from './admin/cfCounters.js';
+import { bumpGlobalStats } from './admin/gstats.js';
 
 export async function handleUpload(request, env, ctx) {
   const actor = await resolveActor(request, env);
@@ -50,6 +51,8 @@ export async function handleUpload(request, env, ctx) {
 
   // R2 Class A 操作追踪（best-effort，不阻塞响应）
   ctx?.waitUntil(cfBump(env.STATS, 'cf:r2a:' + cfMonth(), 1, true));
+  // 全局计数缓存增量（best-effort，不阻塞响应）
+  ctx?.waitUntil(bumpGlobalStats(env, 1, size));
 
   // Track in KV: imgmeta + userimgs
   await trackImage(env, actor.username, key, size, false); // default private

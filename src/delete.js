@@ -1,6 +1,7 @@
 import { verifyAdminToken } from './admin/auth.js';
 import { verifyUserToken } from './user-auth.js';
 import { cfBump, cfMonth } from './admin/cfCounters.js';
+import { bumpGlobalStats } from './admin/gstats.js';
 
 export async function handleDelete(request, env, key, ctx) {
   const isAdmin = await verifyAdminToken(request, env);
@@ -22,6 +23,8 @@ export async function handleDelete(request, env, key, ctx) {
 
   // R2 Class A 操作追踪（删除）
   ctx?.waitUntil(cfBump(env.STATS, 'cf:r2a:' + cfMonth(), 1, true));
+  // 全局计数缓存增量（排除 proto/ 文件，与统计口径一致）
+  if (!key.startsWith('proto/')) ctx?.waitUntil(bumpGlobalStats(env, -1, -(object.size ?? 0)));
 
   // Clean up KV metadata
   const owner = object.customMetadata?.uploadedBy ?? username;

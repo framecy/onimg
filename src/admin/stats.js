@@ -1,3 +1,5 @@
+import { getGlobalStats, reconcileGlobalStats } from './gstats.js';
+
 // ── Cloudflare 免费额度 — CF Analytics API 优先，自追踪降级 ──────────────────────
 export async function handleCfQuota(env) {
   const day        = new Date().toISOString().slice(0, 10);
@@ -230,21 +232,26 @@ async function _fetchCfAnalytics(env, today, month, monthStart) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function handleAdminStats(env) {
-  let totalImages = 0;
-  let totalSize = 0;
-  let cursor;
+  // 优先读计数缓存（O(1)）；缓存缺失时退化为全量扫描一次并播种。
+  let g = await getGlobalStats(env);
+  if (!g) g = await reconcileGlobalStats(env);
+  return Response.json({
+    totalImages: g.totalImages,
+    totalSize: g.totalSize,
+    cached: true,
+    updatedAt: g.updatedAt,
+  });
+}
 
-  do {
-    const result = await env.BUCKET.list({ limit: 1000, cursor });
-    for (const obj of result.objects) {
-      if (obj.key.startsWith('proto/')) continue; // exclude prototype files
-      totalImages++;
-      totalSize += obj.size;
-    }
-    cursor = result.truncated ? result.cursor : undefined;
-  } while (cursor);
-
-  return Response.json({ totalImages, totalSize });
+// 全量重算计数缓存（修正任何增量漂移）
+export async function handleReconcileStats(env) {
+  const g = await reconcileGlobalStats(env);
+  return Response.json({
+    totalImages: g.totalImages,
+    totalSize: g.totalSize,
+    updatedAt: g.updatedAt,
+    reconciled: true,
+  });
 }
 
 // 返回所有图片的访问次数（KV metadata，单次 list 调用）
