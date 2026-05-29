@@ -8,8 +8,9 @@ export function renderAdminPage() {
   <title>Onimg Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vditor/dist/index.css">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"></noscript>
+  <!-- Vditor CSS/JS 改为编辑器打开时按需注入（见 ensureVditor），避免每次访问加载 ~0.5MB 编辑器 -->
   <style>
     :root {
       --bg:     #0a0a0a; --bg-2: #141414; --bg-3: #1a1a1a; --bg-4: #222222; --bg-5: #2a2a2a;
@@ -1089,6 +1090,16 @@ export function renderAdminPage() {
 
 <script>
   function _fflate() {
+    // Lazy-execute the inlined fflate bundle on first use (zip/unzip).
+    // Inline <script> exec is CSP-allowed (unsafe-inline); avoids parsing 32KB on every page load.
+    if (!window.fflate) {
+      const src = document.getElementById('fflateSrc');
+      if (src && src.textContent) {
+        const s = document.createElement('script');
+        s.textContent = src.textContent;
+        document.head.appendChild(s); // executes synchronously on append
+      }
+    }
     if (!window.fflate) throw new Error('压缩库未加载，请刷新页面后重试');
     return window.fflate;
   }
@@ -1914,7 +1925,34 @@ export function renderAdminPage() {
   // ── Admin Pages ───────────────────────────────────────────────────────────────
   let adminEditingSlug = null;
 
-  function initApmVditor(initialContent) {
+  // Lazily inject Vditor CSS+JS the first time the editor is opened
+  let vditorLoading = null;
+  function ensureVditor() {
+    if (window.Vditor) return Promise.resolve(true);
+    if (vditorLoading) return vditorLoading;
+    vditorLoading = new Promise(resolve => {
+      if (!document.getElementById('vditorCss')) {
+        const l = document.createElement('link');
+        l.id = 'vditorCss'; l.rel = 'stylesheet';
+        l.href = 'https://cdn.jsdelivr.net/npm/vditor/dist/index.css';
+        document.head.appendChild(l);
+      }
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/vditor/dist/index.min.js';
+      s.onload = () => resolve(true);
+      s.onerror = () => { vditorLoading = null; resolve(false); };
+      document.body.appendChild(s);
+    });
+    return vditorLoading;
+  }
+
+  async function initApmVditor(initialContent) {
+    const ok = await ensureVditor();
+    if (!ok || !window.Vditor) {
+      const ta = document.getElementById('apmContent');
+      ta.value = initialContent || ''; ta.style.display = '';
+      return;
+    }
     const box = document.getElementById('apmVditor');
     box.style.display = 'block';
     document.getElementById('apmContent').style.display = 'none';
@@ -2567,8 +2605,7 @@ export function renderAdminPage() {
     }
   });
 </script>
-<script>${FFLATE_UMD}</script>
-<script src="https://cdn.jsdelivr.net/npm/vditor/dist/index.min.js" defer></script>
+<script type="text/plain" id="fflateSrc">${FFLATE_UMD}</script>
 </body>
 </html>`;
 }
