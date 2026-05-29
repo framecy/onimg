@@ -1366,8 +1366,9 @@ export function renderAdminPage() {
     const protoActions = (id, pm) => {
       const url = location.origin + '/proto/' + id + '/';
       const previewUrl = url + (pm.accessPassword ? '?pwd=' + encodeURIComponent(pm.accessPassword) : '');
+      const pwdAttr = pm.accessPassword ? \` data-pwd="\${esc(pm.accessPassword)}"\` : '';
       return \`<div style="display:flex;gap:4px;flex-wrap:wrap">
-        <button class="btn btn-ghost" style="padding:4px 8px;font-size:.73rem" data-url="\${url}" onclick="copyText(this.dataset.url,this)">复制地址</button>
+        <button class="btn btn-ghost" style="padding:4px 8px;font-size:.73rem" data-url="\${url}"\${pwdAttr} onclick="copyProtoAddr(this)">复制地址</button>
         <a href="\${previewUrl}" target="_blank" class="btn btn-ghost" style="padding:4px 8px;font-size:.73rem;text-decoration:none">预览</a>
         <button class="btn btn-ghost" style="padding:4px 8px;font-size:.73rem" data-title="\${esc(pm.title||id)}" onclick="openProtoStatsModal('\${esc(id)}',this.dataset.title)">统计数据</button>
       </div>\`;
@@ -2602,6 +2603,7 @@ export function renderAdminPage() {
   function fmtSize(b) { if(b<1024) return b+' B'; if(b<1048576) return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
   function fmtSizeParts(b) { if(b<1048576) return {val:(b/1024).toFixed(1),unit:'KB'}; if(b<1073741824) return {val:(b/1048576).toFixed(1),unit:'MB'}; return {val:(b/1073741824).toFixed(2),unit:'GB'}; }
   function copyText(text, btn) { navigator.clipboard.writeText(text).then(() => { if(btn){const o=btn.textContent;btn.textContent='✓';setTimeout(()=>btn.textContent=o,1400);} }); }
+  function copyProtoAddr(btn) { const url = btn.dataset.url; const pwd = btn.dataset.pwd; copyText(pwd ? '内容：' + url + '\\n密码：' + pwd : url, btn); }
   function toast(msg, type) {
     const t = document.getElementById('toast');
     t.className = 'toast show' + (type ? ' t-' + type : '');
