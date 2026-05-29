@@ -1733,7 +1733,10 @@ export function renderPage() {
 
   // ── Shared chunked upload engine ─────────────────────────────────────────────
   async function _protoChunkedUpload({ zipFile, filesMap, title, password, existingProtoId, setStatus, initUrl, filesUrl, finalizeUrl }) {
-    const BATCH = 40;
+    // 每批 45 文件：每批为独立 Worker 调用、各享免费版 50 subrequest 预算
+    // （45 put + staging.get + cfBump 两次 KV = 48 ≤ 50）。
+    const BATCH = 45;
+    const CONCURRENCY = 3;  // 批间并发：多个独立 Worker 调用并行，各自独立预算
     let files;
     if (filesMap) {
       files = filesMap;
@@ -1766,19 +1769,45 @@ export function renderPage() {
     if (!initRes.ok) throw new Error(initData.error || '初始化失败');
     const { protoId } = initData;
 
-    // Step 2: upload in batches
+    // Step 2: upload in batches —— 并发池 + 单批重试（免费版约束下提速）
     const totalBatches = Math.ceil(safePaths.length / BATCH);
-    for (let b = 0; b < totalBatches; b++) {
+
+    // 单批上传：最多重试 3 次（指数退避）；4xx（除 429）不重试
+    async function uploadBatch(b) {
       const batchPaths = safePaths.slice(b * BATCH, (b + 1) * BATCH);
-      const from = b * BATCH + 1, to = Math.min((b + 1) * BATCH, safePaths.length);
-      const pct = Math.round(15 + (b / totalBatches) * 75);
-      setStatus(\`📤 上传第 \${b+1}/\${totalBatches} 批（\${from}–\${to} / \${safePaths.length} 个文件）\`, pct);
       const fd = new FormData();
       fd.append('protoId', protoId);
       batchPaths.forEach(p => { fd.append('paths[]', p); fd.append('files[]', new Blob([files[p]]), p); });
-      const bRes = await fetch(filesUrl, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
-      if (!bRes.ok) { const d = await bRes.json().catch(()=>({})); throw new Error(d.error || \`批次 \${b+1} 上传失败\`); }
+      let lastErr;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const bRes = await fetch(filesUrl, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+          if (bRes.ok) return;
+          const d = await bRes.json().catch(() => ({}));
+          lastErr = new Error(d.error || ('批次 ' + (b + 1) + ' 上传失败'));
+          if (bRes.status >= 400 && bRes.status < 500 && bRes.status !== 429) throw lastErr; // 不可重试
+        } catch (e) { lastErr = e; }
+        if (attempt < 2) await new Promise(r => setTimeout(r, 400 * (attempt + 1)));
+      }
+      throw lastErr || new Error('批次 ' + (b + 1) + ' 上传失败');
     }
+
+    // 并发池：CONCURRENCY 个 worker 从队列取批次；任一批彻底失败则中止
+    const queue = Array.from({ length: totalBatches }, (_, i) => i);
+    let done = 0, abortErr = null;
+    async function poolWorker() {
+      while (queue.length && !abortErr) {
+        const b = queue.shift();
+        try { await uploadBatch(b); }
+        catch (e) { abortErr = e; return; }
+        done++;
+        const pct = Math.round(15 + (done / totalBatches) * 75);
+        const filesDone = Math.min(done * BATCH, safePaths.length);
+        setStatus('📤 已上传 ' + done + '/' + totalBatches + ' 批（' + filesDone + ' / ' + safePaths.length + ' 个文件 · 并发 ' + CONCURRENCY + '）', pct);
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, totalBatches) }, poolWorker));
+    if (abortErr) throw abortErr;
 
     // Step 3: finalize
     setStatus('✅ 正在写入元数据…', 93);
