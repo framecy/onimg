@@ -279,6 +279,13 @@ export function renderPage() {
       animation: shimmer 1.4s ease infinite;
     }
     .gitem img.loaded, .pub-item img.loaded { animation: none; background: var(--bg-2); }
+    /* Loading skeletons */
+    .skel { background: linear-gradient(90deg, var(--bg-3) 25%, var(--bg-4) 50%, var(--bg-3) 75%); background-size: 400% 100%; animation: shimmer 1.4s ease infinite; border-radius: 6px; }
+    .skel-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 10px; overflow: hidden; }
+    .skel-card .skel-thumb { width: 100%; aspect-ratio: 1; }
+    .skel-card .skel-meta { padding: 10px 11px; display: flex; flex-direction: column; gap: 7px; }
+    .skel-card .skel-line { height: 9px; }
+    .skel-row { height: 58px; border: 1px solid var(--bd); border-radius: 9px; margin-bottom: 10px; }
     /* Responsive */
     @media (max-width: 600px) {
       main { padding: 16px 16px 28px; }
@@ -1020,8 +1027,10 @@ export function renderPage() {
 
   // ── Public gallery ──
   async function loadPublicGallery() {
+    const grid = document.getElementById('pubGrid');
+    if (!grid.children.length) skelCards(grid, 10);
     const res = await fetch('/api/gallery');
-    if (!res.ok) return;
+    if (!res.ok) { if (grid.querySelector('.skel-card')) grid.innerHTML = ''; return; }
     const { items } = await res.json();
     document.getElementById('pubEmpty').style.display = items.length ? 'none' : 'block';
     document.getElementById('pubGrid').innerHTML = items.map(item =>
@@ -1176,6 +1185,7 @@ export function renderPage() {
   // ── My Gallery ──
   async function loadMineGallery() {
     if (!token) return;
+    if (!mineItems.length) skelCards(document.getElementById('mineGrid'), 8);
     const res = await fetch('/list', { headers: { Authorization: 'Bearer ' + token } });
     if (res.status === 401) { logout(); return; }
     const { items } = await res.json();
@@ -1340,8 +1350,9 @@ export function renderPage() {
 
   async function loadPages() {
     if (!token) return;
+    if (!userPages.length) skelRows(document.getElementById('pagesList'), 4);
     const res = await fetch('/api/pages', { headers: { Authorization: 'Bearer ' + token } });
-    if (!res.ok) return;
+    if (!res.ok) { if (!userPages.length) document.getElementById('pagesList').innerHTML = ''; return; }
     const { pages } = await res.json();
     userPages = pages;
     renderPages();
@@ -2258,6 +2269,16 @@ export function renderPage() {
     t.textContent = msg;
     clearTimeout(t._tid);
     t._tid = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+  function skelCards(el, n) {
+    if (!el) return;
+    el.innerHTML = Array.from({ length: n }, () =>
+      '<div class="skel-card"><div class="skel skel-thumb"></div><div class="skel-meta"><div class="skel skel-line" style="width:80%"></div><div class="skel skel-line" style="width:50%"></div></div></div>'
+    ).join('');
+  }
+  function skelRows(el, n) {
+    if (!el) return;
+    el.innerHTML = Array.from({ length: n }, () => '<div class="skel skel-row"></div>').join('');
   }
   function fmtSize(b) { if(b<1024) return b+' B'; if(b<1048576) return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
   function fmtDate(ms) { if(!ms) return '—'; return new Date(ms).toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit',year:'2-digit'}); }
