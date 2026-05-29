@@ -1399,9 +1399,36 @@ export function renderPage() {
     renderPages();
   }
 
+  // 与后端 SLUG_RE 保持一致：首字符不可为 / ，整体仅允许 字母/数字/- _ / ，最长 120
+  function slugInvalidReason(s) {
+    if (!s) return '请填写后缀';
+    if (s.length > 120) return '后缀过长（最多 120 字符）';
+    if (s.charAt(0) === '/') return '后缀不能以 / 开头';
+    if (!new RegExp('^[a-zA-Z0-9_-][a-zA-Z0-9_/-]*$').test(s)) return '后缀只能用字母、数字、- _ /，不能含中文或空格';
+    return '';
+  }
+  function setSlugSaveState(disabled) {
+    const b = document.getElementById('pageModalSave');
+    b.disabled = disabled;
+    b.style.opacity = disabled ? '0.5' : '';
+    b.style.cursor = disabled ? 'not-allowed' : '';
+  }
+
   document.getElementById('pmSlug').addEventListener('input', () => {
-    const s = document.getElementById('pmSlug').value;
-    document.getElementById('pmSlugPreview').textContent = s ? location.origin + '/p/' + s : '';
+    const el = document.getElementById('pmSlug');
+    const s = el.value.trim();
+    const prev = document.getElementById('pmSlugPreview');
+    const reason = s ? slugInvalidReason(s) : '';
+    if (reason) {
+      el.style.borderColor = 'var(--red)';
+      prev.style.color = 'var(--red)';
+      prev.textContent = reason;
+    } else {
+      el.style.borderColor = '';
+      prev.style.color = '#3b82f6';
+      prev.textContent = s ? location.origin + '/p/' + s : '';
+    }
+    setSlugSaveState(!!reason);
   });
 
   document.getElementById('pmType').addEventListener('change', () => {
@@ -1417,7 +1444,11 @@ export function renderPage() {
     slugEl.value = '';
     slugEl.readOnly = false;
     slugEl.style.opacity = '';
-    document.getElementById('pmSlugPreview').textContent = '';
+    slugEl.style.borderColor = '';
+    const prevEl = document.getElementById('pmSlugPreview');
+    prevEl.style.color = '#3b82f6';
+    prevEl.textContent = '';
+    setSlugSaveState(false);
     document.getElementById('pmType').value = 'markdown';
     document.getElementById('pmContent').value = '';
     document.getElementById('pmPublic').checked = true;
@@ -1437,7 +1468,11 @@ export function renderPage() {
     slugEl.value = p.slug;
     slugEl.readOnly = true;
     slugEl.style.opacity = '0.5';
-    document.getElementById('pmSlugPreview').textContent = location.origin + '/p/' + p.slug;
+    slugEl.style.borderColor = '';
+    const prevEl = document.getElementById('pmSlugPreview');
+    prevEl.style.color = '#3b82f6';
+    prevEl.textContent = location.origin + '/p/' + p.slug;
+    setSlugSaveState(false);
     document.getElementById('pmType').value = p.type;
     document.getElementById('pmContent').value = p.content || '';
     document.getElementById('pmPublic').checked = p.isPublic !== false;
@@ -1454,6 +1489,10 @@ export function renderPage() {
     const content = getContent();
     const isPublic = document.getElementById('pmPublic').checked;
     if (!slug) { toast('请填写后缀'); return; }
+    if (!isEdit) {
+      const reason = slugInvalidReason(slug);
+      if (reason) { toast(reason); document.getElementById('pmSlug').focus(); return; }
+    }
     if (!content) { toast('内容不能为空'); return; }
 
     const url  = isEdit ? '/api/pages/' + encodeURIComponent(editingSlug) : '/api/pages';
