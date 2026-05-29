@@ -743,6 +743,39 @@ export function renderPage() {
     if (!window.fflate) throw new Error('压缩库未加载，请刷新页面后重试');
     return window.fflate;
   }
+
+  // ── Off-main-thread unzip（Web Worker，避免大 ZIP 解压冻结 UI）──────────────
+  let _pw = null, _pwSeq = 0; const _pwCbs = {};
+  function _protoWorker() {
+    if (_pw) return _pw;
+    const fsrc = document.getElementById('fflateSrc');
+    const ftext = fsrc ? fsrc.textContent : '';
+    if (!ftext) throw new Error('压缩库未加载');
+    // Worker：内联 fflate UMD + 消息处理（解压在工作线程同步执行，不阻塞主线程）
+    const handler = "\\nself.onmessage=function(e){var d=e.data,id=d.id;try{if(d.op==='unzip'){var raw=self.fflate.unzipSync(new Uint8Array(d.buf));var files={},transfer=[];for(var k in raw){files[k]=raw[k];transfer.push(raw[k].buffer);}self.postMessage({id:id,ok:true,files:files},transfer);}}catch(err){self.postMessage({id:id,ok:false,error:String(err&&err.message||err)});}};";
+    const blob = new Blob([ftext + handler], { type: 'application/javascript' });
+    _pw = new Worker(URL.createObjectURL(blob));
+    _pw.onmessage = (e) => {
+      const cb = _pwCbs[e.data.id]; if (!cb) return; delete _pwCbs[e.data.id];
+      if (e.data.ok) cb.res(e.data); else cb.rej(new Error(e.data.error || 'worker 解压失败'));
+    };
+    return _pw;
+  }
+  // 用 Worker 解压；失败则回退主线程同步解压（重新读取 File，避免 buffer 已转移）
+  async function _unzipBytes(bytes, zipFile) {
+    try {
+      const w = _protoWorker();
+      const buf = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+      return await new Promise((res, rej) => {
+        const id = ++_pwSeq;
+        _pwCbs[id] = { res: (d) => res(d.files), rej };
+        w.postMessage({ id, op: 'unzip', buf }, [buf]);
+      });
+    } catch (e) {
+      const fb = zipFile ? new Uint8Array(await zipFile.arrayBuffer()) : bytes;
+      return _fflate().unzipSync(fb);
+    }
+  }
   const TOKEN_KEY = 'onimg_token', PERM_KEY = 'onimg_perms', USER_KEY = 'onimg_user', ADMIN_KEY = 'onimg_is_admin';
   let token = localStorage.getItem(TOKEN_KEY);
   let perms = JSON.parse(localStorage.getItem(PERM_KEY) || 'null');
@@ -1621,33 +1654,25 @@ export function renderPage() {
     protoFolderInput.value = '';
   });
 
+  // 文件夹上传：直接构建 filesMap（{相对路径: Uint8Array}），跳过 zipSync + 服务端再解压的双重耗时
   async function packFilesToZip(fileList) {
     const p = protoDropZone.querySelector('p');
-    p.textContent = '正在打包文件夹…';
     document.getElementById('protoUploadBtn').disabled = true;
     try {
-      const { zipSync } = _fflate();
-      const filesData = {};
-      let topFolder = '';
-      // Collect all files
+      const map = {}; let topFolder = '', total = 0, n = 0; const count = fileList.length;
       for (const file of fileList) {
         const parts = file.webkitRelativePath.split('/');
         if (!topFolder) topFolder = parts[0];
         const rel = parts.slice(1).join('/'); // Strip top-level folder
         if (!rel || rel === '.DS_Store' || rel.endsWith('/.DS_Store')) continue;
         const buf = await file.arrayBuffer();
-        filesData[rel] = [new Uint8Array(buf), { level: 0 }];
+        map[rel] = new Uint8Array(buf); total += buf.byteLength;
+        if (++n % 20 === 0) p.textContent = '正在读取文件夹… ' + n + '/' + count;
       }
-      const zipped = zipSync(filesData);
-      const blob = new Blob([zipped], { type: 'application/zip' });
-      const zipFile = new File([blob], (topFolder || 'prototype') + '.zip', { type: 'application/zip' });
-      setProtoFile(zipFile);
-      if (!document.getElementById('protoTitle').value) {
-        document.getElementById('protoTitle').value = topFolder || '';
-      }
+      setProtoFolder(map, topFolder || 'prototype', total);
     } catch(e) {
       p.textContent = '点击选择 ZIP 文件，或拖拽文件夹到此处';
-      document.getElementById('protoErr').textContent = '打包失败: ' + e.message;
+      document.getElementById('protoErr').textContent = '读取失败: ' + e.message;
     }
   }
 
@@ -1656,8 +1681,7 @@ export function renderPage() {
     p.textContent = '正在读取文件夹…';
     document.getElementById('protoUploadBtn').disabled = true;
     try {
-      const { zipSync } = _fflate();
-      const filesData = {};
+      const map = {}; let total = 0, n = 0;
       async function readDir(entry, prefix) {
         const reader = entry.createReader();
         const entries = await new Promise((res, rej) => {
@@ -1671,26 +1695,33 @@ export function renderPage() {
             if (e.name === '.DS_Store') continue;
             const file = await new Promise((res, rej) => e.file(res, rej));
             const buf = await file.arrayBuffer();
-            filesData[prefix + e.name] = [new Uint8Array(buf), { level: 0 }];
+            map[prefix + e.name] = new Uint8Array(buf); total += buf.byteLength;
+            if (++n % 20 === 0) p.textContent = '正在读取文件夹… ' + n + ' 个文件';
           }
         }
       }
       await readDir(dirEntry, '');
-      const zipped = zipSync(filesData);
-      const blob = new Blob([zipped], { type: 'application/zip' });
-      const zipFile = new File([blob], dirEntry.name + '.zip', { type: 'application/zip' });
-      setProtoFile(zipFile);
-      if (!document.getElementById('protoTitle').value) {
-        document.getElementById('protoTitle').value = dirEntry.name;
-      }
+      setProtoFolder(map, dirEntry.name, total);
     } catch(e) {
       protoDropZone.querySelector('p').textContent = '点击选择 ZIP 文件，或拖拽文件夹到此处';
       document.getElementById('protoErr').textContent = '读取文件夹失败: ' + e.message;
     }
   }
 
+  function setProtoFolder(map, name, total) {
+    const count = Object.keys(map).length;
+    if (!count) { document.getElementById('protoErr').textContent = '文件夹为空'; return; }
+    pendingProtoFolderFiles = map;
+    pendingProtoFile = null;
+    protoDropZone.querySelector('p').textContent = name + '/ (' + count + ' 个文件 · ' + fmtSize(total) + ')';
+    document.getElementById('protoErr').textContent = '';
+    document.getElementById('protoUploadBtn').disabled = !token;
+    if (!document.getElementById('protoTitle').value) document.getElementById('protoTitle').value = name;
+  }
+
   function setProtoFile(f) {
     pendingProtoFile = f;
+    pendingProtoFolderFiles = null;
     protoDropZone.querySelector('p').textContent = f.name + ' (' + fmtSize(f.size) + ')';
     document.getElementById('protoErr').textContent = '';
     document.getElementById('protoUploadBtn').disabled = !token;
@@ -1742,10 +1773,10 @@ export function renderPage() {
       files = filesMap;
       setStatus(\`📋 分析文件结构… \${Object.keys(files).length} 个文件\`, 8);
     } else {
-      setStatus('🗜️ 正在解压 ZIP…', 3);
+      setStatus('🗜️ 正在解压 ZIP（后台线程）…', 3);
       const bytes = new Uint8Array(await zipFile.arrayBuffer());
       try {
-        const raw = _fflate().unzipSync(bytes);
+        const raw = await _unzipBytes(bytes, zipFile);
         const fixed = {}; for (const [p,d] of Object.entries(raw)) fixed[_protoFixEnc(p)] = d;
         files = _protoStrip(fixed);
       } catch(e) { throw new Error('解压失败：' + e.message); }
@@ -1824,7 +1855,7 @@ export function renderPage() {
 
   // ── Main proto upload button ──────────────────────────────────────────────────
   document.getElementById('protoUploadBtn').addEventListener('click', async () => {
-    if (!token || !pendingProtoFile) return;
+    if (!token || (!pendingProtoFile && !pendingProtoFolderFiles)) return;
     const title    = document.getElementById('protoTitle').value.trim();
     const password = document.getElementById('protoPassword').value.trim();
 
@@ -2122,6 +2153,7 @@ export function renderPage() {
   // ── Proto Edit / Update ───────────────────────────────────────────────────
   let editingProtoId = null;
   let pendingUpdateFile = null;
+  let pendingUpdateFolderFiles = null;
 
   function openProtoEdit(protoId) {
     const p = userProtos.find(x => x.protoId === protoId);
@@ -2175,7 +2207,7 @@ export function renderPage() {
 
   function openProtoUpdate(protoId) {
     editingProtoId = protoId;
-    pendingUpdateFile = null;
+    pendingUpdateFile = null; pendingUpdateFolderFiles = null;
     document.getElementById('puFileName').textContent = '选择 ZIP 或文件夹';
     document.getElementById('puErr').textContent = '';
     document.getElementById('puProgress').classList.remove('show');
@@ -2212,33 +2244,40 @@ export function renderPage() {
 
   function setPuFile(f) {
     pendingUpdateFile = f;
+    pendingUpdateFolderFiles = null;
     document.getElementById('puFileName').textContent = f.name + ' (' + fmtSize(f.size) + ')';
     document.getElementById('puErr').textContent = '';
     document.getElementById('protoUpdateUpload').disabled = false;
   }
 
+  function setPuFolder(map, name, total) {
+    const count = Object.keys(map).length;
+    if (!count) { document.getElementById('puErr').textContent = '文件夹为空'; return; }
+    pendingUpdateFolderFiles = map;
+    pendingUpdateFile = null;
+    document.getElementById('puFileName').textContent = name + '/ (' + count + ' 个文件 · ' + fmtSize(total) + ')';
+    document.getElementById('puErr').textContent = '';
+    document.getElementById('protoUpdateUpload').disabled = false;
+  }
+
+  // 文件夹更新：直接构建 filesMap，跳过 zip+服务端解压
   async function puPackFilesToZip(fileList) {
-    document.getElementById('puFileName').textContent = '正在打包…';
     document.getElementById('protoUpdateUpload').disabled = true;
     try {
-      const { zipSync } = _fflate();
-      const filesData = {};
-      let topFolder = '';
+      const map = {}; let topFolder = '', total = 0, n = 0; const count = fileList.length;
       for (const file of fileList) {
         const parts = file.webkitRelativePath.split('/');
         if (!topFolder) topFolder = parts[0];
         const rel = parts.slice(1).join('/');
         if (!rel || rel === '.DS_Store' || rel.endsWith('/.DS_Store')) continue;
         const buf = await file.arrayBuffer();
-        filesData[rel] = [new Uint8Array(buf), { level: 0 }];
+        map[rel] = new Uint8Array(buf); total += buf.byteLength;
+        if (++n % 20 === 0) document.getElementById('puFileName').textContent = '正在读取… ' + n + '/' + count;
       }
-      const zipped = zipSync(filesData);
-      const blob = new Blob([zipped], { type: 'application/zip' });
-      const zipFile = new File([blob], (topFolder || 'prototype') + '.zip', { type: 'application/zip' });
-      setPuFile(zipFile);
+      setPuFolder(map, topFolder || 'prototype', total);
     } catch(e) {
       document.getElementById('puFileName').textContent = '选择 ZIP 或文件夹';
-      document.getElementById('puErr').textContent = '打包失败: ' + e.message;
+      document.getElementById('puErr').textContent = '读取失败: ' + e.message;
     }
   }
 
@@ -2246,8 +2285,7 @@ export function renderPage() {
     document.getElementById('puFileName').textContent = '正在读取…';
     document.getElementById('protoUpdateUpload').disabled = true;
     try {
-      const { zipSync } = _fflate();
-      const filesData = {};
+      const map = {}; let total = 0, n = 0;
       async function readDir(entry, prefix) {
         const reader = entry.createReader();
         const entries = await new Promise((res, rej) => {
@@ -2261,15 +2299,13 @@ export function renderPage() {
             if (e.name === '.DS_Store') continue;
             const file = await new Promise((res, rej) => e.file(res, rej));
             const buf = await file.arrayBuffer();
-            filesData[prefix + e.name] = [new Uint8Array(buf), { level: 0 }];
+            map[prefix + e.name] = new Uint8Array(buf); total += buf.byteLength;
+            if (++n % 20 === 0) document.getElementById('puFileName').textContent = '正在读取… ' + n + ' 个文件';
           }
         }
       }
       await readDir(dirEntry, '');
-      const zipped = _fflate().zipSync(filesData);
-      const blob = new Blob([zipped], { type: 'application/zip' });
-      const zipFile = new File([blob], dirEntry.name + '.zip', { type: 'application/zip' });
-      setPuFile(zipFile);
+      setPuFolder(map, dirEntry.name, total);
     } catch(e) {
       document.getElementById('puFileName').textContent = '选择 ZIP 或文件夹';
       document.getElementById('puErr').textContent = '读取失败: ' + e.message;
@@ -2277,7 +2313,7 @@ export function renderPage() {
   }
 
   document.getElementById('protoUpdateUpload').addEventListener('click', async () => {
-    if (!pendingUpdateFile || !editingProtoId) return;
+    if ((!pendingUpdateFile && !pendingUpdateFolderFiles) || !editingProtoId) return;
     document.getElementById('protoUpdateUpload').disabled = true;
     document.getElementById('puErr').textContent = '';
 
@@ -2300,7 +2336,7 @@ export function renderPage() {
 
     try {
       const result = await _protoChunkedUpload({
-        zipFile: pendingUpdateFile, filesMap: null,
+        zipFile: pendingUpdateFile, filesMap: pendingUpdateFolderFiles,
         title: undefined, password: undefined,
         existingProtoId: editingProtoId,
         setStatus,
@@ -2310,7 +2346,7 @@ export function renderPage() {
       resetProg();
       document.getElementById('protoUpdateModal').classList.remove('show');
       toast('版本已更新！');
-      pendingUpdateFile = null;
+      pendingUpdateFile = null; pendingUpdateFolderFiles = null;
       // Optimistic local update for the updated proto
       const idx = userProtos.findIndex(p => p.protoId === editingProtoId);
       if (idx >= 0) {

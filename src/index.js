@@ -346,6 +346,7 @@ function addSecurityHeaders(response) {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
       "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net",
       "connect-src 'self' https://cdn.jsdelivr.net",
+      "worker-src blob:",
       "frame-ancestors 'none'",
     ].join('; '),
   );
