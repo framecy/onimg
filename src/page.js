@@ -958,6 +958,23 @@ export function renderPage() {
   });
 
   // Tabs (sidebar nav)
+  function activateTab(name) {
+    const t = document.querySelector('.tab[data-tab="' + name + '"]');
+    if (!t) return;
+    if (!token && ['upload','gallery-mine','pages','protos'].includes(name)) {
+      openLoginOverlay(); return;
+    }
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel-' + name).classList.add('active');
+    if (name === 'gallery-mine') loadMineGallery();
+    if (name === 'pages') loadPages();
+    if (name === 'protos') loadProtos();
+    // Auto-close mobile sidebar on selection
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarMask').classList.remove('show');
+  }
   document.querySelectorAll('.tab').forEach(t => {
     t.addEventListener('click', (e) => {
       // Ripple effect
@@ -968,20 +985,7 @@ export function renderPage() {
       r.style.top  = (e.clientY - rect.top)  + 'px';
       t.appendChild(r);
       r.addEventListener('animationend', () => r.remove());
-
-      if (!token && ['upload','gallery-mine','pages','protos'].includes(t.dataset.tab)) {
-        openLoginOverlay(); return;
-      }
-      document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-      document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
-      t.classList.add('active');
-      document.getElementById('panel-' + t.dataset.tab).classList.add('active');
-      if (t.dataset.tab === 'gallery-mine') loadMineGallery();
-      if (t.dataset.tab === 'pages') loadPages();
-      if (t.dataset.tab === 'protos') loadProtos();
-      // Auto-close mobile sidebar on selection
-      document.getElementById('sidebar').classList.remove('open');
-      document.getElementById('sidebarMask').classList.remove('show');
+      activateTab(t.dataset.tab);
     });
   });
 
@@ -1024,6 +1028,32 @@ export function renderPage() {
     dropZone.querySelector('p').textContent = files.length ? files.map(f=>f.name).join(', ') : '点击或拖拽图片到此处';
     document.getElementById('uploadBtn').disabled = !files.length || !token;
   }
+
+  // Paste-to-upload: capture screenshots from clipboard (Ctrl/Cmd+V)
+  document.addEventListener('paste', e => {
+    // Don't hijack paste inside text fields or the Vditor editor
+    const ae = document.activeElement;
+    if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) return;
+    const items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    const imgs = [];
+    for (const it of items) {
+      if (it.kind === 'file' && it.type.startsWith('image/')) {
+        const f = it.getAsFile();
+        if (f) {
+          // Clipboard screenshots are often unnamed → synthesize a name
+          const ext = (f.type.split('/')[1] || 'png').replace('jpeg','jpg').replace('svg+xml','svg');
+          imgs.push(f.name ? f : new File([f], 'pasted-' + Date.now() + '.' + ext, { type: f.type }));
+        }
+      }
+    }
+    if (!imgs.length) return;
+    e.preventDefault();
+    if (!token) { openLoginOverlay(); return; }
+    activateTab('upload');
+    setFiles([...pendingFiles, ...imgs]);
+    toast('已粘贴 ' + imgs.length + ' 张图片，点击上传', 'success');
+  });
   document.getElementById('uploadBtn').addEventListener('click', async () => {
     if (!token || !pendingFiles.length) return;
     document.getElementById('uploadBtn').disabled = true;
