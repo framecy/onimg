@@ -1073,6 +1073,55 @@ export function renderPage() {
     setFiles([...pendingFiles, ...imgs]);
     toast('已粘贴 ' + imgs.length + ' 张图片，点击上传', 'success');
   });
+  // Upload a single file; resolves to a result object (failures keep the File ref for retry)
+  const uploadFailMap = new Map(); let uploadFidSeq = 0;
+  function uploadOne(file, makePublic, onProgress) {
+    return new Promise(resolve => {
+      const fd = new FormData(); fd.append('file', file);
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/upload');
+      xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+      if (onProgress) xhr.upload.addEventListener('progress', e => { if (e.lengthComputable) onProgress(e.loaded, e.total); });
+      xhr.addEventListener('load', async () => {
+        let data = {};
+        try { data = JSON.parse(xhr.responseText); } catch {}
+        if (xhr.status >= 400) { resolve({ ok: false, name: file.name, error: data.error || '上传失败', file }); return; }
+        if (makePublic && data.key) {
+          await fetch('/api/image/' + encodeURIComponent(data.key) + '/visibility', { method: 'PATCH', headers: { Authorization: 'Bearer ' + token } }).catch(() => {});
+        }
+        resolve({ ok: true, url: data.url, key: data.key, name: file.name });
+      });
+      xhr.addEventListener('error', () => resolve({ ok: false, name: file.name, error: '网络错误', file }));
+      xhr.send(fd);
+    });
+  }
+
+  function resultItemHtml(r) {
+    if (r.ok) {
+      return \`<div class="result-item"><img src="\${r.url}" loading="lazy"><div class="info"><div class="name">\${esc(r.name)}</div><div class="url-row"><input class="url-input" value="\${r.url}" readonly onclick="this.select()"><button class="btn btn-ghost" onclick="cp('\${r.url}',this)" style="padding:3px 8px">复制</button><button class="btn btn-ghost" onclick="cp('![](\${r.url})',this)" style="padding:3px 8px">MD</button><button class="btn btn-ghost" onclick="cp('[img]\${r.url}[/img]',this)" style="padding:3px 8px">BB</button></div></div></div>\`;
+    }
+    const fid = 'f' + (++uploadFidSeq);
+    if (r.file) uploadFailMap.set(fid, r.file);
+    const retryBtn = r.file ? \`<button class="btn btn-ghost" onclick="retryUpload('\${fid}', this)" style="padding:3px 10px;flex-shrink:0">重试</button>\` : '';
+    return \`<div class="result-item" data-fid="\${fid}"><div class="info"><div class="name" style="color:#ef4444">❌ \${esc(r.name)}: \${esc(r.error)}</div></div>\${retryBtn}</div>\`;
+  }
+  window.retryUpload = async function (fid, btn) {
+    const file = uploadFailMap.get(fid); if (!file) return;
+    btn.disabled = true; btn.textContent = '重试中…';
+    const makePublic = document.getElementById('uploadPublic').checked;
+    const r = await uploadOne(file, makePublic);
+    const item = btn.closest('.result-item');
+    if (r.ok) {
+      uploadFailMap.delete(fid);
+      if (item) item.outerHTML = resultItemHtml(r);
+      loadQuota();
+      toast('重试成功', 'success');
+    } else {
+      btn.disabled = false; btn.textContent = '重试';
+      toast('重试失败: ' + r.error, 'error');
+    }
+  };
+
   document.getElementById('uploadBtn').addEventListener('click', async () => {
     if (!token || !pendingFiles.length) return;
     document.getElementById('uploadBtn').disabled = true;
@@ -1091,34 +1140,12 @@ export function renderPage() {
     for (let i = 0; i < total; i++) {
       const file = pendingFiles[i];
       cntEl.textContent = \`\${i + 1} / \${total} 张\`;
-      const fd = new FormData(); fd.append('file', file);
-      const result = await new Promise(resolve => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/upload');
-        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-        xhr.upload.addEventListener('progress', e => {
-          if (!e.lengthComputable) return;
-          const filePct  = e.loaded / e.total;
-          const overallPct = Math.round(((i + filePct) / total) * 100);
-          bar.style.width   = overallPct + '%';
-          pctEl.textContent = overallPct + '%';
-          bytesEl.textContent = fmtSize(e.loaded) + ' / ' + fmtSize(e.total);
-        });
-        xhr.addEventListener('load', () => {
-          let data = {};
-          try { data = JSON.parse(xhr.responseText); } catch {}
-          if (xhr.status >= 400) resolve({ ok: false, name: file.name, error: data.error || '上传失败' });
-          else resolve({ ok: true, url: data.url, key: data.key, name: file.name });
-        });
-        xhr.addEventListener('error', () => resolve({ ok: false, name: file.name, error: '网络错误' }));
-        xhr.send(fd);
+      const result = await uploadOne(file, makePublic, (loaded, totalBytes) => {
+        const overallPct = Math.round(((i + loaded / totalBytes) / total) * 100);
+        bar.style.width   = overallPct + '%';
+        pctEl.textContent = overallPct + '%';
+        bytesEl.textContent = fmtSize(loaded) + ' / ' + fmtSize(totalBytes);
       });
-
-      if (result.ok && makePublic && result.key) {
-        await fetch('/api/image/' + encodeURIComponent(result.key) + '/visibility', {
-          method: 'PATCH', headers: { Authorization: 'Bearer ' + token },
-        }).catch(() => {});
-      }
       results.push(result);
     }
 
@@ -1127,10 +1154,7 @@ export function renderPage() {
     document.getElementById('uploadBtn').disabled = false;
     setFiles([]);
     loadQuota();
-    document.getElementById('resultList').innerHTML = results.map(r => r.ok
-      ? \`<div class="result-item"><img src="\${r.url}" loading="lazy"><div class="info"><div class="name">\${r.name}</div><div class="url-row"><input class="url-input" value="\${r.url}" readonly onclick="this.select()"><button class="btn btn-ghost" onclick="cp('\${r.url}',this)" style="padding:3px 8px">复制</button><button class="btn btn-ghost" onclick="cp('![](\${r.url})',this)" style="padding:3px 8px">MD</button><button class="btn btn-ghost" onclick="cp('[img]\${r.url}[/img]',this)" style="padding:3px 8px">BB</button></div></div></div>\`
-      : \`<div class="result-item"><div class="info"><div class="name" style="color:#ef4444">❌ \${r.name}: \${r.error}</div></div></div>\`
-    ).join('');
+    document.getElementById('resultList').innerHTML = results.map(resultItemHtml).join('');
   });
 
   async function loadQuota() {
