@@ -141,7 +141,8 @@ export async function handleProtoUpload(request, env, owner) {
     do {
       const result = await env.BUCKET.list({ prefix, limit: 1000, cursor });
       if (result.objects.length) {
-        await Promise.all(result.objects.map(o => env.BUCKET.delete(o.key)));
+        // R2 批量删除：单次 delete 接受 ≤1000 个 key = 1 个 subrequest
+        await env.BUCKET.delete(result.objects.map(o => o.key));
       }
       cursor = result.truncated ? result.cursor : undefined;
     } while (cursor);

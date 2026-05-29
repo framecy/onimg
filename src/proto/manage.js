@@ -95,7 +95,9 @@ export async function deleteProto(env, protoId, callerUsername, isAdmin) {
   do {
     const result = await env.BUCKET.list({ prefix, limit: 1000, cursor });
     if (result.objects.length) {
-      await Promise.all(result.objects.map(o => env.BUCKET.delete(o.key)));
+      // R2 批量删除：单次 delete 接受 ≤1000 个 key = 1 个 subrequest
+      // （原先逐个 delete 会在大原型上超出免费版 50 subrequest 上限而失败）
+      await env.BUCKET.delete(result.objects.map(o => o.key));
       totalDeleted += result.objects.length;
     }
     cursor = result.truncated ? result.cursor : undefined;
@@ -106,10 +108,11 @@ export async function deleteProto(env, protoId, callerUsername, isAdmin) {
     try { await cfBump(env.STATS, 'cf:r2a:' + cfMonth(), totalDeleted, true); } catch {}
   }
 
-  // Delete KV metadata + all version file lists
+  // Delete KV metadata + all version file lists + 访问计数（prstats），避免概览残留
   const vList = await env.STATS.list({ prefix: `proto:vfiles:${protoId}:` });
   await Promise.all([
     env.STATS.delete(`proto:${protoId}`),
+    env.STATS.delete(`prstats:${protoId}`),
     ...vList.keys.map(k => env.STATS.delete(k.name)),
   ]);
 
