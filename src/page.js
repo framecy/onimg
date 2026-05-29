@@ -295,6 +295,13 @@ export function renderPage() {
       .drop-zone { padding: 36px 20px; }
       .page-header .page-title { font-size: 1.15rem; }
     }
+    /* Phones — denser 3-up gallery */
+    @media (max-width: 480px) {
+      .gallery-grid, .pub-grid { grid-template-columns: repeat(3, 1fr); gap: 7px; }
+      .gitem-info, .pub-item-info { padding: 6px 8px; }
+      .gitem-key { font-size: .64rem; }
+      .batch-bar { gap: 7px; padding: 8px 10px; }
+    }
 
     /* Protos — upload box */
     .proto-upload-section { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 12px; margin-bottom: 20px; overflow: hidden; box-shadow: 0 1px 0 rgba(255,255,255,.02) inset; }
