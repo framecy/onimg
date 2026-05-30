@@ -121,8 +121,6 @@ export function renderAdminPage() {
 
     /* ── Data table ── */
     .table-wrap { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 10px; overflow: hidden; box-shadow: 0 1px 0 rgba(255,255,255,.02) inset, 0 2px 8px rgba(0,0,0,.25); }
-    .audit-select { padding: 7px 11px; background: var(--bg-3); border: 1px solid var(--bd); border-radius: 7px; color: var(--tx); font-size: .82rem; font-family: var(--font); cursor: pointer; outline: none; }
-    .audit-select:focus { border-color: var(--bd-f); }
     .data-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
     .data-table th { text-align: left; padding: 10px 13px; color: var(--tx-2); font-weight: 700; border-bottom: 1px solid var(--bd-2); font-size: .66rem; text-transform: uppercase; letter-spacing: .11em; background: rgba(0,0,0,.35); white-space: nowrap; }
     .data-table td { padding: 10px 13px; border-bottom: 1px solid var(--bd); vertical-align: middle; color: var(--tx); }
@@ -1119,65 +1117,6 @@ export function renderAdminPage() {
 
   const authH = () => ({ 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' });
 
-  // ─ Access trend chart (lazy-load Chart.js from CDN; CSP allows cdn.jsdelivr.net) ─
-  let _chartLoading = null;
-  function ensureChartJs() {
-    if (window.Chart) return Promise.resolve(true);
-    if (_chartLoading) return _chartLoading;
-    _chartLoading = new Promise(resolve => {
-      const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js';
-      s.onload = () => resolve(true);
-      s.onerror = () => { _chartLoading = null; resolve(false); };
-      document.head.appendChild(s);
-    });
-    return _chartLoading;
-  }
-  // 把 accesses[]（含 ts）按本地日期聚合为最近 N 天的每日访问数
-  function aggregateDailyHits(accesses, days) {
-    const counts = {};
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const labels = [];
-    const dayKey = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(today.getTime() - i * 86400000);
-      const k = dayKey(d); counts[k] = 0; labels.push(k);
-    }
-    for (const a of (accesses || [])) {
-      if (!a || !a.ts) continue;
-      const k = dayKey(new Date(a.ts));
-      if (k in counts) counts[k]++;
-    }
-    return { labels, data: labels.map(l => counts[l]) };
-  }
-  const _charts = {};
-  async function renderTrendChart(canvasId, accesses, days = 14) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return;
-    const ok = await ensureChartJs();
-    if (!ok || !window.Chart) {
-      const fb = document.createElement('div');
-      fb.textContent = '趋势图加载失败（CDN 不可用）';
-      fb.style.cssText = 'color:var(--tx-3);font-size:.8rem;padding:12px 0';
-      canvas.replaceWith(fb);
-      return;
-    }
-    const { labels, data } = aggregateDailyHits(accesses, days);
-    if (_charts[canvasId]) _charts[canvasId].destroy();
-    _charts[canvasId] = new window.Chart(canvas, {
-      type: 'line',
-      data: { labels, datasets: [{ data, borderColor: '#34d399', backgroundColor: 'rgba(52,211,153,.12)', fill: true, tension: .3, pointRadius: 2, borderWidth: 2 }] },
-      options: {
-        responsive: true, maintainAspectRatio: false, animation: false,
-        plugins: { legend: { display: false }, tooltip: { intersect: false, mode: 'index' } },
-        scales: {
-          x: { ticks: { color: '#858585', maxRotation: 0, autoSkip: true, maxTicksLimit: 7, font: { size: 10 } }, grid: { display: false } },
-          y: { beginAtZero: true, ticks: { color: '#858585', precision: 0, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,.05)' } },
-        },
-      },
-    });
-  }
-
   function parseTokenExp(tok) {
     try { return JSON.parse(atob(tok.split('.')[0])).exp * 1000; } catch { return null; }
   }
@@ -1306,6 +1245,7 @@ export function renderAdminPage() {
     if (name === 'pages') loadAdminPages();
     if (name === 'protos') loadAdminProtos();
     if (name === 'members') loadMemberStats();
+    if (name === 'audit') loadAudit();
   }
 
   // ── Dashboard stats tab switching ────────────────────────────────────────────
@@ -1640,66 +1580,6 @@ export function renderAdminPage() {
   // ── Settings ─────────────────────────────────────────────────────────────────
   let enabledTypes = new Set();
 
-  // ─ Audit log ─
-  let auditEntries = [];
-  const AUDIT_ACTION_LABEL = {
-    'admin.login': '管理员登录', 'user.login': '用户登录',
-    'user.create': '创建用户', 'user.update': '修改用户', 'user.delete': '删除用户',
-    'image.delete': '删除图片', 'proto.delete': '删除原型', 'page.delete': '删除页面',
-    'config.update': '修改配置', 'trash.purge': '彻底删除',
-  };
-  async function loadAudit() {
-    const days = document.getElementById('auditDays').value;
-    const body = document.getElementById('auditBody');
-    body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--tx-3);padding:32px">加载中…</td></tr>';
-    try {
-      const res = await fetch('/admin/audit?days=' + encodeURIComponent(days), { headers: authH() });
-      if (!res.ok) { body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--tx-3);padding:32px">加载失败</td></tr>'; return; }
-      const data = await res.json();
-      auditEntries = data.entries || [];
-      renderAudit();
-    } catch { body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--tx-3);padding:32px">加载失败</td></tr>'; }
-  }
-  function fmtTs(ts) {
-    if (!ts) return '—';
-    const d = new Date(ts);
-    const p = n => String(n).padStart(2, '0');
-    return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
-  }
-  function renderAudit() {
-    const body = document.getElementById('auditBody');
-    if (!auditEntries.length) { body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--tx-3);padding:32px">暂无记录</td></tr>'; return; }
-    body.innerHTML = auditEntries.map(e => {
-      const label = AUDIT_ACTION_LABEL[e.action] || e.action;
-      const ok = e.status !== 'fail';
-      const statusBadge = '<span style="color:' + (ok ? 'var(--green)' : 'var(--red)') + ';font-weight:600">' + (ok ? '成功' : '失败') + '</span>';
-      return '<tr><td style="white-space:nowrap;font-family:var(--mono);font-size:.78rem">' + fmtTs(e.ts) + '</td>' +
-        '<td>' + esc(label) + '</td>' +
-        '<td>' + esc(e.actor || '—') + '</td>' +
-        '<td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(e.target || '') + '">' + esc(e.target || '—') + '</td>' +
-        '<td>' + statusBadge + '</td>' +
-        '<td style="font-family:var(--mono);font-size:.78rem">' + esc(e.ip || '—') + '</td></tr>';
-    }).join('');
-  }
-  function exportAuditCsv() {
-    if (!auditEntries.length) { toast('暂无数据可导出'); return; }
-    const head = ['时间', '操作', '操作者', '对象', '结果', 'IP'];
-    const rows = auditEntries.map(e => [
-      fmtTs(e.ts), AUDIT_ACTION_LABEL[e.action] || e.action, e.actor || '', e.target || '', e.status === 'fail' ? '失败' : '成功', e.ip || '',
-    ]);
-    const csvCell = v => '"' + String(v).replace(/"/g, '""') + '"';
-    const csv = '\\uFEFF' + [head, ...rows].map(r => r.map(csvCell).join(',')).join('\\r\\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'onimg-audit-' + new Date().toISOString().slice(0, 10) + '.csv';
-    a.click();
-    URL.revokeObjectURL(a.href);
-  }
-  document.getElementById('auditRefresh').addEventListener('click', loadAudit);
-  document.getElementById('auditDays').addEventListener('change', loadAudit);
-  document.getElementById('auditExport').addEventListener('click', exportAuditCsv);
-
   async function loadSettings() {
     const res = await fetch('/admin/config', { headers: authH() });
     if (!res.ok) return;
@@ -1752,7 +1632,6 @@ export function renderAdminPage() {
       document.getElementById('countryBars').innerHTML = cl.slice(0,8).map(([cc,cnt]) =>
         \`<div class="country-row"><span class="country-name">\${cc}</span><div class="bar-wrap"><div class="bar" style="width:\${(cnt/maxV*100).toFixed(1)}%"></div></div><span class="country-count">\${cnt}</span></div>\`
       ).join('') || '<span style="color:#333;font-size:.82rem">暂无数据</span>';
-      renderTrendChart('imgTrendChart', data.accesses, 14);
       document.getElementById('accessLogBody').innerHTML = (data.accesses??[]).slice(0,50).map(a =>
         \`<tr><td>\${new Date(a.ts).toLocaleString('zh-CN')}</td><td>\${a.ip}</td><td>\${a.country}</td><td>\${[a.city,a.region].filter(x=>x&&x!=='—').join(' ')}</td><td style="color:#444">\${a.org!=='—'?a.org:''}</td></tr>\`
       ).join('') || '<tr><td colspan="5" style="color:#333;text-align:center">暂无记录</td></tr>';
@@ -1793,7 +1672,6 @@ export function renderAdminPage() {
       ).join('') || '<span style="color:#333;font-size:.82rem">暂无数据</span>';
 
       // Access log
-      renderTrendChart('pageTrendChart', data.accesses, 14);
       document.getElementById('psmLogBody').innerHTML = (data.accesses ?? []).slice(0,50).map(a =>
         \`<tr><td>\${new Date(a.ts).toLocaleString('zh-CN')}</td><td style="font-family:monospace">\${a.ip}</td><td>\${a.country}</td><td>\${[a.city,a.region].filter(x=>x&&x!=='—').join(' ')}</td><td style="color:#444">\${a.org!=='—'?a.org:''}</td></tr>\`
       ).join('') || '<tr><td colspan="5" style="color:#333;text-align:center">暂无记录</td></tr>';
@@ -1825,7 +1703,6 @@ export function renderAdminPage() {
       document.getElementById('prsCountryBars').innerHTML = cl.map(([c,cnt]) =>
         \`<div class="country-row"><span class="country-name">\${c}</span><div class="bar-wrap"><div class="bar" style="width:\${(cnt/maxC*100).toFixed(1)}%"></div></div><span class="country-count">\${cnt}</span></div>\`
       ).join('') || '<span style="color:#333;font-size:.82rem">暂无数据</span>';
-      renderTrendChart('protoTrendChart', data.accesses, 14);
       document.getElementById('prsLogBody').innerHTML = (data.accesses ?? []).slice(0,50).map(a =>
         \`<tr><td>\${new Date(a.ts).toLocaleString('zh-CN')}</td><td style="font-family:monospace;font-size:.75rem">\${a.ip}</td><td>\${a.country}</td></tr>\`
       ).join('') || '<tr><td colspan="3" style="color:#333;text-align:center">暂无记录</td></tr>';
