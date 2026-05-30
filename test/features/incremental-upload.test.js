@@ -71,4 +71,24 @@ describe('Incremental prototype upload', () => {
     const meta = await env.STATS.get(`proto:${protoId}`, 'json');
     expect(meta.version).toBe(2);
   });
+
+  test('updating content clears the trash (deletedAt) flag', async () => {
+    const protoId = 'pid3';
+    await seedV1(env, protoId, ['index.html', 'a.js']);
+    // mark it soft-deleted, then update its content directly (without restore)
+    const meta0 = await env.STATS.get(`proto:${protoId}`, 'json');
+    meta0.deletedAt = Date.now();
+    await env.STATS.put(`proto:${protoId}`, JSON.stringify(meta0));
+
+    await handleProtoUploadInit(createRequest('POST', 'http://localhost/upload/proto/init', {
+      body: { title: 'P', entryPoint: 'index.html', totalSize: 16, protoId },
+    }), env, OWNER);
+    const fReq = createRequest('POST', 'http://localhost/upload/proto/finalize', {
+      body: { protoId, filePaths: ['index.html', 'a.js'], manifest: { 'index.html': 'h', 'a.js': 'h' } },
+    });
+    const res = await handleProtoFinalize(fReq, env, OWNER);
+    expect(res.status).toBe(200);
+    const meta = await env.STATS.get(`proto:${protoId}`, 'json');
+    expect(meta.deletedAt).toBeUndefined();
+  });
 });

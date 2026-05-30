@@ -413,6 +413,8 @@ export async function handleProtoFinalize(request, env, owner) {
 
   if (accessPassword) { meta.accessPassword = accessPassword; meta.passwordExpiry = passwordExpiry; }
   else { delete meta.accessPassword; meta.passwordExpiry = null; }
+  // 更新内容即视为复活：清除回收站标记，避免更新后仍被列表过滤而「消失」
+  if (meta.deletedAt) delete meta.deletedAt;
 
   const tasks = [
     env.STATS.put(`proto:${protoId}`, JSON.stringify(meta)),

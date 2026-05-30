@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { handleDelete } from '../../src/delete.js';
-import { handleList, handleSetImageTags, normalizeTags, handlePublicGallery } from '../../src/list.js';
+import { handleList, handleSetImageTags, handleToggleVisibility, normalizeTags, handlePublicGallery } from '../../src/list.js';
 import { handleTrashList, handleTrashRestore, handleTrashPurge, purgeExpiredTrash, TRASH_RETENTION_MS } from '../../src/trash.js';
 import { createToken } from '../../src/admin/auth.js';
 import {
@@ -125,6 +125,15 @@ describe('Tags: normalize + set image tags', () => {
     expect(out.length).toBeLessThanOrEqual(10);
   });
 
+  test('normalizeTags strips HTML/attribute-breaking chars but keeps spaces/hyphens', () => {
+    const out = normalizeTags(["x'); alert(1)//", 'a"b', '<script>', 'a&b', 'front-end', 'high res', '正常标签']);
+    // no quote/angle/amp/backslash survives → safe to interpolate into onclick attrs
+    expect(out.every(t => !/[<>"'`\\&]/.test(t))).toBe(true);
+    expect(out).toContain('front-end');
+    expect(out).toContain('high res');
+    expect(out).toContain('正常标签');
+  });
+
   test('set tags persists to imgmeta value and userimgs entry', async () => {
     const req = authedRequest('PATCH', 'http://localhost/api/image/a.png/tags', token, { body: { tags: ['壁纸', 'hd', '壁纸'] } });
     const res = await handleSetImageTags(req, env, 'a.png');
@@ -142,5 +151,18 @@ describe('Tags: normalize + set image tags', () => {
     const req = authedRequest('PATCH', 'http://localhost/api/image/a.png/tags', bobToken, { body: { tags: ['x'] } });
     const res = await handleSetImageTags(req, env, 'a.png');
     expect(res.status).toBe(403);
+  });
+
+  test('cannot tag an image that is in the trash (409)', async () => {
+    await handleDelete(authedRequest('DELETE', 'http://localhost/delete/a.png', token), env, 'a.png');
+    const req = authedRequest('PATCH', 'http://localhost/api/image/a.png/tags', token, { body: { tags: ['x'] } });
+    const res = await handleSetImageTags(req, env, 'a.png');
+    expect(res.status).toBe(409);
+  });
+
+  test('cannot toggle visibility of a trashed image (409)', async () => {
+    await handleDelete(authedRequest('DELETE', 'http://localhost/delete/a.png', token), env, 'a.png');
+    const res = await handleToggleVisibility(authedRequest('PATCH', 'http://localhost/api/image/a.png/visibility', token), env, 'a.png');
+    expect(res.status).toBe(409);
   });
 });

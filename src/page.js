@@ -1341,6 +1341,8 @@ export function renderPage() {
     const bar = document.getElementById('mineTagFilter');
     if (!bar) return;
     const tags = allMineTags();
+    // 剔除已不存在的标签筛选（对应图片被删除/改标签后避免列表永远为空且无法清除）
+    [...mineTagFilter].forEach(t => { if (!tags.includes(t)) mineTagFilter.delete(t); });
     if (!tags.length) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
     bar.style.display = 'flex';
     bar.innerHTML = '<span class="tag-filter-label">标签</span>' +

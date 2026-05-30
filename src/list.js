@@ -28,13 +28,18 @@ export async function handleList(request, env) {
   return Response.json({ items: list.filter(e => !e.deletedAt), cursor: null, truncated: false });
 }
 
-// 标签规范化：去重、trim、去空、长度上限，最多 10 个，每个 ≤ 24 字符
+// 标签规范化：去重、trim、去空、长度上限，最多 10 个，每个 ≤ 24 字符。
+// 安全：剥离可破坏 HTML 属性/标签的字符（< > " ' & ` \ 及控制符），
+// 因前端在 onclick 等属性上下文中插值标签，仅 HTML 实体转义不足以防注入。
 export function normalizeTags(input) {
   if (!Array.isArray(input)) return [];
   const seen = new Set();
   const out = [];
   for (const raw of input) {
-    const t = String(raw ?? '').trim().slice(0, 24);
+    const t = String(raw ?? '')
+      .replace(/[<>\"'`\\&\x00-\x1f]/g, '')  // 去除可破坏 HTML 属性的字符与控制符（保留空格、连字符等）
+      .trim()
+      .slice(0, 24);
     if (!t) continue;
     const key = t.toLowerCase();
     if (seen.has(key)) continue;
@@ -61,6 +66,7 @@ export async function handleSetImageTags(request, env, key) {
   if (!isAdmin && existing.metadata.owner !== user.username) {
     return Response.json({ error: 'Forbidden' }, { status: 403 });
   }
+  if (existing.metadata.deletedAt) return Response.json({ error: '图片在回收站中，请先恢复' }, { status: 409 });
 
   // 持久来源：imgmeta value（metadata 保持不变，避免超出 1KB metadata 上限）
   await env.STATS.put(metaKey, JSON.stringify({ ...(existing.value ?? {}), tags }), {
@@ -103,6 +109,7 @@ export async function handleToggleVisibility(request, env, key) {
   if (!isAdmin && existing.metadata.owner !== user.username) {
     return Response.json({ error: 'Forbidden' }, { status: 403 });
   }
+  if (existing.metadata.deletedAt) return Response.json({ error: '图片在回收站中，请先恢复' }, { status: 409 });
 
   const newPublic = !existing.metadata.isPublic;
   await env.STATS.put(metaKey, JSON.stringify(existing.value ?? {}), {
