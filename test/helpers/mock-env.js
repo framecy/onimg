@@ -44,9 +44,12 @@ export function createR2() {
   const store = new Map();
   return {
     async put(key, body, opts = {}) {
+      const isStr = typeof body === 'string';
+      const size = isStr ? body.length : (body?.byteLength ?? 0);
       store.set(key, {
         key,
-        size: body?.byteLength ?? 0,
+        size,
+        body,                         // raw: string | ArrayBuffer | Uint8Array
         httpMetadata: opts.httpMetadata ?? {},
         customMetadata: opts.customMetadata ?? {},
         uploaded: new Date(),
@@ -54,7 +57,15 @@ export function createR2() {
       return { key };
     },
     async get(key) {
-      return store.get(key) ?? null;
+      const obj = store.get(key);
+      if (!obj) return null;
+      const body = obj.body;
+      return {
+        ...obj,
+        async text() { return typeof body === 'string' ? body : new TextDecoder().decode(body); },
+        async json() { return JSON.parse(typeof body === 'string' ? body : new TextDecoder().decode(body)); },
+        async arrayBuffer() { return body instanceof ArrayBuffer ? body : (body?.buffer ?? new ArrayBuffer(0)); },
+      };
     },
     async head(key) {
       const obj = store.get(key);
@@ -62,7 +73,9 @@ export function createR2() {
       return { key: obj.key, size: obj.size, customMetadata: obj.customMetadata, uploaded: obj.uploaded };
     },
     async delete(key) {
-      store.delete(key);
+      // R2 supports deleting a single key or an array (≤1000) of keys
+      if (Array.isArray(key)) { for (const k of key) store.delete(k); }
+      else store.delete(key);
     },
     async list(opts = {}) {
       const { limit = 1000, cursor, prefix = '' } = opts;
