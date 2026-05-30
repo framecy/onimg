@@ -12,7 +12,7 @@ export async function handleList(request, env) {
     const result = await env.BUCKET.list({ limit, cursor });
     return Response.json({
       items: result.objects
-        .filter(o => !o.key.startsWith('proto/'))
+        .filter(o => !o.key.startsWith('proto/') && !o.key.startsWith('manifests/'))
         .map(o => ({ key: o.key, size: o.size, uploaded: o.uploaded, etag: o.etag })),
       cursor: result.truncated ? result.cursor : null,
       truncated: result.truncated,

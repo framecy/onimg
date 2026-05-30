@@ -1993,6 +1993,17 @@ export function renderPage() {
     });
   }
 
+  // 内容指纹：FNV-1a 32-bit（含长度前缀防碰撞），返回 hex 字符串。
+  // 仅用于「内容是否变化」的快速判断，非加密用途。
+  function _fnv1a(bytes) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < bytes.length; i++) {
+      h ^= bytes[i];
+      h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+    }
+    return (bytes.length >>> 0).toString(16) + '-' + h.toString(16);
+  }
+
   // ── Shared chunked upload engine ─────────────────────────────────────────────
   async function _protoChunkedUpload({ zipFile, filesMap, title, password, existingProtoId, setStatus, initUrl, filesUrl, finalizeUrl }) {
     // 每批 45 文件：每批为独立 Worker 调用、各享免费版 50 subrequest 预算
@@ -2020,7 +2031,11 @@ export function renderPage() {
     if (!entryPoint) throw new Error('未找到入口文件（start.html 或 index.html）');
     const totalSize = safePaths.reduce((s, p) => s + (files[p]?.byteLength ?? 0), 0);
 
-    // Step 1: init
+    // 计算本次所有文件的内容指纹（用于增量 diff 与写回 manifest）
+    const newManifest = {};
+    for (const p of safePaths) newManifest[p] = _fnv1a(files[p] ?? new Uint8Array(0));
+
+    // Step 1: init（更新模式下后端回传上一版本 manifest）
     setStatus('🔧 初始化上传会话…', 12);
     const initRes = await fetch(initUrl, {
       method: 'POST',
@@ -2029,14 +2044,21 @@ export function renderPage() {
     });
     const initData = await initRes.json().catch(() => ({}));
     if (!initRes.ok) throw new Error(initData.error || '初始化失败');
-    const { protoId } = initData;
+    const { protoId, manifest: prevManifest } = initData;
+
+    // 增量上传：仅上传新增 / 内容变更的文件。无历史 manifest 时退化为全量上传。
+    const uploadPaths = prevManifest
+      ? safePaths.filter(p => prevManifest[p] !== newManifest[p])
+      : safePaths;
+    const skipped = safePaths.length - uploadPaths.length;
 
     // Step 2: upload in batches —— 并发池 + 单批重试（免费版约束下提速）
-    const totalBatches = Math.ceil(safePaths.length / BATCH);
+    const totalBatches = Math.ceil(uploadPaths.length / BATCH) || 0;
+    if (skipped > 0) setStatus(\`⚡ 增量上传：\${uploadPaths.length} 个变更，跳过 \${skipped} 个未变文件\`, 15);
 
     // 单批上传：最多重试 3 次（指数退避）；4xx（除 429）不重试
     async function uploadBatch(b) {
-      const batchPaths = safePaths.slice(b * BATCH, (b + 1) * BATCH);
+      const batchPaths = uploadPaths.slice(b * BATCH, (b + 1) * BATCH);
       const fd = new FormData();
       fd.append('protoId', protoId);
       batchPaths.forEach(p => { fd.append('paths[]', p); fd.append('files[]', new Blob([files[p]]), p); });
@@ -2064,23 +2086,25 @@ export function renderPage() {
         catch (e) { abortErr = e; return; }
         done++;
         const pct = Math.round(15 + (done / totalBatches) * 75);
-        const filesDone = Math.min(done * BATCH, safePaths.length);
-        setStatus('📤 已上传 ' + done + '/' + totalBatches + ' 批（' + filesDone + ' / ' + safePaths.length + ' 个文件 · 并发 ' + CONCURRENCY + '）', pct);
+        const filesDone = Math.min(done * BATCH, uploadPaths.length);
+        setStatus('📤 已上传 ' + done + '/' + totalBatches + ' 批（' + filesDone + ' / ' + uploadPaths.length + ' 个变更文件 · 并发 ' + CONCURRENCY + '）', pct);
       }
     }
-    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, totalBatches) }, poolWorker));
-    if (abortErr) throw abortErr;
+    if (totalBatches > 0) {
+      await Promise.all(Array.from({ length: Math.min(CONCURRENCY, totalBatches) }, poolWorker));
+      if (abortErr) throw abortErr;
+    }
 
-    // Step 3: finalize
+    // Step 3: finalize（filePaths 记录完整清单，manifest 写回供下次 diff）
     setStatus('✅ 正在写入元数据…', 93);
     const fRes = await fetch(finalizeUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ protoId, filePaths: safePaths }),
+      body: JSON.stringify({ protoId, filePaths: safePaths, manifest: newManifest }),
     });
     const fData = await fRes.json().catch(() => ({}));
     if (!fRes.ok) throw new Error(fData.error || '最终化失败');
-    setStatus('🎉 上传完成！', 100);
+    setStatus(skipped > 0 ? \`🎉 完成！增量上传 \${uploadPaths.length} 个文件（节省 \${skipped} 个）\` : '🎉 上传完成！', 100);
     return { ...fData, protoId, safePaths, totalSize };
   }
 

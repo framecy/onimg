@@ -146,6 +146,8 @@ export async function handleProtoUpload(request, env, owner) {
       }
       cursor = result.truncated ? result.cursor : undefined;
     } while (cursor);
+    // 单次上传整原型替换：作废旧增量 manifest，下次 chunked 更新退化为全量（保证正确性）
+    try { await env.BUCKET.delete(`manifests/${protoId}.json`); } catch {}
   }
 
   // Upload all files to R2 in batches of 20
@@ -287,7 +289,24 @@ export async function handleProtoUploadInit(request, env, owner) {
     createdAt: Date.now(),
   }), { expirationTtl: 3600 });
 
-  return Response.json({ ok: true, protoId });
+  // 增量上传：更新模式下回传上一版本的内容指纹清单（{path: hash}），
+  // 客户端据此只上传新增/变更的文件。首次启用或旧原型无清单时返回 null（退化为全量上传）。
+  let manifest = null;
+  if (existingId) {
+    manifest = await readManifest(env, protoId);
+  }
+
+  return Response.json({ ok: true, protoId, manifest });
+}
+
+// 内容指纹清单存于 R2 `manifests/{protoId}.json`（KV 25KB 单值上限放不下大原型清单）。
+export async function readManifest(env, protoId) {
+  try {
+    const obj = await env.BUCKET.get(`manifests/${protoId}.json`);
+    if (!obj) return null;
+    const data = await obj.json();
+    return data && typeof data === 'object' ? data : null;
+  } catch { return null; }
 }
 
 /**
@@ -342,7 +361,7 @@ export async function handleProtoFinalize(request, env, owner) {
   let body;
   try { body = await request.json(); } catch { return Response.json({ error: 'Invalid JSON' }, { status: 400 }); }
 
-  const { protoId, filePaths } = body;
+  const { protoId, filePaths, manifest } = body;
   if (!protoId) return Response.json({ error: 'Missing protoId' }, { status: 400 });
 
   const staging = await env.STATS.get(`proto:staging:${protoId}`, 'json');
@@ -351,6 +370,20 @@ export async function handleProtoFinalize(request, env, owner) {
 
   const existingMeta = staging.existingId ? await env.STATS.get(`proto:${protoId}`, 'json') : null;
   const safePaths = Array.isArray(filePaths) ? filePaths : [];
+
+  // 增量上传：删除上一版本存在、但本次清单中已不存在的 orphan 文件（同时修复历史 orphan）。
+  if (existingMeta) {
+    const prevVer  = existingMeta.version ?? 1;
+    const prevList = await env.STATS.get(`proto:vfiles:${protoId}:v${prevVer}`, 'json');
+    if (Array.isArray(prevList)) {
+      const nowSet  = new Set(safePaths);
+      const orphans = prevList.filter(p => !nowSet.has(p)).map(p => `proto/${protoId}/${p}`);
+      // R2 批量删除：每次 ≤1000 key = 1 个 subrequest
+      for (let i = 0; i < orphans.length; i += 1000) {
+        try { await env.BUCKET.delete(orphans.slice(i, i + 1000)); } catch {}
+      }
+    }
+  }
   const now = Date.now();
   const newVersion = existingMeta ? (existingMeta.version ?? 1) + 1 : 1;
   const versionEntry = { v: newVersion, at: now, files: safePaths.length, size: staging.totalSize };
@@ -381,15 +414,24 @@ export async function handleProtoFinalize(request, env, owner) {
   if (accessPassword) { meta.accessPassword = accessPassword; meta.passwordExpiry = passwordExpiry; }
   else { delete meta.accessPassword; meta.passwordExpiry = null; }
 
-  await Promise.all([
+  const tasks = [
     env.STATS.put(`proto:${protoId}`, JSON.stringify(meta)),
     env.STATS.put(`proto:vfiles:${protoId}:v${newVersion}`, JSON.stringify(safePaths)),
     env.STATS.delete(`proto:staging:${protoId}`),
-  ]);
+  ];
+  // 写入本次内容指纹清单，供下次增量上传 diff（仅保留本次实际存在的文件）
+  if (manifest && typeof manifest === 'object') {
+    const clean = {};
+    for (const p of safePaths) if (manifest[p] !== undefined) clean[p] = manifest[p];
+    tasks.push(env.BUCKET.put(`manifests/${protoId}.json`, JSON.stringify(clean), {
+      httpMetadata: { contentType: 'application/json' },
+    }));
+  }
+  await Promise.all(tasks);
 
   return Response.json({
     protoId, title: meta.title, url: `/proto/${protoId}/`,
-    fileCount: safePaths.length, totalSize: staging.totalSize, version: newVersion,
+    fileCount: safePaths.length, totalSize: staging.totalSize, version: newVersion, entryPoint: staging.entryPoint,
   }, { status: existingMeta ? 200 : 201 });
 }
 

@@ -46,7 +46,7 @@ export async function reconcileGlobalStats(env) {
   do {
     const r = await env.BUCKET.list({ limit: 1000, cursor });
     for (const o of r.objects) {
-      if (o.key.startsWith('proto/')) continue; // 排除原型文件
+      if (o.key.startsWith('proto/') || o.key.startsWith('manifests/')) continue; // 排除原型文件与增量清单
       totalImages++;
       totalSize += o.size;
     }
