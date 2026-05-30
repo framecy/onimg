@@ -121,6 +121,8 @@ export function renderAdminPage() {
 
     /* ── Data table ── */
     .table-wrap { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 10px; overflow: hidden; box-shadow: 0 1px 0 rgba(255,255,255,.02) inset, 0 2px 8px rgba(0,0,0,.25); }
+    .audit-select { padding: 7px 11px; background: var(--bg-3); border: 1px solid var(--bd); border-radius: 7px; color: var(--tx); font-size: .82rem; font-family: var(--font); cursor: pointer; outline: none; }
+    .audit-select:focus { border-color: var(--bd-f); }
     .data-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
     .data-table th { text-align: left; padding: 10px 13px; color: var(--tx-2); font-weight: 700; border-bottom: 1px solid var(--bd-2); font-size: .66rem; text-transform: uppercase; letter-spacing: .11em; background: rgba(0,0,0,.35); white-space: nowrap; }
     .data-table td { padding: 10px 13px; border-bottom: 1px solid var(--bd); vertical-align: middle; color: var(--tx); }
@@ -1578,6 +1580,66 @@ export function renderAdminPage() {
 
   // ── Settings ─────────────────────────────────────────────────────────────────
   let enabledTypes = new Set();
+
+  // ─ Audit log ─
+  let auditEntries = [];
+  const AUDIT_ACTION_LABEL = {
+    'admin.login': '管理员登录', 'user.login': '用户登录',
+    'user.create': '创建用户', 'user.update': '修改用户', 'user.delete': '删除用户',
+    'image.delete': '删除图片', 'proto.delete': '删除原型', 'page.delete': '删除页面',
+    'config.update': '修改配置', 'trash.purge': '彻底删除',
+  };
+  async function loadAudit() {
+    const days = document.getElementById('auditDays').value;
+    const body = document.getElementById('auditBody');
+    body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--tx-3);padding:32px">加载中…</td></tr>';
+    try {
+      const res = await fetch('/admin/audit?days=' + encodeURIComponent(days), { headers: authH() });
+      if (!res.ok) { body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--tx-3);padding:32px">加载失败</td></tr>'; return; }
+      const data = await res.json();
+      auditEntries = data.entries || [];
+      renderAudit();
+    } catch { body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--tx-3);padding:32px">加载失败</td></tr>'; }
+  }
+  function fmtTs(ts) {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    const p = n => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+  }
+  function renderAudit() {
+    const body = document.getElementById('auditBody');
+    if (!auditEntries.length) { body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--tx-3);padding:32px">暂无记录</td></tr>'; return; }
+    body.innerHTML = auditEntries.map(e => {
+      const label = AUDIT_ACTION_LABEL[e.action] || e.action;
+      const ok = e.status !== 'fail';
+      const statusBadge = '<span style="color:' + (ok ? 'var(--green)' : 'var(--red)') + ';font-weight:600">' + (ok ? '成功' : '失败') + '</span>';
+      return '<tr><td style="white-space:nowrap;font-family:var(--mono);font-size:.78rem">' + fmtTs(e.ts) + '</td>' +
+        '<td>' + esc(label) + '</td>' +
+        '<td>' + esc(e.actor || '—') + '</td>' +
+        '<td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(e.target || '') + '">' + esc(e.target || '—') + '</td>' +
+        '<td>' + statusBadge + '</td>' +
+        '<td style="font-family:var(--mono);font-size:.78rem">' + esc(e.ip || '—') + '</td></tr>';
+    }).join('');
+  }
+  function exportAuditCsv() {
+    if (!auditEntries.length) { toast('暂无数据可导出'); return; }
+    const head = ['时间', '操作', '操作者', '对象', '结果', 'IP'];
+    const rows = auditEntries.map(e => [
+      fmtTs(e.ts), AUDIT_ACTION_LABEL[e.action] || e.action, e.actor || '', e.target || '', e.status === 'fail' ? '失败' : '成功', e.ip || '',
+    ]);
+    const csvCell = v => '"' + String(v).replace(/"/g, '""') + '"';
+    const csv = '\\uFEFF' + [head, ...rows].map(r => r.map(csvCell).join(',')).join('\\r\\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'onimg-audit-' + new Date().toISOString().slice(0, 10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+  document.getElementById('auditRefresh').addEventListener('click', loadAudit);
+  document.getElementById('auditDays').addEventListener('change', loadAudit);
+  document.getElementById('auditExport').addEventListener('click', exportAuditCsv);
 
   async function loadSettings() {
     const res = await fetch('/admin/config', { headers: authH() });
