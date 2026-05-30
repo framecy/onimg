@@ -16,6 +16,7 @@ import { handleProtoUpload, handleProtoUploadInit, handleProtoFileBatch, handleP
 import { serveProto } from './proto/serve.js';
 import { listProtos, deleteProto, updateProtoMeta, deleteProtoVersion } from './proto/manage.js';
 import { handleTrashList, handleTrashRestore, handleTrashPurge, purgeExpiredTrash } from './trash.js';
+import { logAudit, clientIp, handleAuditLog } from './admin/audit.js';
 
 export default {
   async fetch(request, env, ctx) {
@@ -53,7 +54,12 @@ export default {
       }
 
       // ── User auth ────────────────────────────────────────────────────────────
-      if (method === 'POST'  && path === '/auth/login')           return withCors(await handleUserLogin(request, env), request);
+      if (method === 'POST'  && path === '/auth/login') {
+        const uname = await peekUsername(request);
+        const res = await handleUserLogin(request, env);
+        ctx.waitUntil(logAudit(env.STATS, { action: 'user.login', actor: uname, status: res.status < 400 ? 'ok' : 'fail', ip: clientIp(request) }));
+        return withCors(res, request);
+      }
       if (method === 'PATCH' && path === '/auth/password')        return withCors(await handleChangePassword(request, env), request);
       if (method === 'GET'   && path === '/auth/quota') {
         const user = await verifyUserToken(request, env);
@@ -74,7 +80,13 @@ export default {
       // Trash / recycle bin（handler 内部按 admin-or-user 解析身份）
       if (method === 'GET'    && path === '/api/trash')           return withCors(await handleTrashList(request, env), request);
       if (method === 'POST'   && path === '/api/trash/restore')   return withCors(await handleTrashRestore(request, env, ctx), request);
-      if (method === 'DELETE' && path === '/api/trash/purge')     return withCors(await handleTrashPurge(request, env, ctx), request);
+      if (method === 'DELETE' && path === '/api/trash/purge') {
+        const actor = await resolveActorName(request, env);
+        const res = await handleTrashPurge(request, env, ctx);
+        const body = await res.clone().json().catch(() => ({}));
+        ctx.waitUntil(logAudit(env.STATS, { action: 'trash.purge', actor, target: body?.purged, status: res.status < 400 ? 'ok' : 'fail', ip: clientIp(request) }));
+        return withCors(res, request);
+      }
       // User pages
       if (method === 'GET'    && path === '/api/pages')            return withCors(await userPagesHandler(request, env), request);
       if (method === 'POST'   && path === '/api/pages')            return withCors(await userPageCreate(request, env), request);
@@ -95,12 +107,18 @@ export default {
 
       // ── Admin panel ──────────────────────────────────────────────────────────
       if (path === '/admin' || path === '/admin/') return addSecurityHeaders(new Response(renderAdminPage(), { headers: { 'Content-Type': 'text/html; charset=utf-8' } }));
-      if (method === 'POST' && path === '/admin/login') return withCors(await handleAdminLogin(request, env), request);
+      if (method === 'POST' && path === '/admin/login') {
+        const uname = await peekUsername(request);
+        const res = await handleAdminLogin(request, env);
+        ctx.waitUntil(logAudit(env.STATS, { action: 'admin.login', actor: uname, status: res.status < 400 ? 'ok' : 'fail', ip: clientIp(request) }));
+        return withCors(res, request);
+      }
 
       if (path.startsWith('/admin/')) {
         if (!await verifyAdminToken(request, env)) return withCors(Response.json({ error: 'Unauthorized' }, { status: 401 }), request);
 
         if (method === 'GET'  && path === '/admin/cf-quota')         return withCors(await handleCfQuota(env), request);
+        if (method === 'GET'  && path === '/admin/audit')            return withCors(await handleAuditLog(env, url), request);
         if (method === 'GET'  && path === '/admin/stats')           return withCors(await handleAdminStats(env), request);
         if (method === 'POST' && path === '/admin/stats/reconcile') return withCors(await handleReconcileStats(env), request);
         if (method === 'GET'  && path === '/admin/all-image-stats') return withCors(await handleAllImageStats(env), request);
@@ -108,11 +126,30 @@ export default {
           return withCors(await handleImageStats(env, decodeURIComponent(path.slice('/admin/image-stats/'.length))), request);
         }
         if (method === 'GET'    && path === '/admin/users')               return withCors(await handleListUsers(env), request);
-        if (method === 'POST'   && path === '/admin/users')               return withCors(await handleCreateUser(request, env), request);
-        if (method === 'PATCH'  && path.startsWith('/admin/users/'))      return withCors(await handleUpdateUser(request, env, decodeURIComponent(path.slice('/admin/users/'.length))), request);
-        if (method === 'DELETE' && path.startsWith('/admin/users/'))      return withCors(await handleDeleteUser(env, decodeURIComponent(path.slice('/admin/users/'.length))), request);
+        if (method === 'POST'   && path === '/admin/users') {
+          const uname = await peekUsername(request);
+          const res = await handleCreateUser(request, env);
+          ctx.waitUntil(logAudit(env.STATS, { action: 'user.create', actor: 'admin', target: uname, status: res.status < 400 ? 'ok' : 'fail', ip: clientIp(request) }));
+          return withCors(res, request);
+        }
+        if (method === 'PATCH'  && path.startsWith('/admin/users/')) {
+          const target = decodeURIComponent(path.slice('/admin/users/'.length));
+          const res = await handleUpdateUser(request, env, target);
+          ctx.waitUntil(logAudit(env.STATS, { action: 'user.update', actor: 'admin', target, status: res.status < 400 ? 'ok' : 'fail', ip: clientIp(request) }));
+          return withCors(res, request);
+        }
+        if (method === 'DELETE' && path.startsWith('/admin/users/')) {
+          const target = decodeURIComponent(path.slice('/admin/users/'.length));
+          const res = await handleDeleteUser(env, target);
+          ctx.waitUntil(logAudit(env.STATS, { action: 'user.delete', actor: 'admin', target, status: res.status < 400 ? 'ok' : 'fail', ip: clientIp(request) }));
+          return withCors(res, request);
+        }
         if (method === 'GET'    && path === '/admin/config')              return withCors(await handleGetConfig(env), request);
-        if (method === 'POST'   && path === '/admin/config')              return withCors(await handleUpdateConfig(request, env), request);
+        if (method === 'POST'   && path === '/admin/config') {
+          const res = await handleUpdateConfig(request, env);
+          ctx.waitUntil(logAudit(env.STATS, { action: 'config.update', actor: 'admin', status: res.status < 400 ? 'ok' : 'fail', ip: clientIp(request) }));
+          return withCors(res, request);
+        }
         if (method === 'GET'    && path === '/admin/r2-stats')            return withCors(await handleR2DetailedStats(env), request);
         if (method === 'GET'    && path === '/admin/member-stats')        return withCors(await handleMemberStats(env), request);
         if (method === 'GET'    && path === '/admin/all-page-stats')      return withCors(await handleAllPageStats(env), request);
@@ -141,20 +178,36 @@ export default {
         if (method === 'POST'   && path === '/admin/proto/finalize')       return withCors(await handleProtoFinalize(request, env, env.ADMIN_USERNAME ?? 'admin'), request);
         // Admin prototypes
         if (method === 'GET'    && path === '/admin/protos')               return withCors(await adminProtoListHandler(env), request);
-        if (method === 'DELETE' && path.startsWith('/admin/protos/'))      return withCors(await deleteProto(env, decodeURIComponent(path.slice('/admin/protos/'.length)), null, true), request);
+        if (method === 'DELETE' && path.startsWith('/admin/protos/')) {
+          const target = decodeURIComponent(path.slice('/admin/protos/'.length));
+          const res = await deleteProto(env, target, null, true);
+          ctx.waitUntil(logAudit(env.STATS, { action: 'proto.delete', actor: 'admin', target, status: res.status < 400 ? 'ok' : 'fail', ip: clientIp(request) }));
+          return withCors(res, request);
+        }
         if (method === 'PATCH'  && path.startsWith('/admin/protos/'))      return withCors(await updateProtoMeta(env, decodeURIComponent(path.slice('/admin/protos/'.length)), null, true, await request.json()), request);
         // Admin pages
         if (method === 'GET'    && path === '/admin/pages')               return withCors(Response.json({ pages: await listPages(env, null) }), request);
         if (method === 'POST'   && path === '/admin/pages')               return withCors(await handleCreatePage(request, env, env.ADMIN_USERNAME ?? 'admin'), request);
         if (method === 'PATCH'  && path.startsWith('/admin/pages/'))      return withCors(await handleUpdatePage(request, env, decodeURIComponent(path.slice('/admin/pages/'.length)), env.ADMIN_USERNAME, true), request);
-        if (method === 'DELETE' && path.startsWith('/admin/pages/'))      return withCors(await handleDeletePage(env, decodeURIComponent(path.slice('/admin/pages/'.length)), env.ADMIN_USERNAME, true), request);
+        if (method === 'DELETE' && path.startsWith('/admin/pages/')) {
+          const target = decodeURIComponent(path.slice('/admin/pages/'.length));
+          const res = await handleDeletePage(env, target, env.ADMIN_USERNAME, true);
+          ctx.waitUntil(logAudit(env.STATS, { action: 'page.delete', actor: 'admin', target, status: res.status < 400 ? 'ok' : 'fail', ip: clientIp(request) }));
+          return withCors(res, request);
+        }
 
         return withCors(new Response('Not Found', { status: 404 }), request);
       }
 
       // ── Core image routes ────────────────────────────────────────────────────
       if (method === 'POST'   && path === '/upload')           return withCors(await handleUpload(request, env, ctx), request);
-      if (method === 'DELETE' && path.startsWith('/delete/'))  return withCors(await handleDelete(request, env, path.slice(8), ctx), request);
+      if (method === 'DELETE' && path.startsWith('/delete/')) {
+        const target = path.slice(8);
+        const actor = await resolveActorName(request, env);
+        const res = await handleDelete(request, env, target, ctx);
+        ctx.waitUntil(logAudit(env.STATS, { action: 'image.delete', actor, target: decodeURIComponent(target), status: res.status < 400 ? 'ok' : 'fail', ip: clientIp(request) }));
+        return withCors(res, request);
+      }
       if (method === 'GET'    && path === '/list')             return withCors(await handleList(request, env), request);
       if (method === 'GET'    && path === '/')                 return addSecurityHeaders(new Response(renderPage(), { headers: { 'Content-Type': 'text/html; charset=utf-8' } }));
       if (method === 'GET'    && path.startsWith('/'))         return withCors(await handleGet(env, ctx, path.slice(1), request), request);
@@ -170,6 +223,23 @@ export default {
     ctx.waitUntil(purgeExpiredTrash(env).catch(() => {}));
   },
 };
+
+// ── Audit helpers ───────────────────────────────────────────────────────────
+
+// 从登录请求体读取 username 用于审计（克隆请求，避免消耗给 handler 的 body）。
+async function peekUsername(request) {
+  try {
+    const body = await request.clone().json();
+    return String(body?.username ?? '—').slice(0, 64);
+  } catch { return '—'; }
+}
+
+// 解析当前操作者名（admin token → admin；user token → username；否则匿名）。
+async function resolveActorName(request, env) {
+  if (await verifyAdminToken(request, env)) return env.ADMIN_USERNAME ?? 'admin';
+  const user = await verifyUserToken(request, env);
+  return user?.username ?? '—';
+}
 
 // ── User page helpers ─────────────────────────────────────────────────────────
 
