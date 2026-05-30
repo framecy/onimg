@@ -1,4 +1,5 @@
 import { cfBump, cfMonth } from '../admin/cfCounters.js';
+import { normalizeTags } from '../list.js';
 
 export async function listProtos(env, ownerFilter, includePasswords = false) {
   const list = await env.STATS.list({ prefix: 'proto:' });
@@ -56,6 +57,9 @@ export async function updateProtoMeta(env, protoId, callerUsername, isAdmin, upd
   }
   if (body.isPrivate !== undefined) {
     meta.isPrivate = !!body.isPrivate;
+  }
+  if (body.tags !== undefined) {
+    meta.tags = normalizeTags(body.tags);
   }
 
   // Password handling

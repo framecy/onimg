@@ -200,6 +200,19 @@ export function renderPage() {
     .gallery-grid.selecting .gitem-sel { display: block; }
     .gallery-grid.selecting .gitem img { cursor: pointer; }
     .gitem.selected { border-color: var(--tx-2); box-shadow: 0 0 0 2px var(--tx-2) inset; }
+    /* Tags */
+    .gitem-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+    .tag-chip { font-size: .64rem; padding: 1px 7px; border-radius: 10px; background: rgba(255,255,255,.05); color: var(--tx-2); border: 1px solid var(--bd); font-weight: 600; white-space: nowrap; }
+    .tag-filter-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 14px; }
+    .tag-filter { font-size: .72rem; padding: 3px 11px; border-radius: 12px; background: var(--bg-3); color: var(--tx-2); border: 1px solid var(--bd); cursor: pointer; font-weight: 600; transition: var(--t); font-family: var(--font); }
+    .tag-filter:hover { border-color: var(--bd-2); color: var(--tx); }
+    .tag-filter.active { background: rgba(255,255,255,.1); color: var(--tx); border-color: var(--bd-f); }
+    .tag-filter-label { font-size: .68rem; color: var(--tx-3); text-transform: uppercase; letter-spacing: .1em; font-weight: 700; margin-right: 2px; }
+    /* Tag editor modal */
+    .tag-edit-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; min-height: 28px; }
+    .tag-edit-item { display: inline-flex; align-items: center; gap: 5px; font-size: .76rem; padding: 3px 6px 3px 10px; border-radius: 12px; background: rgba(255,255,255,.06); color: var(--tx); border: 1px solid var(--bd-2); font-weight: 600; }
+    .tag-edit-item button { background: none; border: none; color: var(--tx-3); cursor: pointer; font-size: .9rem; line-height: 1; padding: 0; }
+    .tag-edit-item button:hover { color: var(--red); }
 
     /* Pages */
     .pages-header { display: flex; align-items: center; margin-bottom: 16px; }
@@ -479,6 +492,7 @@ export function renderPage() {
         <button class="btn btn-ghost" id="batchPrivate">设为私密</button>
         <button class="btn btn-danger" id="batchDelete">删除选中</button>
       </div>
+      <div class="tag-filter-bar" id="mineTagFilter" style="display:none"></div>
       <div class="gallery-grid" id="mineGrid"></div>
       <div class="empty" id="mineEmpty" style="display:none">暂无图片，去上传吧</div>
     </div>
@@ -727,6 +741,28 @@ export function renderPage() {
   </div>
 </div>
 
+<!-- Tag Editor Modal -->
+<div class="modal-overlay" id="tagModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h3>编辑标签 <span id="tagModalTarget" style="font-size:.72rem;color:var(--tx-3);font-weight:400"></span></h3>
+      <button class="modal-close" id="tagModalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="tag-edit-list" id="tagEditList"></div>
+      <div class="field">
+        <label>添加标签（回车确认，最多 10 个）</label>
+        <input type="text" id="tagInput" placeholder="输入标签后按回车" maxlength="24" autocomplete="off">
+      </div>
+      <div class="err" id="tagErr"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="tagModalCancel">取消</button>
+      <button class="btn btn-primary" id="tagModalSave">保存</button>
+    </div>
+  </div>
+</div>
+
 <!-- Trash / Recycle Bin Modal -->
 <div class="modal-overlay" id="trashModal">
   <div class="modal" style="max-width:760px;width:92vw;max-height:86vh;display:flex;flex-direction:column">
@@ -795,6 +831,7 @@ export function renderPage() {
   let isAdminUser = localStorage.getItem(ADMIN_KEY) === '1';
   let mineItems = [], lbKey = null, editingSlug = null, userPages = [], vditorInst = null, userProtos = [];
   let mineSelectMode = false; const mineSelected = new Set();
+  const mineTagFilter = new Set();
   let lbList = [], lbIdx = -1;
 
   // Validate stored token hasn't expired
@@ -1281,9 +1318,41 @@ export function renderPage() {
   document.getElementById('mineSearch').addEventListener('input', renderMineGallery);
   document.getElementById('refreshMine').addEventListener('click', loadMineGallery);
 
-  function renderMineGallery() {
+  // 所有图片用到的标签集合（用于筛选栏）
+  function allMineTags() {
+    const set = new Set();
+    mineItems.forEach(i => (i.tags || []).forEach(t => set.add(t)));
+    return [...set].sort((a, b) => a.localeCompare(b, 'zh'));
+  }
+  function renderTagFilterBar() {
+    const bar = document.getElementById('mineTagFilter');
+    if (!bar) return;
+    const tags = allMineTags();
+    if (!tags.length) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
+    bar.style.display = 'flex';
+    bar.innerHTML = '<span class="tag-filter-label">标签</span>' +
+      tags.map(t => \`<button class="tag-filter\${mineTagFilter.has(t)?' active':''}" onclick="toggleTagFilter('\${esc(t)}')">\${esc(t)}</button>\`).join('') +
+      (mineTagFilter.size ? '<button class="tag-filter" onclick="clearTagFilter()" style="color:var(--red)">清除</button>' : '');
+  }
+  window.toggleTagFilter = function(tag) {
+    if (mineTagFilter.has(tag)) mineTagFilter.delete(tag); else mineTagFilter.add(tag);
+    renderMineGallery();
+  };
+  window.clearTagFilter = function() { mineTagFilter.clear(); renderMineGallery(); };
+
+  function mineFiltered() {
     const q = document.getElementById('mineSearch').value.toLowerCase();
-    const items = q ? mineItems.filter(i => i.key.toLowerCase().includes(q)) : mineItems;
+    return mineItems.filter(i => {
+      if (q && !i.key.toLowerCase().includes(q) && !(i.tags || []).some(t => t.toLowerCase().includes(q))) return false;
+      // 标签筛选：AND 语义（须包含全部选中标签）
+      if (mineTagFilter.size && ![...mineTagFilter].every(t => (i.tags || []).includes(t))) return false;
+      return true;
+    });
+  }
+
+  function renderMineGallery() {
+    renderTagFilterBar();
+    const items = mineFiltered();
     document.getElementById('mineEmpty').style.display = items.length ? 'none' : 'block';
     const grid = document.getElementById('mineGrid');
     grid.classList.toggle('selecting', mineSelectMode);
@@ -1291,17 +1360,21 @@ export function renderPage() {
       const url = location.origin + '/' + item.key;
       const sel = mineSelected.has(item.key);
       const clickAttr = mineSelectMode ? \`onclick="toggleSel('\${item.key}')"\` : \`onclick="openLb('\${item.key}', true, 'mine')"\`;
+      const tags = item.tags || [];
+      const tagsHtml = tags.length ? \`<div class="gitem-tags">\${tags.map(t => \`<span class="tag-chip">\${esc(t)}</span>\`).join('')}</div>\` : '';
       return \`<div class="gitem\${sel?' selected':''}" data-key="\${item.key}">
         <input type="checkbox" class="gitem-sel" \${sel?'checked':''} onchange="toggleSel('\${item.key}')">
         <img src="\${url}" loading="lazy" onload="this.classList.add('loaded')" \${clickAttr}>
         <div class="gitem-info">
           <div class="gitem-key">\${item.key}</div>
+          \${tagsHtml}
           <div class="gitem-row">
             <button class="\${item.isPublic?'btn-public':'btn-private'}" id="vis-\${item.key}" onclick="toggleVis('\${item.key}', this)">\${item.isPublic?'公开':'私密'}</button>
             <span style="font-size:.68rem;color:#444">\${fmtSize(item.size)}</span>
           </div>
           <div class="gitem-actions">
             <button class="btn btn-ghost" onclick="cp('\${url}',this)" style="padding:3px 8px">复制</button>
+            <button class="btn btn-ghost" onclick="openTagEditor('\${item.key}')" style="padding:3px 8px">标签</button>
             \${perms?.canDelete?\`<button class="btn btn-danger" onclick="delMine('\${item.key}')" style="padding:3px 8px">删除</button>\`:''}
           </div>
         </div>
@@ -1323,8 +1396,7 @@ export function renderPage() {
   window.toggleSel = toggleSel;
 
   function visibleMineKeys() {
-    const q = document.getElementById('mineSearch').value.toLowerCase();
-    return (q ? mineItems.filter(i => i.key.toLowerCase().includes(q)) : mineItems).map(i => i.key);
+    return mineFiltered().map(i => i.key);
   }
   function updateBatchUI() {
     document.getElementById('mineSelCount').textContent = '已选 ' + mineSelected.size;
@@ -1484,6 +1556,87 @@ export function renderPage() {
   document.getElementById('trashBtn').addEventListener('click', openTrash);
   document.getElementById('trashClose').addEventListener('click', () => document.getElementById('trashModal').classList.remove('show'));
   document.getElementById('trashModal').addEventListener('click', e => { if (e.target === document.getElementById('trashModal')) document.getElementById('trashModal').classList.remove('show'); });
+
+  // ── Tag editor (images + protos) ──
+  let tagTarget = null;   // { type:'image'|'proto', id }
+  let tagDraft = [];
+  function renderTagEditList() {
+    document.getElementById('tagEditList').innerHTML = tagDraft.length
+      ? tagDraft.map((t, i) => \`<span class="tag-edit-item">\${esc(t)}<button onclick="removeTagDraft(\${i})" title="移除">×</button></span>\`).join('')
+      : '<span style="color:var(--tx-3);font-size:.76rem">暂无标签</span>';
+  }
+  window.removeTagDraft = function(i) { tagDraft.splice(i, 1); renderTagEditList(); };
+  function addTagDraft(raw) {
+    const t = String(raw || '').trim().slice(0, 24);
+    if (!t) return;
+    if (tagDraft.length >= 10) { document.getElementById('tagErr').textContent = '最多 10 个标签'; return; }
+    if (tagDraft.some(x => x.toLowerCase() === t.toLowerCase())) { document.getElementById('tagErr').textContent = '标签已存在'; return; }
+    tagDraft.push(t); document.getElementById('tagErr').textContent = ''; renderTagEditList();
+  }
+  window.openTagEditor = function(key) {
+    const it = mineItems.find(i => i.key === key);
+    tagTarget = { type: 'image', id: key };
+    tagDraft = [...((it && it.tags) || [])];
+    document.getElementById('tagModalTarget').textContent = key;
+    document.getElementById('tagInput').value = '';
+    document.getElementById('tagErr').textContent = '';
+    renderTagEditList();
+    document.getElementById('tagModal').classList.add('show');
+    setTimeout(() => document.getElementById('tagInput').focus(), 60);
+  };
+  window.openProtoTagEditor = function(protoId) {
+    const p = userProtos.find(x => x.protoId === protoId);
+    tagTarget = { type: 'proto', id: protoId };
+    tagDraft = [...((p && p.tags) || [])];
+    document.getElementById('tagModalTarget').textContent = (p && p.title) || protoId;
+    document.getElementById('tagInput').value = '';
+    document.getElementById('tagErr').textContent = '';
+    renderTagEditList();
+    document.getElementById('tagModal').classList.add('show');
+    setTimeout(() => document.getElementById('tagInput').focus(), 60);
+  };
+  document.getElementById('tagInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); addTagDraft(e.target.value); e.target.value = ''; }
+  });
+  function closeTagModal() { document.getElementById('tagModal').classList.remove('show'); }
+  ['tagModalClose','tagModalCancel'].forEach(id => document.getElementById(id).addEventListener('click', closeTagModal));
+  document.getElementById('tagModal').addEventListener('click', e => { if (e.target === document.getElementById('tagModal')) closeTagModal(); });
+  document.getElementById('tagModalSave').addEventListener('click', async () => {
+    if (!tagTarget) return;
+    // 把输入框里未回车的内容也并入
+    const pending = document.getElementById('tagInput').value.trim();
+    if (pending) addTagDraft(pending);
+    const btn = document.getElementById('tagModalSave');
+    btn.disabled = true; btn.textContent = '保存中…';
+    try {
+      let res;
+      if (tagTarget.type === 'image') {
+        res = await fetch('/api/image/' + encodeURIComponent(tagTarget.id) + '/tags', {
+          method: 'PATCH', headers: authH(), body: JSON.stringify({ tags: tagDraft }),
+        });
+      } else {
+        res = await fetch('/api/protos/' + encodeURIComponent(tagTarget.id), {
+          method: 'PATCH', headers: authH(), body: JSON.stringify({ tags: tagDraft }),
+        });
+      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { document.getElementById('tagErr').textContent = data.error || '保存失败'; return; }
+      const saved = data.tags || tagDraft;
+      if (tagTarget.type === 'image') {
+        const it = mineItems.find(i => i.key === tagTarget.id);
+        if (it) it.tags = saved;
+        renderMineGallery();
+      } else {
+        const p = userProtos.find(x => x.protoId === tagTarget.id);
+        if (p) p.tags = saved;
+        renderProtos();
+      }
+      closeTagModal();
+      toast('标签已保存');
+    } finally {
+      btn.disabled = false; btn.textContent = '保存';
+    }
+  });
 
   // ── Pages ──
   function renderPages() {
@@ -1656,9 +1809,7 @@ export function renderPage() {
   function openLb(key, showDelete, context) {
     lbKey = key;
     if (context === 'mine') {
-      const q = document.getElementById('mineSearch').value.toLowerCase();
-      const items = q ? mineItems.filter(i => i.key.toLowerCase().includes(q)) : mineItems;
-      lbList = items.map(i => ({ key: i.key, showDelete }));
+      lbList = mineFiltered().map(i => ({ key: i.key, showDelete }));
     } else if (context === 'pub') {
       lbList = Array.from(document.querySelectorAll('#pubGrid .pub-item img')).map(img => ({
         key: img.src.replace(location.origin + '/', ''), showDelete: false,
@@ -2057,7 +2208,7 @@ export function renderPage() {
         <td class="proto-muted" style="font-size:.75rem;text-align:center">\${idx+1}</td>
         <td class="proto-td-name">
           <div class="name">\${esc(p.title || p.protoId)}</div>
-          <div style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap">\${lock}\${priv}</div>
+          <div style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap">\${lock}\${priv}\${(p.tags||[]).map(t=>\`<span class="tag-chip">\${esc(t)}</span>\`).join('')}</div>
           <div class="id">\${p.protoId}</div>
         </td>
         <td class="proto-muted">\${p.fileCount ?? '—'}</td>
@@ -2071,6 +2222,7 @@ export function renderPage() {
           <a href="\${previewUrl}" target="_blank" class="btn btn-ghost">预览</a>
           <button class="btn btn-ghost" onclick="cpProto(userProtos[\${idx}]._copyText,this)">复制</button>
           <button class="btn btn-ghost" onclick="upvmOpen(\${idx})">版本</button>
+          <button class="btn btn-ghost" onclick="openProtoTagEditor('\${esc(p.protoId)}')">标签</button>
           <button class="btn btn-ghost" onclick="openProtoEdit('\${esc(p.protoId)}')">编辑</button>
           <button class="btn btn-ghost" onclick="openProtoUpdate('\${esc(p.protoId)}')">更新</button>
           <button class="btn btn-danger" onclick="deleteProto('\${esc(p.protoId)}')">删除</button>
@@ -2512,7 +2664,7 @@ export function renderPage() {
     const lb = document.getElementById('lightbox');
     if (e.key === 'Escape') {
       lb.classList.remove('show'); closePageModal();
-      ['protoEditModal','protoUpdateModal','userProtoVersionModal','trashModal'].forEach(id => {
+      ['protoEditModal','protoUpdateModal','userProtoVersionModal','trashModal','tagModal'].forEach(id => {
         const el = document.getElementById(id); if (el) el.classList.remove('show');
       });
       closeChangePwdModal();

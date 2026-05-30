@@ -1,7 +1,7 @@
 import { handleUpload } from './upload.js';
 import { handleGet } from './get.js';
 import { handleDelete } from './delete.js';
-import { handleList, handlePublicGallery, handleToggleVisibility } from './list.js';
+import { handleList, handlePublicGallery, handleToggleVisibility, handleSetImageTags } from './list.js';
 import { renderPage } from './page.js';
 import { renderAdminPage } from './admin-page.js';
 import { handleAdminLogin, verifyAdminToken, timingSafeEqual } from './admin/auth.js';
@@ -66,6 +66,10 @@ export default {
       if (method === 'PATCH'  && path.startsWith('/api/image/') && path.endsWith('/visibility')) {
         const key = decodeURIComponent(path.slice('/api/image/'.length, -'/visibility'.length));
         return withCors(await handleToggleVisibility(request, env, key), request);
+      }
+      if (method === 'PATCH'  && path.startsWith('/api/image/') && path.endsWith('/tags')) {
+        const key = decodeURIComponent(path.slice('/api/image/'.length, -'/tags'.length));
+        return withCors(await handleSetImageTags(request, env, key), request);
       }
       // Trash / recycle bin（handler 内部按 admin-or-user 解析身份）
       if (method === 'GET'    && path === '/api/trash')           return withCors(await handleTrashList(request, env), request);

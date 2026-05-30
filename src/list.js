@@ -28,6 +28,55 @@ export async function handleList(request, env) {
   return Response.json({ items: list.filter(e => !e.deletedAt), cursor: null, truncated: false });
 }
 
+// 标签规范化：去重、trim、去空、长度上限，最多 10 个，每个 ≤ 24 字符
+export function normalizeTags(input) {
+  if (!Array.isArray(input)) return [];
+  const seen = new Set();
+  const out = [];
+  for (const raw of input) {
+    const t = String(raw ?? '').trim().slice(0, 24);
+    if (!t) continue;
+    const key = t.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(t);
+    if (out.length >= 10) break;
+  }
+  return out;
+}
+
+// 设置单张图片标签：PATCH /api/image/{key}/tags  body { tags: string[] }
+export async function handleSetImageTags(request, env, key) {
+  const user = await verifyUserToken(request, env);
+  const isAdmin = !user && await verifyAdminToken(request, env);
+  if (!user && !isAdmin) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+  let body;
+  try { body = await request.json(); } catch { return Response.json({ error: 'Invalid JSON' }, { status: 400 }); }
+  const tags = normalizeTags(body.tags);
+
+  const metaKey = 'imgmeta:' + key;
+  const existing = await env.STATS.getWithMetadata(metaKey, 'json');
+  if (!existing?.metadata) return Response.json({ error: 'Image not found in index' }, { status: 404 });
+  if (!isAdmin && existing.metadata.owner !== user.username) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  // 持久来源：imgmeta value（metadata 保持不变，避免超出 1KB metadata 上限）
+  await env.STATS.put(metaKey, JSON.stringify({ ...(existing.value ?? {}), tags }), {
+    metadata: existing.metadata,
+  });
+
+  // 冗余进 userimgs 列表项，供前端筛选无需逐项读取
+  const owner = existing.metadata.owner;
+  const imgsKv = 'userimgs:' + owner;
+  const list = await env.STATS.get(imgsKv, 'json') ?? [];
+  const idx = list.findIndex(e => e.key === key);
+  if (idx !== -1) { list[idx].tags = tags; await env.STATS.put(imgsKv, JSON.stringify(list)); }
+
+  return Response.json({ key, tags });
+}
+
 // Public gallery — no auth required
 export async function handlePublicGallery(env) {
   const kvList = await env.STATS.list({ prefix: 'imgmeta:' });
