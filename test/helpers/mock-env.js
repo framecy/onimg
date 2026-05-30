@@ -2,7 +2,8 @@ import { hashPassword, randomSalt } from '../../src/user-auth.js';
 
 // In-memory KV Namespace
 export function createKV() {
-  const store = new Map();
+  const store = new Map();    // key -> string value
+  const metaStore = new Map(); // key -> metadata object
   return {
     async get(key, type) {
       const val = store.get(key) ?? null;
@@ -11,17 +12,27 @@ export function createKV() {
       }
       return val;
     },
-    async put(key, value, _opts) {
+    async getWithMetadata(key, type) {
+      const raw = store.get(key) ?? null;
+      let value = raw;
+      if (type === 'json' && raw !== null) {
+        try { value = JSON.parse(raw); } catch { value = null; }
+      }
+      return { value, metadata: metaStore.get(key) ?? null };
+    },
+    async put(key, value, opts = {}) {
       store.set(key, String(value));
+      if (opts.metadata !== undefined) metaStore.set(key, opts.metadata);
     },
     async delete(key) {
       store.delete(key);
+      metaStore.delete(key);
     },
     async list(opts = {}) {
       const prefix = opts.prefix ?? '';
       const keys = [...store.keys()]
         .filter(k => k.startsWith(prefix))
-        .map(name => ({ name, metadata: null }));
+        .map(name => ({ name, metadata: metaStore.get(name) ?? null }));
       return { keys, list_complete: true };
     },
     _store: store,

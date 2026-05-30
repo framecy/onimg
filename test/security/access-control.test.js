@@ -126,10 +126,9 @@ describe('Access Control: Delete', () => {
     expect(res.status).toBe(200);
   });
 
-  // SECURITY NOTE: current implementation does NOT enforce ownership for non-admin users.
-  // A user with canDelete=true can delete images belonging to other users (IDOR).
-  // This test documents the current behaviour; a future fix should add an ownership check.
-  test('[IDOR] user with canDelete can delete another user\'s image (known limitation)', async () => {
+  // Ownership enforced (soft-delete refactor): a non-admin user cannot delete
+  // an image they do not own — the handler returns 403 before any mutation.
+  test('user with canDelete cannot delete another user\'s image (ownership enforced)', async () => {
     const carolToken = await createToken(
       { type: 'user', username: 'carol' },
       3600_000,
@@ -137,8 +136,7 @@ describe('Access Control: Delete', () => {
     );
     const req = authedRequest('DELETE', 'http://localhost/delete/' + imgKey, carolToken);
     const res = await handleDelete(req, env, imgKey);
-    // Currently succeeds — this documents the missing ownership check
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(403);
   });
 
   test('returns 404 for nonexistent image', async () => {

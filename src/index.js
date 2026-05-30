@@ -15,6 +15,7 @@ import { listPages, handleListPages, handleCreatePage, handleUpdatePage, handleD
 import { handleProtoUpload, handleProtoUploadInit, handleProtoFileBatch, handleProtoFinalize } from './proto/upload.js';
 import { serveProto } from './proto/serve.js';
 import { listProtos, deleteProto, updateProtoMeta, deleteProtoVersion } from './proto/manage.js';
+import { handleTrashList, handleTrashRestore, handleTrashPurge, purgeExpiredTrash } from './trash.js';
 
 export default {
   async fetch(request, env, ctx) {
@@ -66,6 +67,10 @@ export default {
         const key = decodeURIComponent(path.slice('/api/image/'.length, -'/visibility'.length));
         return withCors(await handleToggleVisibility(request, env, key), request);
       }
+      // Trash / recycle bin（handler 内部按 admin-or-user 解析身份）
+      if (method === 'GET'    && path === '/api/trash')           return withCors(await handleTrashList(request, env), request);
+      if (method === 'POST'   && path === '/api/trash/restore')   return withCors(await handleTrashRestore(request, env, ctx), request);
+      if (method === 'DELETE' && path === '/api/trash/purge')     return withCors(await handleTrashPurge(request, env, ctx), request);
       // User pages
       if (method === 'GET'    && path === '/api/pages')            return withCors(await userPagesHandler(request, env), request);
       if (method === 'POST'   && path === '/api/pages')            return withCors(await userPageCreate(request, env), request);
@@ -154,7 +159,12 @@ export default {
     } catch (err) {
       return withCors(Response.json({ error: err.message }, { status: 500 }), request);
     }
-  }
+  },
+
+  // Cron Trigger：每日清理超过 30 天保留期的回收站内容（见 wrangler.toml [triggers]）
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(purgeExpiredTrash(env).catch(() => {}));
+  },
 };
 
 // ── User page helpers ─────────────────────────────────────────────────────────

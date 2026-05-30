@@ -24,14 +24,15 @@ export async function handleList(request, env) {
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const list = await env.STATS.get('userimgs:' + user.username, 'json') ?? [];
-  return Response.json({ items: list, cursor: null, truncated: false });
+  // 排除回收站中（软删除）的图片
+  return Response.json({ items: list.filter(e => !e.deletedAt), cursor: null, truncated: false });
 }
 
 // Public gallery — no auth required
 export async function handlePublicGallery(env) {
   const kvList = await env.STATS.list({ prefix: 'imgmeta:' });
   const public_ = kvList.keys
-    .filter(k => k.metadata?.isPublic)
+    .filter(k => k.metadata?.isPublic && !k.metadata?.deletedAt)
     .map(k => ({
       key: k.name.slice(8),   // strip 'imgmeta:'
       owner: k.metadata.owner,

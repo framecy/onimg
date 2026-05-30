@@ -23,6 +23,8 @@ export async function listProtos(env, ownerFilter, includePasswords = false) {
         versions:        p.versions ?? [],
         passwordExpiry:  p.passwordExpiry ?? null,
         isPrivate:       p.isPrivate ?? false,
+        tags:            Array.isArray(p.tags) ? p.tags : [],
+        deletedAt:       p.deletedAt ?? null,
       };
       if (includePasswords && p.accessPassword) {
         obj.accessPassword = p.accessPassword;
@@ -30,7 +32,8 @@ export async function listProtos(env, ownerFilter, includePasswords = false) {
       return obj;
     })
   );
-  const all = protos.filter(Boolean);
+  // 排除已软删除（在回收站中）的原型
+  const all = protos.filter(p => p && !p.deletedAt);
   return ownerFilter ? all.filter(p => p.owner === ownerFilter) : all;
 }
 
@@ -80,6 +83,8 @@ export async function updateProtoMeta(env, protoId, callerUsername, isAdmin, upd
   return Response.json({ ok: true, protoId, updatedAt: meta.updatedAt });
 }
 
+// 软删除：标记 deletedAt，保留 R2 内容，移入回收站（30 天后 cron 彻底清理）。
+// 永久删除见 purgeProto（由回收站「彻底删除」与 cron 调用）。
 export async function deleteProto(env, protoId, callerUsername, isAdmin) {
   if (!protoId) return Response.json({ error: 'Missing protoId' }, { status: 400 });
 
@@ -88,6 +93,16 @@ export async function deleteProto(env, protoId, callerUsername, isAdmin) {
   if (!isAdmin && meta.owner !== callerUsername) {
     return Response.json({ error: 'Forbidden' }, { status: 403 });
   }
+  if (meta.deletedAt) return Response.json({ trashed: protoId, alreadyTrashed: true });
+
+  meta.deletedAt = Date.now();
+  await env.STATS.put(`proto:${protoId}`, JSON.stringify(meta));
+  return Response.json({ trashed: protoId });
+}
+
+// 永久删除：清空 R2 前缀下所有对象 + KV 元数据 / 版本清单 / 访问计数 / 增量上传 manifest。
+export async function purgeProto(env, protoId) {
+  if (!protoId) return;
 
   // Delete all R2 objects with this proto prefix (paginated)
   let cursor, totalDeleted = 0;
@@ -96,12 +111,14 @@ export async function deleteProto(env, protoId, callerUsername, isAdmin) {
     const result = await env.BUCKET.list({ prefix, limit: 1000, cursor });
     if (result.objects.length) {
       // R2 批量删除：单次 delete 接受 ≤1000 个 key = 1 个 subrequest
-      // （原先逐个 delete 会在大原型上超出免费版 50 subrequest 上限而失败）
       await env.BUCKET.delete(result.objects.map(o => o.key));
       totalDeleted += result.objects.length;
     }
     cursor = result.truncated ? result.cursor : undefined;
   } while (cursor);
+
+  // 增量上传 manifest（位于 proto 前缀之外，需单独删除）
+  try { await env.BUCKET.delete(`manifests/${protoId}.json`); } catch {}
 
   // R2 Class A 追踪：删除的文件数（best-effort）
   if (totalDeleted > 0) {
@@ -115,8 +132,6 @@ export async function deleteProto(env, protoId, callerUsername, isAdmin) {
     env.STATS.delete(`prstats:${protoId}`),
     ...vList.keys.map(k => env.STATS.delete(k.name)),
   ]);
-
-  return Response.json({ deleted: protoId });
 }
 
 // Delete a single historical version record (metadata + vfiles KV).

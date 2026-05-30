@@ -468,6 +468,7 @@ export function renderPage() {
         <input class="search-input" id="mineSearch" type="text" placeholder="搜索…">
         <div class="spacer"></div>
         <button class="btn btn-ghost" id="mineSelectToggle">选择</button>
+        <button class="btn btn-ghost" id="trashBtn">🗑 回收站</button>
         <button class="btn btn-ghost" id="refreshMine">刷新</button>
       </div>
       <div class="batch-bar" id="mineBatchBar" style="display:none">
@@ -723,6 +724,17 @@ export function renderPage() {
       <button class="btn btn-ghost" id="pageModalCancel">取消</button>
       <button class="btn btn-primary" id="pageModalSave">创建</button>
     </div>
+  </div>
+</div>
+
+<!-- Trash / Recycle Bin Modal -->
+<div class="modal-overlay" id="trashModal">
+  <div class="modal" style="max-width:760px;width:92vw;max-height:86vh;display:flex;flex-direction:column">
+    <div class="modal-header">
+      <h3>回收站 <span style="font-size:.72rem;color:var(--tx-3);font-weight:400">删除项保留 30 天，到期自动清除</span></h3>
+      <button class="modal-close" id="trashClose">✕</button>
+    </div>
+    <div class="modal-body" id="trashBody" style="min-height:200px"><div class="empty">加载中…</div></div>
   </div>
 </div>
 
@@ -1351,8 +1363,8 @@ export function renderPage() {
   document.getElementById('batchDelete').addEventListener('click', async () => {
     const keys = [...mineSelected];
     if (!keys.length) { toast('未选择图片'); return; }
-    if (!confirm('确认删除选中的 ' + keys.length + ' 张图片？此操作不可恢复。')) return;
-    toast('删除中…');
+    if (!confirm('确认将选中的 ' + keys.length + ' 张图片移至回收站？可在回收站恢复。')) return;
+    toast('处理中…');
     const { ok, fail } = await runPool(keys, 6, async key => {
       const r = await fetch('/delete/' + key, { method:'DELETE', headers:{ Authorization:'Bearer '+token } });
       if (!r.ok) throw new Error();
@@ -1360,7 +1372,7 @@ export function renderPage() {
       mineSelected.delete(key);
     });
     renderMineGallery();
-    toast('已删除 ' + ok + ' 张' + (fail ? '，' + fail + ' 张失败' : ''), fail ? 'warn' : 'success');
+    toast('已移至回收站 ' + ok + ' 张' + (fail ? '，' + fail + ' 张失败' : ''), fail ? 'warn' : 'success');
   });
 
   async function batchSetVisibility(makePublic) {
@@ -1397,13 +1409,81 @@ export function renderPage() {
   }
 
   async function delMine(key) {
-    if (!confirm('确认删除？')) return;
+    if (!confirm('将此图片移至回收站？可在回收站恢复。')) return;
     await fetch('/delete/' + key, { method:'DELETE', headers:{ Authorization:'Bearer '+token } });
     mineItems = mineItems.filter(i => i.key !== key);
     renderMineGallery();
     document.getElementById('lightbox').classList.remove('show');
-    toast('已删除');
+    toast('已移至回收站');
   }
+
+  // ── Trash / Recycle Bin ──
+  let trashData = null;
+  function openTrash() {
+    if (!token) { openLoginOverlay(); return; }
+    document.getElementById('trashModal').classList.add('show');
+    loadTrash();
+  }
+  async function loadTrash() {
+    const body = document.getElementById('trashBody');
+    body.innerHTML = '<div class="empty">加载中…</div>';
+    try {
+      const res = await fetch('/api/trash', { headers: { Authorization: 'Bearer ' + token } });
+      if (!res.ok) { body.innerHTML = '<div class="empty">加载失败</div>'; return; }
+      trashData = await res.json();
+      renderTrash();
+    } catch { body.innerHTML = '<div class="empty">加载失败</div>'; }
+  }
+  function trashDaysLeft(deletedAt, days) {
+    const left = Math.ceil((deletedAt + days * 86400000 - Date.now()) / 86400000);
+    return left > 0 ? left + ' 天后清除' : '即将清除';
+  }
+  function renderTrash() {
+    const body = document.getElementById('trashBody');
+    const { images = [], protos = [], retentionDays = 30 } = trashData || {};
+    if (!images.length && !protos.length) { body.innerHTML = '<div class="empty">回收站为空</div>'; return; }
+    let html = '';
+    if (images.length) {
+      html += '<div style="font-size:.72rem;font-weight:700;color:var(--tx-2);text-transform:uppercase;letter-spacing:.1em;margin:4px 0 10px">图片 (' + images.length + ')</div>';
+      html += '<div class="gallery-grid" style="margin-bottom:18px">' + images.map(it => {
+        const url = location.origin + '/' + it.key;
+        return '<div class="gitem"><img src="' + url + '" loading="lazy" onload="this.classList.add(\\'loaded\\')">' +
+          '<div class="gitem-info"><div class="gitem-key">' + esc(it.key) + '</div>' +
+          '<div style="font-size:.66rem;color:var(--tx-3);margin-top:3px">' + trashDaysLeft(it.deletedAt, retentionDays) + '</div>' +
+          '<div class="gitem-actions"><button class="btn btn-ghost" onclick="restoreTrash(\\'image\\',\\'' + encodeURIComponent(it.key) + '\\')" style="padding:3px 8px">恢复</button>' +
+          '<button class="btn btn-danger" onclick="purgeTrash(\\'image\\',\\'' + encodeURIComponent(it.key) + '\\')" style="padding:3px 8px">彻底删除</button></div></div></div>';
+      }).join('') + '</div>';
+    }
+    if (protos.length) {
+      html += '<div style="font-size:.72rem;font-weight:700;color:var(--tx-2);text-transform:uppercase;letter-spacing:.1em;margin:4px 0 10px">原型 (' + protos.length + ')</div>';
+      html += '<div class="pages-list">' + protos.map(p =>
+        '<div class="page-item"><div class="page-item-info"><div class="page-title">' + esc(p.title || p.protoId) + '</div>' +
+        '<div class="page-meta">' + (p.fileCount ?? '—') + ' 文件 · ' + fmtSize(p.totalSize || 0) + ' · ' + trashDaysLeft(p.deletedAt, retentionDays) + '</div></div>' +
+        '<button class="btn btn-ghost" onclick="restoreTrash(\\'proto\\',\\'' + esc(p.protoId) + '\\')">恢复</button>' +
+        '<button class="btn btn-danger" onclick="purgeTrash(\\'proto\\',\\'' + esc(p.protoId) + '\\')">彻底删除</button></div>'
+      ).join('') + '</div>';
+    }
+    body.innerHTML = html;
+  }
+  window.restoreTrash = async function(type, id) {
+    const payload = type === 'image' ? { type, key: decodeURIComponent(id) } : { type, protoId: id };
+    const res = await fetch('/api/trash/restore', { method:'POST', headers: authH(), body: JSON.stringify(payload) });
+    if (!res.ok) { toast('恢复失败'); return; }
+    toast('已恢复');
+    if (type === 'image') loadMineGallery(); else loadProtos(true);
+    loadTrash();
+  };
+  window.purgeTrash = async function(type, id) {
+    if (!confirm('彻底删除后无法恢复，确定？')) return;
+    const payload = type === 'image' ? { type, key: decodeURIComponent(id) } : { type, protoId: id };
+    const res = await fetch('/api/trash/purge', { method:'DELETE', headers: authH(), body: JSON.stringify(payload) });
+    if (!res.ok) { toast('删除失败'); return; }
+    toast('已彻底删除');
+    loadTrash();
+  };
+  document.getElementById('trashBtn').addEventListener('click', openTrash);
+  document.getElementById('trashClose').addEventListener('click', () => document.getElementById('trashModal').classList.remove('show'));
+  document.getElementById('trashModal').addEventListener('click', e => { if (e.target === document.getElementById('trashModal')) document.getElementById('trashModal').classList.remove('show'); });
 
   // ── Pages ──
   function renderPages() {
@@ -2010,7 +2090,7 @@ export function renderPage() {
   }
 
   async function deleteProto(protoId) {
-    if (!confirm('确认删除此原型？此操作无法撤销。')) return;
+    if (!confirm('将此原型移至回收站？可在「我的图库 → 回收站」恢复。')) return;
     // Optimistic: remove row immediately for instant feedback
     const backup = [...userProtos];
     userProtos = userProtos.filter(p => p.protoId !== protoId);
@@ -2023,7 +2103,7 @@ export function renderPage() {
         userProtos = backup; renderProtos(); toast('删除失败: ' + (d.error || ''));
         return;
       }
-      toast('已删除');
+      toast('已移至回收站');
     } catch { userProtos = backup; renderProtos(); toast('删除失败'); }
   }
 
@@ -2432,7 +2512,7 @@ export function renderPage() {
     const lb = document.getElementById('lightbox');
     if (e.key === 'Escape') {
       lb.classList.remove('show'); closePageModal();
-      ['protoEditModal','protoUpdateModal','userProtoVersionModal'].forEach(id => {
+      ['protoEditModal','protoUpdateModal','userProtoVersionModal','trashModal'].forEach(id => {
         const el = document.getElementById(id); if (el) el.classList.remove('show');
       });
       closeChangePwdModal();
