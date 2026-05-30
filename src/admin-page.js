@@ -1117,6 +1117,55 @@ export function renderAdminPage() {
 
   const authH = () => ({ 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' });
 
+  // ── Access trend chart (lazy-load Chart.js from CDN; CSP allows cdn.jsdelivr.net) ─
+  let _chartLoading = null;
+  function ensureChartJs() {
+    if (window.Chart) return Promise.resolve(true);
+    if (_chartLoading) return _chartLoading;
+    _chartLoading = new Promise(resolve => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js';
+      s.onload = () => resolve(true);
+      s.onerror = () => { _chartLoading = null; resolve(false); };
+      document.head.appendChild(s);
+    });
+    return _chartLoading;
+  }
+  function aggregateDailyHits(accesses, days) {
+    const counts = {}, labels = [];
+    const today = new Date(); today.setHours(0,0,0,0);
+    const dayKey = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    for (let i = days - 1; i >= 0; i--) { const k = dayKey(new Date(today.getTime() - i*86400000)); counts[k]=0; labels.push(k); }
+    for (const a of (accesses||[])) { if (!a || !a.ts) continue; const k = dayKey(new Date(a.ts)); if (k in counts) counts[k]++; }
+    return { labels, data: labels.map(l => counts[l]) };
+  }
+  const _trendCharts = {};
+  async function renderTrendChart(canvasId, accesses, days = 14) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ok = await ensureChartJs();
+    if (!ok || !window.Chart) {
+      const fb = document.createElement('div');
+      fb.textContent = '趋势图加载失败（CDN 不可用）';
+      fb.style.cssText = 'color:var(--tx-3);font-size:.8rem;padding:12px 0';
+      canvas.replaceWith(fb); return;
+    }
+    const { labels, data } = aggregateDailyHits(accesses, days);
+    if (_trendCharts[canvasId]) _trendCharts[canvasId].destroy();
+    _trendCharts[canvasId] = new window.Chart(canvas, {
+      type: 'line',
+      data: { labels, datasets: [{ data, borderColor:'#34d399', backgroundColor:'rgba(52,211,153,.12)', fill:true, tension:.3, pointRadius:2, borderWidth:2 }] },
+      options: {
+        responsive:true, maintainAspectRatio:false, animation:false,
+        plugins: { legend:{display:false}, tooltip:{intersect:false, mode:'index'} },
+        scales: {
+          x: { ticks:{color:'#858585', maxRotation:0, autoSkip:true, maxTicksLimit:7, font:{size:10}}, grid:{display:false} },
+          y: { beginAtZero:true, ticks:{color:'#858585', precision:0, font:{size:10}}, grid:{color:'rgba(255,255,255,.05)'} },
+        },
+      },
+    });
+  }
+
   function parseTokenExp(tok) {
     try { return JSON.parse(atob(tok.split('.')[0])).exp * 1000; } catch { return null; }
   }
@@ -1632,6 +1681,7 @@ export function renderAdminPage() {
       document.getElementById('countryBars').innerHTML = cl.slice(0,8).map(([cc,cnt]) =>
         \`<div class="country-row"><span class="country-name">\${cc}</span><div class="bar-wrap"><div class="bar" style="width:\${(cnt/maxV*100).toFixed(1)}%"></div></div><span class="country-count">\${cnt}</span></div>\`
       ).join('') || '<span style="color:#333;font-size:.82rem">暂无数据</span>';
+      renderTrendChart('imgTrendChart', data.accesses, 14);
       document.getElementById('accessLogBody').innerHTML = (data.accesses??[]).slice(0,50).map(a =>
         \`<tr><td>\${new Date(a.ts).toLocaleString('zh-CN')}</td><td>\${a.ip}</td><td>\${a.country}</td><td>\${[a.city,a.region].filter(x=>x&&x!=='—').join(' ')}</td><td style="color:#444">\${a.org!=='—'?a.org:''}</td></tr>\`
       ).join('') || '<tr><td colspan="5" style="color:#333;text-align:center">暂无记录</td></tr>';
@@ -1672,6 +1722,7 @@ export function renderAdminPage() {
       ).join('') || '<span style="color:#333;font-size:.82rem">暂无数据</span>';
 
       // Access log
+      renderTrendChart('pageTrendChart', data.accesses, 14);
       document.getElementById('psmLogBody').innerHTML = (data.accesses ?? []).slice(0,50).map(a =>
         \`<tr><td>\${new Date(a.ts).toLocaleString('zh-CN')}</td><td style="font-family:monospace">\${a.ip}</td><td>\${a.country}</td><td>\${[a.city,a.region].filter(x=>x&&x!=='—').join(' ')}</td><td style="color:#444">\${a.org!=='—'?a.org:''}</td></tr>\`
       ).join('') || '<tr><td colspan="5" style="color:#333;text-align:center">暂无记录</td></tr>';
@@ -1703,6 +1754,7 @@ export function renderAdminPage() {
       document.getElementById('prsCountryBars').innerHTML = cl.map(([c,cnt]) =>
         \`<div class="country-row"><span class="country-name">\${c}</span><div class="bar-wrap"><div class="bar" style="width:\${(cnt/maxC*100).toFixed(1)}%"></div></div><span class="country-count">\${cnt}</span></div>\`
       ).join('') || '<span style="color:#333;font-size:.82rem">暂无数据</span>';
+      renderTrendChart('protoTrendChart', data.accesses, 14);
       document.getElementById('prsLogBody').innerHTML = (data.accesses ?? []).slice(0,50).map(a =>
         \`<tr><td>\${new Date(a.ts).toLocaleString('zh-CN')}</td><td style="font-family:monospace;font-size:.75rem">\${a.ip}</td><td>\${a.country}</td></tr>\`
       ).join('') || '<tr><td colspan="3" style="color:#333;text-align:center">暂无记录</td></tr>';
