@@ -478,7 +478,18 @@ export function renderPage() {
         </div>
       </div>
       <div class="toolbar">
-        <input class="search-input" id="mineSearch" type="text" placeholder="搜索…">
+        <input class="search-input" id="mineSearch" type="text" placeholder="搜索文件名或标签…">
+        <select class="search-input" id="mineVisFilter" style="width:auto;cursor:pointer">
+          <option value="all">全部</option>
+          <option value="public">仅公开</option>
+          <option value="private">仅私密</option>
+        </select>
+        <select class="search-input" id="mineSort" style="width:auto;cursor:pointer">
+          <option value="new">最新优先</option>
+          <option value="old">最早优先</option>
+          <option value="big">体积降序</option>
+          <option value="name">名称排序</option>
+        </select>
         <div class="spacer"></div>
         <button class="btn btn-ghost" id="mineSelectToggle">选择</button>
         <button class="btn btn-ghost" id="trashBtn">🗑 回收站</button>
@@ -1316,6 +1327,8 @@ export function renderPage() {
     renderMineGallery();
   }
   document.getElementById('mineSearch').addEventListener('input', renderMineGallery);
+  document.getElementById('mineVisFilter').addEventListener('change', renderMineGallery);
+  document.getElementById('mineSort').addEventListener('change', renderMineGallery);
   document.getElementById('refreshMine').addEventListener('click', loadMineGallery);
 
   // 所有图片用到的标签集合（用于筛选栏）
@@ -1342,12 +1355,23 @@ export function renderPage() {
 
   function mineFiltered() {
     const q = document.getElementById('mineSearch').value.toLowerCase();
-    return mineItems.filter(i => {
+    const vis = document.getElementById('mineVisFilter')?.value || 'all';
+    const sort = document.getElementById('mineSort')?.value || 'new';
+    const out = mineItems.filter(i => {
       if (q && !i.key.toLowerCase().includes(q) && !(i.tags || []).some(t => t.toLowerCase().includes(q))) return false;
       // 标签筛选：AND 语义（须包含全部选中标签）
       if (mineTagFilter.size && ![...mineTagFilter].every(t => (i.tags || []).includes(t))) return false;
+      if (vis === 'public'  && !i.isPublic) return false;
+      if (vis === 'private' &&  i.isPublic) return false;
       return true;
     });
+    // 排序（不改动 mineItems 原始顺序）
+    const sorted = [...out];
+    if (sort === 'new')       sorted.sort((a, b) => (b.uploadedAt || 0) - (a.uploadedAt || 0));
+    else if (sort === 'old')  sorted.sort((a, b) => (a.uploadedAt || 0) - (b.uploadedAt || 0));
+    else if (sort === 'big')  sorted.sort((a, b) => (b.size || 0) - (a.size || 0));
+    else if (sort === 'name') sorted.sort((a, b) => a.key.localeCompare(b.key));
+    return sorted;
   }
 
   function renderMineGallery() {
