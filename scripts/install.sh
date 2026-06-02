@@ -126,9 +126,36 @@ echo -e "  ${DIM}点击"验证图片上传选项"测试（首次会打开浏览�
 
 # ── 完成 ──────────────────────────────────────────────────────────────────────
 
+hdr "安装完成"
 echo ""
-echo -e "${GRN}${BOLD}安装完成！${RST}"
+echo -e "  ${GRN}${BOLD}所有文件已就绪，以下是快速上手指南。${RST}"
+
 echo ""
-echo -e "  ${BOLD}首次使用：${RST}"
-echo -e "    ${CYN}onimg${RST}  → 选 [2] 登录 → 浏览器授权"
+echo -e "  ${BOLD}━━ 第一步：启动 CLI${RST}"
+echo -e "    ${CYN}onimg${RST}"
+echo -e "    ${DIM}选 [2] 登录 → 浏览器打开授权页 → 输入账号密码 → 授权成功${RST}"
+
+echo ""
+echo -e "  ${BOLD}━━ 第二步：配置 Typora 自动上传${RST}"
+echo -e "    偏好设置 → 图像 → 上传服务 → ${CYN}Custom Command${RST}"
+echo -e "    命令填写：${CYN}${INSTALL_DIR}/onimg-upload${RST}"
+echo -e "    点击 ${DIM}\"验证图片上传选项\"${RST} 测试（首次会打开浏览器授权）"
+
+echo ""
+echo -e "  ${BOLD}━━ CLI 功能速查（运行 onimg）${RST}"
+echo -e "    ${YLW}[1]${RST} 查看登录状态 / 配额用量"
+echo -e "    ${YLW}[2]${RST} 登录 / Token 过期时重新授权"
+echo -e "    ${YLW}[4]${RST} 手动上传图片（支持拖入文件）"
+echo -e "    ${YLW}[5]${RST} 查看最近上传记录"
+echo -e "    ${YLW}[?]${RST} 随时查看使用说明"
+
+echo ""
+echo -e "  ${BOLD}━━ Token 管理${RST}"
+echo -e "    有效期默认 ${CYN}7 天${RST}（可在 Admin → 用户管理 中调整）"
+echo -e "    过期后下次上传时 ${DIM}自动重新授权${RST}"
+echo -e "    手动退出：${DIM}rm ${TOKEN_FILE}${RST}"
+
+echo ""
+echo -e "  ${DIM}配置文件  ${CONFIG_DIR}/config${RST}"
+echo -e "  ${DIM}Token     ${TOKEN_FILE}${RST}"
 echo ""

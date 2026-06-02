@@ -975,6 +975,43 @@ def do_change_url(cfg):
     msg_ok('已更新为 %s' % new_url)
     msg_inf('建议删除旧 token 后重新登录：rm ' + TOKEN_FILE)
 
+def do_help(cfg):
+    install_dir = os.path.expanduser('~/.local/bin')
+    url = cfg.get('ONIMG_URL', 'https://img.diswant.space')
+    host = url.replace('https://','').replace('http://','')
+    print('\\n  %s使用说明%s\\n' % (BOLD, RST))
+
+    print('  %s── 快速开始%s' % (BOLD, RST))
+    print('  %s[2]%s 登录        → 浏览器打开授权页，输入账号密码' % (YLW, RST))
+    print('  %s[4]%s 上传图片    → 输入路径或拖入文件，返回 URL' % (YLW, RST))
+    print('  %s[5]%s 上传记录    → 查看历史文件、大小、时间' % (YLW, RST))
+    print('  %s[1]%s 状态详情    → 账号、配额、Token 到期时间' % (YLW, RST))
+    print('  %s[6]%s 换服务地址  → 切换不同 Onimg 实例' % (YLW, RST))
+
+    print()
+    print('  %s── Typora 自动上传%s' % (BOLD, RST))
+    print('  偏好设置 → 图像 → Custom Command:')
+    print('  %s%s/onimg-upload%s' % (BCYN, install_dir, RST))
+    print('  %s粘贴或拖入图片 → Typora 自动调用脚本 → 图片链接自动替换%s' % (DIM, RST))
+
+    print()
+    print('  %s── Token 管理%s' % (BOLD, RST))
+    print('  有效期: 默认 %s7 天%s（Admin → 用户管理 可调整至 1–365 天）' % (CYN, RST))
+    print('  过期后: 下次上传时 %s自动重新授权%s（无需手动操作）' % (DIM, RST))
+    print('  手动退出: %s[3] 退出登录%s  或  %srm %s%s' % (YLW, RST, DIM, TOKEN_FILE, RST))
+
+    print()
+    print('  %s── 文件路径%s' % (BOLD, RST))
+    print('  配置   %s%s%s' % (DIM, CONFIG_FILE, RST))
+    print('  Token  %s%s%s' % (DIM, TOKEN_FILE, RST))
+    print('  上传   %s%s/onimg-upload%s' % (DIM, install_dir, RST))
+    print('  CLI    %s%s/onimg%s' % (DIM, install_dir, RST))
+
+    print()
+    print('  %s── 管理后台%s' % (BOLD, RST))
+    print('  %s%s/admin%s' % (CYN, url, RST))
+    print('  %s用户管理 / 配额设置 / 图库管理 / 系统配置%s' % (DIM, RST))
+
 def do_status_detail(cfg, tok, quota):
     info = tok_info(tok)
     print('\\n  %s详细状态%s\\n' % (BOLD, RST))
@@ -1013,6 +1050,12 @@ def main():
         clr()
         print()
         header(cfg, t_inf, quota)
+
+        # 未登录时在菜单上方显示首屏提示
+        if not t_inf.get('ok'):
+            print('  %s提示: 选 [2] 登录 → 浏览器授权 → 开始使用%s' % (YLW, RST))
+            print()
+
         menu([
             ('1', '刷新状态'),
             ('2', '登录 / 重新授权  (浏览器)'),
@@ -1020,7 +1063,8 @@ def main():
             ('4', '测试上传'),
             ('5', '最近上传记录'),
             ('6', '修改服务地址'),
-            ('q', f'{DIM}退出{RST}'),
+            ('?', '使用说明'),
+            ('q', '%s退出%s' % (DIM, RST)),
         ])
 
         ch = prompt()
@@ -1043,9 +1087,12 @@ def main():
         elif ch == '6':
             do_change_url(cfg)
             pause()
+        elif ch == '?':
+            do_help(cfg)
+            pause()
         elif ch in ('q', 'Q', '0'):
             clr()
-            print(f'\\n  {DIM}再见。{RST}\\n')
+            print('\\n  %s再见。%s\\n' % (DIM, RST))
             sys.exit(0)
         else:
             msg_err('无效输入')
