@@ -54,6 +54,7 @@ export default {
       }
 
       // ── User auth ────────────────────────────────────────────────────────────
+      if (method === 'GET'   && path === '/auth/device') return serveDeviceAuthPage(url);
       if (method === 'POST'  && path === '/auth/login') {
         const uname = await peekUsername(request);
         const res = await handleUserLogin(request, env);
@@ -445,4 +446,89 @@ function withCors(response, req) {
   res.headers.set('X-Frame-Options', 'DENY');
   res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   return res;
+}
+
+// ── Device auth page (/auth/device) ──────────────────────────────────────────
+// Used by CLI tools (e.g. Typora uploader). Opens in browser, redirects to
+// localhost callback with ?token=<jwt> after successful login.
+
+function serveDeviceAuthPage(url) {
+  const cb = url.searchParams.get('callback') ?? '';
+  if (cb && !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/.test(cb)) {
+    return new Response('Invalid callback — must be localhost', { status: 400 });
+  }
+  const html = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Onimg — 设备授权</title>
+<style>
+:root{--bg:#0a0a0a;--bg-2:#141414;--bg-3:#1a1a1a;--bd:#2e2e2e;--bd-2:#3a3a3a;--tx:#f5f5f5;--tx-2:#b5b5b5;--tx-3:#858585;--green:#34d399;--green-g:rgba(52,211,153,.12);--green-r:rgba(52,211,153,.22);--red:#f87171;--red-g:rgba(248,113,113,.1);--shadow:0 24px 60px rgba(0,0,0,.92);--font:'Outfit',system-ui,-apple-system,sans-serif}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;-webkit-font-smoothing:antialiased}
+.card{background:var(--bg-3);border:1px solid var(--bd);border-radius:14px;padding:40px 36px;width:100%;max-width:360px;box-shadow:var(--shadow)}
+.logo{width:40px;height:40px;background:linear-gradient(135deg,#2e2e2e,#1a1a1a);border:1px solid var(--bd-2);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:.88rem;font-weight:800;color:var(--tx);margin-bottom:20px;box-shadow:0 3px 10px rgba(0,0,0,.5)}
+h1{font-size:1.1rem;font-weight:800;letter-spacing:-.025em;margin-bottom:6px}
+.sub{font-size:.8rem;color:var(--tx-2);margin-bottom:26px;line-height:1.5}
+input{width:100%;background:var(--bg-2);border:1px solid var(--bd);border-radius:8px;padding:10px 13px;color:var(--tx);font-size:.88rem;font-family:var(--font);outline:none;transition:border-color .15s;margin-bottom:10px}
+input:focus{border-color:var(--bd-2)}
+input::placeholder{color:var(--tx-3)}
+button{width:100%;padding:11px;background:var(--tx);color:var(--bg);border:none;border-radius:8px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:var(--font);transition:opacity .15s;margin-top:4px}
+button:hover{opacity:.88}
+button:disabled{opacity:.45;cursor:default}
+.err{color:var(--red);font-size:.78rem;margin-top:10px;min-height:18px;text-align:center}
+.ok{background:var(--green-g);border:1px solid var(--green-r);border-radius:8px;padding:14px;text-align:center;color:var(--green);font-size:.85rem;font-weight:600;margin-top:14px;display:none}
+.notice{font-size:.7rem;color:var(--tx-3);text-align:center;margin-top:18px;line-height:1.5}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin::before{content:'';display:inline-block;width:13px;height:13px;border:2px solid rgba(0,0,0,.2);border-top-color:#000;border-radius:50%;animation:spin .6s linear infinite;margin-right:8px;vertical-align:middle}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">Oi</div>
+  <h1>设备授权</h1>
+  <p class="sub">登录后，访问令牌将自动返回给调用方（仅限本机）。</p>
+  <input id="u" type="text" placeholder="用户名" autocomplete="username">
+  <input id="p" type="password" placeholder="密码" autocomplete="current-password">
+  <button id="btn">登录并授权</button>
+  <div class="err" id="err"></div>
+  <div class="ok" id="ok">授权成功！可以关闭此窗口。</div>
+  <p class="notice">令牌仅发送至 localhost，不经过任何第三方</p>
+</div>
+<script>
+const CB = ${JSON.stringify(cb)};
+const btn = document.getElementById('btn');
+const err = document.getElementById('err');
+document.getElementById('u').addEventListener('keydown', e => e.key === 'Enter' && document.getElementById('p').focus());
+document.getElementById('p').addEventListener('keydown', e => e.key === 'Enter' && btn.click());
+btn.addEventListener('click', async () => {
+  const u = document.getElementById('u').value.trim();
+  const p = document.getElementById('p').value;
+  err.textContent = '';
+  if (!u || !p) { err.textContent = '请填写账号和密码'; return; }
+  btn.disabled = true; btn.classList.add('spin'); btn.textContent = '登录中…';
+  try {
+    const res = await fetch('/auth/login', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({username: u, password: p})
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '登录失败');
+    if (CB) {
+      window.location.href = CB + (CB.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(data.token);
+    } else {
+      document.getElementById('ok').style.display = 'block';
+      btn.textContent = '已授权';
+    }
+  } catch(e) {
+    err.textContent = e.message;
+    btn.disabled = false; btn.classList.remove('spin'); btn.textContent = '登录并授权';
+  }
+});
+</script>
+</body>
+</html>`;
+  return addSecurityHeaders(new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } }));
 }
