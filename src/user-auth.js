@@ -1,6 +1,10 @@
 import { createToken, verifyToken, bearerToken, timingSafeEqual } from './admin/auth.js';
 
-const USER_TOKEN_TTL = 7 * 24 * 60 * 60 * 1000;
+const DEFAULT_TOKEN_TTL_DAYS = 7;
+
+function tokenTtlMs(ttlDays) {
+  return (ttlDays ?? DEFAULT_TOKEN_TTL_DAYS) * 24 * 60 * 60 * 1000;
+}
 
 export async function handleUserLogin(request, env) {
   let body;
@@ -15,8 +19,11 @@ export async function handleUserLogin(request, env) {
       return Response.json({ error: 'Invalid credentials' }, { status: 401 });
     }
     const unlimitedPerms = { canUpload: true, canDelete: true, canEdit: true, maxTotalUploads: -1, dailyUploadLimit: -1 };
-    const token = await createToken({ type: 'user', username, isAdmin: true }, USER_TOKEN_TTL, env.TOKEN_SECRET);
-    return Response.json({ token, username, isAdmin: true, permissions: unlimitedPerms });
+    const ttl = tokenTtlMs(DEFAULT_TOKEN_TTL_DAYS);
+    const token = await createToken({ type: 'user', username, isAdmin: true }, ttl, env.TOKEN_SECRET);
+    // Best-effort: record admin last login (no await — don't delay response)
+    env.STATS?.put('admin:lastLoginAt', String(Date.now())).catch(() => {});
+    return Response.json({ token, username, isAdmin: true, permissions: unlimitedPerms, tokenTtlDays: DEFAULT_TOKEN_TTL_DAYS });
   }
 
   const user = await getUser(env, username);
@@ -27,8 +34,14 @@ export async function handleUserLogin(request, env) {
     return Response.json({ error: 'Invalid credentials' }, { status: 401 });
   }
 
-  const token = await createToken({ type: 'user', username }, USER_TOKEN_TTL, env.TOKEN_SECRET);
-  return Response.json({ token, username, permissions: user.permissions });
+  const ttl = tokenTtlMs(user.tokenTtlDays);
+  const token = await createToken({ type: 'user', username }, ttl, env.TOKEN_SECRET);
+
+  // Record last login time (update only lastLoginAt, avoid full rewrite race)
+  user.lastLoginAt = Date.now();
+  await putUser(env, username, user);
+
+  return Response.json({ token, username, permissions: user.permissions, tokenTtlDays: user.tokenTtlDays ?? DEFAULT_TOKEN_TTL_DAYS });
 }
 
 // Returns { username, permissions } or null
