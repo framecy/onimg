@@ -5,14 +5,25 @@ export async function handleList(request, env) {
   const isAdmin = await verifyAdminToken(request, env);
 
   if (isAdmin) {
-    // Admin: full R2 list — exclude proto/ objects (they are prototype files, not images)
     const url = new URL(request.url);
     const cursor = url.searchParams.get('cursor') ?? undefined;
     const limit  = Math.min(parseInt(url.searchParams.get('limit') ?? '50'), 200);
+
+    // 收集所有已软删除的 key（单次 KV list，metadata 含 deletedAt 无需额外读取）
+    const trashed = new Set();
+    let kvCursor;
+    do {
+      const kv = await env.STATS.list({ prefix: 'imgmeta:', cursor: kvCursor, limit: 1000 });
+      for (const k of kv.keys) {
+        if (k.metadata?.deletedAt) trashed.add(k.name.slice('imgmeta:'.length));
+      }
+      kvCursor = kv.list_complete ? undefined : kv.cursor;
+    } while (kvCursor);
+
     const result = await env.BUCKET.list({ limit, cursor });
     return Response.json({
       items: result.objects
-        .filter(o => !o.key.startsWith('proto/') && !o.key.startsWith('manifests/'))
+        .filter(o => !o.key.startsWith('proto/') && !o.key.startsWith('manifests/') && !trashed.has(o.key))
         .map(o => ({ key: o.key, size: o.size, uploaded: o.uploaded, etag: o.etag })),
       cursor: result.truncated ? result.cursor : null,
       truncated: result.truncated,

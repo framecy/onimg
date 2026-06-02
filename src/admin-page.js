@@ -735,8 +735,8 @@ export function renderAdminPage() {
         </div>
         <div class="users-table-wrap">
           <table class="data-table">
-            <thead><tr><th>用户名</th><th>权限</th><th>上传统计</th><th>限制</th><th>操作</th></tr></thead>
-            <tbody id="usersBody"><tr><td colspan="5" style="text-align:center;color:var(--tx-3);padding:24px">加载中…</td></tr></tbody>
+            <thead><tr><th>用户名</th><th>权限</th><th>上传统计</th><th>限制</th><th>登录状态</th><th>操作</th></tr></thead>
+            <tbody id="usersBody"><tr><td colspan="6" style="text-align:center;color:var(--tx-3);padding:24px">加载中…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -910,6 +910,11 @@ export function renderAdminPage() {
           <label>每日上传上限</label>
           <input type="number" id="pmDailyLimit" value="20" min="-1">
           <span class="perm-hint">（-1 = 无限制）</span>
+        </div>
+        <div class="perm-num-row" style="margin-top:16px;padding-top:12px;border-top:1px solid var(--bd)">
+          <label>Token 有效期</label>
+          <input type="number" id="pmTokenTtl" value="7" min="1" max="365">
+          <span class="perm-hint">天（1–365）</span>
         </div>
       </div>
     </div>
@@ -1470,11 +1475,39 @@ export function renderAdminPage() {
 
   // ── User Management ──────────────────────────────────────────────────────────
   async function loadUsers() {
-    document.getElementById('usersBody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#333;padding:24px">加载中…</td></tr>';
+    document.getElementById('usersBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#333;padding:24px">加载中…</td></tr>';
     const res = await fetch('/admin/users', { headers: authH() });
     if (!res.ok) return;
     const { users } = await res.json();
     renderUsers(users);
+  }
+
+  function timeLeft(ms) {
+    if (ms <= 0) return '已过期';
+    if (ms < 3600000)  return Math.ceil(ms / 60000) + ' 分钟后过期';
+    if (ms < 86400000) return Math.ceil(ms / 3600000) + ' 小时后过期';
+    return Math.ceil(ms / 86400000) + ' 天后过期';
+  }
+
+  function renderLoginStatus(u) {
+    if (!u.lastLoginAt) return \`<td class="muted" style="white-space:nowrap">—</td>\`;
+    const ttlMs = (u.tokenTtlDays ?? 7) * 86400000;
+    const expiresAt = u.lastLoginAt + ttlMs;
+    const remaining = expiresAt - Date.now();
+    const active = remaining > 0;
+    const dot = active
+      ? \`<span style="width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 5px rgba(52,211,153,.5);display:inline-block;flex-shrink:0"></span>\`
+      : \`<span style="width:7px;height:7px;border-radius:50%;background:var(--tx-3);display:inline-block;flex-shrink:0"></span>\`;
+    const label = active
+      ? \`<span style="font-size:.76rem;font-weight:600;color:var(--green)">活跃</span>\`
+      : \`<span style="font-size:.76rem;color:var(--tx-3)">离线</span>\`;
+    const sub = active
+      ? \`<span style="font-size:.7rem;color:var(--tx-3)">\${timeAgo(u.lastLoginAt)} 登录 · \${timeLeft(remaining)}</span>\`
+      : \`<span style="font-size:.7rem;color:var(--tx-3)">\${timeAgo(u.lastLoginAt)} 登录 · \${timeLeft(remaining)}</span>\`;
+    return \`<td style="white-space:nowrap">
+      <div style="display:flex;align-items:center;gap:5px">\${dot}\${label}</div>
+      <div style="margin-top:2px">\${sub}</div>
+    </td>\`;
   }
 
   function renderUsers(users) {
@@ -1498,9 +1531,10 @@ export function renderAdminPage() {
         <td>\${perms}</td>
         <td class="muted">\${quota}</td>
         <td class="muted">\${limits}</td>
+        \${renderLoginStatus(u)}
         <td>\${actions}</td>
       </tr>\`;
-    }).join('') || '<tr><td colspan="5" style="text-align:center;color:#333;padding:24px">暂无用户</td></tr>';
+    }).join('') || '<tr><td colspan="6" style="text-align:center;color:#333;padding:24px">暂无用户</td></tr>';
   }
 
   document.getElementById('createUserBtn').addEventListener('click', () => openUserModal(null));
@@ -1519,6 +1553,7 @@ export function renderAdminPage() {
     document.getElementById('pmDisabled').checked = false;
     document.getElementById('pmMaxTotal').value = 100;
     document.getElementById('pmDailyLimit').value = 20;
+    document.getElementById('pmTokenTtl').value = 7;
     document.getElementById('userModalSave').textContent = isEdit ? '保存' : '创建';
     document.getElementById('userModal').classList.add('show');
   }
@@ -1535,6 +1570,7 @@ export function renderAdminPage() {
       document.getElementById('pmDisabled').checked = u.disabled;
       document.getElementById('pmMaxTotal').value   = u.permissions.maxTotalUploads;
       document.getElementById('pmDailyLimit').value = u.permissions.dailyUploadLimit;
+      document.getElementById('pmTokenTtl').value   = u.tokenTtlDays ?? 7;
     });
   }
 
@@ -1550,9 +1586,12 @@ export function renderAdminPage() {
       dailyUploadLimit: parseInt(document.getElementById('pmDailyLimit').value),
     };
     const disabled = document.getElementById('pmDisabled').checked;
+    const tokenTtlDays = parseInt(document.getElementById('pmTokenTtl').value) || 7;
     if (!isEdit && !password) { toast('请设置密码'); return; }
 
-    const body = isEdit ? { permissions, disabled, ...(password ? { password } : {}) } : { username, password, permissions };
+    const body = isEdit
+      ? { permissions, disabled, tokenTtlDays, ...(password ? { password } : {}) }
+      : { username, password, permissions, tokenTtlDays };
     const res = await fetch(isEdit ? '/admin/users/' + encodeURIComponent(username) : '/admin/users', {
       method: isEdit ? 'PATCH' : 'POST',
       headers: authH(),
