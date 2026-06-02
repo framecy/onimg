@@ -53,6 +53,9 @@ export default {
         return await servePage(env, slug, ctx, request);
       }
 
+      // ── Install script ───────────────────────────────────────────────────────
+      if (method === 'GET'   && path === '/install.sh') return serveInstallScript(url);
+
       // ── User auth ────────────────────────────────────────────────────────────
       if (method === 'GET'   && path === '/auth/device') return serveDeviceAuthPage(url);
       if (method === 'POST'  && path === '/auth/login') {
@@ -446,6 +449,31 @@ function withCors(response, req) {
   res.headers.set('X-Frame-Options', 'DENY');
   res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   return res;
+}
+
+// ── Install script (/install.sh) ─────────────────────────────────────────────
+// Serves a bootstrap that injects the current origin as ONIMG_URL and fetches
+// the real installer from GitHub, so users can run:
+//   curl -fsSL https://img.diswant.space/install.sh | bash
+
+function serveInstallScript(url) {
+  const origin = url.origin;
+  const raw = 'https://raw.githubusercontent.com/framecy/onimg/main/scripts/install.sh';
+  const body = `#!/usr/bin/env bash
+# Onimg CLI 一键安装 — 由 ${origin}/install.sh 生成
+# 用法: curl -fsSL ${origin}/install.sh | bash
+set -euo pipefail
+if ! command -v curl &>/dev/null; then echo "需要 curl"; exit 1; fi
+if ! command -v python3 &>/dev/null; then echo "需要 python3"; exit 1; fi
+ONIMG_URL="${origin}" bash <(curl -fsSL '${raw}')
+`;
+  return new Response(body, {
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'Content-Disposition': 'inline; filename="install.sh"',
+    },
+  });
 }
 
 // ── Device auth page (/auth/device) ──────────────────────────────────────────
