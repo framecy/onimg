@@ -104,6 +104,7 @@ def api(url, method='GET', data=None, token=None, content_type='application/json
             body = None
 
         req = urllib.request.Request(url, data=body, method=method)
+        req.add_header('User-Agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
         if token:
             req.add_header('Authorization', f'Bearer {token}')
         if body:
