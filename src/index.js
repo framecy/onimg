@@ -53,8 +53,10 @@ export default {
         return await servePage(env, slug, ctx, request);
       }
 
-      // ── Install script ───────────────────────────────────────────────────────
-      if (method === 'GET'   && path === '/install.sh') return serveInstallScript(url);
+      // ── Install script & CLI assets ──────────────────────────────────────────
+      if (method === 'GET'   && path === '/install.sh')                  return serveInstallScript(url);
+      if (method === 'GET'   && path === '/scripts/onimg-cli.py')        return serveStaticScript(env, 'onimg-cli.py', 'text/plain');
+      if (method === 'GET'   && path === '/scripts/typora-upload.sh')    return serveStaticScript(env, 'typora-upload.sh', 'text/plain');
 
       // ── User auth ────────────────────────────────────────────────────────────
       if (method === 'GET'   && path === '/auth/device') return serveDeviceAuthPage(url);
@@ -451,27 +453,123 @@ function withCors(response, req) {
   return res;
 }
 
+// ── Script file hosting (/scripts/*) ─────────────────────────────────────────
+// Redirects to GitHub raw so install.sh can download the CLI files.
+// Update BRANCH to 'main' after merging the PR.
+
+const SCRIPTS_BRANCH = 'claude/nifty-cartwright-27401b';
+
+function serveStaticScript(env, name, contentType) {
+  const raw = `https://raw.githubusercontent.com/framecy/onimg/${SCRIPTS_BRANCH}/scripts/${name}`;
+  return Response.redirect(raw, 302);
+}
+
 // ── Install script (/install.sh) ─────────────────────────────────────────────
 // Serves a bootstrap that injects the current origin as ONIMG_URL and fetches
 // the real installer from GitHub, so users can run:
 //   curl -fsSL https://img.diswant.space/install.sh | bash
 
 function serveInstallScript(url) {
-  const origin = url.origin;
-  const raw = 'https://raw.githubusercontent.com/framecy/onimg/main/scripts/install.sh';
-  const body = `#!/usr/bin/env bash
-# Onimg CLI 一键安装 — 由 ${origin}/install.sh 生成
-# 用法: curl -fsSL ${origin}/install.sh | bash
-set -euo pipefail
-if ! command -v curl &>/dev/null; then echo "需要 curl"; exit 1; fi
-if ! command -v python3 &>/dev/null; then echo "需要 python3"; exit 1; fi
-ONIMG_URL="${origin}" bash <(curl -fsSL '${raw}')
-`;
+  const o = url.origin;   // e.g. https://img.diswant.space
+  const d = url.origin.replace(/^https?:\/\//, '');  // host only, for display
+
+  // Build full install script via string concat to avoid ${} conflicts with bash vars
+  const lines = [
+    '#!/usr/bin/env bash',
+    '# Onimg CLI 安装脚本',
+    '# 用法: curl -fsSL ' + o + '/install.sh | bash',
+    '',
+    'set -euo pipefail',
+    '',
+    'ONIMG_URL=' + JSON.stringify(o),
+    'INSTALL_DIR="${ONIMG_INSTALL_DIR:-$HOME/.local/bin}"',
+    'CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/onimg"',
+    '',
+    '# ── 颜色 ──────────────────────────────────────────────────────────────────',
+    'if [[ -t 1 ]]; then',
+    "  GRN='\\033[92m'; YLW='\\033[93m'; CYN='\\033[96m'",
+    "  RED='\\033[91m'; DIM='\\033[2m';  RST='\\033[0m'; BOLD='\\033[1m'",
+    'else',
+    "  GRN=''; YLW=''; CYN=''; RED=''; DIM=''; RST=''; BOLD=''",
+    'fi',
+    'ok()  { echo -e "  ${GRN}✓${RST}  $*"; }',
+    'inf() { echo -e "  ${CYN}ℹ${RST}  $*"; }',
+    'err() { echo -e "  ${RED}✗${RST}  $*" >&2; }',
+    'hdr() { echo -e "\\n${BOLD}$*${RST}"; }',
+    '',
+    '# ── 参数 ──────────────────────────────────────────────────────────────────',
+    'while [[ $# -gt 0 ]]; do',
+    '  case "$1" in',
+    '    --url) ONIMG_URL="$2"; shift 2 ;;',
+    '    --dir) INSTALL_DIR="$2"; shift 2 ;;',
+    '    *) shift ;;',
+    '  esac',
+    'done',
+    '',
+    '# ── 检查依赖 ──────────────────────────────────────────────────────────────',
+    'hdr "Onimg CLI 安装程序"',
+    'echo ""',
+    'for cmd in python3 curl; do',
+    '  if ! command -v "$cmd" &>/dev/null; then',
+    '    err "缺少依赖：$cmd"; exit 1',
+    '  fi',
+    'done',
+    'ok "依赖检查通过 (python3 + curl)"',
+    '',
+    '# ── 下载文件 ──────────────────────────────────────────────────────────────',
+    'hdr "下载文件"',
+    'mkdir -p "$INSTALL_DIR"',
+    '',
+    'curl -fsSL ' + JSON.stringify(o + '/scripts/onimg-cli.py') + ' -o "$INSTALL_DIR/onimg-cli.py"',
+    'chmod +x "$INSTALL_DIR/onimg-cli.py"',
+    'ok "onimg-cli.py"',
+    '',
+    'curl -fsSL ' + JSON.stringify(o + '/scripts/typora-upload.sh') + ' -o "$INSTALL_DIR/onimg-upload"',
+    'chmod +x "$INSTALL_DIR/onimg-upload"',
+    'ok "onimg-upload  (Typora 上传脚本)"',
+    '',
+    "cat > \"$INSTALL_DIR/onimg\" <<'WRAPPER'",
+    '#!/usr/bin/env bash',
+    'exec python3 "$HOME/.local/bin/onimg-cli.py" "$@"',
+    'WRAPPER',
+    'chmod +x "$INSTALL_DIR/onimg"',
+    'ok "onimg          (CLI 管理工具)"',
+    '',
+    '# ── 写入配置 ──────────────────────────────────────────────────────────────',
+    'hdr "写入配置"',
+    'mkdir -p "$CONFIG_DIR"',
+    'chmod 700 "$CONFIG_DIR"',
+    'cat > "$CONFIG_DIR/config" <<CFG',
+    'ONIMG_URL=${ONIMG_URL}',
+    'CFG',
+    'ok "~/.config/onimg/config"',
+    '',
+    '# ── PATH 提示 ─────────────────────────────────────────────────────────────',
+    'if ! echo "$PATH" | tr \':\' \'\\n\' | grep -qxF "$INSTALL_DIR"; then',
+    '  echo ""',
+    '  inf "${YLW}${INSTALL_DIR} 不在 PATH 中，请添加到 ~/.zshrc 或 ~/.bashrc:${RST}"',
+    '  echo ""',
+    '  echo -e "    ${DIM}export PATH=\\"\\$HOME/.local/bin:\\$PATH\\"${RST}"',
+    'fi',
+    '',
+    '# ── Typora 提示 ───────────────────────────────────────────────────────────',
+    'hdr "Typora 配置"',
+    'echo -e "  偏好设置 → 图像 → Custom Command:\\n"',
+    'echo -e "    ${CYN}${INSTALL_DIR}/onimg-upload${RST}\\n"',
+    '',
+    '# ── 完成 ──────────────────────────────────────────────────────────────────',
+    'echo ""',
+    'echo -e "${GRN}${BOLD}安装完成！${RST}"',
+    'echo ""',
+    'echo -e "  首次使用: ${CYN}onimg${RST}  → 选 [2] 登录 → 浏览器授权"',
+    'echo ""',
+  ];
+
+  const body = lines.join('\n') + '\n';
   return new Response(body, {
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
       'Cache-Control': 'no-store',
-      'Content-Disposition': 'inline; filename="install.sh"',
     },
   });
 }
