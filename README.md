@@ -2,7 +2,7 @@
 
 基于 Cloudflare Workers + R2 + KV 的个人图床与静态原型托管服务，运行于免费版额度之内。
 
-线上：<https://img.diswant.space>
+线上：<https://img.diswant.space>　　📖 [CLI 使用手册](docs/cli-usage.md)　　🗺 [版本规划](docs/ROADMAP.md)
 
 ---
 
@@ -40,50 +40,45 @@
 
 ## CLI 工具快速上手
 
+> 完整文档见 [docs/cli-usage.md](docs/cli-usage.md)
+
 ### 安装
 
 ```bash
 curl -fsSL https://img.diswant.space/install.sh | bash
 ```
 
-安装内容：
-| 文件 | 路径 | 说明 |
-|---|---|---|
-| `onimg` | `~/.local/bin/onimg` | CLI 管理工具入口 |
-| `onimg-cli.py` | `~/.local/bin/onimg-cli.py` | CLI 主程序（Python 3，无需 pip） |
-| `onimg-upload` | `~/.local/bin/onimg-upload` | Typora 上传脚本 |
-| config | `~/.config/onimg/config` | 服务器地址配置 |
+安装到 `~/.local/bin/`：`onimg`（CLI 入口）、`onimg-upload`（Typora 脚本）、`onimg-cli.py`（主程序，纯 Python 3 标准库）。
 
 ### 首次使用
 
 ```bash
-onimg         # 启动 CLI
-# → 选 [2] 登录  →  浏览器打开授权页  →  输入账号密码  →  授权成功
+onimg
+# → [2] 登录 → 浏览器授权 → 输入账号密码 → token 自动缓存
 ```
 
-### CLI 功能
+### 功能速查
 
-```
-[1] 查看状态      账号 / 配额 / Token 到期时间
-[2] 登录授权      浏览器设备授权，token 缓存 N 天（按 admin 设置）
-[3] 退出登录      清除 token 缓存
-[4] 测试上传      输入文件路径或拖入文件，返回 URL 与 Markdown 格式
-[5] 最近记录      列出文件名、大小、上传时间、公开状态
-[6] 修改地址      切换 Onimg 实例
-[?] 使用说明      完整帮助
-```
+| 选项 | 功能 |
+|---|---|
+| `[1]` | 账号 / 配额 / Token 到期时间详情 |
+| `[2]` | 浏览器设备授权，token 缓存 N 天 |
+| `[3]` | 退出登录（清除 token 缓存） |
+| `[4]` | 手动上传图片，返回 URL 与 Markdown |
+| `[5]` | 最近上传记录（文件名 / 大小 / 时间） |
+| `[6]` | 修改服务器地址 |
+| `[?]` | 内置使用说明 |
 
 ### 配置 Typora
 
-> 偏好设置 → 图像 → 上传服务 → **Custom Command**
+偏好设置 → 图像 → 上传服务 → **Custom Command**：
 
 ```
 ~/.local/bin/onimg-upload
 ```
 
-点击"验证图片上传选项"测试，首次验证会自动打开浏览器完成授权。
+之后粘贴或拖入图片自动上传，Markdown 链接自动替换：
 
-之后在 Typora 中粘贴或拖入图片，自动上传并替换为：
 ```markdown
 ![](https://img.diswant.space/1234567890-xxxx.jpg)
 ```
@@ -92,7 +87,7 @@ onimg         # 启动 CLI
 
 | 场景 | 操作 |
 |---|---|
-| Token 过期（默认 7 天） | 下次使用时自动打开浏览器重新授权 |
+| Token 过期 | 下次使用自动打开浏览器重新授权 |
 | 手动退出 | `rm ~/.config/onimg/token` 或 CLI 选 `[3]` |
 | 调整有效期 | Admin → 用户管理 → 编辑用户 → Token 有效期（1–365 天） |
 
