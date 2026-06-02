@@ -454,207 +454,666 @@ function withCors(response, req) {
 }
 
 // ── Script file hosting (/scripts/*) ─────────────────────────────────────────
-// Redirects to GitHub raw so install.sh can download the CLI files.
-// Update BRANCH to 'main' after merging the PR.
-
-const SCRIPTS_BRANCH = 'claude/nifty-cartwright-27401b';
+// Files are embedded inline so the private repo doesn't block downloads.
 
 function serveStaticScript(env, name, contentType) {
-  const raw = `https://raw.githubusercontent.com/framecy/onimg/${SCRIPTS_BRANCH}/scripts/${name}`;
-  return Response.redirect(raw, 302);
-}
-
-// ── Install script (/install.sh) ─────────────────────────────────────────────
-// Serves a bootstrap that injects the current origin as ONIMG_URL and fetches
-// the real installer from GitHub, so users can run:
-//   curl -fsSL https://img.diswant.space/install.sh | bash
-
-function serveInstallScript(url) {
-  const o = url.origin;   // e.g. https://img.diswant.space
-  const d = url.origin.replace(/^https?:\/\//, '');  // host only, for display
-
-  // Build full install script via string concat to avoid ${} conflicts with bash vars
-  const lines = [
-    '#!/usr/bin/env bash',
-    '# Onimg CLI 安装脚本',
-    '# 用法: curl -fsSL ' + o + '/install.sh | bash',
-    '',
-    'set -euo pipefail',
-    '',
-    'ONIMG_URL=' + JSON.stringify(o),
-    'INSTALL_DIR="${ONIMG_INSTALL_DIR:-$HOME/.local/bin}"',
-    'CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/onimg"',
-    '',
-    '# ── 颜色 ──────────────────────────────────────────────────────────────────',
-    'if [[ -t 1 ]]; then',
-    "  GRN='\\033[92m'; YLW='\\033[93m'; CYN='\\033[96m'",
-    "  RED='\\033[91m'; DIM='\\033[2m';  RST='\\033[0m'; BOLD='\\033[1m'",
-    'else',
-    "  GRN=''; YLW=''; CYN=''; RED=''; DIM=''; RST=''; BOLD=''",
-    'fi',
-    'ok()  { echo -e "  ${GRN}✓${RST}  $*"; }',
-    'inf() { echo -e "  ${CYN}ℹ${RST}  $*"; }',
-    'err() { echo -e "  ${RED}✗${RST}  $*" >&2; }',
-    'hdr() { echo -e "\\n${BOLD}$*${RST}"; }',
-    '',
-    '# ── 参数 ──────────────────────────────────────────────────────────────────',
-    'while [[ $# -gt 0 ]]; do',
-    '  case "$1" in',
-    '    --url) ONIMG_URL="$2"; shift 2 ;;',
-    '    --dir) INSTALL_DIR="$2"; shift 2 ;;',
-    '    *) shift ;;',
-    '  esac',
-    'done',
-    '',
-    '# ── 检查依赖 ──────────────────────────────────────────────────────────────',
-    'hdr "Onimg CLI 安装程序"',
-    'echo ""',
-    'for cmd in python3 curl; do',
-    '  if ! command -v "$cmd" &>/dev/null; then',
-    '    err "缺少依赖：$cmd"; exit 1',
-    '  fi',
-    'done',
-    'ok "依赖检查通过 (python3 + curl)"',
-    '',
-    '# ── 下载文件 ──────────────────────────────────────────────────────────────',
-    'hdr "下载文件"',
-    'mkdir -p "$INSTALL_DIR"',
-    '',
-    'curl -fsSL ' + JSON.stringify(o + '/scripts/onimg-cli.py') + ' -o "$INSTALL_DIR/onimg-cli.py"',
-    'chmod +x "$INSTALL_DIR/onimg-cli.py"',
-    'ok "onimg-cli.py"',
-    '',
-    'curl -fsSL ' + JSON.stringify(o + '/scripts/typora-upload.sh') + ' -o "$INSTALL_DIR/onimg-upload"',
-    'chmod +x "$INSTALL_DIR/onimg-upload"',
-    'ok "onimg-upload  (Typora 上传脚本)"',
-    '',
-    "cat > \"$INSTALL_DIR/onimg\" <<'WRAPPER'",
-    '#!/usr/bin/env bash',
-    'exec python3 "$HOME/.local/bin/onimg-cli.py" "$@"',
-    'WRAPPER',
-    'chmod +x "$INSTALL_DIR/onimg"',
-    'ok "onimg          (CLI 管理工具)"',
-    '',
-    '# ── 写入配置 ──────────────────────────────────────────────────────────────',
-    'hdr "写入配置"',
-    'mkdir -p "$CONFIG_DIR"',
-    'chmod 700 "$CONFIG_DIR"',
-    'cat > "$CONFIG_DIR/config" <<CFG',
-    'ONIMG_URL=${ONIMG_URL}',
-    'CFG',
-    'ok "~/.config/onimg/config"',
-    '',
-    '# ── PATH 提示 ─────────────────────────────────────────────────────────────',
-    'if ! echo "$PATH" | tr \':\' \'\\n\' | grep -qxF "$INSTALL_DIR"; then',
-    '  echo ""',
-    '  inf "${YLW}${INSTALL_DIR} 不在 PATH 中，请添加到 ~/.zshrc 或 ~/.bashrc:${RST}"',
-    '  echo ""',
-    '  echo -e "    ${DIM}export PATH=\\"\\$HOME/.local/bin:\\$PATH\\"${RST}"',
-    'fi',
-    '',
-    '# ── Typora 提示 ───────────────────────────────────────────────────────────',
-    'hdr "Typora 配置"',
-    'echo -e "  偏好设置 → 图像 → Custom Command:\\n"',
-    'echo -e "    ${CYN}${INSTALL_DIR}/onimg-upload${RST}\\n"',
-    '',
-    '# ── 完成 ──────────────────────────────────────────────────────────────────',
-    'echo ""',
-    'echo -e "${GRN}${BOLD}安装完成！${RST}"',
-    'echo ""',
-    'echo -e "  首次使用: ${CYN}onimg${RST}  → 选 [2] 登录 → 浏览器授权"',
-    'echo ""',
-  ];
-
-  const body = lines.join('\n') + '\n';
-  return new Response(body, {
-    headers: {
-      'Content-Type': 'text/plain; charset=utf-8',
-      'Cache-Control': 'no-store',
-    },
+  const content = name === 'onimg-cli.py' ? ONIMG_CLI_PY : TYPORA_UPLOAD_SH;
+  return new Response(content, {
+    headers: { 'Content-Type': contentType + '; charset=utf-8', 'Cache-Control': 'no-store' },
   });
 }
 
-// ── Device auth page (/auth/device) ──────────────────────────────────────────
-// Used by CLI tools (e.g. Typora uploader). Opens in browser, redirects to
-// localhost callback with ?token=<jwt> after successful login.
+// onimg-cli.py — embedded inline (Python, no ${} conflicts)
+const ONIMG_CLI_PY = `\
+#!/usr/bin/env python3
+"""Onimg CLI 管理工具 — 无外部依赖"""
 
-function serveDeviceAuthPage(url) {
-  const cb = url.searchParams.get('callback') ?? '';
-  if (cb && !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/.test(cb)) {
-    return new Response('Invalid callback — must be localhost', { status: 400 });
-  }
-  const html = `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Onimg — 设备授权</title>
-<style>
-:root{--bg:#0a0a0a;--bg-2:#141414;--bg-3:#1a1a1a;--bd:#2e2e2e;--bd-2:#3a3a3a;--tx:#f5f5f5;--tx-2:#b5b5b5;--tx-3:#858585;--green:#34d399;--green-g:rgba(52,211,153,.12);--green-r:rgba(52,211,153,.22);--red:#f87171;--red-g:rgba(248,113,113,.1);--shadow:0 24px 60px rgba(0,0,0,.92);--font:'Outfit',system-ui,-apple-system,sans-serif}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;-webkit-font-smoothing:antialiased}
-.card{background:var(--bg-3);border:1px solid var(--bd);border-radius:14px;padding:40px 36px;width:100%;max-width:360px;box-shadow:var(--shadow)}
-.logo{width:40px;height:40px;background:linear-gradient(135deg,#2e2e2e,#1a1a1a);border:1px solid var(--bd-2);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:.88rem;font-weight:800;color:var(--tx);margin-bottom:20px;box-shadow:0 3px 10px rgba(0,0,0,.5)}
-h1{font-size:1.1rem;font-weight:800;letter-spacing:-.025em;margin-bottom:6px}
-.sub{font-size:.8rem;color:var(--tx-2);margin-bottom:26px;line-height:1.5}
-input{width:100%;background:var(--bg-2);border:1px solid var(--bd);border-radius:8px;padding:10px 13px;color:var(--tx);font-size:.88rem;font-family:var(--font);outline:none;transition:border-color .15s;margin-bottom:10px}
-input:focus{border-color:var(--bd-2)}
-input::placeholder{color:var(--tx-3)}
-button{width:100%;padding:11px;background:var(--tx);color:var(--bg);border:none;border-radius:8px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:var(--font);transition:opacity .15s;margin-top:4px}
-button:hover{opacity:.88}
-button:disabled{opacity:.45;cursor:default}
-.err{color:var(--red);font-size:.78rem;margin-top:10px;min-height:18px;text-align:center}
-.ok{background:var(--green-g);border:1px solid var(--green-r);border-radius:8px;padding:14px;text-align:center;color:var(--green);font-size:.85rem;font-weight:600;margin-top:14px;display:none}
-.notice{font-size:.7rem;color:var(--tx-3);text-align:center;margin-top:18px;line-height:1.5}
-@keyframes spin{to{transform:rotate(360deg)}}
-.spin::before{content:'';display:inline-block;width:13px;height:13px;border:2px solid rgba(0,0,0,.2);border-top-color:#000;border-radius:50%;animation:spin .6s linear infinite;margin-right:8px;vertical-align:middle}
-</style>
-</head>
-<body>
-<div class="card">
-  <div class="logo">Oi</div>
-  <h1>设备授权</h1>
-  <p class="sub">登录后，访问令牌将自动返回给调用方（仅限本机）。</p>
-  <input id="u" type="text" placeholder="用户名" autocomplete="username">
-  <input id="p" type="password" placeholder="密码" autocomplete="current-password">
-  <button id="btn">登录并授权</button>
-  <div class="err" id="err"></div>
-  <div class="ok" id="ok">授权成功！可以关闭此窗口。</div>
-  <p class="notice">令牌仅发送至 localhost，不经过任何第三方</p>
-</div>
-<script>
-const CB = ${JSON.stringify(cb)};
-const btn = document.getElementById('btn');
-const err = document.getElementById('err');
-document.getElementById('u').addEventListener('keydown', e => e.key === 'Enter' && document.getElementById('p').focus());
-document.getElementById('p').addEventListener('keydown', e => e.key === 'Enter' && btn.click());
-btn.addEventListener('click', async () => {
-  const u = document.getElementById('u').value.trim();
-  const p = document.getElementById('p').value;
-  err.textContent = '';
-  if (!u || !p) { err.textContent = '请填写账号和密码'; return; }
-  btn.disabled = true; btn.classList.add('spin'); btn.textContent = '登录中…';
-  try {
-    const res = await fetch('/auth/login', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({username: u, password: p})
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || '登录失败');
-    if (CB) {
-      window.location.href = CB + (CB.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(data.token);
-    } else {
-      document.getElementById('ok').style.display = 'block';
-      btn.textContent = '已授权';
+import os, sys, json, base64, time, socket, threading, mimetypes, webbrowser
+import urllib.request, urllib.parse, urllib.error, http.server, shutil
+
+# ── 路径 ──────────────────────────────────────────────────────────────────────
+
+_cfg_dir   = os.path.join(os.environ.get('XDG_CONFIG_HOME',
+                           os.path.expanduser('~/.config')), 'onimg')
+CONFIG_FILE = os.path.join(_cfg_dir, 'config')
+TOKEN_FILE  = os.path.join(_cfg_dir, 'token')
+
+# ── ANSI ──────────────────────────────────────────────────────────────────────
+
+_tty = sys.stdout.isatty()
+
+def _c(*codes): return f'\\033[{";".join(str(c) for c in codes)}m' if _tty else ''
+
+RST  = _c(0);  BOLD = _c(1);  DIM  = _c(2)
+GRN  = _c(32); YLW  = _c(33); RED  = _c(31)
+CYN  = _c(36); MAG  = _c(35); WHT  = _c(97)
+BGRN = _c(92); BYLW = _c(93); BRED = _c(91); BCYN = _c(96)
+
+def clr():
+    if _tty:
+        print('\\033[2J\\033[H', end='', flush=True)
+    else:
+        print('\\n' + '─' * (W + 2))
+
+# ── Config ────────────────────────────────────────────────────────────────────
+
+def load_cfg():
+    cfg = {'ONIMG_URL': 'https://img.diswant.space'}
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE) as f:
+            for ln in f:
+                ln = ln.strip()
+                if '=' in ln and not ln.startswith('#'):
+                    k, v = ln.split('=', 1)
+                    cfg[k.strip()] = v.strip().strip("'\\"")
+    # 环境变量优先级最高
+    for key in ('ONIMG_URL',):
+        if key in os.environ:
+            cfg[key] = os.environ[key]
+    return cfg
+
+def save_cfg(cfg: dict):
+    os.makedirs(_cfg_dir, mode=0o700, exist_ok=True)
+    with open(CONFIG_FILE, 'w') as f:
+        for k, v in cfg.items():
+            f.write(f'{k}={v}\\n')
+
+# ── Token ─────────────────────────────────────────────────────────────────────
+
+def load_tok():
+    return open(TOKEN_FILE).read().strip() if os.path.exists(TOKEN_FILE) else None
+
+def save_tok(tok: str):
+    os.makedirs(_cfg_dir, mode=0o700, exist_ok=True)
+    with open(TOKEN_FILE, 'w') as f: f.write(tok)
+    os.chmod(TOKEN_FILE, 0o600)
+
+def del_tok():
+    if os.path.exists(TOKEN_FILE): os.remove(TOKEN_FILE)
+
+def parse_tok(tok):
+    """→ (username, exp_ms, is_admin) or (None, 0, False)"""
+    try:
+        seg = tok.split('.')[0]
+        seg += '=' * (-len(seg) % 4)
+        p = json.loads(base64.b64decode(seg))
+        return p.get('username'), p.get('exp', 0), bool(p.get('isAdmin'))
+    except Exception:
+        return None, 0, False
+
+def tok_info(tok):
+    if not tok:
+        return {'ok': False}
+    username, exp_ms, is_admin = parse_tok(tok)
+    if not username:
+        return {'ok': False}
+    remaining = exp_ms / 1000 - time.time()
+    return {
+        'ok': remaining > 0,
+        'username': username,
+        'is_admin': is_admin,
+        'remaining': remaining,
+        'exp_ms': exp_ms,
     }
-  } catch(e) {
-    err.textContent = e.message;
-    btn.disabled = false; btn.classList.remove('spin'); btn.textContent = '登录并授权';
-  }
-});
-</script>
-</body>
-</html>`;
-  return addSecurityHeaders(new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } }));
+
+# ── HTTP ──────────────────────────────────────────────────────────────────────
+
+def api(url, method='GET', data=None, token=None, content_type='application/json',
+        binary_path=None):
+    """→ (status_code, response_body_dict | None)"""
+    try:
+        if binary_path:
+            with open(binary_path, 'rb') as f:
+                body = f.read()
+        elif data is not None:
+            body = json.dumps(data).encode()
+        else:
+            body = None
+
+        req = urllib.request.Request(url, data=body, method=method)
+        if token:
+            req.add_header('Authorization', f'Bearer {token}')
+        if body:
+            req.add_header('Content-Type', content_type)
+
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return r.status, json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        try:
+            return e.code, json.loads(e.read())
+        except Exception:
+            return e.code, None
+    except Exception as e:
+        return 0, {'error': str(e)}
+
+# ── Browser login ─────────────────────────────────────────────────────────────
+
+def _free_port() -> int:
+    s = socket.socket(); s.bind(('', 0)); p = s.getsockname()[1]; s.close(); return p
+
+def browser_login(base_url):
+    port = _free_port()
+    cb   = f'http://localhost:{port}/cb'
+    result = {'token': None}
+    srv = None
+
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            params = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            tok = params.get('token', [''])[0]
+            ok_html = ('<html><body style="font-family:system-ui;text-align:center;'
+                       'padding:60px;background:#0a0a0a;color:#f5f5f5">'
+                       '<h2 style="color:#34d399">授权成功</h2>'
+                       '<p style="color:#b5b5b5">可以关闭此窗口，返回终端继续操作。</p>'
+                       '</body></html>').encode()
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.send_header('Content-Length', str(len(ok_html)))
+            self.end_headers()
+            self.wfile.write(ok_html)
+            if tok:
+                result['token'] = tok
+                threading.Thread(target=srv.shutdown, daemon=True).start()
+        def log_message(self, *_): pass
+
+    srv = http.server.HTTPServer(('localhost', port), H)
+
+    auth_url = f"{base_url.rstrip('/')}/auth/device?callback={urllib.parse.quote(cb, safe='')}"
+    print(f'\\n  {DIM}正在打开浏览器…{RST}')
+    print(f'  {DIM}如未自动打开，请访问：{RST}')
+    print(f'  {CYN}{auth_url}{RST}\\n')
+    webbrowser.open(auth_url)
+
+    print(f'  {YLW}等待授权（最多 120 秒）…{RST}', end='', flush=True)
+    t = threading.Thread(target=srv.serve_forever)
+    t.daemon = True
+    t.start()
+
+    deadline = time.time() + 120
+    while not result['token'] and time.time() < deadline:
+        time.sleep(0.5)
+        print('.', end='', flush=True)
+
+    srv.shutdown()
+    print()
+    return result['token']
+
+# ── 格式化 ────────────────────────────────────────────────────────────────────
+
+def fmt_dur(secs: float) -> str:
+    if secs <= 0: return f'{RED}已过期{RST}'
+    d = int(secs // 86400)
+    h = int((secs % 86400) // 3600)
+    m = int((secs % 3600) // 60)
+    if d: return f'{d} 天 {h} 小时后过期'
+    if h: return f'{h} 小时 {m} 分钟后过期'
+    return f'{m} 分钟后过期'
+
+def fmt_size(b: int) -> str:
+    if b < 1024: return f'{b} B'
+    if b < 1024**2: return f'{b/1024:.1f} KB'
+    return f'{b/1024**2:.1f} MB'
+
+def fmt_time(ms: int) -> str:
+    import datetime
+    return datetime.datetime.fromtimestamp(ms / 1000).strftime('%m-%d %H:%M')
+
+# ── 界面组件 ──────────────────────────────────────────────────────────────────
+
+W = 52  # 框宽
+
+def box_top(title=''):
+    inner = f'  {BOLD}{title}{RST}  ' if title else ''
+    pad = W - 2 - len(title) - (4 if title else 0)
+    if title:
+        return f'┌── {BOLD}{title}{RST} {"─" * max(pad, 0)}┐'
+    return '┌' + '─' * W + '┐'
+
+def box_row(left, right='', w=W):
+    raw_left  = _strip_ansi(left)
+    raw_right = _strip_ansi(right)
+    gap = w - len(raw_left) - len(raw_right)
+    return f'│ {left}{" " * max(gap - 2, 0)}{right} │'
+
+def box_sep():  return '├' + '─' * W + '┤'
+def box_bot():  return '└' + '─' * W + '┘'
+def box_blank(): return f'│{" " * W}  │'
+
+import re
+def _strip_ansi(s): return re.sub(r'\\033\\[[0-9;]*m', '', s)
+
+def header(cfg, tok_i, quota):
+    url = cfg.get('ONIMG_URL', '?')
+    print(box_top('Onimg  CLI'))
+
+    # 服务器
+    srv_display = url.replace('https://','').replace('http://','')
+    print(box_row(f'  {DIM}服务器{RST}  {CYN}{srv_display}{RST}'))
+
+    # 登录状态
+    if tok_i.get('ok'):
+        uname = tok_i['username']
+        role  = f'{MAG}Admin{RST}' if tok_i['is_admin'] else f'{DIM}用户{RST}'
+        print(box_row(f'  {DIM}账  号{RST}  {BGRN}● {BOLD}{uname}{RST}  {role}'))
+        print(box_row(f'  {DIM}有效期{RST}  {fmt_dur(tok_i["remaining"])}'))
+    else:
+        print(box_row(f'  {DIM}账  号{RST}  {BRED}○ 未登录{RST}'))
+
+    # 配额
+    if quota:
+        daily = quota.get('daily', 0)
+        total = quota.get('total', 0)
+        # 从 token 读不到配额上限，只展示使用量
+        print(box_row(f'  {DIM}配  额{RST}  今日 {BCYN}{daily}{RST} 次 · 累计 {BCYN}{total}{RST} 次'))
+
+    print(box_bot())
+
+def menu(items):
+    print()
+    for key, label in items:
+        k_str = f'{BOLD}{YLW}[{key}]{RST}'
+        print(f'  {k_str}  {label}')
+    print()
+
+def prompt(text='选择') -> str:
+    try:
+        return input(f'  {BOLD}▶ {RST}{text}: ').strip()
+    except (EOFError, KeyboardInterrupt):
+        return 'q'
+
+def msg_ok(text):  print(f'\\n  {BGRN}✓{RST}  {text}')
+def msg_err(text): print(f'\\n  {BRED}✗{RST}  {text}')
+def msg_inf(text): print(f'\\n  {CYN}ℹ{RST}  {text}')
+def pause():       input(f'\\n  {DIM}按 Enter 返回…{RST}')
+
+# ── 动作 ──────────────────────────────────────────────────────────────────────
+
+def do_login(cfg):
+    tok = browser_login(cfg['ONIMG_URL'])
+    if tok:
+        save_tok(tok)
+        info = tok_info(tok)
+        msg_ok('已登录为 %s%s%s' % (BOLD, info.get('username','?'), RST))
+    else:
+        msg_err('授权超时或取消')
+
+def do_logout():
+    del_tok()
+    msg_ok('已退出登录，Token 已清除')
+
+def do_upload(cfg, tok):
+    if not tok:
+        msg_err('请先登录'); return
+    path = prompt('图片路径（可拖入文件）').strip().strip("'\\"")
+    if not path or not os.path.isfile(path):
+        msg_err('文件不存在'); return
+
+    mime, _ = mimetypes.guess_type(path)
+    if not mime: mime = 'application/octet-stream'
+    url = '%s/upload' % cfg['ONIMG_URL'].rstrip('/')
+    print('\\n  %s上传中…%s' % (DIM, RST), end='', flush=True)
+    status, resp = api(url, method='POST', token=tok,
+                       content_type=mime, binary_path=path)
+    print()
+    if status == 201 and resp and 'url' in resp:
+        img_url = resp['url']
+        size    = fmt_size(resp.get('size', 0))
+        msg_ok('上传成功  (%s)' % size)
+        print('\\n  %sURL:%s' % (BOLD, RST))
+        print('  %s%s%s' % (BCYN, img_url, RST))
+        print('\\n  %sMarkdown:%s' % (DIM, RST))
+        print('  %s![](%s)%s' % (DIM, img_url, RST))
+    elif status == 401:
+        msg_err('Token 已失效，请重新登录')
+    else:
+        msg_err('上传失败 (%s)：%s' % (status, resp))
+
+def do_recent(cfg, tok):
+    if not tok:
+        msg_err('请先登录'); return
+    url = '%s/list' % cfg['ONIMG_URL'].rstrip('/')
+    status, resp = api(url, token=tok)
+    if status != 200 or not resp:
+        msg_err('获取失败 (%s)' % status); return
+    items = resp.get('items', [])
+    if not items:
+        msg_inf('暂无上传记录'); return
+
+    print('\\n  %s最近上传%s  %s(共 %d 条)%s\\n' % (BOLD, RST, DIM, len(items), RST))
+    w_key = min(max(len(it['key']) for it in items), 44)
+    print('  %s%-*s  %8s  %-14s  公开%s' % (DIM, w_key, '文件名', '大小', '时间', RST))
+    print('  ' + '─' * (w_key + 36))
+    for it in items[:20]:
+        key  = it['key'][:w_key]
+        size = fmt_size(it.get('size', 0))
+        ts   = fmt_time(it.get('uploadedAt', 0))
+        pub  = '%s公开%s' % (BGRN, RST) if it.get('isPublic') else '%s私有%s' % (DIM, RST)
+        print('  %-*s  %8s  %-14s  %s' % (w_key, key, size, ts, pub))
+    if resp.get('truncated'):
+        print('\\n  %s（仅展示前 20 条）%s' % (DIM, RST))
+
+def do_change_url(cfg):
+    current = cfg.get('ONIMG_URL', '')
+    print('\\n  %s当前地址：%s%s' % (DIM, current, RST))
+    new_url = prompt('新地址（留空取消）')
+    if not new_url:
+        msg_inf('已取消'); return
+    if not new_url.startswith('http'):
+        new_url = 'https://' + new_url
+    cfg['ONIMG_URL'] = new_url.rstrip('/')
+    save_cfg(cfg)
+    msg_ok('已更新为 %s' % new_url)
+    msg_inf('建议删除旧 token 后重新登录：rm ' + TOKEN_FILE)
+
+def do_status_detail(cfg, tok, quota):
+    info = tok_info(tok)
+    print('\\n  %s详细状态%s\\n' % (BOLD, RST))
+    print('  服务器    %s%s%s' % (CYN, cfg.get('ONIMG_URL','?'), RST))
+    if info.get('ok'):
+        uname = info['username']
+        role  = 'Admin' if info['is_admin'] else '普通用户'
+        print('  账  号    %s%s%s  (%s)' % (BGRN, uname, RST, role))
+        exp_str = time.strftime('%Y-%m-%d %H:%M', time.localtime(info['exp_ms'] / 1000))
+        print('  过期时间  %s  (%s)' % (exp_str, fmt_dur(info['remaining'])))
+    else:
+        print('  账  号    %s未登录%s' % (BRED, RST))
+    if quota:
+        print('  配  额    今日 %d 次 · 累计 %d 次' % (quota.get('daily',0), quota.get('total',0)))
+    print('  Token 路径  %s%s%s' % (DIM, TOKEN_FILE, RST))
+    print('  配置路径    %s%s%s' % (DIM, CONFIG_FILE, RST))
+
+# ── 主循环 ────────────────────────────────────────────────────────────────────
+
+def main():
+    while True:
+        cfg   = load_cfg()
+        tok   = load_tok()
+        t_inf = tok_info(tok)
+        quota = None
+
+        # 拉配额（仅登录状态下，快速超时避免卡界面）
+        if t_inf.get('ok'):
+            try:
+                url = f"{cfg['ONIMG_URL'].rstrip('/')}/auth/quota"
+                st, q = api(url, token=tok)
+                if st == 200 and q: quota = q
+            except Exception:
+                pass
+
+        clr()
+        print()
+        header(cfg, t_inf, quota)
+        menu([
+            ('1', '刷新状态'),
+            ('2', '登录 / 重新授权  (浏览器)'),
+            ('3', '退出登录'),
+            ('4', '测试上传'),
+            ('5', '最近上传记录'),
+            ('6', '修改服务地址'),
+            ('q', f'{DIM}退出{RST}'),
+        ])
+
+        ch = prompt()
+
+        if ch == '1':
+            do_status_detail(cfg, tok, quota)
+            pause()
+        elif ch == '2':
+            do_login(cfg)
+            pause()
+        elif ch == '3':
+            do_logout()
+            pause()
+        elif ch == '4':
+            do_upload(cfg, tok)
+            pause()
+        elif ch == '5':
+            do_recent(cfg, tok)
+            pause()
+        elif ch == '6':
+            do_change_url(cfg)
+            pause()
+        elif ch in ('q', 'Q', '0'):
+            clr()
+            print(f'\\n  {DIM}再见。{RST}\\n')
+            sys.exit(0)
+        else:
+            msg_err('无效输入')
+            time.sleep(0.8)
+
+if __name__ == '__main__':
+    try:
+        main()
+    except KeyboardInterrupt:
+        clr()
+        print(f'\\n  {DIM}已退出。{RST}\\n')
+        sys.exit(0)
+`;
+
+// typora-upload.sh — embedded inline
+const TYPORA_UPLOAD_SH = `\
+#!/usr/bin/env bash
+# Typora custom uploader for Onimg — browser-based device auth
+#
+# First run: opens browser to log in; token cached for 7 days.
+# No credentials stored locally.
+#
+# Setup:
+#   1. chmod +x scripts/typora-upload.sh
+#   2. Set ONIMG_URL (env var or ~/.config/onimg/config):
+#        ONIMG_URL=https://img.diswant.space
+#   3. In Typora → Preferences → Image → Upload Service → Custom Command:
+#        /path/to/scripts/typora-upload.sh
+
+set -uo pipefail
+
+CONFIG_DIR="${'$'}{XDG_CONFIG_HOME:-$HOME/.config}/onimg"
+CONFIG_FILE="$CONFIG_DIR/config"
+TOKEN_FILE="$CONFIG_DIR/token"
+
+[[ -f "$CONFIG_FILE" ]] && source "$CONFIG_FILE"  # shellcheck source=/dev/null
+
+ONIMG_URL="${'$'}{ONIMG_URL:-https://img.diswant.space}"
+ONIMG_URL="${'$'}{ONIMG_URL%/}"
+
+mkdir -p "$CONFIG_DIR"
+chmod 700 "$CONFIG_DIR"
+
+# ── Helpers ──────────────────────────────────────────────────────────────────
+
+json_get() {
+  python3 -c "import json,sys; print(json.loads(sys.argv[1])[sys.argv[2]])" "$1" "$2"
 }
+
+mime_type() {
+  python3 -c "
+import mimetypes, sys
+t, _ = mimetypes.guess_type(sys.argv[1])
+print(t or 'application/octet-stream')
+" "$1"
+}
+
+url_encode() {
+  python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$1"
+}
+
+# ── Browser device auth flow ──────────────────────────────────────────────────
+
+browser_login() {
+  # Pick a free port
+  local port
+  port=$(python3 -c "
+import socket
+s = socket.socket()
+s.bind(('', 0))
+print(s.getsockname()[1])
+s.close()
+")
+
+  local token_file
+  token_file=$(mktemp)
+  local cb="http://localhost:${'$'}{port}/cb"
+
+  # Start a one-shot local callback server
+  python3 - "$token_file" "$port" <<'PYEOF' &
+import http.server, urllib.parse, sys, threading
+
+token_file, port = sys.argv[1], int(sys.argv[2])
+server = None
+
+class H(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path.startswith('/cb'):
+            params = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            token = params.get('token', [''])[0]
+            body = ('<html><body style="font-family:system-ui;text-align:center;padding:60px;background:#0a0a0a;color:#f5f5f5">'
+                    '<h2 style="color:#34d399">授权成功</h2><p style="color:#b5b5b5">可以关闭此窗口，返回继续操作。</p>'
+                    '</body></html>').encode()
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.send_header('Content-Length', str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            if token:
+                open(token_file, 'w').write(token)
+                threading.Thread(target=server.shutdown, daemon=True).start()
+        else:
+            self.send_response(404); self.end_headers()
+    def log_message(self, *a): pass
+
+server = http.server.HTTPServer(('localhost', port), H)
+server.serve_forever()
+PYEOF
+
+  local server_pid=$!
+
+  local auth_url="${'$'}{ONIMG_URL}/auth/device?callback=$(url_encode "$cb")"
+  echo "正在打开浏览器授权... 如未自动打开，请访问：" >&2
+  echo "  $auth_url" >&2
+
+  # Open browser (macOS)
+  open "$auth_url" 2>/dev/null || true
+
+  # Wait for token (up to 120 s)
+  local waited=0
+  while [[ ! -s "$token_file" && $waited -lt 120 ]]; do
+    sleep 1
+    (( waited++ )) || true
+  done
+
+  kill "$server_pid" 2>/dev/null || true
+  wait "$server_pid" 2>/dev/null || true
+
+  if [[ ! -s "$token_file" ]]; then
+    rm -f "$token_file"
+    echo "ERROR: 登录超时（120 秒内未完成授权）" >&2
+    return 1
+  fi
+
+  local token
+  token=$(cat "$token_file")
+  rm -f "$token_file"
+  echo "$token"
+}
+
+# ── Token management ──────────────────────────────────────────────────────────
+
+get_token() {
+  if [[ -f "$TOKEN_FILE" ]]; then
+    local tok exp
+    tok=$(cat "$TOKEN_FILE")
+    # Check JWT expiry (field 0 = header, 1 = payload)
+    exp=$(python3 -c "
+import base64, json, sys, time
+try:
+    # Token format: base64(payload).hmac_sig  (2 parts, exp in ms)
+    seg = sys.argv[1].split('.')[0]
+    seg += '=' * (-len(seg) % 4)
+    payload = json.loads(base64.b64decode(seg))
+    exp_ms = payload.get('exp', 0)
+    print('ok' if exp_ms / 1000 - 60 > time.time() else 'expired')
+except Exception:
+    print('expired')
+" "$tok" 2>/dev/null || echo 'expired')
+    if [[ "$exp" == "ok" ]]; then
+      echo "$tok"
+      return
+    fi
+  fi
+
+  echo "token 已过期或不存在，需要重新登录" >&2
+  local tok
+  tok=$(browser_login) || return 1
+  printf '%s' "$tok" > "$TOKEN_FILE"
+  chmod 600 "$TOKEN_FILE"
+  echo "$tok"
+}
+
+# ── Upload ────────────────────────────────────────────────────────────────────
+
+upload_one() {
+  local path="$1" token="$2"
+  local mime http_code resp tmp
+  mime=$(mime_type "$path")
+  tmp=$(mktemp)
+
+  http_code=$(curl -sf -o "$tmp" -w "%{http_code}" -X POST "$ONIMG_URL/upload" \\
+    -H "Authorization: Bearer $token" \\
+    -H "Content-Type: $mime" \\
+    --data-binary "@$path") || http_code="000"
+
+  resp=$(cat "$tmp"); rm -f "$tmp"
+
+  if [[ "$http_code" == "401" ]]; then
+    return 2  # signal: token rejected, re-auth needed
+  fi
+
+  if [[ "$http_code" == "000" ]]; then
+    echo "ERROR: 网络错误，上传失败: $path" >&2
+    return 1
+  fi
+
+  if [[ "$http_code" != "201" ]]; then
+    echo "ERROR: 上传失败 ($http_code): $path — $resp" >&2
+    return 1
+  fi
+
+  json_get "$resp" "url"
+}
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+
+if [[ $# -eq 0 ]]; then
+  echo "Usage: $(basename "$0") image-path [image-path ...]" >&2
+  exit 1
+fi
+
+TOKEN=$(get_token) || exit 1
+
+urls=()
+for img in "$@"; do
+  url=$(upload_one "$img" "$TOKEN") && {
+    urls+=("$url")
+    continue
+  }
+  exit_code=$?
+
+  if [[ $exit_code -eq 2 ]]; then
+    # Token rejected by server — clear cache and re-auth once
+    rm -f "$TOKEN_FILE"
+    echo "token 被服务端拒绝，重新登录..." >&2
+    TOKEN=$(browser_login) || exit 1
+    printf '%s' "$TOKEN" > "$TOKEN_FILE"
+    chmod 600 "$TOKEN_FILE"
+    url=$(upload_one "$img" "$TOKEN") || exit 1
+    urls+=("$url")
+  else
+    exit 1
+  fi
+done
+
+echo "Upload Success:"
+for u in "${'$'}{urls[@]}"; do
+  echo "$u"
+done
+`;
