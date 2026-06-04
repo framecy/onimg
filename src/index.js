@@ -216,6 +216,7 @@ export default {
       }
       if (method === 'GET'    && path === '/list')             return withCors(await handleList(request, env), request);
       if (method === 'GET'    && path === '/')                 return addSecurityHeaders(new Response(renderPage(), { headers: { 'Content-Type': 'text/html; charset=utf-8' } }));
+      if (method === 'GET'    && path.startsWith('/static/'))  return serveStaticAsset(env, path.slice('/static/'.length));
       if (method === 'GET'    && path.startsWith('/'))         return withCors(await handleGet(env, ctx, path.slice(1), request), request);
 
       return withCors(new Response('Not Found', { status: 404 }), request);
@@ -451,6 +452,19 @@ function withCors(response, req) {
   res.headers.set('X-Frame-Options', 'DENY');
   res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   return res;
+}
+
+// ── Static asset hosting (/static/*) ──────────────────────────────────────────
+// ByteMD bundle files stored in R2 under _static/ prefix.
+
+async function serveStaticAsset(env, name) {
+  const obj = await env.BUCKET.get('_static/' + name);
+  if (!obj) return new Response('Not Found', { status: 404 });
+  const ext = name.split('.').pop();
+  const ct = { js: 'application/javascript', css: 'text/css' }[ext] ?? 'application/octet-stream';
+  return new Response(obj.body, {
+    headers: { 'Content-Type': ct, 'Cache-Control': 'public, max-age=31536000, immutable' },
+  });
 }
 
 // ── Script file hosting (/scripts/*) ─────────────────────────────────────────

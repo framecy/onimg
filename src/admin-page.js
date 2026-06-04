@@ -10,7 +10,7 @@ export function renderAdminPage() {
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"></noscript>
-  <!-- Vditor CSS/JS 改为编辑器打开时按需注入（见 ensureVditor），避免每次访问加载 ~0.5MB 编辑器 -->
+  <!-- ByteMD CSS/JS 按需注入（见 ensureBytemd），编辑器首次打开时加载 -->
   <style>
     :root {
       --bg:     #0a0a0a; --bg-2: #141414; --bg-3: #1a1a1a; --bg-4: #222222; --bg-5: #2a2a2a;
@@ -334,11 +334,71 @@ export function renderAdminPage() {
     .toast.t-warn    { background: #2d1b00; border-color: #92400e; color: #fcd34d; }
     .toast.t-error   { background: #1c0505; border-color: #7f1d1d; color: #f87171; }
 
-    /* ── Admin page editor Vditor ── */
-    #apmVditor { border-radius: 7px; overflow: hidden; border: 1px solid var(--bd); }
-    #apmVditor .vditor-outline { display: none !important; }
-    #apmVditor .vditor-content { height: calc(100% - 36px) !important; overflow-y: auto !important; overscroll-behavior: contain; }
-    #apmVditor .vditor-toolbar { position: sticky !important; top: 0 !important; z-index: 10 !important; flex-wrap: nowrap; overflow-x: auto; }
+    /* ── Admin page editor ByteMD ── */
+    #apmVditor { border-radius: 7px; overflow: hidden; border: 1px solid var(--bd); min-height: 440px; }
+    #apmVditor .bytemd { height: 440px !important; border: none !important; background: var(--bg-2) !important; }
+    /* 全屏时撑满视口 */
+    #apmVditor .bytemd.bytemd-fullscreen { height: 100vh !important; width: 100vw !important; }
+    /* 工具栏 */
+    #apmVditor .bytemd-toolbar { background: var(--bg-3) !important; border-bottom: 1px solid var(--bd) !important; padding: 3px 8px !important; }
+    #apmVditor .bytemd-toolbar-icon { color: var(--tx-2) !important; border-radius: 6px !important; }
+    #apmVditor .bytemd-toolbar-icon:hover { background: var(--bg-h) !important; color: var(--tx) !important; }
+    #apmVditor .bytemd-toolbar-icon.active { color: var(--green) !important; }
+    /* 编辑区 CodeMirror */
+    #apmVditor .CodeMirror { background: var(--bg-2) !important; color: var(--tx) !important; font-family: var(--mono) !important; font-size: 13.5px !important; line-height: 1.75 !important; }
+    #apmVditor .CodeMirror-cursor { border-left-color: var(--tx) !important; }
+    #apmVditor .CodeMirror-selected { background: rgba(255,255,255,.08) !important; }
+    #apmVditor .cm-header { color: var(--tx) !important; font-weight: 700 !important; }
+    #apmVditor .cm-strong { color: var(--tx) !important; font-weight: 700 !important; }
+    #apmVditor .cm-em { color: var(--tx-2) !important; }
+    #apmVditor .cm-link, #apmVditor .cm-url { color: #60a5fa !important; }
+    #apmVditor .cm-formatting { color: var(--tx-3) !important; }
+    #apmVditor .cm-comment, #apmVditor .cm-quote { color: var(--tx-3) !important; }
+    /* 分隔线 & 侧边栏 */
+    #apmVditor .bytemd-split { background: var(--bd) !important; }
+    #apmVditor .bytemd-sidebar { background: var(--bg-3) !important; border-left: 1px solid var(--bd) !important; color: var(--tx-2) !important; }
+    #apmVditor .bytemd-sidebar-close { color: var(--tx-3) !important; }
+    /* 预览区 */
+    #apmVditor .bytemd-preview { background: var(--bg-2) !important; border-left: 1px solid var(--bd) !important; padding: 16px 22px !important; }
+    #apmVditor .markdown-body { background: transparent !important; color: var(--tx) !important; font-size: 14px !important; line-height: 1.8 !important; }
+    #apmVditor .markdown-body h1,#apmVditor .markdown-body h2,#apmVditor .markdown-body h3,#apmVditor .markdown-body h4 { color: var(--tx) !important; border-bottom-color: var(--bd) !important; }
+    #apmVditor .markdown-body p, #apmVditor .markdown-body li { color: var(--tx) !important; }
+    #apmVditor .markdown-body a { color: #60a5fa !important; text-decoration: none !important; border-bottom: 1px solid rgba(96,165,250,.3) !important; }
+    #apmVditor .markdown-body :not(pre) > code { background: rgba(110,118,129,.14) !important; color: var(--amber) !important; border: none !important; border-radius: 5px !important; padding: 2px 6px !important; }
+    #apmVditor .markdown-body pre { background: var(--bg-4) !important; border: 1px solid var(--bd) !important; border-radius: 8px !important; padding: 14px 18px !important; }
+    #apmVditor .markdown-body pre code { background: none !important; color: var(--tx) !important; border: none !important; padding: 0 !important; }
+    #apmVditor .markdown-body blockquote { border-left: 3px solid #60a5fa !important; background: rgba(96,165,250,.06) !important; color: var(--tx-2) !important; border-radius: 0 6px 6px 0 !important; padding: 10px 16px !important; }
+    #apmVditor .markdown-body blockquote p { color: var(--tx-2) !important; }
+    #apmVditor .markdown-body hr { border-top: 1px solid var(--bd) !important; background: none !important; }
+    #apmVditor .markdown-body strong { color: var(--tx) !important; }
+    #apmVditor .markdown-body img { border-radius: 8px !important; max-width: 100% !important; }
+    /* 表格 —— 暗色 */
+    #apmVditor .markdown-body table { border-collapse: separate !important; border-spacing: 0 !important; border: 1px solid var(--bd) !important; border-radius: 8px !important; overflow: hidden !important; width: 100% !important; }
+    #apmVditor .markdown-body table th { background: var(--bg-4) !important; color: var(--tx-2) !important; border-bottom: 1px solid var(--bd) !important; border-right: none !important; padding: 9px 14px !important; font-size: 13px !important; }
+    #apmVditor .markdown-body table td { background: var(--bg-2) !important; color: var(--tx) !important; border-bottom: 1px solid var(--bg-3) !important; border-right: none !important; padding: 8px 14px !important; }
+    #apmVditor .markdown-body table tr:last-child td { border-bottom: none !important; }
+    #apmVditor .markdown-body table tr:nth-child(even) td { background: var(--bg-3) !important; }
+    /* 状态栏 */
+    #apmVditor .bytemd-status { background: var(--bg-3) !important; border-top: 1px solid var(--bd) !important; color: var(--tx-3) !important; font-size: .7rem !important; }
+    /* ── 亮色预览主题（data-preview-theme="light"） ── */
+    #apmVditor[data-preview-theme="light"] .bytemd-preview { background: #ffffff !important; }
+    #apmVditor[data-preview-theme="light"] .markdown-body { color: #1a1a1a !important; }
+    #apmVditor[data-preview-theme="light"] .markdown-body h1,#apmVditor[data-preview-theme="light"] .markdown-body h2,#apmVditor[data-preview-theme="light"] .markdown-body h3,#apmVditor[data-preview-theme="light"] .markdown-body h4 { color: #111 !important; border-bottom-color: #e5e7eb !important; }
+    #apmVditor[data-preview-theme="light"] .markdown-body p,#apmVditor[data-preview-theme="light"] .markdown-body li { color: #374151 !important; }
+    #apmVditor[data-preview-theme="light"] .markdown-body a { color: #2563eb !important; border-bottom-color: rgba(37,99,235,.3) !important; }
+    #apmVditor[data-preview-theme="light"] .markdown-body :not(pre) > code { background: #f3f4f6 !important; color: #dc2626 !important; }
+    #apmVditor[data-preview-theme="light"] .markdown-body pre { background: #1e1e1e !important; border-color: #e5e7eb !important; }
+    #apmVditor[data-preview-theme="light"] .markdown-body pre code { color: #d4d4d4 !important; }
+    #apmVditor[data-preview-theme="light"] .markdown-body blockquote { border-left-color: #2563eb !important; background: rgba(37,99,235,.05) !important; color: #6b7280 !important; }
+    #apmVditor[data-preview-theme="light"] .markdown-body blockquote p { color: #6b7280 !important; }
+    #apmVditor[data-preview-theme="light"] .markdown-body strong { color: #111 !important; }
+    #apmVditor[data-preview-theme="light"] .markdown-body hr { border-top-color: #e5e7eb !important; }
+    #apmVditor[data-preview-theme="light"] .markdown-body table { border-color: #e5e7eb !important; }
+    #apmVditor[data-preview-theme="light"] .markdown-body table th { background: #f9fafb !important; color: #374151 !important; border-bottom-color: #e5e7eb !important; }
+    #apmVditor[data-preview-theme="light"] .markdown-body table td { background: #fff !important; color: #374151 !important; border-bottom-color: #f3f4f6 !important; }
+    #apmVditor[data-preview-theme="light"] .markdown-body table tr:nth-child(even) td { background: #f9fafb !important; }
+    /* 主题切换按钮 */
+    #apmPreviewThemeBtn { padding: 3px 10px; border-radius: 6px; font-size: .72rem; font-weight: 600; font-family: var(--font); cursor: pointer; border: 1px solid var(--bd); background: var(--bg-4); color: var(--tx-2); transition: var(--t); }
 
     /* ── Login enhancements ── */
     @keyframes loginSpin { to { transform: rotate(360deg); } }
@@ -953,7 +1013,10 @@ export function renderAdminPage() {
         <span style="font-size:.7rem;color:#5a7090;margin-top:4px;display:block">6位字母+数字，访客凭密码访问私密页面</span>
       </div>
       <div class="field" style="flex:1;display:flex;flex-direction:column;min-height:0">
-        <label>内容</label>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <label style="margin:0">内容</label>
+          <button id="apmPreviewThemeBtn" class="btn btn-ghost" style="display:none;padding:3px 10px;font-size:.72rem">☀ 亮色预览</button>
+        </div>
         <div id="apmVditor" style="display:none"></div>
         <textarea id="apmContent" rows="14" style="resize:vertical;min-height:200px;font-family:monospace;font-size:.82rem;padding:10px 12px;background:#0b0f1a;border:1px solid #2a3650;border-radius:8px;color:#e8edf5;outline:none;width:100%" placeholder="# Hello\n\n内容…"></textarea>
       </div>
@@ -1118,6 +1181,7 @@ export function renderAdminPage() {
   let allImages = [], allStats = {}, galleryCursor = null, selected = new Set(), lbKey = null;
   let editingUser = null;
   let apmVditorInst = null;
+  let apmEditorValue = '';
   let expiryTimerId = null;
 
   const authH = () => ({ 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' });
@@ -1974,30 +2038,32 @@ export function renderAdminPage() {
   // ── Admin Pages ───────────────────────────────────────────────────────────────
   let adminEditingSlug = null;
 
-  // Lazily inject Vditor CSS+JS the first time the editor is opened
-  let vditorLoading = null;
-  function ensureVditor() {
-    if (window.Vditor) return Promise.resolve(true);
-    if (vditorLoading) return vditorLoading;
-    vditorLoading = new Promise(resolve => {
-      if (!document.getElementById('vditorCss')) {
+  // Lazily load ByteMD bundle the first time the editor is opened
+  let bytemdLoading = null;
+  const _BYTEMD_BASE = '/static';
+  function ensureBytemd() {
+    if (window.ByteMD) return Promise.resolve(true);
+    if (bytemdLoading) return bytemdLoading;
+    [_BYTEMD_BASE + '/bytemd.css', _BYTEMD_BASE + '/highlight.css'].forEach((href, i) => {
+      if (!document.getElementById('bytemdCss' + i)) {
         const l = document.createElement('link');
-        l.id = 'vditorCss'; l.rel = 'stylesheet';
-        l.href = 'https://cdn.jsdelivr.net/npm/vditor/dist/index.css';
+        l.id = 'bytemdCss' + i; l.rel = 'stylesheet'; l.href = href;
         document.head.appendChild(l);
       }
+    });
+    bytemdLoading = new Promise(resolve => {
       const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/vditor/dist/index.min.js';
+      s.src = _BYTEMD_BASE + '/bytemd.bundle.js';
       s.onload = () => resolve(true);
-      s.onerror = () => { vditorLoading = null; resolve(false); };
+      s.onerror = () => { bytemdLoading = null; resolve(false); };
       document.body.appendChild(s);
     });
-    return vditorLoading;
+    return bytemdLoading;
   }
 
-  async function initApmVditor(initialContent) {
-    const ok = await ensureVditor();
-    if (!ok || !window.Vditor) {
+  async function initBytemdEditor(initialContent) {
+    const ok = await ensureBytemd();
+    if (!ok) {
       const ta = document.getElementById('apmContent');
       ta.value = initialContent || ''; ta.style.display = '';
       return;
@@ -2005,48 +2071,44 @@ export function renderAdminPage() {
     const box = document.getElementById('apmVditor');
     box.style.display = 'block';
     document.getElementById('apmContent').style.display = 'none';
-    if (apmVditorInst) { apmVditorInst.setValue(initialContent || ''); return; }
-    const editorH = Math.min(480, Math.max(300, window.innerHeight - 420));
-    apmVditorInst = new Vditor('apmVditor', {
-      height: editorH, mode: 'ir', lang: 'zh_CN',
-      cdn: 'https://cdn.jsdelivr.net/npm/vditor',
-      cache: { enable: false }, outline: { enable: false }, preview: { show: false },
-      toolbar: ['headings','bold','italic','strike','|','list','ordered-list','check','quote','|',
-                'code','inline-code','link','table','upload','|','undo','redo','fullscreen'],
-      toolbarConfig: { pin: false },
-      upload: {
-        url: '/upload', fieldName: 'file',
-        headers: adminToken ? { Authorization: 'Bearer ' + adminToken } : {},
-        accept: 'image/*',
-        format: (files, responseText) => {
-          try {
-            const d = JSON.parse(responseText);
-            const url = d.url || (d.items && d.items[0] && d.items[0].url);
-            if (!url) return responseText;
-            return JSON.stringify({ code: 0, data: { errFiles: [], succMap: { [files[0].name]: url } } });
-          } catch { return responseText; }
-        },
-      },
-      after() {
-        window.dispatchEvent(new Event('resize'));
-        apmVditorInst.setValue(initialContent || '');
-        apmVditorInst.focus();
-        box.addEventListener('wheel', function(e) {
-          const scroller = box.querySelector('.vditor-content');
-          if (!scroller) return;
-          const atTop = scroller.scrollTop === 0 && e.deltaY < 0;
-          const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1 && e.deltaY > 0;
-          if (!atTop && !atBottom) e.stopPropagation();
-        }, { passive: true });
-      },
+    apmEditorValue = initialContent || '';
+    if (apmVditorInst) { apmVditorInst.$set({ value: apmEditorValue }); return; }
+    const { Editor, gfm, highlight } = ByteMD;
+    apmVditorInst = new Editor({
+      target: box,
+      props: { value: apmEditorValue, plugins: [gfm(), highlight()] },
     });
+    apmVditorInst.$on('change', e => {
+      apmEditorValue = e.detail.value;
+      apmVditorInst.$set({ value: apmEditorValue });
+    });
+    // 文档内锚点跳转（TOC + 内容链接）
+    box.addEventListener('click', e => {
+      const a = e.target.closest('a[href^="#"]');
+      if (!a) return;
+      e.preventDefault();
+      const id = decodeURIComponent(a.getAttribute('href').slice(1));
+      const preview = box.querySelector('.bytemd-preview');
+      const target = preview?.querySelector('[id="' + id.replace(/"/g, '\\"') + '"]');
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, true);
+    // 亮/暗色预览切换按钮（默认亮色）
+    const themeBtn = document.getElementById('apmPreviewThemeBtn');
+    themeBtn.style.display = '';
+    box.dataset.previewTheme = 'light';
+    themeBtn.textContent = '☀ 亮色预览';
+    themeBtn.onclick = () => {
+      const isLight = box.dataset.previewTheme === 'light';
+      box.dataset.previewTheme = isLight ? 'dark' : 'light';
+      themeBtn.textContent = isLight ? '🌙 暗色预览' : '☀ 亮色预览';
+    };
   }
 
   function switchApmEditorToType(type, content) {
     if (type === 'markdown') {
-      setTimeout(() => initApmVditor(content || ''), 50);
+      setTimeout(() => initBytemdEditor(content || ''), 50);
     } else {
-      if (apmVditorInst) { apmVditorInst.destroy(); apmVditorInst = null; }
+      if (apmVditorInst) { apmVditorInst.$destroy(); apmVditorInst = null; apmEditorValue = ''; }
       document.getElementById('apmVditor').style.display = 'none';
       const ta = document.getElementById('apmContent');
       ta.style.display = '';
@@ -2147,7 +2209,7 @@ export function renderAdminPage() {
 
   document.getElementById('apmType').addEventListener('change', () => {
     const type = document.getElementById('apmType').value;
-    const currentContent = apmVditorInst ? apmVditorInst.getValue() : document.getElementById('apmContent').value;
+    const currentContent = apmVditorInst ? apmEditorValue : document.getElementById('apmContent').value;
     switchApmEditorToType(type, currentContent);
   });
 
@@ -2156,7 +2218,7 @@ export function renderAdminPage() {
     const title   = document.getElementById('apmTitle').value.trim();
     const type    = document.getElementById('apmType').value;
     const content = apmVditorInst && type === 'markdown'
-      ? apmVditorInst.getValue()
+      ? apmEditorValue
       : document.getElementById('apmContent').value;
     const isPublic = document.getElementById('apmPublic').checked;
     const accessPassword = !isPublic ? (document.getElementById('apmPassword').value.trim() || null) : null;
@@ -2168,7 +2230,7 @@ export function renderAdminPage() {
     const res = await fetch(url, { method:meth, headers:authH(), body:JSON.stringify(body) });
     const data = await res.json();
     if (!res.ok) { toast('失败: ' + data.error); return; }
-    if (apmVditorInst) { apmVditorInst.destroy(); apmVditorInst = null; }
+    if (apmVditorInst) { apmVditorInst.$destroy(); apmVditorInst = null; apmEditorValue = ''; }
     document.getElementById('apmVditor').style.display = 'none';
     document.getElementById('apmContent').style.display = '';
     document.getElementById('adminPageModal').classList.remove('show');
@@ -2177,8 +2239,13 @@ export function renderAdminPage() {
   });
   function closeApmModal() {
     document.getElementById('adminPageModal').classList.remove('show');
-    if (apmVditorInst) { apmVditorInst.destroy(); apmVditorInst = null; }
-    document.getElementById('apmVditor').style.display = 'none';
+    if (apmVditorInst) { apmVditorInst.$destroy(); apmVditorInst = null; apmEditorValue = ''; }
+    const box = document.getElementById('apmVditor');
+    box.style.display = 'none';
+    delete box.dataset.previewTheme;
+    const themeBtn = document.getElementById('apmPreviewThemeBtn');
+    themeBtn.style.display = 'none';
+    themeBtn.textContent = '☀ 亮色预览';
     document.getElementById('apmContent').style.display = '';
     document.getElementById('apmPwdSection').style.display = 'none';
     document.getElementById('apmPassword').value = '';
