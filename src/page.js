@@ -226,6 +226,37 @@ export function renderPage() {
     .type-badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: .66rem; font-weight: 700; }
     .type-md   { background: rgba(255,255,255,.07); color: var(--tx); border: 1px solid var(--bd-2); }
     .type-html { background: var(--amber-g); color: var(--amber); border: 1px solid var(--amber-r); }
+    /* Page tree view */
+    .pages-tree { display: flex; flex-direction: column; gap: 6px; }
+    .page-project { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 10px; overflow: hidden; }
+    .page-project-header { display: flex; align-items: center; padding: 10px 14px; cursor: pointer; gap: 8px; user-select: none; }
+    .page-project-header:hover { background: var(--bg-4); }
+    .expand-icon { font-size: .6rem; transition: transform .15s; color: var(--tx-3); width: 14px; text-align: center; flex-shrink: 0; }
+    .expand-icon.open { transform: rotate(90deg); }
+    .project-name, .group-name { flex: 1; font-weight: 600; font-size: .88rem; color: var(--tx); }
+    .count-badge { font-size: .66rem; color: var(--tx-3); background: var(--bg-5); padding: 2px 7px; border-radius: 4px; font-weight: 600; }
+    .proj-actions, .grp-actions { display: flex; gap: 4px; margin-left: 6px; opacity: 0; transition: opacity .15s; }
+    .page-project-header:hover .proj-actions,
+    .page-group-header:hover .grp-actions { opacity: 1; }
+    .proj-act-btn, .grp-act-btn { background: none; border: none; color: var(--tx-3); cursor: pointer; font-size: .72rem; padding: 2px 5px; border-radius: 4px; transition: var(--t); }
+    .proj-act-btn:hover, .grp-act-btn:hover { background: var(--bg-5); color: var(--tx); }
+    .page-project-body { border-top: 1px solid var(--bd); }
+    .page-group { margin-left: 18px; border-left: 2px solid var(--bd); }
+    .page-group-header { display: flex; align-items: center; padding: 8px 12px; cursor: pointer; gap: 7px; user-select: none; }
+    .page-group-header:hover { background: var(--bg-4); }
+    .page-group-body {}
+    .page-tree-docs { margin-left: 18px; border-left: 2px solid var(--bd); }
+    .page-tree-item { background: var(--bg-2); border: 1px solid transparent; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; margin: 2px 0; transition: var(--t); }
+    .page-tree-item:hover { border-color: var(--bd); background: var(--bg-3); }
+    .drag-handle { cursor: grab; color: var(--tx-3); font-size: .78rem; padding: 0 2px; }
+    .drag-handle:active { cursor: grabbing; }
+    .pages-uncategorized { border-top: 1px dashed var(--bd-2); padding-top: 10px; margin-top: 6px; }
+    .uncat-label { font-size: .72rem; color: var(--tx-3); font-weight: 600; letter-spacing: .04em; margin-bottom: 6px; }
+    .page-tree-item.dragging { opacity: .35; }
+    .page-tree-item.drag-over-top { border-top: 2px solid var(--accent); }
+    .page-tree-item.drag-over-bot { border-bottom: 2px solid var(--accent); }
+    .page-project.drag-over-proj { border-color: var(--accent); }
+    .page-group-header.drag-over-grp { background: var(--bg-5); }
 
     /* Public gallery */
     .pub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
@@ -515,9 +546,19 @@ export function renderPage() {
           <div class="page-title">我的页面</div>
           <div class="page-sub">托管的 Markdown / HTML 文档</div>
         </div>
+        <button class="btn btn-ghost" id="newProjectBtn" style="padding:7px 10px;font-size:.78rem">+ 项目</button>
+        <button class="btn btn-ghost" id="importPageBtn" style="padding:7px 10px;font-size:.78rem">导入 .md</button>
         <button class="btn btn-primary" id="newPageBtn" style="padding:7px 14px;font-size:.82rem">+ 新建页面</button>
       </div>
-      <div class="pages-list" id="pagesList"></div>
+      <div class="toolbar">
+        <input class="search-input" id="pageSearch" type="text" placeholder="搜索标题或 slug…">
+        <select class="search-input" id="pageProjectFilter" style="width:auto;cursor:pointer">
+          <option value="all">全部项目</option>
+        </select>
+        <div class="spacer"></div>
+        <button class="btn btn-ghost" id="refreshPages" style="font-size:.78rem">刷新</button>
+      </div>
+      <div class="pages-tree" id="pagesTree"></div>
       <div class="empty" id="pagesEmpty" style="display:none">暂无页面</div>
     </div>
 
@@ -740,6 +781,18 @@ export function renderPage() {
         <textarea id="pmContent" rows="12" placeholder="# Hello World\n\n写点什么…"></textarea>
       </div>
       <div class="field">
+        <label>所属项目</label>
+        <select id="pmProject">
+          <option value="">-- 无 --</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>所属分组</label>
+        <select id="pmGroup">
+          <option value="">-- 无 --</option>
+        </select>
+      </div>
+      <div class="field">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
           <input type="checkbox" id="pmPublic" checked> 公开访问
         </label>
@@ -748,6 +801,84 @@ export function renderPage() {
     <div class="modal-footer">
       <button class="btn btn-ghost" id="pageModalCancel">取消</button>
       <button class="btn btn-primary" id="pageModalSave">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- Project Modal -->
+<div class="modal-overlay" id="projectModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h3 id="projModalTitle">新建项目</h3>
+      <button class="modal-close" id="projModalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>项目名称</label><input type="text" id="projName" placeholder="我的知识库" maxlength="64"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="projModalCancel">取消</button>
+      <button class="btn btn-primary" id="projModalSave">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- Group Modal -->
+<div class="modal-overlay" id="groupModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h3 id="grpModalTitle">新建分组</h3>
+      <button class="modal-close" id="grpModalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>分组名称</label><input type="text" id="grpName" placeholder="入门指南" maxlength="64"></div>
+      <input type="hidden" id="grpProjectId">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="grpModalCancel">取消</button>
+      <button class="btn btn-primary" id="grpModalSave">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import Markdown Modal -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <h3>导入 Markdown 文件</h3>
+      <button class="modal-close" id="importModalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="drop-zone" id="importDropZone" style="padding:28px;text-align:center;border:2px dashed var(--bd-2);border-radius:10px;cursor:pointer;transition:var(--t)">
+        <input type="file" id="importFileInput" accept=".md,.markdown,text/markdown" style="display:none">
+        <div style="font-size:1.4rem;margin-bottom:8px">📄</div>
+        <div style="color:var(--tx-2);font-size:.84rem">点击或拖拽 .md 文件到此处</div>
+        <div style="color:var(--tx-3);font-size:.72rem;margin-top:4px">支持 YAML frontmatter (title, slug, projectId, groupId, type, isPublic)</div>
+      </div>
+      <div id="importPreview" style="display:none">
+        <div class="field"><label>标题</label><input type="text" id="importTitle"></div>
+        <div class="field"><label>Slug</label><input type="text" id="importSlug"></div>
+        <div class="field">
+          <label>类型</label>
+          <select id="importType"><option value="markdown">Markdown</option><option value="html">HTML</option></select>
+        </div>
+        <div class="field">
+          <label>所属项目</label>
+          <select id="importProject"><option value="">-- 无 --</option></select>
+        </div>
+        <div class="field">
+          <label>所属分组</label>
+          <select id="importGroup"><option value="">-- 无 --</option></select>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="importPublic" checked> 公开访问
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="importModalCancel">取消</button>
+      <button class="btn btn-primary" id="importModalSave" disabled>导入</button>
     </div>
   </div>
 </div>
@@ -840,7 +971,7 @@ export function renderPage() {
   let perms = JSON.parse(localStorage.getItem(PERM_KEY) || 'null');
   let username = localStorage.getItem(USER_KEY);
   let isAdminUser = localStorage.getItem(ADMIN_KEY) === '1';
-  let mineItems = [], lbKey = null, editingSlug = null, userPages = [], vditorInst = null, userProtos = [];
+  let mineItems = [], lbKey = null, editingSlug = null, userPages = [], userProjects = [], userGroups = [], vditorInst = null, userProtos = [];
   let mineSelectMode = false; const mineSelected = new Set();
   const mineTagFilter = new Set();
   let lbList = [], lbIdx = -1;
@@ -1057,7 +1188,7 @@ export function renderPage() {
     token = null; perms = null; username = null; isAdminUser = false;
     updateUserArea();
     document.getElementById('mineGrid').innerHTML = '';
-    document.getElementById('pagesList').innerHTML = '';
+    document.getElementById('pagesTree').innerHTML = '';
     document.getElementById('protoTableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:#333;padding:32px">加载中…</td></tr>';
     userProtos = [];
     toast('已退出登录');
@@ -1665,30 +1796,121 @@ export function renderPage() {
   });
 
   // ── Pages ──
-  function renderPages() {
-    document.getElementById('pagesEmpty').style.display = userPages.length ? 'none' : 'block';
-    document.getElementById('pagesList').innerHTML = userPages.map((p, i) => \`
-      <div class="page-item">
-        <div class="page-item-info">
-          <div class="page-title">\${esc(p.title)} <span class="type-badge type-\${p.type==='markdown'?'md':'html'}">\${p.type}</span></div>
-          <div class="page-slug">/p/\${p.slug}</div>
-          <div class="page-meta">\${p.isPublic?'公开':'私密'} · \${new Date(p.createdAt).toLocaleDateString('zh-CN')}</div>
+  function renderPageTree() {
+    const q = (document.getElementById('pageSearch')?.value || '').toLowerCase();
+    const projFilter = document.getElementById('pageProjectFilter')?.value || 'all';
+    const pages = userPages.filter(p => {
+      if (q && !p.title.toLowerCase().includes(q) && !p.slug.toLowerCase().includes(q)) return false;
+      if (projFilter !== 'all' && p.projectId !== projFilter && p.projectId != null) return false;
+      if (projFilter === '_none_' && p.projectId != null) return false;
+      return true;
+    });
+    const projects = [...userProjects].sort((a,b) => (a.sort??0) - (b.sort??0));
+    const groups = [...userGroups].sort((a,b) => (a.sort??0) - (b.sort??0));
+    const projMap = Object.fromEntries(projects.map(p => [p.id, p]));
+    const grpMap = Object.fromEntries(groups.map(g => [g.id, g]));
+
+    document.getElementById('pagesEmpty').style.display = pages.length || projects.length ? 'none' : 'block';
+    let html = '';
+
+    // projects
+    for (const proj of projects) {
+      if (projFilter !== 'all' && projFilter !== proj.id) continue;
+      const projGroups = groups.filter(g => g.projectId === proj.id);
+      const projPages = pages.filter(p => p.projectId === proj.id && !p.groupId).sort((a,b) => (a.sort??0) - (b.sort??0));
+      const total = pages.filter(p => p.projectId === proj.id).length;
+      html += \`<div class="page-project" data-drag-type="project" data-drag-id="\${esc(proj.id)}">
+        <div class="page-project-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.expand-icon').classList.toggle('open')">
+          <span class="expand-icon open">▶</span>
+          <span class="project-name">\${esc(proj.name)}</span>
+          <span class="count-badge">\${total}</span>
+          <span class="proj-actions">
+            <button class="proj-act-btn" onclick="event.stopPropagation();editProject('\${esc(proj.id)}')" title="编辑">✏</button>
+            <button class="proj-act-btn" onclick="event.stopPropagation();createGroupInProject('\${esc(proj.id)}')" title="新建分组">+</button>
+            <button class="proj-act-btn" onclick="event.stopPropagation();deleteProject('\${esc(proj.id)}')" title="删除" style="color:var(--red)">✕</button>
+          </span>
         </div>
-        <a href="/p/\${p.slug}" target="_blank" class="btn btn-ghost">预览</a>
-        <button class="btn btn-ghost" onclick="editPage(\${i})">编辑</button>
-        <button class="btn btn-danger" onclick="deletePage('\${p.slug}')">删除</button>
+        <div class="page-project-body">\`;
+      // groups
+      for (const grp of projGroups) {
+        const grpPages = pages.filter(p => p.groupId === grp.id).sort((a,b) => (a.sort??0) - (b.sort??0));
+        html += \`<div class="page-group" data-drag-type="group" data-drag-id="\${esc(grp.id)}" data-project-id="\${esc(proj.id)}">
+          <div class="page-group-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.expand-icon').classList.toggle('open')">
+            <span class="expand-icon open" style="font-size:.55rem">▶</span>
+            <span class="group-name">\${esc(grp.name)}</span>
+            <span class="count-badge">\${grpPages.length}</span>
+            <span class="grp-actions">
+              <button class="grp-act-btn" onclick="event.stopPropagation();editGroup('\${esc(grp.id)}')" title="编辑">✏</button>
+              <button class="grp-act-btn" onclick="event.stopPropagation();deleteGroup('\${esc(grp.id)}')" title="删除" style="color:var(--red)">✕</button>
+            </span>
+          </div>
+          <div class="page-group-body page-tree-docs">\`;
+        for (const p of grpPages) html += renderDocItem(p);
+        html += \`</div></div>\`;
+      }
+      // pages directly under project (no group)
+      for (const p of projPages) html += \`<div class="page-tree-docs">\${renderDocItem(p)}</div>\`;
+      html += \`</div></div>\`;
+    }
+
+    // uncategorized pages
+    const uncat = pages.filter(p => !p.projectId).sort((a,b) => (a.sort??0) - (b.sort??0));
+    if (uncat.length) {
+      html += \`<div class="pages-uncategorized"><div class="uncat-label">未分类</div>\`;
+      for (const p of uncat) html += renderDocItem(p);
+      html += \`</div>\`;
+    }
+
+    document.getElementById('pagesTree').innerHTML = html;
+    updateProjectFilter(projects);
+    initPageDnD();
+  }
+
+  function renderDocItem(p) {
+    return \`<div class="page-tree-item" data-drag-type="page" data-drag-id="\${esc(p.slug)}" data-project-id="\${esc(p.projectId||'')}" data-group-id="\${esc(p.groupId||'')}">
+      <span class="drag-handle" title="拖拽排序">⠿</span>
+      <div class="page-item-info" style="flex:1;min-width:0">
+        <div class="page-title">\${esc(p.title)} <span class="type-badge type-\${p.type==='markdown'?'md':'html'}">\${p.type}</span></div>
+        <div class="page-meta">\${p.isPublic?'公开':'私密'} · /p/\${esc(p.slug)}</div>
       </div>
-    \`).join('');
+      <a href="/p/\${p.slug}" target="_blank" class="btn btn-ghost" style="font-size:.72rem">预览</a>
+      <button class="btn btn-ghost" onclick="editPageBySlug('\${esc(p.slug)}')" style="font-size:.72rem">编辑</button>
+      <button class="btn btn-danger" onclick="deletePage('\${esc(p.slug)}')" style="font-size:.72rem">删除</button>
+    </div>\`;
+  }
+
+  function updateProjectFilter(projects) {
+    const sel = document.getElementById('pageProjectFilter');
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="all">全部项目</option><option value="_none_">未分类</option>' +
+      projects.map(p => '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('');
+    sel.value = cur;
+  }
+
+  function updatePageProjectSelect(selEl, selectedId) {
+    if (!selEl) return;
+    selEl.innerHTML = '<option value="">-- 无 --</option>' +
+      userProjects.map(p => '<option value="'+esc(p.id)+'"'+(p.id===selectedId?' selected':'')+'>'+esc(p.name)+'</option>').join('');
+  }
+
+  function updatePageGroupSelect(selEl, projectId, selectedGroupId) {
+    if (!selEl) return;
+    const grps = userGroups.filter(g => g.projectId === projectId);
+    selEl.innerHTML = '<option value="">-- 无 --</option>' +
+      grps.map(g => '<option value="'+esc(g.id)+'"'+(g.id===selectedGroupId?' selected':'')+'>'+g.name+'</option>').join('');
   }
 
   async function loadPages() {
     if (!token) return;
-    if (!userPages.length) skelRows(document.getElementById('pagesList'), 4);
+    if (!userPages.length) document.getElementById('pagesTree').innerHTML = '';
     const res = await fetch('/api/pages', { headers: { Authorization: 'Bearer ' + token } });
-    if (!res.ok) { if (!userPages.length) document.getElementById('pagesList').innerHTML = ''; return; }
-    const { pages } = await res.json();
-    userPages = pages;
-    renderPages();
+    if (!res.ok) return;
+    const data = await res.json();
+    userPages = data.pages || [];
+    userProjects = data.projects || [];
+    userGroups = data.groups || [];
+    renderPageTree();
   }
 
   // 与后端 SLUG_RE 保持一致：首字符不可为 / ，整体仅允许 字母/数字/- _ / ，最长 120
@@ -1744,13 +1966,20 @@ export function renderPage() {
     document.getElementById('pmType').value = 'markdown';
     document.getElementById('pmContent').value = '';
     document.getElementById('pmPublic').checked = true;
+    updatePageProjectSelect(document.getElementById('pmProject'), '');
+    updatePageGroupSelect(document.getElementById('pmGroup'), '', '');
     document.getElementById('pageModalSave').textContent = '创建';
     document.getElementById('pageModal').classList.add('show');
     setTimeout(() => initVditor(''), 50);
   });
 
-  function editPage(idx) {
-    const p = userPages[idx];
+  document.getElementById('pmProject').addEventListener('change', () => {
+    const pid = document.getElementById('pmProject').value;
+    updatePageGroupSelect(document.getElementById('pmGroup'), pid, '');
+  });
+
+  function editPageBySlug(slug) {
+    const p = userPages.find(x => x.slug === slug);
     if (!p) return;
     editingSlug = p.slug;
     destroyVditor();
@@ -1768,10 +1997,15 @@ export function renderPage() {
     document.getElementById('pmType').value = p.type;
     document.getElementById('pmContent').value = p.content || '';
     document.getElementById('pmPublic').checked = p.isPublic !== false;
+    updatePageProjectSelect(document.getElementById('pmProject'), p.projectId || '');
+    updatePageGroupSelect(document.getElementById('pmGroup'), p.projectId || '', p.groupId || '');
     document.getElementById('pageModalSave').textContent = '保存';
     document.getElementById('pageModal').classList.add('show');
     setTimeout(() => switchEditorToType(p.type, p.content || ''), 50);
   }
+
+  // keep editPage(idx) as alias for backward compat with inline onclick
+  function editPage(idx) { if (userPages[idx]) editPageBySlug(userPages[idx].slug); }
 
   document.getElementById('pageModalSave').addEventListener('click', async () => {
     const isEdit = !!editingSlug;
@@ -1780,6 +2014,8 @@ export function renderPage() {
     const type    = document.getElementById('pmType').value;
     const content = getContent();
     const isPublic = document.getElementById('pmPublic').checked;
+    const projectId = document.getElementById('pmProject')?.value || null;
+    const groupId = document.getElementById('pmGroup')?.value || null;
     if (!slug) { toast('请填写后缀'); return; }
     if (!isEdit) {
       const reason = slugInvalidReason(slug);
@@ -1789,7 +2025,7 @@ export function renderPage() {
 
     const url  = isEdit ? '/api/pages/' + encodeURIComponent(editingSlug) : '/api/pages';
     const meth = isEdit ? 'PATCH' : 'POST';
-    const body = isEdit ? { title, content, type, isPublic } : { slug, title, content, type, isPublic };
+    const body = isEdit ? { title, content, type, isPublic, projectId, groupId } : { slug, title, content, type, isPublic, projectId, groupId };
 
     const res = await fetch(url, { method: meth, headers: authH(), body: JSON.stringify(body) });
     const data = await res.json();
@@ -1798,22 +2034,9 @@ export function renderPage() {
       toast('失败: ' + data.error); return;
     }
 
-    // Close modal and clean up editor immediately
     destroyVditor();
     document.getElementById('pageModal').classList.remove('show');
     toast(isEdit ? '已保存' : '页面已创建');
-
-    // Optimistic update — avoid KV list eventual-consistency delay
-    const now = Date.now();
-    if (isEdit) {
-      const idx = userPages.findIndex(p => p.slug === editingSlug);
-      if (idx >= 0) Object.assign(userPages[idx], { title: title || slug, content, type, isPublic, updatedAt: now });
-    } else {
-      userPages.unshift({ slug, title: title || slug, content, type, isPublic, createdAt: now, updatedAt: now });
-    }
-    renderPages();
-
-    // Background sync to stay consistent with server
     loadPages();
   });
 
@@ -1830,6 +2053,292 @@ export function renderPage() {
   ['pageModalClose','pageModalCancel'].forEach(id =>
     document.getElementById(id).addEventListener('click', closePageModal)
   );
+
+  // ── Project CRUD ──
+  let editingProjectId = null;
+
+  document.getElementById('newProjectBtn').addEventListener('click', () => {
+    editingProjectId = null;
+    document.getElementById('projModalTitle').textContent = '新建项目';
+    document.getElementById('projName').value = '';
+    document.getElementById('projModalSave').textContent = '创建';
+    document.getElementById('projectModal').classList.add('show');
+  });
+
+  window.editProject = function(id) {
+    const proj = userProjects.find(p => p.id === id);
+    if (!proj) return;
+    editingProjectId = id;
+    document.getElementById('projModalTitle').textContent = '编辑项目';
+    document.getElementById('projName').value = proj.name;
+    document.getElementById('projModalSave').textContent = '保存';
+    document.getElementById('projectModal').classList.add('show');
+  };
+
+  document.getElementById('projModalSave').addEventListener('click', async () => {
+    const name = document.getElementById('projName').value.trim();
+    if (!name) { toast('请输入项目名称'); return; }
+    const isEdit = !!editingProjectId;
+    const url = isEdit ? '/api/projects/' + encodeURIComponent(editingProjectId) : '/api/projects';
+    const meth = isEdit ? 'PATCH' : 'POST';
+    const res = await fetch(url, { method: meth, headers: authH(), body: JSON.stringify({ name }) });
+    if (!res.ok) { toast('失败'); return; }
+    document.getElementById('projectModal').classList.remove('show');
+    toast(isEdit ? '项目已更新' : '项目已创建');
+    loadPages();
+  });
+
+  window.deleteProject = async function(id) {
+    const proj = userProjects.find(p => p.id === id);
+    if (!proj) return;
+    if (!confirm('确认删除项目「' + proj.name + '」？其下所有文档将变为未分类')) return;
+    await fetch('/api/projects/' + encodeURIComponent(id), { method: 'DELETE', headers: authH() });
+    toast('项目已删除'); loadPages();
+  };
+
+  ['projModalClose','projModalCancel'].forEach(id =>
+    document.getElementById(id)?.addEventListener('click', () => document.getElementById('projectModal').classList.remove('show'))
+  );
+
+  // ── Group CRUD ──
+  let editingGroupId = null;
+
+  window.createGroupInProject = function(projectId) {
+    editingGroupId = null;
+    document.getElementById('grpModalTitle').textContent = '新建分组';
+    document.getElementById('grpName').value = '';
+    document.getElementById('grpProjectId').value = projectId;
+    document.getElementById('grpModalSave').textContent = '创建';
+    document.getElementById('groupModal').classList.add('show');
+  };
+
+  window.editGroup = function(id) {
+    const grp = userGroups.find(g => g.id === id);
+    if (!grp) return;
+    editingGroupId = id;
+    document.getElementById('grpModalTitle').textContent = '编辑分组';
+    document.getElementById('grpName').value = grp.name;
+    document.getElementById('grpProjectId').value = grp.projectId;
+    document.getElementById('grpModalSave').textContent = '保存';
+    document.getElementById('groupModal').classList.add('show');
+  };
+
+  document.getElementById('grpModalSave').addEventListener('click', async () => {
+    const name = document.getElementById('grpName').value.trim();
+    const projectId = document.getElementById('grpProjectId').value;
+    if (!name) { toast('请输入分组名称'); return; }
+    const isEdit = !!editingGroupId;
+    const url = isEdit ? '/api/groups/' + encodeURIComponent(editingGroupId) : '/api/groups';
+    const meth = isEdit ? 'PATCH' : 'POST';
+    const body = isEdit ? { name } : { projectId, name };
+    const res = await fetch(url, { method: meth, headers: authH(), body: JSON.stringify(body) });
+    if (!res.ok) { toast('失败'); return; }
+    document.getElementById('groupModal').classList.remove('show');
+    toast(isEdit ? '分组已更新' : '分组已创建');
+    loadPages();
+  });
+
+  window.deleteGroup = async function(id) {
+    const grp = userGroups.find(g => g.id === id);
+    if (!grp) return;
+    if (!confirm('确认删除分组「' + grp.name + '」？其下文档将移至项目根')) return;
+    await fetch('/api/groups/' + encodeURIComponent(id), { method: 'DELETE', headers: authH() });
+    toast('分组已删除'); loadPages();
+  };
+
+  ['grpModalClose','grpModalCancel'].forEach(id =>
+    document.getElementById(id)?.addEventListener('click', () => document.getElementById('groupModal').classList.remove('show'))
+  );
+
+  // ── Import ──
+  let importFile = null, importMd = '';
+
+  document.getElementById('importPageBtn').addEventListener('click', () => {
+    importFile = null; importMd = '';
+    document.getElementById('importDropZone').style.display = '';
+    document.getElementById('importPreview').style.display = 'none';
+    document.getElementById('importModalSave').disabled = true;
+    document.getElementById('importModal').classList.add('show');
+  });
+
+  document.getElementById('importDropZone').addEventListener('click', () => {
+    document.getElementById('importFileInput').click();
+  });
+
+  document.getElementById('importFileInput').addEventListener('change', (e) => {
+    const f = e.target.files[0];
+    if (f) processImportFile(f);
+  });
+
+  document.getElementById('importDropZone').addEventListener('dragover', (e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--accent)'; });
+  document.getElementById('importDropZone').addEventListener('dragleave', (e) => { e.currentTarget.style.borderColor = ''; });
+  document.getElementById('importDropZone').addEventListener('drop', (e) => {
+    e.preventDefault(); e.currentTarget.style.borderColor = '';
+    const f = e.dataTransfer.files[0];
+    if (f) processImportFile(f);
+  });
+
+  function processImportFile(file) {
+    importFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      importMd = e.target.result;
+      const { metadata, content } = parseFrontmatter(importMd);
+      document.getElementById('importTitle').value = metadata.title || file.name.replace(/\\.(md|markdown)$/i, '');
+      document.getElementById('importSlug').value = metadata.slug || generateSlugFromFile(file.name);
+      document.getElementById('importType').value = metadata.type || 'markdown';
+      document.getElementById('importPublic').checked = metadata.isPublic !== false;
+      updatePageProjectSelect(document.getElementById('importProject'), metadata.projectId || '');
+      updatePageGroupSelect(document.getElementById('importGroup'), metadata.projectId || '', metadata.groupId || '');
+      document.getElementById('importDropZone').style.display = 'none';
+      document.getElementById('importPreview').style.display = '';
+      document.getElementById('importModalSave').disabled = false;
+    };
+    reader.readAsText(file);
+  }
+
+  function parseFrontmatter(text) {
+    const match = text.match(/^---\\r?\\n([\\s\\S]*?)\\r?\\n---\\r?\\n?/);
+    if (!match) return { metadata: {}, content: text };
+    const yaml = match[1];
+    const content = text.slice(match[0].length);
+    const metadata = {};
+    for (const line of yaml.split('\\n')) {
+      const colonIdx = line.indexOf(':');
+      if (colonIdx === -1) continue;
+      const key = line.slice(0, colonIdx).trim();
+      const val = line.slice(colonIdx + 1).trim();
+      if (key === 'isPublic') metadata[key] = val === 'true';
+      else metadata[key] = val;
+    }
+    return { metadata, content };
+  }
+
+  function generateSlugFromFile(filename) {
+    return filename.replace(/\\.(md|markdown)$/i, '').replace(/[^a-zA-Z0-9_-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 120) || 'imported-' + Date.now();
+  }
+
+  document.getElementById('importProject')?.addEventListener('change', () => {
+    const pid = document.getElementById('importProject').value;
+    updatePageGroupSelect(document.getElementById('importGroup'), pid, '');
+  });
+
+  document.getElementById('importModalSave').addEventListener('click', async () => {
+    if (!importFile || !importMd) return;
+    const fd = new FormData();
+    fd.append('file', importFile);
+    const title = document.getElementById('importTitle').value.trim();
+    const slug = document.getElementById('importSlug').value.trim();
+    const type = document.getElementById('importType').value;
+    const isPublic = document.getElementById('importPublic').checked ? 'true' : 'false';
+    const pid = document.getElementById('importProject')?.value || '';
+    const gid = document.getElementById('importGroup')?.value || '';
+    fd.append('title', title);
+    fd.append('slug', slug);
+    fd.append('type', type);
+    fd.append('isPublic', isPublic);
+    if (pid) fd.append('projectId', pid);
+    if (gid) fd.append('groupId', gid);
+
+    const res = await fetch('/api/pages/import', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd });
+    if (!res.ok) { const d = await res.json().catch(() => ({})); toast('导入失败: ' + (d.error || '')); return; }
+    document.getElementById('importModal').classList.remove('show');
+    toast('页面已导入');
+    loadPages();
+  });
+
+  ['importModalClose','importModalCancel'].forEach(id =>
+    document.getElementById(id)?.addEventListener('click', () => document.getElementById('importModal').classList.remove('show'))
+  );
+
+  // ── Pages search/filter ──
+  document.getElementById('pageSearch')?.addEventListener('input', renderPageTree);
+  document.getElementById('pageProjectFilter')?.addEventListener('change', renderPageTree);
+  document.getElementById('refreshPages')?.addEventListener('click', loadPages);
+
+  // ── Page Drag and Drop ──
+  let dragState = null;
+
+  function initPageDnD() {
+    document.querySelectorAll('.page-tree-item .drag-handle').forEach(handle => {
+      handle.addEventListener('mousedown', () => {
+        const item = handle.closest('.page-tree-item');
+        if (item) item.setAttribute('draggable', 'true');
+      });
+      handle.addEventListener('mouseup', () => {
+        const item = handle.closest('.page-tree-item');
+        if (item) item.setAttribute('draggable', 'false');
+      });
+    });
+    document.querySelectorAll('.page-tree-item[draggable="true"],.page-tree-item').forEach(el => {
+      el.addEventListener('dragstart', onDragStart);
+      el.addEventListener('dragend', onDragEnd);
+      el.addEventListener('dragover', onDragOver);
+      el.addEventListener('drop', onDrop);
+      el.addEventListener('dragleave', onDragLeave);
+    });
+  }
+
+  function onDragStart(e) {
+    const el = e.currentTarget;
+    dragState = { type: el.dataset.dragType, id: el.dataset.dragId, el };
+    el.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', el.dataset.dragId);
+  }
+  function onDragEnd(e) {
+    e.currentTarget.classList.remove('dragging');
+    document.querySelectorAll('.drag-over-top,.drag-over-bot,.drag-over-proj,.drag-over-grp').forEach(el => {
+      el.classList.remove('drag-over-top','drag-over-bot','drag-over-proj','drag-over-grp');
+    });
+    dragState = null;
+  }
+  function onDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const target = e.currentTarget;
+    if (!dragState || target === dragState.el) return;
+    const rect = target.getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    target.classList.remove('drag-over-top','drag-over-bot');
+    target.classList.add(e.clientY < midY ? 'drag-over-top' : 'drag-over-bot');
+  }
+  function onDragLeave(e) {
+    e.currentTarget.classList.remove('drag-over-top','drag-over-bot');
+  }
+  async function onDrop(e) {
+    e.preventDefault();
+    const target = e.currentTarget;
+    target.classList.remove('drag-over-top','drag-over-bot');
+    if (!dragState || target === dragState.el) return;
+
+    // page reorder within same group
+    if (dragState.type === 'page' && target.dataset.dragType === 'page') {
+      const targetGroupId = target.dataset.groupId || '';
+      const srcGroupId = dragState.el.dataset.groupId || '';
+      if (targetGroupId === srcGroupId) {
+        // same group: reorder
+        const container = target.parentElement;
+        const items = [...container.querySelectorAll('.page-tree-item')];
+        const slugs = items.map(el => el.dataset.dragId);
+        const oldIdx = slugs.indexOf(dragState.id);
+        const newIdx = slugs.indexOf(target.dataset.dragId);
+        if (oldIdx !== -1 && newIdx !== -1 && oldIdx !== newIdx) {
+          // optimistic DOM reorder
+          if (oldIdx < newIdx) container.insertBefore(dragState.el, items[newIdx].nextSibling);
+          else container.insertBefore(dragState.el, items[newIdx]);
+          const newOrder = [...container.querySelectorAll('.page-tree-item')].map(el => el.dataset.dragId);
+          await fetch('/api/pages/reorder', { method: 'PATCH', headers: authH(), body: JSON.stringify({ groupId: targetGroupId || null, order: newOrder }) });
+        }
+      } else {
+        // move to different group
+        const newProjectId = target.dataset.projectId || null;
+        const newGroupId = targetGroupId || null;
+        await fetch('/api/pages/' + encodeURIComponent(dragState.id), { method: 'PATCH', headers: authH(), body: JSON.stringify({ projectId: newProjectId, groupId: newGroupId }) });
+      }
+      loadPages();
+    }
+  }
 
   // ── Lightbox ──
   function openLb(key, showDelete, context) {
@@ -2714,7 +3223,7 @@ export function renderPage() {
     const lb = document.getElementById('lightbox');
     if (e.key === 'Escape') {
       lb.classList.remove('show'); closePageModal();
-      ['protoEditModal','protoUpdateModal','userProtoVersionModal','trashModal','tagModal'].forEach(id => {
+      ['protoEditModal','protoUpdateModal','userProtoVersionModal','trashModal','tagModal','projectModal','groupModal','importModal'].forEach(id => {
         const el = document.getElementById(id); if (el) el.classList.remove('show');
       });
       closeChangePwdModal();

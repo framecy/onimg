@@ -809,13 +809,22 @@ export function renderAdminPage() {
         </div>
         <div class="section-header">
           <h3>所有页面</h3>
+          <input class="search-input" id="adminPageSearch" type="text" placeholder="搜索标题/slug/作者…" style="max-width:200px">
           <div class="spacer"></div>
           <button class="btn btn-primary" id="adminNewPageBtn">+ 新建页面</button>
         </div>
         <div class="table-wrap">
           <table class="data-table">
-            <thead><tr><th>标题 / Slug</th><th>类型</th><th>作者</th><th>状态</th><th>更新</th><th></th></tr></thead>
-            <tbody id="adminPagesBody"><tr><td colspan="6" style="text-align:center;color:var(--tx-3);padding:24px">加载中…</td></tr></tbody>
+            <thead><tr>
+              <th class="sort-th" onclick="adminPageSort('title')">标题 / Slug</th>
+              <th class="sort-th" onclick="adminPageSort('type')">类型</th>
+              <th class="sort-th" onclick="adminPageSort('owner')">作者</th>
+              <th>项目</th><th>分组</th>
+              <th class="sort-th" onclick="adminPageSort('status')">状态</th>
+              <th class="sort-th" onclick="adminPageSort('updated')">更新</th>
+              <th></th>
+            </tr></thead>
+            <tbody id="adminPagesBody"><tr><td colspan="8" style="text-align:center;color:var(--tx-3);padding:24px">加载中…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1002,6 +1011,10 @@ export function renderAdminPage() {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="field"><label>类型</label><select id="apmType"><option value="markdown">Markdown</option><option value="html">HTML</option></select></div>
         <div class="field"><label style="display:flex;align-items:center;gap:8px;margin-top:26px;cursor:pointer"><input type="checkbox" id="apmPublic" checked> 公开访问</label></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field"><label>项目</label><select id="apmProject"><option value="">-- 无 --</option></select></div>
+        <div class="field"><label>分组</label><select id="apmGroup"><option value="">-- 无 --</option></select></div>
       </div>
       <div class="field" id="apmPwdSection" style="display:none">
         <label>访问密码</label>
@@ -2116,21 +2129,50 @@ export function renderAdminPage() {
     }
   }
 
+  let adminAllPages = [], adminAllProjects = [], adminAllGroups = [];
+  let adminPageSortKey = 'updated', adminPageSortAsc = false;
+
   async function loadAdminPages() {
-    document.getElementById('adminPagesBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#333;padding:24px">加载中…</td></tr>';
+    document.getElementById('adminPagesBody').innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--tx-3);padding:24px">加载中…</td></tr>';
     const res = await fetch('/admin/pages', { headers: authH() });
     if (!res.ok) return;
-    const { pages } = await res.json();
+    const data = await res.json();
+    adminAllPages = data.pages || [];
+    adminAllProjects = data.projects || [];
+    adminAllGroups = data.groups || [];
+    renderAdminPages();
+  }
+
+  function renderAdminPages() {
+    const q = (document.getElementById('adminPageSearch')?.value || '').toLowerCase();
+    const projMap = Object.fromEntries(adminAllProjects.map(p => [p.id, p.name]));
+    const grpMap = Object.fromEntries(adminAllGroups.map(g => [g.id, g.name]));
+    let filtered = adminAllPages;
+    if (q) filtered = filtered.filter(p =>
+      (p.title||'').toLowerCase().includes(q) || p.slug.toLowerCase().includes(q) || (p.owner||'').toLowerCase().includes(q)
+    );
+    const sorted = [...filtered].sort((a, b) => {
+      let va, vb;
+      switch (adminPageSortKey) {
+        case 'title': va = (a.title||'').toLowerCase(); vb = (b.title||'').toLowerCase(); return adminPageSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+        case 'type': va = a.type||''; vb = b.type||''; return adminPageSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+        case 'owner': va = (a.owner||'').toLowerCase(); vb = (b.owner||'').toLowerCase(); return adminPageSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+        case 'status': va = a.isPublic ? 0 : 1; vb = b.isPublic ? 0 : 1; return adminPageSortAsc ? va - vb : vb - va;
+        case 'updated': default: va = a.updatedAt||0; vb = b.updatedAt||0; return adminPageSortAsc ? va - vb : vb - va;
+      }
+    });
     const TYPE_LABEL = { markdown: '<span style="background:rgba(59,130,246,.1);color:#3b82f6;padding:2px 6px;border-radius:4px;font-size:.72rem">MD</span>', html: '<span style="background:rgba(245,158,11,.1);color:#f59e0b;padding:2px 6px;border-radius:4px;font-size:.72rem">HTML</span>' };
-    document.getElementById('adminPagesBody').innerHTML = pages.length
-      ? pages.map(p => \`<tr>
+    document.getElementById('adminPagesBody').innerHTML = sorted.length
+      ? sorted.map(p => \`<tr>
           <td>
             <div style="font-weight:500;font-size:.88rem">\${esc(p.title)}</div>
-            <div style="font-family:monospace;font-size:.72rem;color:#555">/p/\${p.slug}</div>
+            <div style="font-family:monospace;font-size:.72rem;color:var(--tx-3)">/p/\${p.slug}</div>
           </td>
           <td>\${TYPE_LABEL[p.type] || p.type}</td>
           <td class="muted">@\${p.owner}</td>
-          <td>\${p.isPublic ? '<span style="color:#22c55e;font-size:.78rem">公开</span>' : '<span style="color:#555;font-size:.78rem">私密</span>'}</td>
+          <td class="muted" style="font-size:.78rem">\${p.projectId ? esc(projMap[p.projectId] || '--') : '--'}</td>
+          <td class="muted" style="font-size:.78rem">\${p.groupId ? esc(grpMap[p.groupId] || '--') : '--'}</td>
+          <td>\${p.isPublic ? '<span style="color:var(--green);font-size:.78rem">公开</span>' : '<span style="color:var(--tx-3);font-size:.78rem">私密</span>'}</td>
           <td class="muted">\${timeAgo(p.updatedAt)}</td>
           <td style="white-space:nowrap">
             <a href="/p/\${p.slug}" target="_blank" class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem;text-decoration:none">预览</a>
@@ -2139,8 +2181,16 @@ export function renderAdminPage() {
             <button class="btn btn-danger" style="padding:4px 8px;font-size:.75rem" onclick="adminDeletePage('\${p.slug}')">删除</button>
           </td>
         </tr>\`).join('')
-      : '<tr><td colspan="6" style="text-align:center;color:#333;padding:24px">暂无页面</td></tr>';
+      : '<tr><td colspan="8" style="text-align:center;color:var(--tx-3);padding:24px">暂无页面</td></tr>';
   }
+
+  window.adminPageSort = function(key) {
+    if (adminPageSortKey === key) adminPageSortAsc = !adminPageSortAsc;
+    else { adminPageSortKey = key; adminPageSortAsc = key === 'title' || key === 'owner'; }
+    renderAdminPages();
+  };
+
+  document.getElementById('adminPageSearch')?.addEventListener('input', renderAdminPages);
 
   function genApmPwd() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
@@ -2163,8 +2213,8 @@ export function renderAdminPage() {
 
   async function adminEditPage(slug) {
     const res = await fetch('/admin/pages', { headers: authH() });
-    const { pages } = await res.json();
-    const p = pages.find(x => x.slug === slug);
+    const data = await res.json();
+    const p = (data.pages || []).find(x => x.slug === slug);
     if (p) adminOpenPageModal(p);
   }
 
@@ -2172,6 +2222,21 @@ export function renderAdminPage() {
     if (!confirm('确认删除页面 /p/' + slug + '？')) return;
     await fetch('/admin/pages/' + encodeURIComponent(slug), { method:'DELETE', headers:authH() });
     toast('已删除'); loadAdminPages();
+  }
+
+  function adminUpdateProjectSelect(selectedId) {
+    const sel = document.getElementById('apmProject');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">-- 无 --</option>' +
+      adminAllProjects.map(p => '<option value="'+esc(p.id)+'"'+(p.id===selectedId?' selected':'')+'>'+esc(p.name)+'</option>').join('');
+  }
+
+  function adminUpdateGroupSelect(projectId, selectedGroupId) {
+    const sel = document.getElementById('apmGroup');
+    if (!sel) return;
+    const grps = adminAllGroups.filter(g => g.projectId === projectId);
+    sel.innerHTML = '<option value="">-- 无 --</option>' +
+      grps.map(g => '<option value="'+esc(g.id)+'"'+(g.id===selectedGroupId?' selected':'')+'>'+esc(g.name)+'</option>').join('');
   }
 
   function adminOpenPageModal(page) {
@@ -2196,6 +2261,8 @@ export function renderAdminPage() {
       pwdSec.style.display = 'none';
       pwdInput.value = '';
     }
+    adminUpdateProjectSelect(page?.projectId || '');
+    adminUpdateGroupSelect(page?.projectId || '', page?.groupId || '');
     document.getElementById('apmSave').textContent = page ? '保存' : '创建';
     document.getElementById('apmSlugPreview').textContent = page ? location.origin + '/p/' + page.slug : '';
     modal.classList.add('show');
@@ -2213,6 +2280,10 @@ export function renderAdminPage() {
     switchApmEditorToType(type, currentContent);
   });
 
+  document.getElementById('apmProject')?.addEventListener('change', () => {
+    adminUpdateGroupSelect(document.getElementById('apmProject').value, '');
+  });
+
   document.getElementById('apmSave').addEventListener('click', async () => {
     const slug    = document.getElementById('apmSlug').value.trim();
     const title   = document.getElementById('apmTitle').value.trim();
@@ -2222,11 +2293,15 @@ export function renderAdminPage() {
       : document.getElementById('apmContent').value;
     const isPublic = document.getElementById('apmPublic').checked;
     const accessPassword = !isPublic ? (document.getElementById('apmPassword').value.trim() || null) : null;
+    const projectId = document.getElementById('apmProject')?.value || null;
+    const groupId = document.getElementById('apmGroup')?.value || null;
     if (!slug || !content) { toast('Slug 和内容不能为空'); return; }
     const isEdit = !!adminEditingSlug;
     const url  = isEdit ? '/admin/pages/' + encodeURIComponent(adminEditingSlug) : '/admin/pages';
     const meth = isEdit ? 'PATCH' : 'POST';
-    const body = isEdit ? { title, content, type, isPublic, accessPassword } : { slug, title, content, type, isPublic, accessPassword };
+    const body = isEdit
+      ? { title, content, type, isPublic, accessPassword, projectId, groupId }
+      : { slug, title, content, type, isPublic, accessPassword, projectId, groupId };
     const res = await fetch(url, { method:meth, headers:authH(), body:JSON.stringify(body) });
     const data = await res.json();
     if (!res.ok) { toast('失败: ' + data.error); return; }

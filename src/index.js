@@ -11,7 +11,9 @@ import { handleListUsers, handleCreateUser, handleUpdateUser, handleDeleteUser }
 import { handleGetConfig, handleUpdateConfig } from './admin/config-handler.js';
 import { handleUserLogin, verifyUserToken, getUserQuotaInfo, getUser, putUser, hashPassword, randomSalt } from './user-auth.js';
 import { servePage } from './pages/handler.js';
-import { listPages, handleListPages, handleCreatePage, handleUpdatePage, handleDeletePage } from './pages/manage.js';
+import { listPages, handleListPages, handleCreatePage, handleUpdatePage, handleDeletePage, handleReorderPages, handleImportPage } from './pages/manage.js';
+import { handleCreateProject, handleListProjects, handleUpdateProject, handleDeleteProject, handleReorderProjects } from './pages/project.js';
+import { handleCreateGroup, handleListGroups, handleUpdateGroup, handleDeleteGroup, handleReorderGroups } from './pages/group.js';
 import { handleProtoUpload, handleProtoUploadInit, handleProtoFileBatch, handleProtoFinalize } from './proto/upload.js';
 import { serveProto } from './proto/serve.js';
 import { listProtos, deleteProto, updateProtoMeta, deleteProtoVersion } from './proto/manage.js';
@@ -96,8 +98,22 @@ export default {
       // User pages
       if (method === 'GET'    && path === '/api/pages')            return withCors(await userPagesHandler(request, env), request);
       if (method === 'POST'   && path === '/api/pages')            return withCors(await userPageCreate(request, env), request);
+      if (method === 'POST'   && path === '/api/pages/import')    return withCors(await userPageImportHandler(request, env), request);
+      if (method === 'PATCH'  && path === '/api/pages/reorder')   return withCors(await userPageReorderHandler(request, env), request);
       if (method === 'PATCH'  && path.startsWith('/api/pages/'))   return withCors(await userPageUpdate(request, env, path.slice('/api/pages/'.length)), request);
       if (method === 'DELETE' && path.startsWith('/api/pages/'))   return withCors(await userPageDelete(request, env, path.slice('/api/pages/'.length)), request);
+      // User projects
+      if (method === 'GET'    && path === '/api/projects')         return withCors(await userProjectListHandler(request, env), request);
+      if (method === 'POST'   && path === '/api/projects')         return withCors(await userProjectCreateHandler(request, env), request);
+      if (method === 'PATCH'  && path === '/api/projects/reorder') return withCors(await userProjectReorderHandler(request, env), request);
+      if (method === 'PATCH'  && path.startsWith('/api/projects/')) return withCors(await userProjectUpdateHandler(request, env, path.slice('/api/projects/'.length)), request);
+      if (method === 'DELETE' && path.startsWith('/api/projects/')) return withCors(await userProjectDeleteHandler(request, env, path.slice('/api/projects/'.length)), request);
+      // User groups
+      if (method === 'GET'    && path === '/api/groups')           return withCors(await userGroupListHandler(request, env), request);
+      if (method === 'POST'   && path === '/api/groups')           return withCors(await userGroupCreateHandler(request, env), request);
+      if (method === 'PATCH'  && path === '/api/groups/reorder')   return withCors(await userGroupReorderHandler(request, env), request);
+      if (method === 'PATCH'  && path.startsWith('/api/groups/'))  return withCors(await userGroupUpdateHandler(request, env, path.slice('/api/groups/'.length)), request);
+      if (method === 'DELETE' && path.startsWith('/api/groups/'))  return withCors(await userGroupDeleteHandler(request, env, path.slice('/api/groups/'.length)), request);
       // User prototypes
       if (method === 'POST'   && path === '/upload/proto')              return withCors(await protoUploadHandler(request, env), request);
       if (method === 'POST'   && path === '/upload/proto/init')         return withCors(await protoUploadInitHandler(request, env), request);
@@ -192,8 +208,10 @@ export default {
         }
         if (method === 'PATCH'  && path.startsWith('/admin/protos/'))      return withCors(await updateProtoMeta(env, decodeURIComponent(path.slice('/admin/protos/'.length)), null, true, await request.json()), request);
         // Admin pages
-        if (method === 'GET'    && path === '/admin/pages')               return withCors(Response.json({ pages: await listPages(env, null) }), request);
+        if (method === 'GET'    && path === '/admin/pages')               return withCors(await handleListPages(request, env, null), request);
         if (method === 'POST'   && path === '/admin/pages')               return withCors(await handleCreatePage(request, env, env.ADMIN_USERNAME ?? 'admin'), request);
+        if (method === 'POST'   && path === '/admin/pages/import')        return withCors(await adminPageImportHandler(request, env), request);
+        if (method === 'PATCH'  && path === '/admin/pages/reorder')      return withCors(await handleReorderPages(request, env, env.ADMIN_USERNAME ?? 'admin', true), request);
         if (method === 'PATCH'  && path.startsWith('/admin/pages/'))      return withCors(await handleUpdatePage(request, env, decodeURIComponent(path.slice('/admin/pages/'.length)), env.ADMIN_USERNAME, true), request);
         if (method === 'DELETE' && path.startsWith('/admin/pages/')) {
           const target = decodeURIComponent(path.slice('/admin/pages/'.length));
@@ -201,6 +219,18 @@ export default {
           ctx.waitUntil(logAudit(env.STATS, { action: 'page.delete', actor: 'admin', target, status: res.status < 400 ? 'ok' : 'fail', ip: clientIp(request) }));
           return withCors(res, request);
         }
+        // Admin projects
+        if (method === 'GET'    && path === '/admin/projects')           return withCors(await handleListProjects(request, env, null, true), request);
+        if (method === 'POST'   && path === '/admin/projects')          return withCors(await handleCreateProject(request, env, env.ADMIN_USERNAME ?? 'admin', true), request);
+        if (method === 'PATCH'  && path === '/admin/projects/reorder')  return withCors(await handleReorderProjects(request, env, null, true), request);
+        if (method === 'PATCH'  && path.startsWith('/admin/projects/')) return withCors(await handleUpdateProject(request, env, decodeURIComponent(path.slice('/admin/projects/'.length)), env.ADMIN_USERNAME ?? 'admin', true), request);
+        if (method === 'DELETE' && path.startsWith('/admin/projects/')) return withCors(await handleDeleteProject(env, decodeURIComponent(path.slice('/admin/projects/'.length)), env.ADMIN_USERNAME ?? 'admin', true), request);
+        // Admin groups
+        if (method === 'GET'    && path === '/admin/groups')             return withCors(await handleListGroups(request, env, null, true), request);
+        if (method === 'POST'   && path === '/admin/groups')             return withCors(await handleCreateGroup(request, env, env.ADMIN_USERNAME ?? 'admin', true), request);
+        if (method === 'PATCH'  && path === '/admin/groups/reorder')     return withCors(await handleReorderGroups(request, env, null, true), request);
+        if (method === 'PATCH'  && path.startsWith('/admin/groups/'))    return withCors(await handleUpdateGroup(request, env, decodeURIComponent(path.slice('/admin/groups/'.length)), env.ADMIN_USERNAME ?? 'admin', true), request);
+        if (method === 'DELETE' && path.startsWith('/admin/groups/'))    return withCors(await handleDeleteGroup(env, decodeURIComponent(path.slice('/admin/groups/'.length)), env.ADMIN_USERNAME ?? 'admin', true), request);
 
         return withCors(new Response('Not Found', { status: 404 }), request);
       }
@@ -275,6 +305,72 @@ async function userPageDelete(request, env, slug) {
   const [user, err] = await requireUser(request, env);
   if (err) return err;
   return handleDeletePage(env, slug, user.username, false);
+}
+async function userPageReorderHandler(request, env) {
+  const [user, err] = await requireUser(request, env);
+  if (err) return err;
+  return handleReorderPages(request, env, user.username, false);
+}
+async function userPageImportHandler(request, env) {
+  const [user, err] = await requireUser(request, env);
+  if (err) return err;
+  return handleImportPage(request, env, user.username);
+}
+async function adminPageImportHandler(request, env) {
+  return handleImportPage(request, env, env.ADMIN_USERNAME ?? 'admin');
+}
+
+// ── User project/group helpers ──────────────────────────────────────────────
+
+async function userProjectListHandler(request, env) {
+  const [user, err] = await requireUser(request, env);
+  if (err) return err;
+  return handleListProjects(request, env, user.username, false);
+}
+async function userProjectCreateHandler(request, env) {
+  const [user, err] = await requireUser(request, env);
+  if (err) return err;
+  return handleCreateProject(request, env, user.username, false);
+}
+async function userProjectUpdateHandler(request, env, id) {
+  const [user, err] = await requireUser(request, env);
+  if (err) return err;
+  return handleUpdateProject(request, env, decodeURIComponent(id), user.username, false);
+}
+async function userProjectDeleteHandler(request, env, id) {
+  const [user, err] = await requireUser(request, env);
+  if (err) return err;
+  return handleDeleteProject(env, decodeURIComponent(id), user.username, false);
+}
+async function userProjectReorderHandler(request, env) {
+  const [user, err] = await requireUser(request, env);
+  if (err) return err;
+  return handleReorderProjects(request, env, user.username, false);
+}
+async function userGroupListHandler(request, env) {
+  const [user, err] = await requireUser(request, env);
+  if (err) return err;
+  return handleListGroups(request, env, user.username, false);
+}
+async function userGroupCreateHandler(request, env) {
+  const [user, err] = await requireUser(request, env);
+  if (err) return err;
+  return handleCreateGroup(request, env, user.username, false);
+}
+async function userGroupUpdateHandler(request, env, id) {
+  const [user, err] = await requireUser(request, env);
+  if (err) return err;
+  return handleUpdateGroup(request, env, decodeURIComponent(id), user.username, false);
+}
+async function userGroupDeleteHandler(request, env, id) {
+  const [user, err] = await requireUser(request, env);
+  if (err) return err;
+  return handleDeleteGroup(env, decodeURIComponent(id), user.username, false);
+}
+async function userGroupReorderHandler(request, env) {
+  const [user, err] = await requireUser(request, env);
+  if (err) return err;
+  return handleReorderGroups(request, env, user.username, false);
 }
 
 // ── Proto helpers ─────────────────────────────────────────────────────────────
