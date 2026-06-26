@@ -2432,10 +2432,10 @@ export function renderAdminPage() {
   document.getElementById('adminNewPageBtn').addEventListener('click', () => adminOpenPageModal(null));
 
   async function adminEditPage(slug) {
-    const res = await fetch('/admin/pages', { headers: authH() });
-    const data = await res.json();
-    const p = (data.pages || []).find(x => x.slug === slug);
-    if (p) adminOpenPageModal(p);
+    const res = await fetch('/admin/pages/' + encodeURIComponent(slug), { headers: authH() });
+    if (!res.ok) { toast('获取页面失败'); return; }
+    const p = await res.json();
+    adminOpenPageModal(p);
   }
 
   async function adminDeletePage(slug) {

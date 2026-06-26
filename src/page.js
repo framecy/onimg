@@ -1976,7 +1976,7 @@ export function renderPage() {
     updatePageGroupSelect(document.getElementById('pmGroup'), pid, '');
   });
 
-  function editPageBySlug(slug) {
+  async function editPageBySlug(slug) {
     const p = userPages.find(x => x.slug === slug);
     if (!p) return;
     editingSlug = p.slug;
@@ -1993,13 +1993,17 @@ export function renderPage() {
     prevEl.textContent = location.origin + '/p/' + p.slug;
     setSlugSaveState(false);
     document.getElementById('pmType').value = p.type;
-    document.getElementById('pmContent').value = p.content || '';
+    // Fetch full page content (list API omits content)
+    const res = await fetch('/api/pages/' + encodeURIComponent(slug), { headers: authH() });
+    const full = res.ok ? await res.json() : null;
+    const content = full?.content ?? '';
+    document.getElementById('pmContent').value = content;
     document.getElementById('pmPublic').checked = p.isPublic !== false;
     updatePageProjectSelect(document.getElementById('pmProject'), p.projectId || '');
     updatePageGroupSelect(document.getElementById('pmGroup'), p.projectId || '', p.groupId || '');
     document.getElementById('pageModalSave').textContent = '保存';
     document.getElementById('pageModal').classList.add('show');
-    setTimeout(() => switchEditorToType(p.type, p.content || ''), 50);
+    setTimeout(() => switchEditorToType(p.type, content), 50);
   }
 
   // keep editPage(idx) as alias for backward compat with inline onclick

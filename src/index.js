@@ -11,7 +11,7 @@ import { handleListUsers, handleCreateUser, handleUpdateUser, handleDeleteUser }
 import { handleGetConfig, handleUpdateConfig } from './admin/config-handler.js';
 import { handleUserLogin, verifyUserToken, getUserQuotaInfo, getUser, putUser, hashPassword, randomSalt } from './user-auth.js';
 import { servePage } from './pages/handler.js';
-import { listPages, handleListPages, handleCreatePage, handleUpdatePage, handleDeletePage, handleReorderPages, handleImportPage } from './pages/manage.js';
+import { listPages, handleGetPage, handleListPages, handleCreatePage, handleUpdatePage, handleDeletePage, handleReorderPages, handleImportPage } from './pages/manage.js';
 import { handleCreateProject, handleListProjects, handleUpdateProject, handleDeleteProject, handleReorderProjects } from './pages/project.js';
 import { handleCreateGroup, handleListGroups, handleUpdateGroup, handleDeleteGroup, handleReorderGroups } from './pages/group.js';
 import { handleProtoUpload, handleProtoUploadInit, handleProtoFileBatch, handleProtoFinalize } from './proto/upload.js';
@@ -99,6 +99,7 @@ export default {
       if (method === 'GET'    && path === '/api/pages')            return withCors(await userPagesHandler(request, env), request);
       if (method === 'POST'   && path === '/api/pages')            return withCors(await userPageCreate(request, env), request);
       if (method === 'POST'   && path === '/api/pages/import')    return withCors(await userPageImportHandler(request, env), request);
+      if (method === 'GET'    && path.startsWith('/api/pages/') && path !== '/api/pages/')   return withCors(await userPageGet(request, env, decodeURIComponent(path.slice('/api/pages/'.length))), request);
       if (method === 'PATCH'  && path === '/api/pages/reorder')   return withCors(await userPageReorderHandler(request, env), request);
       if (method === 'PATCH'  && path.startsWith('/api/pages/'))   return withCors(await userPageUpdate(request, env, path.slice('/api/pages/'.length)), request);
       if (method === 'DELETE' && path.startsWith('/api/pages/'))   return withCors(await userPageDelete(request, env, path.slice('/api/pages/'.length)), request);
@@ -209,6 +210,7 @@ export default {
         if (method === 'PATCH'  && path.startsWith('/admin/protos/'))      return withCors(await updateProtoMeta(env, decodeURIComponent(path.slice('/admin/protos/'.length)), null, true, await request.json()), request);
         // Admin pages
         if (method === 'GET'    && path === '/admin/pages')               return withCors(await handleListPages(request, env, null), request);
+        if (method === 'GET'    && path.startsWith('/admin/pages/') && path !== '/admin/pages/')  return withCors(await handleGetPage(env, decodeURIComponent(path.slice('/admin/pages/'.length)), env.ADMIN_USERNAME, true), request);
         if (method === 'POST'   && path === '/admin/pages')               return withCors(await handleCreatePage(request, env, env.ADMIN_USERNAME ?? 'admin'), request);
         if (method === 'POST'   && path === '/admin/pages/import')        return withCors(await adminPageImportHandler(request, env), request);
         if (method === 'PATCH'  && path === '/admin/pages/reorder')      return withCors(await handleReorderPages(request, env, env.ADMIN_USERNAME ?? 'admin', true), request);
@@ -295,6 +297,11 @@ async function userPageCreate(request, env) {
   const [user, err] = await requireUser(request, env);
   if (err) return err;
   return handleCreatePage(request, env, user.username);
+}
+async function userPageGet(request, env, slug) {
+  const [user, err] = await requireUser(request, env);
+  if (err) return err;
+  return handleGetPage(env, slug, user.username, false);
 }
 async function userPageUpdate(request, env, slug) {
   const [user, err] = await requireUser(request, env);

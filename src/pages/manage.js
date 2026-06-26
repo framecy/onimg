@@ -132,6 +132,26 @@ export async function handleCreatePage(request, env, owner) {
   return Response.json({ slug, title: page.title, type, isPublic: page.isPublic, projectId: page.projectId, groupId: page.groupId, sort: page.sort }, { status: 201 });
 }
 
+export async function handleGetPage(env, slug, callerUsername, isAdmin) {
+  const page = await env.STATS.get('page:' + slug, 'json');
+  if (!page) return Response.json({ error: 'Page not found' }, { status: 404 });
+  if (!isAdmin && page.owner !== callerUsername) return Response.json({ error: 'Forbidden' }, { status: 403 });
+  return Response.json({
+    slug,
+    title: page.title,
+    content: page.content,
+    type: page.type,
+    isPublic: page.isPublic,
+    accessPassword: page.accessPassword,
+    owner: page.owner,
+    projectId: page.projectId ?? null,
+    groupId: page.groupId ?? null,
+    sort: page.sort ?? 0,
+    createdAt: page.createdAt,
+    updatedAt: page.updatedAt,
+  });
+}
+
 export async function handleUpdatePage(request, env, slug, callerUsername, isAdmin) {
   const page = await env.STATS.get('page:' + slug, 'json');
   if (!page) return Response.json({ error: 'Page not found' }, { status: 404 });
