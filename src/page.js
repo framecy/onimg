@@ -235,11 +235,9 @@ export function renderPage() {
     .expand-icon.open { transform: rotate(90deg); }
     .project-name, .group-name { flex: 1; font-weight: 600; font-size: .88rem; color: var(--tx); }
     .count-badge { font-size: .66rem; color: var(--tx-3); background: var(--bg-5); padding: 2px 7px; border-radius: 4px; font-weight: 600; }
-    .proj-actions, .grp-actions { display: flex; gap: 4px; margin-left: 6px; opacity: 0; transition: opacity .15s; }
-    .page-project-header:hover .proj-actions,
-    .page-group-header:hover .grp-actions { opacity: 1; }
-    .proj-act-btn, .grp-act-btn { background: none; border: none; color: var(--tx-3); cursor: pointer; font-size: .72rem; padding: 2px 5px; border-radius: 4px; transition: var(--t); }
-    .proj-act-btn:hover, .grp-act-btn:hover { background: var(--bg-5); color: var(--tx); }
+    .proj-actions, .grp-actions { display: flex; gap: 3px; margin-left: 6px; }
+    .proj-act-btn, .grp-act-btn { background: none; border: 1px solid transparent; color: var(--tx-3); cursor: pointer; font-size: .74rem; padding: 3px 8px; border-radius: 5px; transition: var(--t); }
+    .proj-act-btn:hover, .grp-act-btn:hover { background: var(--bg-5); color: var(--tx); border-color: var(--bd); }
     .page-project-body { border-top: 1px solid var(--bd); }
     .page-group { margin-left: 18px; border-left: 2px solid var(--bd); }
     .page-group-header { display: flex; align-items: center; padding: 8px 12px; cursor: pointer; gap: 7px; user-select: none; }
@@ -1801,8 +1799,8 @@ export function renderPage() {
     const projFilter = document.getElementById('pageProjectFilter')?.value || 'all';
     const pages = userPages.filter(p => {
       if (q && !p.title.toLowerCase().includes(q) && !p.slug.toLowerCase().includes(q)) return false;
-      if (projFilter !== 'all' && p.projectId !== projFilter && p.projectId != null) return false;
-      if (projFilter === '_none_' && p.projectId != null) return false;
+      if (projFilter === '_none_') return !p.projectId;
+      if (projFilter !== 'all') return p.projectId === projFilter;
       return true;
     });
     const projects = [...userProjects].sort((a,b) => (a.sort??0) - (b.sort??0));
@@ -1825,9 +1823,9 @@ export function renderPage() {
           <span class="project-name">\${esc(proj.name)}</span>
           <span class="count-badge">\${total}</span>
           <span class="proj-actions">
-            <button class="proj-act-btn" onclick="event.stopPropagation();editProject('\${esc(proj.id)}')" title="编辑">✏</button>
-            <button class="proj-act-btn" onclick="event.stopPropagation();createGroupInProject('\${esc(proj.id)}')" title="新建分组">+</button>
-            <button class="proj-act-btn" onclick="event.stopPropagation();deleteProject('\${esc(proj.id)}')" title="删除" style="color:var(--red)">✕</button>
+            <button class="proj-act-btn" onclick="event.stopPropagation();editProject('\${esc(proj.id)}')" title="编辑项目">编辑</button>
+            <button class="proj-act-btn" onclick="event.stopPropagation();createGroupInProject('\${esc(proj.id)}')" title="新建分组">+ 分组</button>
+            <button class="proj-act-btn" onclick="event.stopPropagation();deleteProject('\${esc(proj.id)}')" title="删除项目" style="color:var(--red)">删除</button>
           </span>
         </div>
         <div class="page-project-body">\`;
@@ -1840,16 +1838,16 @@ export function renderPage() {
             <span class="group-name">\${esc(grp.name)}</span>
             <span class="count-badge">\${grpPages.length}</span>
             <span class="grp-actions">
-              <button class="grp-act-btn" onclick="event.stopPropagation();editGroup('\${esc(grp.id)}')" title="编辑">✏</button>
-              <button class="grp-act-btn" onclick="event.stopPropagation();deleteGroup('\${esc(grp.id)}')" title="删除" style="color:var(--red)">✕</button>
+              <button class="grp-act-btn" onclick="event.stopPropagation();editGroup('\${esc(grp.id)}')" title="编辑分组">编辑</button>
+              <button class="grp-act-btn" onclick="event.stopPropagation();deleteGroup('\${esc(grp.id)}')" title="删除分组" style="color:var(--red)">删除</button>
             </span>
           </div>
           <div class="page-group-body page-tree-docs">\`;
         for (const p of grpPages) html += renderDocItem(p);
         html += \`</div></div>\`;
       }
-      // pages directly under project (no group)
-      for (const p of projPages) html += \`<div class="page-tree-docs">\${renderDocItem(p)}</div>\`;
+      // pages directly under project (no group) — rendered directly, same drop container as group items
+      for (const p of projPages) html += renderDocItem(p);
       html += \`</div></div>\`;
     }
 
@@ -2309,17 +2307,23 @@ export function renderPage() {
       const targetGroupId = target.dataset.groupId || '';
       const srcGroupId = dragState.el.dataset.groupId || '';
       if (targetGroupId === srcGroupId) {
-        // same group: reorder
-        const container = target.parentElement;
-        const items = [...container.querySelectorAll('.page-tree-item')];
-        const slugs = items.map(el => el.dataset.dragId);
+        // same group/project-level: reorder
+        // Find all page items in the same group (including those inside sub-containers)
+        const container = target.closest('.page-group-body, .page-project-body');
+        const allItems = container ? [...container.querySelectorAll('.page-tree-item')] : [];
+        // Filter to same groupId only
+        const sameGroupItems = allItems.filter(el => (el.dataset.groupId || '') === targetGroupId);
+        const slugs = sameGroupItems.map(el => el.dataset.dragId);
         const oldIdx = slugs.indexOf(dragState.id);
         const newIdx = slugs.indexOf(target.dataset.dragId);
         if (oldIdx !== -1 && newIdx !== -1 && oldIdx !== newIdx) {
           // optimistic DOM reorder
-          if (oldIdx < newIdx) container.insertBefore(dragState.el, items[newIdx].nextSibling);
-          else container.insertBefore(dragState.el, items[newIdx]);
-          const newOrder = [...container.querySelectorAll('.page-tree-item')].map(el => el.dataset.dragId);
+          const refNode = oldIdx < newIdx ? sameGroupItems[newIdx].nextSibling : sameGroupItems[newIdx];
+          sameGroupItems[newIdx].parentElement.insertBefore(dragState.el, refNode);
+          const newOrder = sameGroupItems.map(el => el.dataset.dragId);
+          // update indices: remove old position, insert at new position
+          newOrder.splice(oldIdx, 1);
+          newOrder.splice(newIdx > oldIdx ? newIdx - 1 : newIdx, 0, dragState.id);
           await fetch('/api/pages/reorder', { method: 'PATCH', headers: authH(), body: JSON.stringify({ groupId: targetGroupId || null, order: newOrder }) });
         }
       } else {
