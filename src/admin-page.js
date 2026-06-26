@@ -41,7 +41,7 @@ export function renderAdminPage() {
     .login-sub { font-size: .8rem; color: var(--tx-3); margin-bottom: 28px; margin-top: 4px; }
     .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
     .field label { font-size: .67rem; color: var(--tx-3); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; }
-    .field input, .field select { padding: 9px 12px; background: var(--bg-2); border: 1px solid var(--bd); border-radius: 8px; color: var(--tx); font-size: .88rem; font-family: var(--font); outline: none; transition: var(--t); }
+    .field input, .field select { padding: 9px 12px; background: var(--bg-2); border: 1px solid var(--bd); border-radius: 8px; color: var(--tx); font-size: .88rem; font-family: var(--font); outline: none; transition: var(--t); appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
     .field input:focus, .field select:focus { border-color: var(--bd-f); box-shadow: 0 0 0 3px var(--blue-g); background: var(--bg); }
     .btn-login { width: 100%; padding: 10px; background: #e0e0e0; color: #080808; border: none; border-radius: 8px; font-size: .9rem; font-weight: 700; font-family: var(--font); cursor: pointer; margin-top: 6px; transition: var(--t); }
     .btn-login:hover { background: #f2f2f2; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,255,255,.07); }

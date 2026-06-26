@@ -113,6 +113,7 @@ export function renderPage() {
     .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
     .field label { font-size: .67rem; color: var(--tx-2); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; }
     .field input, .field select, .field textarea { padding: 9px 12px; background: var(--bg-2); border: 1px solid var(--bd); border-radius: 8px; color: var(--tx); font-size: .88rem; font-family: var(--font); outline: none; transition: var(--t); }
+    .field select { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
     .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--bd-f); background: var(--bg); box-shadow: 0 0 0 3px rgba(255,255,255,.04); }
     .field textarea { resize: vertical; min-height: 120px; font-family: var(--mono); font-size: .82rem; }
     .btn-full { width: 100%; padding: 10px; background: #e0e0e0; color: #0a0a0a; border: none; border-radius: 8px; font-size: .9rem; font-weight: 700; font-family: var(--font); cursor: pointer; margin-top: 6px; transition: var(--t); }
@@ -773,11 +774,6 @@ export function renderPage() {
           <option value="html">HTML</option>
         </select>
       </div>
-      <div class="field" style="flex:1;min-height:0">
-        <label id="pmContentLabel">内容</label>
-        <div id="pmVditor" style="display:none"></div>
-        <textarea id="pmContent" rows="12" placeholder="# Hello World\n\n写点什么…"></textarea>
-      </div>
       <div class="field">
         <label>所属项目</label>
         <select id="pmProject">
@@ -794,6 +790,11 @@ export function renderPage() {
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
           <input type="checkbox" id="pmPublic" checked> 公开访问
         </label>
+      </div>
+      <div class="field" style="flex:1;min-height:0">
+        <label id="pmContentLabel">内容</label>
+        <div id="pmVditor" style="display:none"></div>
+        <textarea id="pmContent" rows="12" placeholder="# Hello World\n\n写点什么…"></textarea>
       </div>
     </div>
     <div class="modal-footer">
