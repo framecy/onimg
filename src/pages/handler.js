@@ -2,7 +2,7 @@ import { renderMarkdown, extractHeadings } from './markdown.js';
 
 export async function servePage(env, slug, ctx, request) {
   const page = await env.STATS.get('page:' + slug, 'json');
-  if (!page) return new Response('Page Not Found', { status: 404 });
+  if (!page) return new Response('Page Not Found', { status: 404, headers: { 'Cache-Control': 'no-store' } });
 
   if (!page.isPublic) {
     if (!page.accessPassword) return new Response('This page is private', { status: 403 });
@@ -37,11 +37,11 @@ export async function servePage(env, slug, ctx, request) {
   const body = renderMarkdown(page.content);
   const headings = extractHeadings(page.content);
   return new Response(renderMdPage(page, body, headings), {
-    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=0, must-revalidate' },
   });
 }
 
-// ── Markdown page ─────────────────────────────────────────────────────────────
+// ── HTML page ─────────────────────────────────────────────────────────────
 
 function renderMdPage(page, body, headings) {
   const hasToc = headings.length >= 2;
@@ -250,7 +250,7 @@ function serveHtmlPage(page) {
   } else {
     content = content + script;
   }
-  return new Response(content, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+  return new Response(content, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=0, must-revalidate' } });
 }
 
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -302,7 +302,7 @@ function servePasswordPrompt(slug, page, wrong) {
   <div class="footer">Powered by <a href="/">Onimg</a></div>
 </div>
 </body>
-</html>`, { headers: { 'Content-Type': 'text/html; charset=utf-8' }, status: wrong ? 401 : 403 });
+</html>`, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }, status: wrong ? 401 : 403 });
 }
 
 async function recordPageAccess(env, slug, request) {

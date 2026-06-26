@@ -1,3 +1,25 @@
+// ── Cache purge ────────────────────────────────────────────────────────────────
+
+async function purgePageCache(env, slug) {
+  const token = env.CF_API_TOKEN;
+  if (!token) return; // no-op if CF API token unavailable
+  try {
+    // resolve zone ID from domain
+    const zoneRes = await fetch(`https://api.cloudflare.com/client/v4/zones?name=img.diswant.space`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const zoneData = await zoneRes.json();
+    const zoneId = zoneData?.result?.[0]?.id;
+    if (!zoneId) return;
+    // purge by URL
+    await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}/purge_cache`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files: [`https://img.diswant.space/p/${slug}`] }),
+    });
+  } catch { /* best-effort, never block main request */ }
+}
+
 // CRUD for hosted pages (MD / HTML)
 
 const SLUG_RE = /^[a-zA-Z0-9_\-][a-zA-Z0-9_\-/]{0,119}$/;
@@ -193,6 +215,9 @@ export async function handleUpdatePage(request, env, slug, callerUsername, isAdm
     await env.STATS.put('userpages:' + owner, JSON.stringify(pageIdx));
   }
 
+  // purge Cloudflare edge cache for this page (fire-and-forget)
+  purgePageCache(env, slug);
+
   return Response.json({ slug, title: page.title, isPublic: page.isPublic, projectId: page.projectId, groupId: page.groupId, sort: page.sort });
 }
 
@@ -210,6 +235,9 @@ export async function handleDeletePage(env, slug, callerUsername, isAdmin) {
   if (newIdx.length !== pageIdx.length) {
     await env.STATS.put('userpages:' + owner, JSON.stringify(newIdx));
   }
+
+  // purge Cloudflare edge cache for this page (fire-and-forget)
+  purgePageCache(env, slug);
 
   return Response.json({ deleted: slug });
 }

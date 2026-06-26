@@ -61,7 +61,7 @@ export default {
       if (method === 'GET'   && path === '/scripts/typora-upload.sh')    return serveStaticScript(env, 'typora-upload.sh', 'text/plain');
 
       // ── User auth ────────────────────────────────────────────────────────────
-      if (method === 'GET'   && path === '/auth/device') return serveDeviceAuthPage(url);
+      if (method === 'GET'   && path === '/auth/device') return addSecurityHeaders(serveDeviceAuthPage(url));
       if (method === 'POST'  && path === '/auth/login') {
         const uname = await peekUsername(request);
         const res = await handleUserLogin(request, env);
@@ -129,7 +129,7 @@ export default {
       if (method === 'DELETE' && path.startsWith('/api/proto-versions/')) return withCors(await protoVersionDeleteHandler(request, env, path.slice('/api/proto-versions/'.length)), request);
 
       // ── Admin panel ──────────────────────────────────────────────────────────
-      if (path === '/admin' || path === '/admin/') return addSecurityHeaders(new Response(renderAdminPage(), { headers: { 'Content-Type': 'text/html; charset=utf-8' } }));
+      if (path === '/admin' || path === '/admin/') return addSecurityHeaders(new Response(renderAdminPage(), { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } }));
       if (method === 'POST' && path === '/admin/login') {
         const uname = await peekUsername(request);
         const res = await handleAdminLogin(request, env);
@@ -247,7 +247,7 @@ export default {
         return withCors(res, request);
       }
       if (method === 'GET'    && path === '/list')             return withCors(await handleList(request, env), request);
-      if (method === 'GET'    && path === '/')                 return addSecurityHeaders(new Response(renderPage(), { headers: { 'Content-Type': 'text/html; charset=utf-8' } }));
+      if (method === 'GET'    && path === '/')                 return addSecurityHeaders(new Response(renderPage(), { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } }));
       if (method === 'GET'    && path.startsWith('/static/'))  return serveStaticAsset(env, path.slice('/static/'.length));
       if (method === 'GET'    && path.startsWith('/'))         return withCors(await handleGet(env, ctx, path.slice(1), request), request);
 
@@ -531,6 +531,7 @@ function addSecurityHeaders(response) {
   res.headers.set('X-Frame-Options', 'DENY');
   res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.headers.set('Permissions-Policy', 'geolocation=(), camera=(), microphone=()');
+  if (!res.headers.has('Cache-Control')) res.headers.set('Cache-Control', 'no-store');
   res.headers.set(
     'Content-Security-Policy',
     [
@@ -554,6 +555,8 @@ function withCors(response, req) {
   res.headers.set('X-Content-Type-Options', 'nosniff');
   res.headers.set('X-Frame-Options', 'DENY');
   res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  // API responses should never be cached at edge
+  if (!res.headers.has('Cache-Control')) res.headers.set('Cache-Control', 'no-store');
   return res;
 }
 
