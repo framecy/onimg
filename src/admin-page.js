@@ -1264,7 +1264,37 @@ export function renderAdminPage() {
     return true;
   }
 
-  if (adminToken && checkTokenValid()) showApp(); else { adminToken = null; showLogin(); }
+  // ── 统一 fetch 封装：自动拦截 401 过期 ──────────────────────────────────────
+  let _unauthLock = false;
+  async function adminFetch(url, opts) {
+    const res = await fetch(url, opts);
+    if (res.status === 401 && !_unauthLock) { _unauthLock = true; handleUnauth(); }
+    return res;
+  }
+
+  // ── 启动时主动向服务端验证 token 是否有效 ──────────────────────────────────────
+  async function validateTokenWithServer() {
+    if (!adminToken) return false;
+    try {
+      const res = await fetch('/admin/stats', { headers: authH() });
+      if (res.status === 401) { handleUnauth(); return false; }
+      return true;
+    } catch { return true; /* 网络错误不判定失效 */ }
+  }
+
+  // ── Tab 切换回来时验证 token ──────────────────────────────────────────────────
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' || !adminToken) return;
+    validateTokenWithServer();
+  });
+
+  if (adminToken && checkTokenValid()) {
+    // 先显示界面，再异步验证 token
+    showApp();
+    validateTokenWithServer();
+  } else {
+    adminToken = null; showLogin();
+  }
 
   function showLogin() { document.getElementById('loginScreen').style.display = 'flex'; document.getElementById('adminApp').style.display = 'none'; }
   function showApp() {
@@ -1413,12 +1443,12 @@ export function renderAdminPage() {
 
   async function loadDashboard() {
     const [sRes, iRes, pRes, psRes, prRes, prsRes] = await Promise.all([
-      fetch('/admin/stats',           { headers: authH() }),
-      fetch('/admin/all-image-stats', { headers: authH() }),
-      fetch('/admin/pages',           { headers: authH() }),
-      fetch('/admin/all-page-stats',  { headers: authH() }),
-      fetch('/admin/protos',          { headers: authH() }),
-      fetch('/admin/all-proto-stats', { headers: authH() }),
+      adminFetch('/admin/stats',           { headers: authH() }),
+      adminFetch('/admin/all-image-stats', { headers: authH() }),
+      adminFetch('/admin/pages',           { headers: authH() }),
+      adminFetch('/admin/all-page-stats',  { headers: authH() }),
+      adminFetch('/admin/protos',          { headers: authH() }),
+      adminFetch('/admin/all-proto-stats', { headers: authH() }),
     ]);
     // 任一并行请求返回 401 都视为登录失效
     if ([sRes, iRes, pRes, psRes, prRes, prsRes].some(r => r.status === 401)) { handleUnauth(); return; }
@@ -1536,12 +1566,12 @@ export function renderAdminPage() {
   async function loadGallery(reset = false) {
     if (reset) { allImages = []; galleryCursor = null; selected.clear(); updateBulkBar(); }
     if (!Object.keys(allStats).length) {
-      const r = await fetch('/admin/all-image-stats', { headers: authH() });
+      const r = await adminFetch('/admin/all-image-stats', { headers: authH() });
       if (r.ok) allStats = (await r.json()).stats;
     }
     const url = '/list?limit=50' + (galleryCursor ? '&cursor=' + encodeURIComponent(galleryCursor) : '');
-    const res = await fetch(url, { headers: authH() });
-    if (res.status === 401) { handleUnauth(); return; }
+    const res = await adminFetch(url, { headers: authH() });
+    if (!res.ok) return;
     const data = await res.json();
     allImages = reset ? data.items : [...allImages, ...data.items];
     galleryCursor = data.cursor;
@@ -1602,12 +1632,12 @@ export function renderAdminPage() {
   function toggleSel(key) { if (selected.has(key)) selected.delete(key); else selected.add(key); updateBulkBar(); renderGallery(); }
   function updateBulkBar() { const n=selected.size; document.getElementById('bulkBar').className='bulk-bar'+(n?' show':''); document.getElementById('bulkCount').textContent='已选 '+n+' 张'; }
   async function deleteSingle(key) { if (!confirm('确认删除？')) return; await doDelete(key); allImages=allImages.filter(i=>i.key!==key); selected.delete(key); updateBulkBar(); renderGallery(); toast('已删除'); }
-  async function doDelete(key) { await fetch('/delete/'+key, { method:'DELETE', headers:authH() }); }
+  async function doDelete(key) { await adminFetch('/delete/'+key, { method:'DELETE', headers:authH() }); }
 
   // ── User Management ──────────────────────────────────────────────────────────
   async function loadUsers() {
     document.getElementById('usersBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#333;padding:24px">加载中…</td></tr>';
-    const res = await fetch('/admin/users', { headers: authH() });
+    const res = await adminFetch('/admin/users', { headers: authH() });
     if (!res.ok) return;
     const { users } = await res.json();
     renderUsers(users);
@@ -1691,7 +1721,7 @@ export function renderAdminPage() {
 
   function openEditUser(username) {
     // Fetch user info to pre-fill
-    fetch('/admin/users', { headers: authH() }).then(r => r.json()).then(({ users }) => {
+    adminFetch('/admin/users', { headers: authH() }).then(r => { if (r.status === 401) return null; return r.json(); }).then(data => { if (!data) return; const { users } = data;
       const u = users.find(x => x.username === username);
       if (!u) return;
       openUserModal(username);
@@ -1737,7 +1767,7 @@ export function renderAdminPage() {
 
   async function deleteUser(username) {
     if (!confirm(\`确认删除用户 "\${username}"？\`)) return;
-    const res = await fetch('/admin/users/' + encodeURIComponent(username), { method: 'DELETE', headers: authH() });
+    const res = await adminFetch('/admin/users/' + encodeURIComponent(username), { method: 'DELETE', headers: authH() });
     if (res.ok) { toast('已删除'); loadUsers(); }
     else toast('删除失败');
   }
@@ -1750,7 +1780,7 @@ export function renderAdminPage() {
   let enabledTypes = new Set();
 
   async function loadSettings() {
-    const res = await fetch('/admin/config', { headers: authH() });
+    const res = await adminFetch('/admin/config', { headers: authH() });
     if (!res.ok) return;
     const cfg = await res.json();
     const mb = Math.round(cfg.maxFileSize / 1048576);
@@ -1772,7 +1802,7 @@ export function renderAdminPage() {
     const mb = parseFloat(document.getElementById('cfgSize').value);
     if (isNaN(mb) || mb < 0.1 || mb > 100) { toast('文件大小限制应在 0.1 - 100 MB 之间'); return; }
     if (enabledTypes.size === 0) { toast('至少选择一种文件类型'); return; }
-    const res = await fetch('/admin/config', {
+    const res = await adminFetch('/admin/config', {
       method: 'POST',
       headers: authH(),
       body: JSON.stringify({ maxFileSize: Math.round(mb * 1048576), allowedTypes: [...enabledTypes].join(',') }),
@@ -1791,7 +1821,7 @@ export function renderAdminPage() {
     document.getElementById('accessLogBody').innerHTML = '<tr><td colspan="5" style="color:#333;text-align:center;padding:16px">加载中…</td></tr>';
     document.getElementById('statsModal').classList.add('show');
     try {
-      const res = await fetch('/admin/image-stats/' + encodeURIComponent(key), { headers: authH() });
+      const res = await adminFetch('/admin/image-stats/' + encodeURIComponent(key), { headers: authH() });
       const data = await res.json();
       document.getElementById('smTotal').textContent = (data.count??0).toLocaleString();
       const cl = Object.entries(data.countries??{}).sort((a,b)=>b[1]-a[1]);
@@ -1820,7 +1850,7 @@ export function renderAdminPage() {
     document.getElementById('psmLogBody').innerHTML = '<tr><td colspan="5" style="color:#333;text-align:center;padding:16px">加载中…</td></tr>';
     document.getElementById('pageStatsModal').classList.add('show');
     try {
-      const res = await fetch('/admin/page-stats/' + encodeURIComponent(slug), { headers: authH() });
+      const res = await adminFetch('/admin/page-stats/' + encodeURIComponent(slug), { headers: authH() });
       const data = await res.json();
       document.getElementById('psmTotal').textContent = (data.count ?? 0).toLocaleString();
       document.getElementById('psmUniqueIps').textContent = (data.uniqueIps ?? 0).toLocaleString();
@@ -1861,7 +1891,7 @@ export function renderAdminPage() {
     document.getElementById('prsLogBody').innerHTML = '<tr><td colspan="3" style="color:#333;text-align:center">加载中…</td></tr>';
     document.getElementById('protoStatsModal').classList.add('show');
     try {
-      const res = await fetch('/admin/proto-stats/' + encodeURIComponent(protoId), { headers: authH() });
+      const res = await adminFetch('/admin/proto-stats/' + encodeURIComponent(protoId), { headers: authH() });
       if (!res.ok) throw new Error();
       const data = await res.json();
       document.getElementById('prsTotal').textContent = (data.count ?? 0).toLocaleString();
@@ -2190,7 +2220,7 @@ export function renderAdminPage() {
 
   async function loadAdminPages() {
     document.getElementById('adminPagesBody').innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--tx-3);padding:24px">加载中…</td></tr>';
-    const res = await fetch('/admin/pages', { headers: authH() });
+    const res = await adminFetch('/admin/pages', { headers: authH() });
     if (!res.ok) return;
     const data = await res.json();
     adminAllPages = data.pages || [];
@@ -2344,7 +2374,7 @@ export function renderAdminPage() {
     const btn = document.getElementById('adminPageBulkDelete');
     btn.textContent = '删除中…'; btn.disabled = true;
     await runAdminPagePool(slugs, 6, async slug => {
-      await fetch('/admin/pages/' + encodeURIComponent(slug), { method:'DELETE', headers:authH() });
+      await adminFetch('/admin/pages/' + encodeURIComponent(slug), { method:'DELETE', headers:authH() });
     });
     toast('已删除 ' + slugs.length + ' 个页面');
     adminPageSelected.clear();
@@ -2377,7 +2407,7 @@ export function renderAdminPage() {
     const groupId = document.getElementById('apgMoveGroup').value || null;
     document.getElementById('adminPageBulkMoveModal').classList.remove('show');
     await runAdminPagePool(slugs, 6, async slug => {
-      await fetch('/admin/pages/' + encodeURIComponent(slug), { method:'PATCH', headers:{...authH(),'Content-Type':'application/json'}, body:JSON.stringify({projectId,groupId}) });
+      await adminFetch('/admin/pages/' + encodeURIComponent(slug), { method:'PATCH', headers:{...authH(),'Content-Type':'application/json'}, body:JSON.stringify({projectId,groupId}) });
     });
     toast('已移动 ' + slugs.length + ' 个页面');
     adminPageSelected.clear();
@@ -2398,7 +2428,7 @@ export function renderAdminPage() {
     const name = document.getElementById('apgNewGrpName').value.trim();
     if (!projectId) { toast('请选择所属项目'); return; }
     if (!name) { toast('请输入分组名称'); return; }
-    const res = await fetch('/admin/groups', { method:'POST', headers:{...authH(),'Content-Type':'application/json'}, body:JSON.stringify({projectId,name}) });
+    const res = await adminFetch('/admin/groups', { method:'POST', headers:{...authH(),'Content-Type':'application/json'}, body:JSON.stringify({projectId,name}) });
     const data = await res.json();
     if (!res.ok) { toast('创建失败: ' + data.error); return; }
     document.getElementById('adminNewGroupModal').classList.remove('show');
@@ -2432,7 +2462,7 @@ export function renderAdminPage() {
   document.getElementById('adminNewPageBtn').addEventListener('click', () => adminOpenPageModal(null));
 
   async function adminEditPage(slug) {
-    const res = await fetch('/admin/pages/' + encodeURIComponent(slug), { headers: authH() });
+    const res = await adminFetch('/admin/pages/' + encodeURIComponent(slug), { headers: authH() });
     if (!res.ok) { toast('获取页面失败'); return; }
     const p = await res.json();
     adminOpenPageModal(p);
@@ -2440,7 +2470,7 @@ export function renderAdminPage() {
 
   async function adminDeletePage(slug) {
     if (!confirm('确认删除页面 /p/' + slug + '？')) return;
-    await fetch('/admin/pages/' + encodeURIComponent(slug), { method:'DELETE', headers:authH() });
+    await adminFetch('/admin/pages/' + encodeURIComponent(slug), { method:'DELETE', headers:authH() });
     toast('已删除'); loadAdminPages();
   }
 
@@ -2554,7 +2584,7 @@ export function renderAdminPage() {
     tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#333;padding:24px">加载中…</td></tr>';
     empty.style.display = 'none';
     try {
-      const res = await fetch('/admin/protos', { headers: authH() });
+      const res = await adminFetch('/admin/protos', { headers: authH() });
       if (!res.ok) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#555;padding:24px">加载失败</td></tr>'; return; }
       const { protos } = await res.json();
       if (!protos.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
@@ -2593,7 +2623,7 @@ export function renderAdminPage() {
 
   async function adminDeleteProto(protoId) {
     if (!confirm('确认删除此原型？将同时删除所有相关文件，此操作无法撤销。')) return;
-    const res = await fetch('/admin/protos/' + encodeURIComponent(protoId), { method: 'DELETE', headers: authH() });
+    const res = await adminFetch('/admin/protos/' + encodeURIComponent(protoId), { method: 'DELETE', headers: authH() });
     if (!res.ok) { const d = await res.json().catch(()=>{}); toast('删除失败: ' + (d?.error || '')); return; }
     toast('已删除'); loadAdminProtos();
   }
@@ -2675,7 +2705,7 @@ export function renderAdminPage() {
       const totalSize = safePaths.reduce((s, p) => s + (files[p]?.byteLength ?? 0), 0);
 
       setStatus('🔧 初始化上传会话…', 12);
-      const initRes = await fetch('/admin/proto/init', {
+      const initRes = await adminFetch('/admin/proto/init', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken },
         body: JSON.stringify({ title, password, entryPoint, totalSize }),
@@ -2693,12 +2723,12 @@ export function renderAdminPage() {
         const fd = new FormData();
         fd.append('protoId', protoId);
         batchPaths.forEach(p => { fd.append('paths[]', p); fd.append('files[]', new Blob([files[p]]), p); });
-        const bRes = await fetch('/admin/proto/files', { method: 'POST', headers: { 'Authorization': 'Bearer ' + adminToken }, body: fd });
+        const bRes = await adminFetch('/admin/proto/files', { method: 'POST', headers: { 'Authorization': 'Bearer ' + adminToken }, body: fd });
         if (!bRes.ok) { const d = await bRes.json().catch(()=>({})); throw new Error(d.error || \`批次 \${b+1} 上传失败\`); }
       }
 
       setStatus('✅ 正在写入元数据…', 93);
-      const fRes = await fetch('/admin/proto/finalize', {
+      const fRes = await adminFetch('/admin/proto/finalize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken },
         body: JSON.stringify({ protoId, filePaths: safePaths }),
@@ -2778,7 +2808,7 @@ export function renderAdminPage() {
   // ── CF 额度面板 ───────────────────────────────────────────────────────────────
   async function loadCfQuota() {
     try {
-      const res = await fetch('/admin/cf-quota', { headers: authH() });
+      const res = await adminFetch('/admin/cf-quota', { headers: authH() });
       if (!res.ok) return;
       const d = await res.json();
 
@@ -2876,7 +2906,7 @@ export function renderAdminPage() {
 
   async function loadR2Stats() {
     try {
-      const res = await fetch('/admin/r2-stats', { headers: authH() });
+      const res = await adminFetch('/admin/r2-stats', { headers: authH() });
       if (!res.ok) return;
       const d = await res.json();
       document.getElementById('r2Storage').textContent  = fmtSize(d.storage);
@@ -2904,7 +2934,7 @@ export function renderAdminPage() {
   async function loadMemberStats() {
     document.getElementById('memberTableBody').innerHTML =
       '<tr><td colspan="7" style="text-align:center;color:#333;padding:32px">加载中…</td></tr>';
-    const res = await fetch('/admin/member-stats', { headers: authH() });
+    const res = await adminFetch('/admin/member-stats', { headers: authH() });
     if (!res.ok) return;
     const { users } = await res.json();
     memberData = users;
