@@ -105,9 +105,9 @@ export function renderAdminPage() {
     .btn-warn:hover { background: var(--amber-r); }
 
     /* ── Section header ── */
-    .section-header { display: flex; align-items: center; margin-bottom: 12px; gap: 10px; }
+    .section-header { display: flex; align-items: center; margin-bottom: 12px; gap: 10px; flex-wrap: wrap; }
     .section-header h3 { font-size: .8rem; font-weight: 600; color: var(--tx-2); }
-    .section-header .spacer { flex: 1; }
+    .section-header .spacer { flex: 1; min-width: 20px; }
 
     /* ── Stat Cards ── */
     .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
@@ -165,7 +165,7 @@ export function renderAdminPage() {
     .badge-disabled { background: var(--red-g); color: var(--red); border: 1px solid var(--red-r); padding: 2px 6px; border-radius: 4px; font-size: .68rem; font-weight: 600; }
 
     /* ── Page batch ops ── */
-    .pg-bulk-bar { display: none; align-items: center; gap: 10px; padding: 9px 13px; background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: 8px; margin-bottom: 12px; font-size: .82rem; color: var(--tx-2); }
+    .pg-bulk-bar { display: none; align-items: center; gap: 10px; padding: 9px 13px; background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: 8px; margin-bottom: 12px; font-size: .82rem; color: var(--tx-2); flex-wrap: wrap; }
     .pg-bulk-bar.show { display: flex; }
     .pg-sel-count { font-family: var(--mono); font-size: .8rem; color: var(--tx-3); }
     .pg-check { width: 15px; height: 15px; accent-color: var(--tx-2); cursor: pointer; }
