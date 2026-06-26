@@ -164,6 +164,18 @@ export function renderAdminPage() {
     .perm-admin { background: var(--blue-g); color: var(--tx-a); border: 1px solid var(--blue-r); }
     .badge-disabled { background: var(--red-g); color: var(--red); border: 1px solid var(--red-r); padding: 2px 6px; border-radius: 4px; font-size: .68rem; font-weight: 600; }
 
+    /* ── Page batch ops ── */
+    .pg-bulk-bar { display: none; align-items: center; gap: 10px; padding: 9px 13px; background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: 8px; margin-bottom: 12px; font-size: .82rem; color: var(--tx-2); }
+    .pg-bulk-bar.show { display: flex; }
+    .pg-sel-count { font-family: var(--mono); font-size: .8rem; color: var(--tx-3); }
+    .pg-check { width: 15px; height: 15px; accent-color: var(--tx-2); cursor: pointer; }
+    .data-table .pg-check-col { width: 30px; text-align: center; }
+    .data-table .pg-check-col.selecting { display: table-cell; }
+    .data-table .pg-check-col { display: none; }
+    .pg-filter-sel { padding: 5px 8px; background: var(--bg-3); border: 1px solid var(--bd); border-radius: 6px; color: var(--tx); font-size: .76rem; font-family: var(--font); outline: none; cursor: pointer; transition: var(--t); max-width: 140px; }
+    .pg-filter-sel:focus { border-color: var(--bd-f); }
+    .pg-filter-sel option { background: var(--bg-3); color: var(--tx); }
+
     /* ── Settings ── */
     .settings-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 10px; padding: 20px; margin-bottom: 14px; }
     .settings-card h3 { font-size: .65rem; font-weight: 700; margin-bottom: 16px; color: var(--tx-3); text-transform: uppercase; letter-spacing: .12em; padding-bottom: 10px; border-bottom: 1px solid var(--bd); }
@@ -810,12 +822,23 @@ export function renderAdminPage() {
         <div class="section-header">
           <h3>所有页面</h3>
           <input class="search-input" id="adminPageSearch" type="text" placeholder="搜索标题/slug/作者…" style="max-width:200px">
+          <select class="pg-filter-sel" id="adminPageProjFilter" style="margin-left:8px"><option value="all">全部项目</option></select>
+          <select class="pg-filter-sel" id="adminPageGrpFilter" style="margin-left:4px"><option value="all">全部分组</option></select>
           <div class="spacer"></div>
+          <button class="btn btn-ghost" id="pageSelectToggle" style="font-size:.78rem">选择</button>
+          <button class="btn btn-ghost" id="adminNewGroupBtn" style="font-size:.78rem">+ 新建分组</button>
           <button class="btn btn-primary" id="adminNewPageBtn">+ 新建页面</button>
+        </div>
+        <div class="pg-bulk-bar" id="adminPageBulkBar">
+          <span class="pg-sel-count" id="adminPageSelCount">已选 0</span>
+          <button class="btn btn-danger" id="adminPageBulkDelete" style="padding:4px 10px;font-size:.76rem">批量删除</button>
+          <button class="btn btn-ghost" id="adminPageBulkMove" style="padding:4px 10px;font-size:.76rem">更改项目/分组</button>
+          <button class="btn btn-ghost" id="adminPageCancelSel" style="padding:4px 10px;font-size:.76rem">取消</button>
         </div>
         <div class="table-wrap">
           <table class="data-table">
             <thead><tr>
+              <th class="pg-check-col" id="pgCheckHead"><input type="checkbox" class="pg-check" id="adminPageSelectAll"></th>
               <th class="sort-th" onclick="adminPageSort('title')">标题 / Slug</th>
               <th class="sort-th" onclick="adminPageSort('type')">类型</th>
               <th class="sort-th" onclick="adminPageSort('owner')">作者</th>
@@ -824,7 +847,7 @@ export function renderAdminPage() {
               <th class="sort-th" onclick="adminPageSort('updated')">更新</th>
               <th></th>
             </tr></thead>
-            <tbody id="adminPagesBody"><tr><td colspan="8" style="text-align:center;color:var(--tx-3);padding:24px">加载中…</td></tr></tbody>
+            <tbody id="adminPagesBody"><tr><td colspan="9" style="text-align:center;color:var(--tx-3);padding:24px">加载中…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1037,6 +1060,37 @@ export function renderAdminPage() {
     <div class="modal-footer">
       <button class="btn btn-ghost" id="apmCancel">取消</button>
       <button class="btn btn-primary" id="apmSave">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- Page Stats Modal -->
+<div class="modal-overlay" id="adminPageBulkMoveModal">
+  <div class="modal">
+    <div class="modal-header"><h3>批量移动页面</h3><button class="modal-close" id="apgMoveClose">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>目标项目</label><select id="apgMoveProject"><option value="">-- 无 --</option></select></div>
+      <div class="field"><label>目标分组</label><select id="apgMoveGroup"><option value="">-- 无 --</option></select></div>
+      <p style="font-size:.76rem;color:var(--tx-3);margin-top:6px">选中的 <span id="apgMoveCount" style="font-weight:600;color:var(--tx)">0</span> 个页面将被移动到所选项目/分组</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="apgMoveCancel">取消</button>
+      <button class="btn btn-primary" id="apgMoveConfirm">确认移动</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Group Modal -->
+<div class="modal-overlay" id="adminNewGroupModal">
+  <div class="modal">
+    <div class="modal-header"><h3>新建分组</h3><button class="modal-close" id="apgNewGrpClose">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>所属项目</label><select id="apgNewGrpProject"><option value="">-- 请选择项目 --</option></select></div>
+      <div class="field"><label>分组名称</label><input type="text" id="apgNewGrpName" placeholder="分组名称" maxlength="60"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="apgNewGrpCancel">取消</button>
+      <button class="btn btn-primary" id="apgNewGrpConfirm">创建</button>
     </div>
   </div>
 </div>
@@ -2131,26 +2185,55 @@ export function renderAdminPage() {
 
   let adminAllPages = [], adminAllProjects = [], adminAllGroups = [];
   let adminPageSortKey = 'updated', adminPageSortAsc = false;
+  let adminPageSelectMode = false;
+  const adminPageSelected = new Set();
 
   async function loadAdminPages() {
-    document.getElementById('adminPagesBody').innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--tx-3);padding:24px">加载中…</td></tr>';
+    document.getElementById('adminPagesBody').innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--tx-3);padding:24px">加载中…</td></tr>';
     const res = await fetch('/admin/pages', { headers: authH() });
     if (!res.ok) return;
     const data = await res.json();
     adminAllPages = data.pages || [];
     adminAllProjects = data.projects || [];
     adminAllGroups = data.groups || [];
+    updateAdminPageProjFilter();
     renderAdminPages();
+  }
+
+  function updateAdminPageProjFilter() {
+    const sel = document.getElementById('adminPageProjFilter');
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="all">全部项目</option><option value="_none_">未分类</option>' +
+      adminAllProjects.map(p => '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('');
+    sel.value = adminAllProjects.some(p => p.id === cur) ? cur : 'all';
+  }
+
+  function updateAdminPageGrpFilter() {
+    const projSel = document.getElementById('adminPageProjFilter');
+    const grpSel = document.getElementById('adminPageGrpFilter');
+    if (!projSel || !grpSel) return;
+    const pid = projSel.value;
+    const grps = pid && pid !== 'all' && pid !== '_none_' ? adminAllGroups.filter(g => g.projectId === pid) : [];
+    grpSel.innerHTML = '<option value="all">全部分组</option>' +
+      (grps.length ? '<option value="_none_">未分组</option>' : '') +
+      grps.map(g => '<option value="'+esc(g.id)+'">'+esc(g.name)+'</option>').join('');
   }
 
   function renderAdminPages() {
     const q = (document.getElementById('adminPageSearch')?.value || '').toLowerCase();
+    const projFilter = document.getElementById('adminPageProjFilter')?.value || 'all';
+    const grpFilter = document.getElementById('adminPageGrpFilter')?.value || 'all';
     const projMap = Object.fromEntries(adminAllProjects.map(p => [p.id, p.name]));
     const grpMap = Object.fromEntries(adminAllGroups.map(g => [g.id, g.name]));
     let filtered = adminAllPages;
     if (q) filtered = filtered.filter(p =>
       (p.title||'').toLowerCase().includes(q) || p.slug.toLowerCase().includes(q) || (p.owner||'').toLowerCase().includes(q)
     );
+    if (projFilter === '_none_') filtered = filtered.filter(p => !p.projectId);
+    else if (projFilter !== 'all') filtered = filtered.filter(p => p.projectId === projFilter);
+    if (grpFilter === '_none_') filtered = filtered.filter(p => !p.groupId);
+    else if (grpFilter !== 'all') filtered = filtered.filter(p => p.groupId === grpFilter);
     const sorted = [...filtered].sort((a, b) => {
       let va, vb;
       switch (adminPageSortKey) {
@@ -2162,8 +2245,11 @@ export function renderAdminPage() {
       }
     });
     const TYPE_LABEL = { markdown: '<span style="background:rgba(59,130,246,.1);color:#3b82f6;padding:2px 6px;border-radius:4px;font-size:.72rem">MD</span>', html: '<span style="background:rgba(245,158,11,.1);color:#f59e0b;padding:2px 6px;border-radius:4px;font-size:.72rem">HTML</span>' };
+    const selMode = adminPageSelectMode;
+    const checkCol = selMode ? 'pg-check-col selecting' : 'pg-check-col';
     document.getElementById('adminPagesBody').innerHTML = sorted.length
       ? sorted.map(p => \`<tr>
+          <td class="\${checkCol}"><input type="checkbox" class="pg-check" data-slug="\${esc(p.slug)}" \${adminPageSelected.has(p.slug)?'checked':''} onchange="adminPageToggleSel('\${esc(p.slug)}',this.checked)"></td>
           <td>
             <div style="font-weight:500;font-size:.88rem">\${esc(p.title)}</div>
             <div style="font-family:monospace;font-size:.72rem;color:var(--tx-3)">/p/\${p.slug}</div>
@@ -2181,7 +2267,13 @@ export function renderAdminPage() {
             <button class="btn btn-danger" style="padding:4px 8px;font-size:.75rem" onclick="adminDeletePage('\${p.slug}')">删除</button>
           </td>
         </tr>\`).join('')
-      : '<tr><td colspan="8" style="text-align:center;color:var(--tx-3);padding:24px">暂无页面</td></tr>';
+      : '<tr><td colspan="9" style="text-align:center;color:var(--tx-3);padding:24px">暂无页面</td></tr>';
+    // update select-all checkbox state
+    const allCbs = document.querySelectorAll('#adminPagesBody .pg-check');
+    const visSlugs = [...allCbs].map(cb => cb.dataset.slug);
+    const allSel = visSlugs.length > 0 && visSlugs.every(s => adminPageSelected.has(s));
+    const saCb = document.getElementById('adminPageSelectAll');
+    if (saCb) saCb.checked = allSel;
   }
 
   window.adminPageSort = function(key) {
@@ -2190,7 +2282,135 @@ export function renderAdminPage() {
     renderAdminPages();
   };
 
+  window.adminPageToggleSel = function(slug, checked) {
+    if (checked) adminPageSelected.add(slug); else adminPageSelected.delete(slug);
+    document.getElementById('adminPageSelCount').textContent = '已选 ' + adminPageSelected.size;
+    const allCbs = document.querySelectorAll('#adminPagesBody .pg-check');
+    const visSlugs = [...allCbs].map(cb => cb.dataset.slug);
+    const saCb = document.getElementById('adminPageSelectAll');
+    if (saCb) saCb.checked = visSlugs.length > 0 && visSlugs.every(s => adminPageSelected.has(s));
+  };
+
+  // ── Page select mode toggle ──
+  document.getElementById('pageSelectToggle')?.addEventListener('click', () => {
+    adminPageSelectMode = !adminPageSelectMode;
+    if (!adminPageSelectMode) adminPageSelected.clear();
+    const bar = document.getElementById('adminPageBulkBar');
+    const btn = document.getElementById('pageSelectToggle');
+    const headCol = document.getElementById('pgCheckHead');
+    bar.style.display = adminPageSelectMode ? 'flex' : 'none';
+    btn.textContent = adminPageSelectMode ? '退出选择' : '选择';
+    btn.classList.toggle('btn-primary', adminPageSelectMode);
+    if (headCol) headCol.classList.toggle('selecting', adminPageSelectMode);
+    document.getElementById('adminPageSelCount').textContent = '已选 0';
+    renderAdminPages();
+  });
+
+  document.getElementById('adminPageSelectAll')?.addEventListener('change', function() {
+    const allCbs = document.querySelectorAll('#adminPagesBody .pg-check');
+    if (this.checked) allCbs.forEach(cb => { adminPageSelected.add(cb.dataset.slug); cb.checked = true; });
+    else { allCbs.forEach(cb => cb.checked = false); adminPageSelected.clear(); }
+    document.getElementById('adminPageSelCount').textContent = '已选 ' + adminPageSelected.size;
+  });
+
+  document.getElementById('adminPageCancelSel')?.addEventListener('click', () => {
+    adminPageSelectMode = false;
+    adminPageSelected.clear();
+    document.getElementById('adminPageBulkBar').style.display = 'none';
+    document.getElementById('pageSelectToggle').textContent = '选择';
+    document.getElementById('pageSelectToggle').classList.remove('btn-primary');
+    const headCol = document.getElementById('pgCheckHead');
+    if (headCol) headCol.classList.remove('selecting');
+    renderAdminPages();
+  });
+
+  // ── Page batch delete ──
+  async function runAdminPagePool(items, limit, worker) {
+    let ok = 0, fail = 0;
+    const executing = new Set();
+    for (const item of items) {
+      if (executing.size >= limit) await Promise.race(executing);
+      const p = worker(item).then(r => { ok++; return r; }).catch(() => { fail++; });
+      executing.add(p); p.finally(() => executing.delete(p));
+    }
+    await Promise.all(executing);
+    return { ok, fail };
+  }
+
+  document.getElementById('adminPageBulkDelete')?.addEventListener('click', async () => {
+    const slugs = [...adminPageSelected];
+    if (!slugs.length) return;
+    if (!confirm('确认删除选中的 ' + slugs.length + ' 个页面？')) return;
+    const btn = document.getElementById('adminPageBulkDelete');
+    btn.textContent = '删除中…'; btn.disabled = true;
+    await runAdminPagePool(slugs, 6, async slug => {
+      await fetch('/admin/pages/' + encodeURIComponent(slug), { method:'DELETE', headers:authH() });
+    });
+    toast('已删除 ' + slugs.length + ' 个页面');
+    adminPageSelected.clear();
+    loadAdminPages();
+  });
+
+  // ── Page batch move ──
+  document.getElementById('adminPageBulkMove')?.addEventListener('click', () => {
+    const slugs = [...adminPageSelected];
+    if (!slugs.length) return;
+    const modal = document.getElementById('adminPageBulkMoveModal');
+    document.getElementById('apgMoveCount').textContent = slugs.length;
+    const sel = document.getElementById('apgMoveProject');
+    sel.innerHTML = '<option value="">-- 无 --</option>' +
+      adminAllProjects.map(p => '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('');
+    document.getElementById('apgMoveGroup').innerHTML = '<option value="">-- 无 --</option>';
+    modal.classList.add('show');
+  });
+
+  document.getElementById('apgMoveProject')?.addEventListener('change', function() {
+    const pid = this.value;
+    const gSel = document.getElementById('apgMoveGroup');
+    const grps = pid ? adminAllGroups.filter(g => g.projectId === pid) : [];
+    gSel.innerHTML = '<option value="">-- 无 --</option>' + grps.map(g => '<option value="'+esc(g.id)+'">'+esc(g.name)+'</option>').join('');
+  });
+
+  document.getElementById('apgMoveConfirm')?.addEventListener('click', async () => {
+    const slugs = [...adminPageSelected];
+    const projectId = document.getElementById('apgMoveProject').value || null;
+    const groupId = document.getElementById('apgMoveGroup').value || null;
+    document.getElementById('adminPageBulkMoveModal').classList.remove('show');
+    await runAdminPagePool(slugs, 6, async slug => {
+      await fetch('/admin/pages/' + encodeURIComponent(slug), { method:'PATCH', headers:{...authH(),'Content-Type':'application/json'}, body:JSON.stringify({projectId,groupId}) });
+    });
+    toast('已移动 ' + slugs.length + ' 个页面');
+    adminPageSelected.clear();
+    loadAdminPages();
+  });
+  ['apgMoveClose','apgMoveCancel'].forEach(id => document.getElementById(id)?.addEventListener('click', () => document.getElementById('adminPageBulkMoveModal').classList.remove('show')));
+
+  // ── New group modal ──
+  document.getElementById('adminNewGroupBtn')?.addEventListener('click', () => {
+    const sel = document.getElementById('apgNewGrpProject');
+    sel.innerHTML = '<option value="">-- 请选择项目 --</option>' +
+      adminAllProjects.map(p => '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('');
+    document.getElementById('apgNewGrpName').value = '';
+    document.getElementById('adminNewGroupModal').classList.add('show');
+  });
+  document.getElementById('apgNewGrpConfirm')?.addEventListener('click', async () => {
+    const projectId = document.getElementById('apgNewGrpProject').value;
+    const name = document.getElementById('apgNewGrpName').value.trim();
+    if (!projectId) { toast('请选择所属项目'); return; }
+    if (!name) { toast('请输入分组名称'); return; }
+    const res = await fetch('/admin/groups', { method:'POST', headers:{...authH(),'Content-Type':'application/json'}, body:JSON.stringify({projectId,name}) });
+    const data = await res.json();
+    if (!res.ok) { toast('创建失败: ' + data.error); return; }
+    document.getElementById('adminNewGroupModal').classList.remove('show');
+    toast('分组已创建');
+    loadAdminPages();
+  });
+  ['apgNewGrpClose','apgNewGrpCancel'].forEach(id => document.getElementById(id)?.addEventListener('click', () => document.getElementById('adminNewGroupModal').classList.remove('show')));
+
+  // ── Page filters ──
   document.getElementById('adminPageSearch')?.addEventListener('input', renderAdminPages);
+  document.getElementById('adminPageProjFilter')?.addEventListener('change', () => { updateAdminPageGrpFilter(); renderAdminPages(); });
+  document.getElementById('adminPageGrpFilter')?.addEventListener('change', renderAdminPages);
 
   function genApmPwd() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';

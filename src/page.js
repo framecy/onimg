@@ -252,9 +252,9 @@ export function renderPage() {
     .drag-handle:active { cursor: grabbing; }
     .pages-uncategorized { border-top: 1px dashed var(--bd-2); padding-top: 10px; margin-top: 6px; }
     .uncat-label { font-size: .72rem; color: var(--tx-3); font-weight: 600; letter-spacing: .04em; margin-bottom: 6px; }
-    .page-tree-item.dragging { opacity: .35; }
-    .page-tree-item.drag-over-top { border-top: 2px solid var(--accent); }
-    .page-tree-item.drag-over-bot { border-bottom: 2px solid var(--accent); }
+    .page-tree-item.dragging { opacity: 0.3; border-style: dashed; border-color: var(--bd-2); }
+    .page-tree-item.drag-over-top { border-top: 2px solid var(--accent); margin-top: -2px; }
+    .page-tree-item.drag-over-bot { border-bottom: 2px solid var(--accent); margin-bottom: -2px; }
     .page-project.drag-over-proj { border-color: var(--accent); }
     .page-group-header.drag-over-grp { background: var(--bg-5); }
 
@@ -1867,7 +1867,7 @@ export function renderPage() {
   }
 
   function renderDocItem(p) {
-    return \`<div class="page-tree-item" data-drag-type="page" data-drag-id="\${esc(p.slug)}" data-project-id="\${esc(p.projectId||'')}" data-group-id="\${esc(p.groupId||'')}">
+    return \`<div class="page-tree-item" draggable="true" data-drag-type="page" data-drag-id="\${esc(p.slug)}" data-project-id="\${esc(p.projectId||'')}" data-group-id="\${esc(p.groupId||'')}">
       <span class="drag-handle" title="拖拽排序">⠿</span>
       <div class="page-item-info" style="flex:1;min-width:0">
         <div class="page-title">\${esc(p.title)} <span class="type-badge type-\${p.type==='markdown'?'md':'html'}">\${p.type}</span></div>
@@ -2260,17 +2260,7 @@ export function renderPage() {
   let dragState = null;
 
   function initPageDnD() {
-    document.querySelectorAll('.page-tree-item .drag-handle').forEach(handle => {
-      handle.addEventListener('mousedown', () => {
-        const item = handle.closest('.page-tree-item');
-        if (item) item.setAttribute('draggable', 'true');
-      });
-      handle.addEventListener('mouseup', () => {
-        const item = handle.closest('.page-tree-item');
-        if (item) item.setAttribute('draggable', 'false');
-      });
-    });
-    document.querySelectorAll('.page-tree-item[draggable="true"],.page-tree-item').forEach(el => {
+    document.querySelectorAll('.page-tree-item[draggable="true"]').forEach(el => {
       el.addEventListener('dragstart', onDragStart);
       el.addEventListener('dragend', onDragEnd);
       el.addEventListener('dragover', onDragOver);
@@ -2280,6 +2270,8 @@ export function renderPage() {
   }
 
   function onDragStart(e) {
+    // prevent drag from buttons/links
+    if (e.target.closest('button, a, input, select, textarea')) { e.preventDefault(); return; }
     const el = e.currentTarget;
     dragState = { type: el.dataset.dragType, id: el.dataset.dragId, el };
     el.classList.add('dragging');
