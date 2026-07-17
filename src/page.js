@@ -290,14 +290,22 @@ export function renderPage() {
     .modal { background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: 14px; width: 100%; max-width: 860px; max-height: 96vh; display: flex; flex-direction: column; box-shadow: var(--shadow); }
     .modal-body { padding: 18px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
     /* Vditor container */
-    #pmVditor { border-radius: 8px; overflow: hidden; flex-shrink: 0; border: 1px solid var(--bd-2); }
+    #pmVditor { border-radius: 8px; overflow: hidden; flex-shrink: 0; border: 1px solid var(--bd-2); max-height: min(520px, calc(96vh - 280px)); min-width: 0; max-width: 100%; }
+    #pmVditor .vditor { max-height: inherit !important; max-width: 100% !important; }
     /* Force-hide outline regardless of Vditor internal state */
     #pmVditor .vditor-outline { display: none !important; }
     /* Content area fills remaining height and owns the scroll */
     #pmVditor .vditor-content {
       height: calc(100% - 36px) !important;
+      max-height: calc(min(520px, 96vh - 280px) - 36px) !important;
       overflow-y: auto !important;
       overscroll-behavior: contain;
+      min-width: 0;
+    }
+    #pmVditor .vditor-ir, #pmVditor .vditor-ir pre.vditor-reset {
+      max-width: 100% !important;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     /* Toolbar stays pinned at top — works whether modal or vditor-content scrolls */
     #pmVditor .vditor-toolbar {
@@ -307,6 +315,23 @@ export function renderPage() {
       flex-wrap: nowrap;
       overflow-x: auto;
     }
+    /* Upload file queue */
+    .upload-queue { display: none; flex-direction: column; gap: 6px; margin: 0 0 10px; }
+    .upload-queue.show { display: flex; }
+    .upload-q-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: var(--bg-3); border: 1px solid var(--bd); border-radius: 7px; font-size: .78rem; color: var(--tx-2); }
+    .upload-q-item .uq-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .upload-q-item .uq-size { color: var(--tx-3); flex-shrink: 0; }
+    .upload-q-item .uq-rm { background: none; border: none; color: var(--tx-3); cursor: pointer; font-size: .9rem; padding: 0 4px; line-height: 1; }
+    .upload-q-item .uq-rm:hover { color: var(--red); }
+    /* Page multi-select */
+    .page-batch-bar { display: none; align-items: center; gap: 10px; padding: 9px 13px; background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: 8px; margin-bottom: 12px; font-size: .82rem; color: var(--tx-2); flex-wrap: wrap; }
+    .page-batch-bar.show { display: flex; }
+    .page-tree-item.selecting { cursor: pointer; }
+    .page-tree-item.selected { border-color: var(--accent, #3b82f6); background: rgba(59,130,246,.08); }
+    .page-check { width: 15px; height: 15px; flex-shrink: 0; accent-color: #3b82f6; cursor: pointer; }
+    .page-drop-zone.drag-over-zone { outline: 1px dashed var(--accent, #3b82f6); outline-offset: -2px; background: rgba(59,130,246,.05); min-height: 28px; }
+    .pages-independent { margin-top: 8px; }
+    .indep-label, .uncat-label { font-size: .72rem; font-weight: 700; color: var(--tx-3); letter-spacing: .06em; text-transform: uppercase; margin: 10px 0 6px 2px; }
     .modal-header { display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--bd); flex-shrink: 0; }
     .modal-header h3 { flex: 1; font-size: .98rem; font-weight: 700; color: var(--tx); letter-spacing: -.01em; }
     .modal-close { background: var(--bg-2); border: 1px solid var(--bd-2); color: var(--tx-2); width: 30px; height: 30px; border-radius: 6px; cursor: pointer; transition: var(--t); }
@@ -483,9 +508,10 @@ export function renderPage() {
           <line x1="12" y1="12" x2="12" y2="21"></line>
           <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
         </svg>
-        <p style="font-size:.9rem;font-weight:500;color:inherit">点击或拖拽图片上传</p>
-        <small style="display:block;margin-top:8px;font-size:.76rem">JPG · PNG · GIF · WebP · SVG</small>
+        <p id="dropZoneHint" style="font-size:.9rem;font-weight:500;color:inherit">点击或拖拽图片上传</p>
+        <small style="display:block;margin-top:8px;font-size:.76rem">JPG · PNG · GIF · WebP · SVG · 可多次添加</small>
       </div>
+      <div class="upload-queue" id="uploadQueue"></div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:.82rem;color:#555">
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none">
           <input type="checkbox" id="uploadPublic" style="accent-color:#3b82f6">
@@ -546,7 +572,8 @@ export function renderPage() {
           <div class="page-sub">托管的 Markdown / HTML 文档</div>
         </div>
         <button class="btn btn-ghost" id="newProjectBtn" style="padding:7px 10px;font-size:.78rem">+ 项目</button>
-        <button class="btn btn-ghost" id="importPageBtn" style="padding:7px 10px;font-size:.78rem">导入 .md</button>
+        <button class="btn btn-ghost" id="newGroupBtn" style="padding:7px 10px;font-size:.78rem">+ 分组</button>
+        <button class="btn btn-ghost" id="importPageBtn" style="padding:7px 10px;font-size:.78rem">导入</button>
         <button class="btn btn-primary" id="newPageBtn" style="padding:7px 14px;font-size:.82rem">+ 新建页面</button>
       </div>
       <div class="toolbar">
@@ -555,7 +582,17 @@ export function renderPage() {
           <option value="all">全部项目</option>
         </select>
         <div class="spacer"></div>
+        <button class="btn btn-ghost" id="pageSelectToggle" style="font-size:.78rem">选择</button>
         <button class="btn btn-ghost" id="refreshPages" style="font-size:.78rem">刷新</button>
+      </div>
+      <div class="page-batch-bar" id="pageBatchBar">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none"><input type="checkbox" id="pageSelectAll"> 全选</label>
+        <span id="pageSelCount">已选 0</span>
+        <div class="spacer"></div>
+        <button class="btn btn-ghost" id="pageBatchMove" style="font-size:.78rem">移动</button>
+        <button class="btn btn-ghost" id="pageBatchPublic" style="font-size:.78rem">设为公开</button>
+        <button class="btn btn-ghost" id="pageBatchPrivate" style="font-size:.78rem">设为私密</button>
+        <button class="btn btn-danger" id="pageBatchDelete" style="font-size:.78rem">删除</button>
       </div>
       <div class="pages-tree" id="pagesTree"></div>
       <div class="empty" id="pagesEmpty" style="display:none">暂无页面</div>
@@ -830,7 +867,10 @@ export function renderPage() {
     </div>
     <div class="modal-body">
       <div class="field"><label>分组名称</label><input type="text" id="grpName" placeholder="入门指南" maxlength="64"></div>
-      <input type="hidden" id="grpProjectId">
+      <div class="field">
+        <label>所属项目 <span style="color:var(--tx-3);font-weight:400;text-transform:none">（可选，不选则为独立分组）</span></label>
+        <select id="grpProjectId"><option value="">-- 独立分组 --</option></select>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" id="grpModalCancel">取消</button>
@@ -839,18 +879,42 @@ export function renderPage() {
   </div>
 </div>
 
-<!-- Import Markdown Modal -->
+<!-- Page batch move modal -->
+<div class="modal-overlay" id="pageMoveModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h3>批量移动</h3>
+      <button class="modal-close" id="pageMoveModalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>目标项目</label>
+        <select id="pageMoveProject"><option value="">-- 无 / 未分类 --</option></select>
+      </div>
+      <div class="field">
+        <label>目标分组</label>
+        <select id="pageMoveGroup"><option value="">-- 无 --</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="pageMoveModalCancel">取消</button>
+      <button class="btn btn-primary" id="pageMoveModalSave">移动</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import Markdown / HTML Modal -->
 <div class="modal-overlay" id="importModal">
   <div class="modal" style="max-width:520px">
     <div class="modal-header">
-      <h3>导入 Markdown 文件</h3>
+      <h3>导入页面</h3>
       <button class="modal-close" id="importModalClose">✕</button>
     </div>
     <div class="modal-body">
       <div class="drop-zone" id="importDropZone" style="padding:28px;text-align:center;border:2px dashed var(--bd-2);border-radius:10px;cursor:pointer;transition:var(--t)">
-        <input type="file" id="importFileInput" accept=".md,.markdown,text/markdown" style="display:none">
+        <input type="file" id="importFileInput" accept=".md,.markdown,.html,.htm,text/markdown,text/html" style="display:none">
         <div style="font-size:1.4rem;margin-bottom:8px">📄</div>
-        <div style="color:var(--tx-2);font-size:.84rem">点击或拖拽 .md 文件到此处</div>
+        <div style="color:var(--tx-2);font-size:.84rem">点击或拖拽 .md / .html 文件到此处</div>
         <div style="color:var(--tx-3);font-size:.72rem;margin-top:4px">支持 YAML frontmatter (title, slug, projectId, groupId, type, isPublic)</div>
       </div>
       <div id="importPreview" style="display:none">
@@ -980,7 +1044,8 @@ export function renderPage() {
     if (!token) return;
     try {
       const payload = JSON.parse(atob(token.split('.')[0]));
-      if (payload.exp && Date.now() > payload.exp * 1000) {
+      // server createToken stores exp as ms timestamp
+      if (payload.exp && Date.now() > payload.exp) {
         localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(PERM_KEY);
         localStorage.removeItem(USER_KEY); localStorage.removeItem(ADMIN_KEY);
         token = null; perms = null; username = null; isAdminUser = false;
@@ -991,6 +1056,7 @@ export function renderPage() {
   function authH() { return { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }; }
 
   // ── Vditor editor management ──────────────────────────────────────────────
+  let vditorGen = 0;
   function getContent() {
     return vditorInst ? vditorInst.getValue() : document.getElementById('pmContent').value;
   }
@@ -1017,18 +1083,31 @@ export function renderPage() {
   }
 
   async function initVditor(content) {
+    const gen = ++vditorGen;
+    const seed = () => {
+      const ta = document.getElementById('pmContent');
+      // Prefer textarea value (user may have typed while CDN loads) over call-time content
+      if (ta && ta.value) return ta.value;
+      return content || '';
+    };
     const ok = await ensureVditor();
+    if (gen !== vditorGen) return;
     if (!ok || !window.Vditor) {
       const ta = document.getElementById('pmContent');
-      ta.value = content || ''; ta.style.display = '';
+      ta.value = seed(); ta.style.display = '';
       return;
     }
-    if (vditorInst) { vditorInst.setValue(content || ''); return; }
+    if (vditorInst) {
+      if (gen !== vditorGen) return;
+      vditorInst.setValue(seed());
+      return;
+    }
 
     const box = document.getElementById('pmVditor');
     box.style.display = 'block';
     document.getElementById('pmContent').style.display = 'none';
 
+    const finalContent = seed();
     const editorH = Math.min(520, Math.max(320, window.innerHeight - 460));
     vditorInst = new Vditor('pmVditor', {
       height: editorH,
@@ -1037,7 +1116,7 @@ export function renderPage() {
       lang: 'zh_CN',
       cdn: 'https://cdn.jsdelivr.net/npm/vditor',
       cache: { enable: false },
-      value: content || '',
+      value: finalContent,
       outline: { enable: false },
       preview: { show: false },
       toolbar: [
@@ -1066,9 +1145,10 @@ export function renderPage() {
         },
       },
       after() {
+        if (gen !== vditorGen) return;
         // Force Vditor to recalculate content-area height after modal is painted
         window.dispatchEvent(new Event('resize'));
-        vditorInst.focus();
+        try { vditorInst && vditorInst.focus(); } catch {}
 
         // Stop wheel bubbling to modal-body when editor still has room to scroll
         const box = document.getElementById('pmVditor');
@@ -1084,7 +1164,8 @@ export function renderPage() {
   }
 
   function destroyVditor() {
-    if (vditorInst) { vditorInst.destroy(); vditorInst = null; }
+    vditorGen++; // cancel any in-flight init
+    if (vditorInst) { try { vditorInst.destroy(); } catch {} vditorInst = null; }
     const box = document.getElementById('pmVditor');
     if (box) { box.style.display = 'none'; box.innerHTML = ''; }
     document.getElementById('pmContent').style.display = '';
@@ -1092,7 +1173,10 @@ export function renderPage() {
 
   function switchEditorToType(type, keepContent) {
     if (type === 'markdown') {
-      initVditor(keepContent);
+      // write current content into textarea so async init can seed from it
+      const ta = document.getElementById('pmContent');
+      if (ta) ta.value = keepContent || '';
+      initVditor(keepContent || '');
     } else {
       const prev = vditorInst ? vditorInst.getValue() : keepContent;
       destroyVditor();
@@ -1310,22 +1394,69 @@ export function renderPage() {
   const dropZone = document.getElementById('dropZone');
   const fileInput = document.getElementById('fileInput');
   let pendingFiles = [];
-  dropZone.addEventListener('click', () => { if (!token) { openLoginOverlay(); return; } fileInput.click(); });
-  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+  let uploadBusy = false;
+  dropZone.addEventListener('click', () => { if (!token) { openLoginOverlay(); return; } if (uploadBusy) return; fileInput.click(); });
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); if (!uploadBusy) dropZone.classList.add('over'); });
   dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
-  dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('over'); setFiles([...e.dataTransfer.files].filter(f=>f.type.startsWith('image/'))); });
-  fileInput.addEventListener('change', () => setFiles([...fileInput.files]));
-  function setFiles(files) {
-    pendingFiles = files;
-    dropZone.querySelector('p').textContent = files.length ? files.map(f=>f.name).join(', ') : '点击或拖拽图片到此处';
-    document.getElementById('uploadBtn').disabled = !files.length || !token;
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('over');
+    if (uploadBusy) return;
+    appendFiles([...e.dataTransfer.files].filter(f => f.type.startsWith('image/')));
+  });
+  fileInput.addEventListener('change', () => {
+    if (uploadBusy) { fileInput.value = ''; return; }
+    appendFiles([...fileInput.files]);
+    fileInput.value = '';
+  });
+
+  function fmtShortSize(b) {
+    if (b < 1024) return b + ' B';
+    if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+    return (b / 1048576).toFixed(1) + ' MB';
+  }
+  function renderUploadQueue() {
+    const q = document.getElementById('uploadQueue');
+    const hint = document.getElementById('dropZoneHint');
+    if (!pendingFiles.length) {
+      q.classList.remove('show'); q.innerHTML = '';
+      if (hint) hint.textContent = '点击或拖拽图片上传';
+      document.getElementById('uploadBtn').disabled = true;
+      return;
+    }
+    if (hint) hint.textContent = '已选 ' + pendingFiles.length + ' 张，可继续添加';
+    q.classList.add('show');
+    q.innerHTML = pendingFiles.map((f, i) =>
+      '<div class="upload-q-item"><span class="uq-name" title="' + esc(f.name) + '">' + esc(f.name) +
+      '</span><span class="uq-size">' + fmtShortSize(f.size) +
+      '</span><button type="button" class="uq-rm" data-idx="' + i + '" title="移除">×</button></div>'
+    ).join('');
+    q.querySelectorAll('.uq-rm').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        if (uploadBusy) return;
+        const idx = parseInt(btn.dataset.idx, 10);
+        pendingFiles.splice(idx, 1);
+        renderUploadQueue();
+      });
+    });
+    document.getElementById('uploadBtn').disabled = !token || uploadBusy;
+  }
+  function appendFiles(files) {
+    if (!files || !files.length) return;
+    pendingFiles = pendingFiles.concat(files);
+    renderUploadQueue();
+  }
+  function clearFiles() {
+    pendingFiles = [];
+    renderUploadQueue();
   }
 
   // Paste-to-upload: capture screenshots from clipboard (Ctrl/Cmd+V)
   document.addEventListener('paste', e => {
     // Don't hijack paste inside text fields or the Vditor editor
     const ae = document.activeElement;
-    if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) return;
+    if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable || ae.closest?.('.vditor'))) return;
+    if (uploadBusy) return;
     const items = e.clipboardData && e.clipboardData.items;
     if (!items) return;
     const imgs = [];
@@ -1343,7 +1474,7 @@ export function renderPage() {
     e.preventDefault();
     if (!token) { openLoginOverlay(); return; }
     activateTab('upload');
-    setFiles([...pendingFiles, ...imgs]);
+    appendFiles(imgs);
     toast('已粘贴 ' + imgs.length + ' 张图片，点击上传', 'success');
   });
   // Upload a single file; resolves to a result object (failures keep the File ref for retry)
@@ -1396,7 +1527,9 @@ export function renderPage() {
   };
 
   document.getElementById('uploadBtn').addEventListener('click', async () => {
-    if (!token || !pendingFiles.length) return;
+    if (!token || !pendingFiles.length || uploadBusy) return;
+    const queue = pendingFiles.slice();
+    uploadBusy = true;
     document.getElementById('uploadBtn').disabled = true;
     document.getElementById('resultList').innerHTML = '';
     document.getElementById('uploadErr').textContent = '';
@@ -1407,11 +1540,11 @@ export function renderPage() {
     const bytesEl = document.getElementById('imgProgressBytes');
     const cntEl   = document.getElementById('imgProgressCount');
     const makePublic = document.getElementById('uploadPublic').checked;
-    const total = pendingFiles.length;
+    const total = queue.length;
     const results = [];
 
     for (let i = 0; i < total; i++) {
-      const file = pendingFiles[i];
+      const file = queue[i];
       cntEl.textContent = \`\${i + 1} / \${total} 张\`;
       const result = await uploadOne(file, makePublic, (loaded, totalBytes) => {
         const overallPct = Math.round(((i + loaded / totalBytes) / total) * 100);
@@ -1424,8 +1557,8 @@ export function renderPage() {
 
     bar.style.width = '100%'; pctEl.textContent = '100%';
     setTimeout(() => { prog.classList.remove('show'); bar.style.width = '0%'; info.classList.remove('show'); }, 700);
-    document.getElementById('uploadBtn').disabled = false;
-    setFiles([]);
+    uploadBusy = false;
+    clearFiles();
     loadQuota();
     document.getElementById('resultList').innerHTML = results.map(resultItemHtml).join('');
   });
@@ -1795,21 +1928,29 @@ export function renderPage() {
   });
 
   // ── Pages ──
+  let pageSelectMode = false;
+  const pageSelected = new Set();
+
   function renderPageTree() {
     const q = (document.getElementById('pageSearch')?.value || '').toLowerCase();
     const projFilter = document.getElementById('pageProjectFilter')?.value || 'all';
     const pages = userPages.filter(p => {
       if (q && !p.title.toLowerCase().includes(q) && !p.slug.toLowerCase().includes(q)) return false;
-      if (projFilter === '_none_') return !p.projectId;
+      if (projFilter === '_none_') return !p.projectId && !p.groupId;
       if (projFilter !== 'all') return p.projectId === projFilter;
       return true;
     });
     const projects = [...userProjects].sort((a,b) => (a.sort??0) - (b.sort??0));
     const groups = [...userGroups].sort((a,b) => (a.sort??0) - (b.sort??0));
-    const projMap = Object.fromEntries(projects.map(p => [p.id, p]));
-    const grpMap = Object.fromEntries(groups.map(g => [g.id, g]));
+    const independentGroups = groups.filter(g => !g.projectId);
 
-    document.getElementById('pagesEmpty').style.display = pages.length || projects.length ? 'none' : 'block';
+    // drop stale selections
+    for (const s of [...pageSelected]) {
+      if (!userPages.some(p => p.slug === s)) pageSelected.delete(s);
+    }
+
+    const hasAnything = pages.length || projects.length || independentGroups.length;
+    document.getElementById('pagesEmpty').style.display = hasAnything ? 'none' : 'block';
     let html = '';
 
     // projects
@@ -1843,38 +1984,72 @@ export function renderPage() {
               <button class="grp-act-btn" onclick="event.stopPropagation();deleteGroup('\${esc(grp.id)}')" title="删除分组" style="color:var(--red)">删除</button>
             </span>
           </div>
-          <div class="page-group-body page-tree-docs">\`;
+          <div class="page-group-body page-tree-docs page-drop-zone" data-drop-scope="group" data-project-id="\${esc(proj.id)}" data-group-id="\${esc(grp.id)}">\`;
         for (const p of grpPages) html += renderDocItem(p);
         html += \`</div></div>\`;
       }
-      // pages directly under project (no group) — rendered directly, same drop container as group items
+      // pages directly under project (no group)
+      html += \`<div class="page-project-pages page-drop-zone" data-drop-scope="project" data-project-id="\${esc(proj.id)}" data-group-id="">\`;
       for (const p of projPages) html += renderDocItem(p);
-      html += \`</div></div>\`;
+      html += \`</div></div></div>\`;
     }
 
-    // uncategorized pages
-    const uncat = pages.filter(p => !p.projectId).sort((a,b) => (a.sort??0) - (b.sort??0));
-    if (uncat.length) {
-      html += \`<div class="pages-uncategorized"><div class="uncat-label">未分类</div>\`;
-      for (const p of uncat) html += renderDocItem(p);
-      html += \`</div>\`;
+    // independent groups (no project)
+    if (projFilter === 'all' || projFilter === '_none_') {
+      if (independentGroups.length) {
+        html += \`<div class="pages-independent"><div class="indep-label">独立分组</div>\`;
+        for (const grp of independentGroups) {
+          const grpPages = pages.filter(p => p.groupId === grp.id).sort((a,b) => (a.sort??0) - (b.sort??0));
+          html += \`<div class="page-group" data-drag-type="group" data-drag-id="\${esc(grp.id)}" data-project-id="">
+            <div class="page-group-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.expand-icon').classList.toggle('open')">
+              <span class="expand-icon open" style="font-size:.55rem">▶</span>
+              <span class="group-name">\${esc(grp.name)}</span>
+              <span class="count-badge">\${grpPages.length}</span>
+              <span class="grp-actions">
+                <button class="grp-act-btn" onclick="event.stopPropagation();editGroup('\${esc(grp.id)}')" title="编辑分组">编辑</button>
+                <button class="grp-act-btn" onclick="event.stopPropagation();deleteGroup('\${esc(grp.id)}')" title="删除分组" style="color:var(--red)">删除</button>
+              </span>
+            </div>
+            <div class="page-group-body page-tree-docs page-drop-zone" data-drop-scope="group" data-project-id="" data-group-id="\${esc(grp.id)}">\`;
+          for (const p of grpPages) html += renderDocItem(p);
+          html += \`</div></div>\`;
+        }
+        html += \`</div>\`;
+      }
+
+      // uncategorized pages (no project, no group)
+      const uncat = pages.filter(p => !p.projectId && !p.groupId).sort((a,b) => (a.sort??0) - (b.sort??0));
+      if (uncat.length || projFilter === '_none_') {
+        html += \`<div class="pages-uncategorized page-drop-zone" data-drop-scope="uncat" data-project-id="" data-group-id=""><div class="uncat-label">未分类</div>\`;
+        for (const p of uncat) html += renderDocItem(p);
+        html += \`</div>\`;
+      }
     }
 
     document.getElementById('pagesTree').innerHTML = html;
     updateProjectFilter(projects);
+    updatePageBatchBar();
     initPageDnD();
   }
 
   function renderDocItem(p) {
-    return \`<div class="page-tree-item" draggable="true" data-drag-type="page" data-drag-id="\${esc(p.slug)}" data-project-id="\${esc(p.projectId||'')}" data-group-id="\${esc(p.groupId||'')}">
+    const sel = pageSelected.has(p.slug);
+    const check = pageSelectMode
+      ? \`<input type="checkbox" class="page-check" data-slug="\${esc(p.slug)}" \${sel?'checked':''} onclick="event.stopPropagation();togglePageSel('\${esc(p.slug)}')">\`
+      : '';
+    const drag = pageSelectMode ? 'false' : 'true';
+    const cls = 'page-tree-item' + (pageSelectMode ? ' selecting' : '') + (sel ? ' selected' : '');
+    const clickAttr = pageSelectMode ? \`onclick="togglePageSel('\${esc(p.slug)}')"\` : '';
+    return \`<div class="\${cls}" draggable="\${drag}" data-drag-type="page" data-drag-id="\${esc(p.slug)}" data-project-id="\${esc(p.projectId||'')}" data-group-id="\${esc(p.groupId||'')}" \${clickAttr}>
+      \${check}
       <span class="drag-handle" title="拖拽排序">⠿</span>
       <div class="page-item-info" style="flex:1;min-width:0">
         <div class="page-title">\${esc(p.title)} <span class="type-badge type-\${p.type==='markdown'?'md':'html'}">\${p.type}</span></div>
         <div class="page-meta">\${p.isPublic?'公开':'私密'} · /p/\${esc(p.slug)}</div>
       </div>
-      <a href="/p/\${p.slug}" target="_blank" class="btn btn-ghost" style="font-size:.72rem">预览</a>
-      <button class="btn btn-ghost" onclick="editPageBySlug('\${esc(p.slug)}')" style="font-size:.72rem">编辑</button>
-      <button class="btn btn-danger" onclick="deletePage('\${esc(p.slug)}')" style="font-size:.72rem">删除</button>
+      <a href="/p/\${p.slug}" target="_blank" class="btn btn-ghost" style="font-size:.72rem" onclick="event.stopPropagation()">预览</a>
+      <button class="btn btn-ghost" onclick="event.stopPropagation();editPageBySlug('\${esc(p.slug)}')" style="font-size:.72rem">编辑</button>
+      <button class="btn btn-danger" onclick="event.stopPropagation();deletePage('\${esc(p.slug)}')" style="font-size:.72rem">删除</button>
     </div>\`;
   }
 
@@ -1895,10 +2070,47 @@ export function renderPage() {
 
   function updatePageGroupSelect(selEl, projectId, selectedGroupId) {
     if (!selEl) return;
-    const grps = userGroups.filter(g => g.projectId === projectId);
+    // project selected → that project's groups; empty project → independent groups only
+    const grps = projectId
+      ? userGroups.filter(g => g.projectId === projectId)
+      : userGroups.filter(g => !g.projectId);
     selEl.innerHTML = '<option value="">-- 无 --</option>' +
-      grps.map(g => '<option value="'+esc(g.id)+'"'+(g.id===selectedGroupId?' selected':'')+'>'+g.name+'</option>').join('');
+      grps.map(g => '<option value="'+esc(g.id)+'"'+(g.id===selectedGroupId?' selected':'')+'>'+esc(g.name)+'</option>').join('');
   }
+
+  function updateGrpProjectSelect(selectedId) {
+    const sel = document.getElementById('grpProjectId');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">-- 独立分组 --</option>' +
+      userProjects.map(p => '<option value="'+esc(p.id)+'"'+(p.id===selectedId?' selected':'')+'>'+esc(p.name)+'</option>').join('');
+  }
+
+  function updatePageBatchBar() {
+    const bar = document.getElementById('pageBatchBar');
+    if (!bar) return;
+    bar.classList.toggle('show', pageSelectMode);
+    document.getElementById('pageSelCount').textContent = '已选 ' + pageSelected.size;
+    const toggle = document.getElementById('pageSelectToggle');
+    if (toggle) {
+      toggle.textContent = pageSelectMode ? '退出选择' : '选择';
+      toggle.classList.toggle('btn-primary', pageSelectMode);
+    }
+    const vis = [...document.querySelectorAll('.page-tree-item')].map(el => el.dataset.dragId);
+    const allSel = vis.length > 0 && vis.every(s => pageSelected.has(s));
+    const sa = document.getElementById('pageSelectAll');
+    if (sa) sa.checked = allSel;
+  }
+
+  window.togglePageSel = function(slug) {
+    if (!pageSelectMode) return;
+    if (pageSelected.has(slug)) pageSelected.delete(slug); else pageSelected.add(slug);
+    const el = document.querySelector('.page-tree-item[data-drag-id="'+CSS.escape(slug)+'"]');
+    if (el) {
+      el.classList.toggle('selected', pageSelected.has(slug));
+      const cb = el.querySelector('.page-check'); if (cb) cb.checked = pageSelected.has(slug);
+    }
+    updatePageBatchBar();
+  };
 
   async function loadPages() {
     if (!token) return;
@@ -2106,36 +2318,42 @@ export function renderPage() {
   // ── Group CRUD ──
   let editingGroupId = null;
 
+  function openGroupModal(projectId, isEdit) {
+    document.getElementById('grpModalTitle').textContent = isEdit ? '编辑分组' : '新建分组';
+    document.getElementById('grpName').value = isEdit ? (userGroups.find(g => g.id === editingGroupId)?.name || '') : '';
+    updateGrpProjectSelect(projectId || '');
+    document.getElementById('grpModalSave').textContent = isEdit ? '保存' : '创建';
+    document.getElementById('groupModal').classList.add('show');
+  }
+
+  document.getElementById('newGroupBtn')?.addEventListener('click', () => {
+    editingGroupId = null;
+    openGroupModal('', false);
+  });
+
   window.createGroupInProject = function(projectId) {
     editingGroupId = null;
-    document.getElementById('grpModalTitle').textContent = '新建分组';
-    document.getElementById('grpName').value = '';
-    document.getElementById('grpProjectId').value = projectId;
-    document.getElementById('grpModalSave').textContent = '创建';
-    document.getElementById('groupModal').classList.add('show');
+    openGroupModal(projectId, false);
   };
 
   window.editGroup = function(id) {
     const grp = userGroups.find(g => g.id === id);
     if (!grp) return;
     editingGroupId = id;
-    document.getElementById('grpModalTitle').textContent = '编辑分组';
-    document.getElementById('grpName').value = grp.name;
-    document.getElementById('grpProjectId').value = grp.projectId;
-    document.getElementById('grpModalSave').textContent = '保存';
-    document.getElementById('groupModal').classList.add('show');
+    openGroupModal(grp.projectId || '', true);
   };
 
   document.getElementById('grpModalSave').addEventListener('click', async () => {
     const name = document.getElementById('grpName').value.trim();
-    const projectId = document.getElementById('grpProjectId').value;
+    const projectId = document.getElementById('grpProjectId').value || null;
     if (!name) { toast('请输入分组名称'); return; }
     const isEdit = !!editingGroupId;
     const url = isEdit ? '/api/groups/' + encodeURIComponent(editingGroupId) : '/api/groups';
     const meth = isEdit ? 'PATCH' : 'POST';
-    const body = isEdit ? { name } : { projectId, name };
+    // create: name + optional projectId; edit: name (+ projectId if changed)
+    const body = isEdit ? { name, projectId } : { name, ...(projectId ? { projectId } : {}) };
     const res = await fetch(url, { method: meth, headers: authH(), body: JSON.stringify(body) });
-    if (!res.ok) { toast('失败'); return; }
+    if (!res.ok) { const d = await res.json().catch(() => ({})); toast('失败: ' + (d.error || '')); return; }
     document.getElementById('groupModal').classList.remove('show');
     toast(isEdit ? '分组已更新' : '分组已创建');
     loadPages();
@@ -2144,7 +2362,10 @@ export function renderPage() {
   window.deleteGroup = async function(id) {
     const grp = userGroups.find(g => g.id === id);
     if (!grp) return;
-    if (!confirm('确认删除分组「' + grp.name + '」？其下文档将移至项目根')) return;
+    const msg = grp.projectId
+      ? '确认删除分组「' + grp.name + '」？其下文档将移至项目根'
+      : '确认删除独立分组「' + grp.name + '」？其下文档将变为未分类';
+    if (!confirm(msg)) return;
     await fetch('/api/groups/' + encodeURIComponent(id), { method: 'DELETE', headers: authH() });
     toast('分组已删除'); loadPages();
   };
@@ -2187,9 +2408,10 @@ export function renderPage() {
     reader.onload = (e) => {
       importMd = e.target.result;
       const { metadata, content } = parseFrontmatter(importMd);
-      document.getElementById('importTitle').value = metadata.title || file.name.replace(/\\.(md|markdown)$/i, '');
+      const isHtml = /\.(html?|htm)$/i.test(file.name);
+      document.getElementById('importTitle').value = metadata.title || file.name.replace(/\.(md|markdown|html?|htm)$/i, '');
       document.getElementById('importSlug').value = metadata.slug || generateSlugFromFile(file.name);
-      document.getElementById('importType').value = metadata.type || 'markdown';
+      document.getElementById('importType').value = metadata.type || (isHtml ? 'html' : 'markdown');
       document.getElementById('importPublic').checked = metadata.isPublic !== false;
       updatePageProjectSelect(document.getElementById('importProject'), metadata.projectId || '');
       updatePageGroupSelect(document.getElementById('importGroup'), metadata.projectId || '', metadata.groupId || '');
@@ -2218,7 +2440,7 @@ export function renderPage() {
   }
 
   function generateSlugFromFile(filename) {
-    return filename.replace(/\\.(md|markdown)$/i, '').replace(/[^a-zA-Z0-9_-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 120) || 'imported-' + Date.now();
+    return filename.replace(/\\.(md|markdown|html?|htm)$/i, '').replace(/[^a-zA-Z0-9_-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 120) || 'imported-' + Date.now();
   }
 
   document.getElementById('importProject')?.addEventListener('change', () => {
@@ -2259,37 +2481,119 @@ export function renderPage() {
   document.getElementById('pageProjectFilter')?.addEventListener('change', renderPageTree);
   document.getElementById('refreshPages')?.addEventListener('click', loadPages);
 
+  // ── Page multi-select ──
+  document.getElementById('pageSelectToggle')?.addEventListener('click', () => {
+    pageSelectMode = !pageSelectMode;
+    if (!pageSelectMode) pageSelected.clear();
+    renderPageTree();
+  });
+  document.getElementById('pageSelectAll')?.addEventListener('change', e => {
+    const vis = [...document.querySelectorAll('.page-tree-item')].map(el => el.dataset.dragId);
+    if (e.target.checked) vis.forEach(s => pageSelected.add(s));
+    else vis.forEach(s => pageSelected.delete(s));
+    renderPageTree();
+  });
+
+  async function pageBatchPatch(body) {
+    const slugs = [...pageSelected];
+    if (!slugs.length) { toast('请先选择页面'); return; }
+    const { ok, fail } = await runPool(slugs, 6, async slug => {
+      const res = await fetch('/api/pages/' + encodeURIComponent(slug), {
+        method: 'PATCH', headers: authH(), body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error();
+    });
+    toast(fail ? \`完成 \${ok}，失败 \${fail}\` : \`已更新 \${ok} 个页面\`, fail ? 'error' : 'success');
+    pageSelected.clear();
+    loadPages();
+  }
+
+  document.getElementById('pageBatchPublic')?.addEventListener('click', () => pageBatchPatch({ isPublic: true }));
+  document.getElementById('pageBatchPrivate')?.addEventListener('click', () => pageBatchPatch({ isPublic: false }));
+  document.getElementById('pageBatchDelete')?.addEventListener('click', async () => {
+    const slugs = [...pageSelected];
+    if (!slugs.length) { toast('请先选择页面'); return; }
+    if (!confirm('确认删除选中的 ' + slugs.length + ' 个页面？')) return;
+    const { ok, fail } = await runPool(slugs, 6, async slug => {
+      const res = await fetch('/api/pages/' + encodeURIComponent(slug), { method: 'DELETE', headers: authH() });
+      if (!res.ok) throw new Error();
+    });
+    toast(fail ? \`删除 \${ok}，失败 \${fail}\` : \`已删除 \${ok} 个页面\`, fail ? 'error' : 'success');
+    pageSelected.clear();
+    loadPages();
+  });
+  document.getElementById('pageBatchMove')?.addEventListener('click', () => {
+    if (!pageSelected.size) { toast('请先选择页面'); return; }
+    updatePageProjectSelect(document.getElementById('pageMoveProject'), '');
+    updatePageGroupSelect(document.getElementById('pageMoveGroup'), '', '');
+    document.getElementById('pageMoveModal').classList.add('show');
+  });
+  document.getElementById('pageMoveProject')?.addEventListener('change', () => {
+    updatePageGroupSelect(document.getElementById('pageMoveGroup'), document.getElementById('pageMoveProject').value, '');
+  });
+  document.getElementById('pageMoveModalSave')?.addEventListener('click', async () => {
+    const projectId = document.getElementById('pageMoveProject').value || null;
+    const groupId = document.getElementById('pageMoveGroup').value || null;
+    document.getElementById('pageMoveModal').classList.remove('show');
+    await pageBatchPatch({ projectId, groupId });
+  });
+  ['pageMoveModalClose','pageMoveModalCancel'].forEach(id =>
+    document.getElementById(id)?.addEventListener('click', () => document.getElementById('pageMoveModal').classList.remove('show'))
+  );
+
   // ── Page Drag and Drop ──
   let dragState = null;
 
+  function clearDragOver() {
+    document.querySelectorAll('.drag-over-top,.drag-over-bot,.drag-over-zone').forEach(el => {
+      el.classList.remove('drag-over-top','drag-over-bot','drag-over-zone');
+    });
+  }
+
+  function scopeItems(projectId, groupId) {
+    // direct children of the matching drop zone (avoids nested groups)
+    const sel = '.page-drop-zone[data-project-id="' + CSS.escape(projectId || '') + '"][data-group-id="' + CSS.escape(groupId || '') + '"] > .page-tree-item';
+    return [...document.querySelectorAll(sel)];
+  }
+
   function initPageDnD() {
+    if (pageSelectMode) return;
     document.querySelectorAll('.page-tree-item[draggable="true"]').forEach(el => {
       el.addEventListener('dragstart', onDragStart);
       el.addEventListener('dragend', onDragEnd);
-      el.addEventListener('dragover', onDragOver);
-      el.addEventListener('drop', onDrop);
-      el.addEventListener('dragleave', onDragLeave);
+      el.addEventListener('dragover', onDragOverItem);
+      el.addEventListener('drop', onDropItem);
+      el.addEventListener('dragleave', onDragLeaveItem);
+    });
+    document.querySelectorAll('.page-drop-zone').forEach(el => {
+      el.addEventListener('dragover', onDragOverZone);
+      el.addEventListener('drop', onDropZone);
+      el.addEventListener('dragleave', onDragLeaveZone);
     });
   }
 
   function onDragStart(e) {
-    // prevent drag from buttons/links
     if (e.target.closest('button, a, input, select, textarea')) { e.preventDefault(); return; }
     const el = e.currentTarget;
-    dragState = { type: el.dataset.dragType, id: el.dataset.dragId, el };
+    dragState = {
+      type: el.dataset.dragType,
+      id: el.dataset.dragId,
+      projectId: el.dataset.projectId || '',
+      groupId: el.dataset.groupId || '',
+      el,
+    };
     el.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', el.dataset.dragId);
   }
-  function onDragEnd(e) {
-    e.currentTarget.classList.remove('dragging');
-    document.querySelectorAll('.drag-over-top,.drag-over-bot,.drag-over-proj,.drag-over-grp').forEach(el => {
-      el.classList.remove('drag-over-top','drag-over-bot','drag-over-proj','drag-over-grp');
-    });
+  function onDragEnd() {
+    if (dragState?.el) dragState.el.classList.remove('dragging');
+    clearDragOver();
     dragState = null;
   }
-  function onDragOver(e) {
+  function onDragOverItem(e) {
     e.preventDefault();
+    e.stopPropagation();
     e.dataTransfer.dropEffect = 'move';
     const target = e.currentTarget;
     if (!dragState || target === dragState.el) return;
@@ -2298,47 +2602,99 @@ export function renderPage() {
     target.classList.remove('drag-over-top','drag-over-bot');
     target.classList.add(e.clientY < midY ? 'drag-over-top' : 'drag-over-bot');
   }
-  function onDragLeave(e) {
+  function onDragLeaveItem(e) {
     e.currentTarget.classList.remove('drag-over-top','drag-over-bot');
   }
-  async function onDrop(e) {
+  function onDragOverZone(e) {
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (!dragState) return;
+    // only highlight empty-ish zone when not over a child item
+    if (e.target.closest('.page-tree-item')) return;
+    e.currentTarget.classList.add('drag-over-zone');
+  }
+  function onDragLeaveZone(e) {
+    e.currentTarget.classList.remove('drag-over-zone');
+  }
+
+  async function reorderInScope(projectId, groupId, order) {
+    await fetch('/api/pages/reorder', {
+      method: 'PATCH', headers: authH(),
+      body: JSON.stringify({
+        groupId: groupId || null,
+        projectId: projectId || null,
+        order,
+      }),
+    });
+  }
+
+  async function movePageTo(slug, projectId, groupId) {
+    await fetch('/api/pages/' + encodeURIComponent(slug), {
+      method: 'PATCH', headers: authH(),
+      body: JSON.stringify({ projectId: projectId || null, groupId: groupId || null }),
+    });
+  }
+
+  async function onDropItem(e) {
+    e.preventDefault();
+    e.stopPropagation();
     const target = e.currentTarget;
     target.classList.remove('drag-over-top','drag-over-bot');
-    if (!dragState || target === dragState.el) return;
+    if (!dragState || dragState.type !== 'page' || target === dragState.el) return;
 
-    // page reorder within same group
-    if (dragState.type === 'page' && target.dataset.dragType === 'page') {
-      const targetGroupId = target.dataset.groupId || '';
-      const srcGroupId = dragState.el.dataset.groupId || '';
-      if (targetGroupId === srcGroupId) {
-        // same group/project-level: reorder
-        // Find all page items in the same group (including those inside sub-containers)
-        const container = target.closest('.page-group-body, .page-project-body');
-        const allItems = container ? [...container.querySelectorAll('.page-tree-item')] : [];
-        // Filter to same groupId only
-        const sameGroupItems = allItems.filter(el => (el.dataset.groupId || '') === targetGroupId);
-        const slugs = sameGroupItems.map(el => el.dataset.dragId);
-        const oldIdx = slugs.indexOf(dragState.id);
-        const newIdx = slugs.indexOf(target.dataset.dragId);
-        if (oldIdx !== -1 && newIdx !== -1 && oldIdx !== newIdx) {
-          // optimistic DOM reorder
-          const refNode = oldIdx < newIdx ? sameGroupItems[newIdx].nextSibling : sameGroupItems[newIdx];
-          sameGroupItems[newIdx].parentElement.insertBefore(dragState.el, refNode);
-          const newOrder = sameGroupItems.map(el => el.dataset.dragId);
-          // update indices: remove old position, insert at new position
-          newOrder.splice(oldIdx, 1);
-          newOrder.splice(newIdx > oldIdx ? newIdx - 1 : newIdx, 0, dragState.id);
-          await fetch('/api/pages/reorder', { method: 'PATCH', headers: authH(), body: JSON.stringify({ groupId: targetGroupId || null, order: newOrder }) });
-        }
-      } else {
-        // move to different group
-        const newProjectId = target.dataset.projectId || null;
-        const newGroupId = targetGroupId || null;
-        await fetch('/api/pages/' + encodeURIComponent(dragState.id), { method: 'PATCH', headers: authH(), body: JSON.stringify({ projectId: newProjectId, groupId: newGroupId }) });
-      }
-      loadPages();
+    const targetGroupId = target.dataset.groupId || '';
+    const targetProjectId = target.dataset.projectId || '';
+    const srcGroupId = dragState.groupId || '';
+    const srcProjectId = dragState.projectId || '';
+    const placeAfter = !target.classList.contains('drag-over-top');
+    // re-evaluate midY for placeAfter
+    const rect = target.getBoundingClientRect();
+    const after = e.clientY >= rect.top + rect.height / 2;
+
+    if (targetGroupId === srcGroupId && targetProjectId === srcProjectId) {
+      // same scope: reorder — compute order first, then persist
+      const items = scopeItems(targetProjectId, targetGroupId);
+      const ids = items.map(el => el.dataset.dragId);
+      const from = ids.indexOf(dragState.id);
+      let to = ids.indexOf(target.dataset.dragId);
+      if (from === -1 || to === -1 || from === to) { loadPages(); return; }
+      const order = ids.slice();
+      order.splice(from, 1);
+      // after removal, adjust to if from was before to
+      let insertAt = order.indexOf(target.dataset.dragId);
+      if (after) insertAt += 1;
+      order.splice(insertAt, 0, dragState.id);
+      await reorderInScope(targetProjectId, targetGroupId, order);
+    } else {
+      // cross scope: move then place near target
+      await movePageTo(dragState.id, targetProjectId || null, targetGroupId || null);
+      // best-effort: rebuild order in target scope with dragged id near target
+      // (loadPages will refresh; skip fine-grained reorder for simplicity after move)
     }
+    loadPages();
+  }
+
+  async function onDropZone(e) {
+    e.preventDefault();
+    const zone = e.currentTarget;
+    zone.classList.remove('drag-over-zone');
+    if (!dragState || dragState.type !== 'page') return;
+    // if dropped on a child item, item handler already ran via stopPropagation
+    if (e.target.closest('.page-tree-item')) return;
+
+    const projectId = zone.dataset.projectId || '';
+    const groupId = zone.dataset.groupId || '';
+    const same = (dragState.projectId || '') === projectId && (dragState.groupId || '') === groupId;
+    if (same) {
+      // append to end of this scope
+      const items = scopeItems(projectId, groupId);
+      const order = items.map(el => el.dataset.dragId).filter(id => id !== dragState.id);
+      order.push(dragState.id);
+      await reorderInScope(projectId, groupId, order);
+    } else {
+      await movePageTo(dragState.id, projectId || null, groupId || null);
+    }
+    loadPages();
   }
 
   // ── Lightbox ──
@@ -3224,7 +3580,7 @@ export function renderPage() {
     const lb = document.getElementById('lightbox');
     if (e.key === 'Escape') {
       lb.classList.remove('show'); closePageModal();
-      ['protoEditModal','protoUpdateModal','userProtoVersionModal','trashModal','tagModal','projectModal','groupModal','importModal'].forEach(id => {
+      ['protoEditModal','protoUpdateModal','userProtoVersionModal','trashModal','tagModal','projectModal','groupModal','importModal','pageMoveModal'].forEach(id => {
         const el = document.getElementById(id); if (el) el.classList.remove('show');
       });
       closeChangePwdModal();
@@ -3233,20 +3589,6 @@ export function renderPage() {
     if (!lb.classList.contains('show')) return;
     if (e.key === 'ArrowLeft')  lbNavigate(-1);
     if (e.key === 'ArrowRight') lbNavigate(1);
-  });
-  // Paste upload
-  document.addEventListener('paste', e => {
-    if (!token) return;
-    if (document.activeElement && ['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
-    const items = [...(e.clipboardData?.items || [])];
-    const imgItems = items.filter(i => i.type.startsWith('image/'));
-    if (!imgItems.length) return;
-    const files = imgItems.map(i => i.getAsFile()).filter(Boolean);
-    if (!files.length) return;
-    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'upload'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-upload'));
-    setFiles(files);
-    toast('已从剪贴板粘贴 ' + files.length + ' 张图片，点击上传');
   });
   document.getElementById('loginOverlay').addEventListener('click', e => { if (e.target === document.getElementById('loginOverlay')) document.getElementById('loginOverlay').style.display = 'none'; });
 </script>

@@ -63,13 +63,10 @@ export async function handleListPages(request, env, ownerFilter) {
   let projects = [], groups = [];
   if (ownerFilter) {
     const { listUserProjects } = await import('./project.js');
-    const { listProjectGroups } = await import('./group.js');
+    const { listUserGroups } = await import('./group.js');
     projects = await listUserProjects(env, ownerFilter);
-    const projIds = [...new Set(pages.map(p => p.projectId).filter(Boolean))];
-    for (const pid of projIds) {
-      const grps = await listProjectGroups(env, ownerFilter, pid);
-      groups.push(...grps);
-    }
+    // one prefix scan — includes independent groups (projectId null)
+    groups = await listUserGroups(env, ownerFilter);
   } else {
     // admin: list all projects & groups
     const projKv = await env.STATS.list({ prefix: 'proj:' });
@@ -102,20 +99,30 @@ export async function handleCreatePage(request, env, owner) {
   }
 
   // validate projectId/groupId ownership (skip for admin — handled by caller)
-  if (projectId) {
-    const proj = await env.STATS.get('proj:' + owner + ':' + projectId, 'json');
+  let resolvedProjectId = projectId ?? null;
+  let resolvedGroupId = groupId ?? null;
+  if (resolvedProjectId) {
+    const proj = await env.STATS.get('proj:' + owner + ':' + resolvedProjectId, 'json');
     if (!proj || proj.owner !== owner) return Response.json({ error: '项目不存在或无权限' }, { status: 400 });
   }
-  if (groupId) {
-    const grpKv = await env.STATS.list({ prefix: 'grp:' + owner + ':' + (projectId ?? '') + ':' });
-    let found = false;
+  if (resolvedGroupId) {
+    // scan all owner groups (project-bound + independent _none_)
+    const grpKv = await env.STATS.list({ prefix: 'grp:' + owner + ':' });
+    let found = null;
     for (const k of grpKv.keys) {
-      if (k.name.endsWith(':' + groupId)) {
+      if (k.name.endsWith(':' + resolvedGroupId)) {
         const g = await env.STATS.get(k.name, 'json');
-        if (g && g.id === groupId && g.owner === owner) { found = true; break; }
+        if (g && g.id === resolvedGroupId && g.owner === owner) { found = g; break; }
       }
     }
     if (!found) return Response.json({ error: '分组不存在或无权限' }, { status: 400 });
+    // auto-fill projectId from group when missing; reject mismatch
+    if (found.projectId) {
+      if (resolvedProjectId && resolvedProjectId !== found.projectId) {
+        return Response.json({ error: '分组与项目不匹配' }, { status: 400 });
+      }
+      resolvedProjectId = found.projectId;
+    }
   }
 
   const pub = isPublic !== false;
@@ -124,15 +131,15 @@ export async function handleCreatePage(request, env, owner) {
   // auto sort within group (or project root, or ungrouped)
   const pageIdx = await env.STATS.get('userpages:' + owner, 'json') ?? [];
   const siblings = pageIdx.filter(p =>
-    (groupId ? p.groupId === groupId : (projectId ? p.projectId === projectId && !p.groupId : !p.projectId))
+    (resolvedGroupId ? p.groupId === resolvedGroupId : (resolvedProjectId ? p.projectId === resolvedProjectId && !p.groupId : !p.projectId && !p.groupId))
   );
   const maxSort = siblings.reduce((m, p) => Math.max(m, p.sort ?? 0), -1);
 
   const page = {
     slug, title: title || slug, content, type,
     isPublic: pub, owner,
-    projectId: projectId ?? null,
-    groupId: groupId ?? null,
+    projectId: resolvedProjectId,
+    groupId: resolvedGroupId,
     sort: maxSort + 1,
     createdAt: now, updatedAt: now,
   };
@@ -246,15 +253,22 @@ export async function handleReorderPages(request, env, callerUsername, isAdmin) 
   let body;
   try { body = await request.json(); } catch { return Response.json({ error: 'Invalid JSON' }, { status: 400 }); }
 
-  const { groupId, order } = body;
+  const { groupId, projectId, order } = body;
   if (!Array.isArray(order)) return Response.json({ error: 'order must be an array' }, { status: 400 });
+
+  const inScope = (page) => {
+    if (groupId) return page.groupId === groupId;
+    // groupId null/empty: project root or uncategorized
+    if (page.groupId != null && page.groupId !== '') return false;
+    if (projectId) return page.projectId === projectId;
+    return !page.projectId;
+  };
 
   for (let i = 0; i < order.length; i++) {
     const page = await env.STATS.get('page:' + order[i], 'json');
     if (!page) continue;
     if (!isAdmin && page.owner !== callerUsername) continue;
-    // only reorder pages in the same group
-    if (groupId ? page.groupId !== groupId : page.groupId != null) continue;
+    if (!inScope(page)) continue;
     page.sort = i;
     page.updatedAt = Date.now();
     await env.STATS.put('page:' + order[i], JSON.stringify(page));
@@ -279,7 +293,7 @@ export async function handleImportPage(request, env, owner) {
   try { formData = await request.formData(); } catch { return Response.json({ error: 'Invalid form data' }, { status: 400 }); }
 
   const file = formData.get('file');
-  if (!file || typeof file === 'string') return Response.json({ error: '请上传 .md 文件' }, { status: 400 });
+  if (!file || typeof file === 'string') return Response.json({ error: '请上传 Markdown/HTML 文件' }, { status: 400 });
 
   const text = await file.text();
   const { metadata, content } = parseFrontmatter(text);
@@ -287,7 +301,8 @@ export async function handleImportPage(request, env, owner) {
   // explicit form fields override frontmatter
   const slug = (formData.get('slug')?.trim()) || metadata.slug || generateSlugFromFile(file.name);
   const title = (formData.get('title')?.trim()) || metadata.title || slug;
-  const type = formData.get('type') || metadata.type || 'markdown';
+  const defaultType = /\.(html?|htm)$/i.test(file.name || '') ? 'html' : 'markdown';
+  const type = formData.get('type') || metadata.type || defaultType;
   const isPublic = formData.has('isPublic') ? formData.get('isPublic') === 'true' : (metadata.isPublic !== false);
   const projectId = formData.get('projectId') || metadata.projectId || null;
   const groupId = formData.get('groupId') || metadata.groupId || null;
@@ -320,7 +335,7 @@ function parseFrontmatter(text) {
 
 function generateSlugFromFile(filename) {
   return filename
-    .replace(/\.(md|markdown)$/i, '')
+    .replace(/\.(md|markdown|html?|htm)$/i, '')
     .replace(/[^a-zA-Z0-9_-]/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')

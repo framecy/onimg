@@ -168,89 +168,10 @@ ${body}
 // ── HTML page ─────────────────────────────────────────────────────────────────
 
 function serveHtmlPage(page) {
-  // Client-side script: builds the TOC sidebar dynamically
-  const script = `<script>
-(function(){
-  var hh = Array.from(document.querySelectorAll('h1,h2,h3,h4,h5,h6'));
-  if (hh.length < 2) return;
-
-  // Assign ids to headings that don't have one
-  var idCount = {};
-  hh.forEach(function(h) {
-    if (!h.id) {
-      var base = (h.textContent || '').toLowerCase()
-        .replace(/[^\\w\\u4e00-\\u9fff\\s-]/g, '').replace(/\\s+/g, '-').replace(/-+/g, '-').trim() || 'h';
-      var n = idCount[base] = (idCount[base] || 0) + 1;
-      h.id = n === 1 ? base : base + '-' + n;
-    }
+  // HTML pages are served as-is — no injected TOC sidebar
+  return new Response(page.content, {
+    headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=0, must-revalidate' },
   });
-
-  var minLevel = Math.min.apply(null, hh.map(function(h){ return +h.tagName[1]; }));
-
-  // Inject styles
-  var style = document.createElement('style');
-  style.textContent = [
-    '#_toc_sb{position:fixed;top:0;right:0;width:220px;height:100vh;padding:28px 14px;overflow-y:auto;box-sizing:border-box;font-family:system-ui,sans-serif;z-index:9999}',
-    '#_toc_sb *{box-sizing:border-box}',
-    '._toc_hd{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#9ca3af;margin-bottom:10px;padding-left:10px}',
-    '._toc_nav{display:flex;flex-direction:column;gap:1px}',
-    '._toc_a{display:block;font-size:.79rem;line-height:1.55;color:#6b7280;text-decoration:none;padding:4px 10px;border-radius:5px;border-left:2px solid transparent;transition:all .12s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-    '._toc_l0{padding-left:10px}._toc_l1{padding-left:20px}._toc_l2{padding-left:30px}._toc_l3{padding-left:40px}',
-    '._toc_a:hover{color:#374151;background:#f3f4f6}',
-    '._toc_a.active{color:#2563eb;border-left-color:#2563eb;background:#eff6ff;font-weight:500}',
-    '@media(max-width:1020px){#_toc_sb{display:none}}',
-  ].join('');
-  document.head.appendChild(style);
-
-  // Build sidebar
-  var aside = document.createElement('aside');
-  aside.id = '_toc_sb';
-  var nav = document.createElement('nav');
-  nav.className = '_toc_nav';
-  hh.forEach(function(h) {
-    var a = document.createElement('a');
-    a.href = '#' + h.id;
-    a.className = '_toc_a _toc_l' + Math.min(3, +h.tagName[1] - minLevel);
-    a.textContent = h.textContent;
-    a.addEventListener('click', function(e) {
-      e.preventDefault();
-      h.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      history.pushState(null, '', '#' + h.id);
-    });
-    nav.appendChild(a);
-  });
-  var hd = document.createElement('div');
-  hd.className = '_toc_hd';
-  hd.textContent = '目录';
-  aside.appendChild(hd);
-  aside.appendChild(nav);
-  document.body.appendChild(aside);
-
-  // Active tracking
-  var links = nav.querySelectorAll('._toc_a');
-  function update() {
-    var atBottom = window.scrollY + window.innerHeight >= document.body.scrollHeight - 60;
-    var threshold = atBottom ? window.innerHeight : 80;
-    var active = null;
-    for (var i = hh.length - 1; i >= 0; i--) {
-      if (hh[i].getBoundingClientRect().top <= threshold) { active = hh[i]; break; }
-    }
-    links.forEach(function(a) {
-      a.classList.toggle('active', !!active && a.getAttribute('href') === '#' + active.id);
-    });
-  }
-  window.addEventListener('scroll', update, { passive: true });
-  update();
-})();
-<\/script>`;
-
-  let content = page.content;
-  if (content.includes('</body>')) {
-    content = content.replace('</body>', script + '</body>');
-  } else {
-    content = content + script;
-  }
-  return new Response(content, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=0, must-revalidate' } });
 }
 
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }

@@ -1085,7 +1085,7 @@ export function renderAdminPage() {
   <div class="modal">
     <div class="modal-header"><h3>新建分组</h3><button class="modal-close" id="apgNewGrpClose">✕</button></div>
     <div class="modal-body">
-      <div class="field"><label>所属项目</label><select id="apgNewGrpProject"><option value="">-- 请选择项目 --</option></select></div>
+      <div class="field"><label>所属项目 <span style="color:var(--tx-3);font-weight:400">（可选）</span></label><select id="apgNewGrpProject"><option value="">-- 独立分组 --</option></select></div>
       <div class="field"><label>分组名称</label><input type="text" id="apgNewGrpName" placeholder="分组名称" maxlength="60"></div>
     </div>
     <div class="modal-footer">
@@ -1254,7 +1254,8 @@ export function renderAdminPage() {
   const authH = () => ({ 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' });
 
   function parseTokenExp(tok) {
-    try { return JSON.parse(atob(tok.split('.')[0])).exp * 1000; } catch { return null; }
+    // server createToken stores exp as ms timestamp
+    try { return JSON.parse(atob(tok.split('.')[0])).exp; } catch { return null; }
   }
 
   function checkTokenValid() {
@@ -2418,17 +2419,17 @@ export function renderAdminPage() {
   // ── New group modal ──
   document.getElementById('adminNewGroupBtn')?.addEventListener('click', () => {
     const sel = document.getElementById('apgNewGrpProject');
-    sel.innerHTML = '<option value="">-- 请选择项目 --</option>' +
+    sel.innerHTML = '<option value="">-- 独立分组 --</option>' +
       adminAllProjects.map(p => '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('');
     document.getElementById('apgNewGrpName').value = '';
     document.getElementById('adminNewGroupModal').classList.add('show');
   });
   document.getElementById('apgNewGrpConfirm')?.addEventListener('click', async () => {
-    const projectId = document.getElementById('apgNewGrpProject').value;
+    const projectId = document.getElementById('apgNewGrpProject').value || null;
     const name = document.getElementById('apgNewGrpName').value.trim();
-    if (!projectId) { toast('请选择所属项目'); return; }
     if (!name) { toast('请输入分组名称'); return; }
-    const res = await adminFetch('/admin/groups', { method:'POST', headers:{...authH(),'Content-Type':'application/json'}, body:JSON.stringify({projectId,name}) });
+    const body = projectId ? { projectId, name } : { name };
+    const res = await adminFetch('/admin/groups', { method:'POST', headers:{...authH(),'Content-Type':'application/json'}, body:JSON.stringify(body) });
     const data = await res.json();
     if (!res.ok) { toast('创建失败: ' + data.error); return; }
     document.getElementById('adminNewGroupModal').classList.remove('show');
