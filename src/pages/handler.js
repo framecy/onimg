@@ -88,17 +88,22 @@ ${tocItems}
 
   .page-layout {
     display: flex;
-    max-width: 1120px;
+    max-width: 1600px;
     margin: 0 auto;
     padding: 0 32px;
     gap: 48px;
     align-items: flex-start;
+    justify-content: center;
   }
+  /* 无目录时内容区水平居中 */
+  .page-layout.no-toc { justify-content: center; }
+  .page-layout.no-toc .prose { margin-left: auto; margin-right: auto; }
 
   .prose {
-    flex: 1;
-    min-width: 0;
-    max-width: 720px;
+    flex: 0 1 1280px;
+    width: 100%;
+    min-width: 720px;
+    max-width: 1280px;
     margin: 40px 0 80px;
     padding: 52px 56px 64px;
     background: #fffefb;
@@ -228,20 +233,23 @@ ${tocItems}
 
   @media (max-width: 1020px) {
     .toc-sidebar { display: none; }
-    .page-layout { padding: 0 20px; justify-content: center; }
-    .prose { max-width: 720px; }
+    .page-layout { padding: 0 20px; justify-content: center; max-width: 1280px; }
+    .prose { min-width: 0; max-width: 1280px; }
+  }
+  @media (max-width: 760px) {
+    .prose { min-width: 0; }
   }
   @media (max-width: 640px) {
     body { line-height: 1.75; }
     .page-layout { padding: 0 12px; }
-    .prose { margin: 16px 0 40px; padding: 28px 20px 40px; border-radius: 14px; }
+    .prose { margin: 16px 0 40px; padding: 28px 20px 40px; border-radius: 14px; min-width: 0; max-width: 100%; }
     h1 { font-size: 1.7rem; }
     h2 { font-size: 1.25rem; }
   }
 </style>
 </head>
 <body>
-<div class="page-layout">
+<div class="page-layout${hasToc ? '' : ' no-toc'}">
   <article class="prose">
 ${body}
 <div class="footer">Powered by <a href="/">Onimg</a>${page.owner ? ' · @' + esc(page.owner) : ''}</div>
