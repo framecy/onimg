@@ -27,8 +27,24 @@ const SLUG_RE = /^[a-zA-Z0-9_\-][a-zA-Z0-9_\-/]{0,119}$/;
 export async function listPages(env, ownerFilter) {
   // prefer userpages index; fallback to legacy scan (one-time lazy migration)
   if (ownerFilter) {
-    const pages = await ensureUserPagesIndex(env, ownerFilter);
-    if (pages) return pages;
+    let pages = await ensureUserPagesIndex(env, ownerFilter);
+    if (pages) {
+      // backfill accessPassword for private pages missing it on older indexes
+      let dirty = false;
+      pages = await Promise.all(pages.map(async p => {
+        if (p.isPublic || p.accessPassword) return p;
+        const full = await env.STATS.get('page:' + p.slug, 'json');
+        if (full?.accessPassword) {
+          dirty = true;
+          return { ...p, accessPassword: full.accessPassword };
+        }
+        return p;
+      }));
+      if (dirty) {
+        await env.STATS.put('userpages:' + ownerFilter, JSON.stringify(pages));
+      }
+      return pages;
+    }
   }
   // legacy path or admin (no owner filter)
   const list = await env.STATS.list({ prefix: 'page:' });
@@ -154,11 +170,16 @@ export async function handleCreatePage(request, env, owner) {
     slug, title: page.title, type, isPublic: pub,
     owner, projectId: page.projectId, groupId: page.groupId,
     sort: page.sort, contentLength: content.length,
+    accessPassword: page.accessPassword || null,
     createdAt: now, updatedAt: now,
   });
   await env.STATS.put('userpages:' + owner, JSON.stringify(pageIdx));
 
-  return Response.json({ slug, title: page.title, type, isPublic: page.isPublic, projectId: page.projectId, groupId: page.groupId, sort: page.sort }, { status: 201 });
+  return Response.json({
+    slug, title: page.title, type, isPublic: page.isPublic,
+    projectId: page.projectId, groupId: page.groupId, sort: page.sort,
+    accessPassword: page.accessPassword || null,
+  }, { status: 201 });
 }
 
 export async function handleGetPage(env, slug, callerUsername, isAdmin) {
@@ -198,6 +219,8 @@ export async function handleUpdatePage(request, env, slug, callerUsername, isAdm
       ? String(body.accessPassword).replace(/[^A-Za-z0-9]/g, '').slice(0, 6) || undefined
       : undefined;
   }
+  // public pages never keep access password
+  if (page.isPublic) page.accessPassword = undefined;
   // project/group reassignment
   if (body.projectId !== undefined) page.projectId = body.projectId ?? null;
   if (body.groupId   !== undefined) page.groupId   = body.groupId ?? null;
@@ -219,13 +242,18 @@ export async function handleUpdatePage(request, env, slug, callerUsername, isAdm
     pageIdx[idx].sort = page.sort;
     pageIdx[idx].updatedAt = page.updatedAt;
     pageIdx[idx].contentLength = page.content?.length ?? 0;
+    pageIdx[idx].accessPassword = page.isPublic ? null : (page.accessPassword || null);
     await env.STATS.put('userpages:' + owner, JSON.stringify(pageIdx));
   }
 
   // purge Cloudflare edge cache for this page (fire-and-forget)
   purgePageCache(env, slug);
 
-  return Response.json({ slug, title: page.title, isPublic: page.isPublic, projectId: page.projectId, groupId: page.groupId, sort: page.sort });
+  return Response.json({
+    slug, title: page.title, isPublic: page.isPublic,
+    projectId: page.projectId, groupId: page.groupId, sort: page.sort,
+    accessPassword: page.isPublic ? null : (page.accessPassword || null),
+  });
 }
 
 export async function handleDeletePage(env, slug, callerUsername, isAdmin) {
@@ -358,6 +386,7 @@ async function ensureUserPagesIndex(env, owner) {
         isPublic: p.isPublic, owner: p.owner,
         projectId: p.projectId ?? null, groupId: p.groupId ?? null,
         sort: p.sort ?? 0, contentLength: p.content?.length ?? 0,
+        accessPassword: p.isPublic ? null : (p.accessPassword || null),
         createdAt: p.createdAt, updatedAt: p.updatedAt,
       });
     }

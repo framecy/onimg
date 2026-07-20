@@ -318,32 +318,81 @@ export function renderPage() {
     .modal-overlay.show { display: flex; }
     .modal { background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: var(--r-xl); width: 100%; max-width: 860px; max-height: 96vh; display: flex; flex-direction: column; box-shadow: var(--shadow); }
     .modal-body { padding: 18px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
-    /* Vditor container */
-    #pmVditor { border-radius: var(--r-md); overflow: hidden; flex-shrink: 0; border: 1px solid var(--bd-2); max-height: min(520px, calc(96vh - 280px)); min-width: 0; max-width: 100%; }
-    #pmVditor .vditor { max-height: inherit !important; max-width: 100% !important; }
-    /* Force-hide outline regardless of Vditor internal state */
-    #pmVditor .vditor-outline { display: none !important; }
-    /* Content area fills remaining height and owns the scroll */
+    /* Vditor container — fills remaining modal height, owns scroll */
+    #pmVditor {
+      border-radius: var(--r-md);
+      overflow: hidden;
+      flex: 1 1 auto;
+      min-height: 360px;
+      border: 1px solid var(--bd-2);
+      min-width: 0;
+      max-width: 100%;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-2);
+    }
+    #pmVditor .vditor {
+      height: 100% !important;
+      max-width: 100% !important;
+      border: none !important;
+      background: var(--bg-2) !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+    #pmVditor .vditor-toolbar {
+      flex-shrink: 0 !important;
+      flex-wrap: wrap !important;
+      overflow-x: auto;
+      background: var(--bg-3) !important;
+      border-bottom: 1px solid var(--bd) !important;
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 10 !important;
+    }
     #pmVditor .vditor-content {
-      height: calc(100% - 36px) !important;
-      max-height: calc(min(520px, 96vh - 280px) - 36px) !important;
+      flex: 1 1 auto !important;
+      height: auto !important;
+      min-height: 0 !important;
       overflow-y: auto !important;
       overscroll-behavior: contain;
       min-width: 0;
     }
-    #pmVditor .vditor-ir, #pmVditor .vditor-ir pre.vditor-reset {
+    #pmVditor .vditor-ir,
+    #pmVditor .vditor-sv,
+    #pmVditor .vditor-wysiwyg {
+      min-height: 100% !important;
+    }
+    #pmVditor .vditor-ir pre.vditor-reset,
+    #pmVditor .vditor-sv pre.vditor-reset,
+    #pmVditor .vditor-wysiwyg pre.vditor-reset {
       max-width: 100% !important;
       overflow-wrap: anywhere;
       word-break: break-word;
+      color: var(--tx) !important;
+      background: transparent !important;
+      font-size: 14.5px !important;
+      line-height: 1.75 !important;
+      padding: 14px 16px !important;
     }
-    /* Toolbar stays pinned at top — works whether modal or vditor-content scrolls */
-    #pmVditor .vditor-toolbar {
-      position: sticky !important;
-      top: 0 !important;
-      z-index: 10 !important;
-      flex-wrap: nowrap;
-      overflow-x: auto;
+    #pmVditor .vditor-outline { display: none !important; }
+    #pmContent {
+      flex: 1 1 auto;
+      min-height: 360px;
+      resize: vertical;
+      font-family: var(--mono);
+      font-size: .84rem;
+      line-height: 1.7;
+      padding: 12px 14px;
+      background: var(--bg-2);
+      border: 1px solid var(--bd-2);
+      border-radius: var(--r-md);
+      color: var(--tx);
+      width: 100%;
     }
+    #pageModal .modal { max-width: 960px; height: min(92vh, 900px); max-height: 96vh; }
+    #pageModal .modal-body { overflow: hidden; }
+    #pmPwdSection { display: none; }
+    #pmPwdSection.show { display: block; }
     /* Upload file queue */
     .upload-queue { display: none; flex-direction: column; gap: 6px; margin: 0 0 10px; }
     .upload-queue.show { display: flex; }
@@ -855,10 +904,20 @@ export function renderPage() {
           <input type="checkbox" id="pmPublic" checked> 公开访问
         </label>
       </div>
-      <div class="field" style="flex:1;min-height:0">
+      <div class="field" id="pmPwdSection">
+        <label>访问密码 <span style="color:var(--tx-3);font-weight:400;text-transform:none;letter-spacing:0">（可选，6 位字母数字）</span></label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" id="pmPassword" maxlength="6" autocomplete="off" spellcheck="false"
+            placeholder="留空则仅登录可见"
+            style="font-family:var(--mono);letter-spacing:.14em;font-size:.92rem;width:140px;padding:8px 10px;background:var(--bg-2);border:1px solid var(--bd-2);border-radius:var(--r-md);color:var(--tx);outline:none">
+          <button type="button" id="pmPwdGen" class="btn btn-ghost" style="white-space:nowrap;flex-shrink:0">生成</button>
+        </div>
+        <span style="font-size:.7rem;color:var(--tx-3);margin-top:4px;display:block">设置后访客可通过密码访问；复制地址时会附带密码</span>
+      </div>
+      <div class="field" style="flex:1;min-height:0;display:flex;flex-direction:column">
         <label id="pmContentLabel">内容</label>
         <div id="pmVditor" style="display:none"></div>
-        <textarea id="pmContent" rows="12" placeholder="# Hello World\n\n写点什么…"></textarea>
+        <textarea id="pmContent" rows="14" placeholder="# Hello World\n\n写点什么…"></textarea>
       </div>
     </div>
     <div class="modal-footer">
@@ -1131,33 +1190,55 @@ export function renderPage() {
     }
 
     const box = document.getElementById('pmVditor');
-    box.style.display = 'block';
+    box.style.display = 'flex';
     document.getElementById('pmContent').style.display = 'none';
 
     const finalContent = seed();
-    const editorH = Math.min(520, Math.max(320, window.innerHeight - 460));
+    // Fill remaining modal height; fallback if layout not ready
+    const modalBody = box.closest('.modal-body');
+    let editorH = 420;
+    if (modalBody) {
+      const used = Array.from(modalBody.children).reduce((sum, el) => {
+        if (el === box.parentElement) return sum;
+        return sum + el.getBoundingClientRect().height + 12;
+      }, 0);
+      editorH = Math.max(320, Math.min(640, modalBody.clientHeight - used - 28));
+    } else {
+      editorH = Math.min(560, Math.max(360, window.innerHeight - 320));
+    }
+
     vditorInst = new Vditor('pmVditor', {
       height: editorH,
-      mode: 'ir',        // inline rendering — single column, no split
-      // default (light) theme avoids dark-on-dark contrast issues
+      mode: 'sv',        // split view: source | preview — easier for long docs
+      theme: 'dark',
       lang: 'zh_CN',
       cdn: 'https://cdn.jsdelivr.net/npm/vditor',
       cache: { enable: false },
       value: finalContent,
       outline: { enable: false },
-      preview: { show: false },
+      preview: {
+        theme: { current: 'dark' },
+        hljs: { style: 'native', lineNumber: false },
+        markdown: { toc: false, mark: true },
+      },
+      counter: { enable: true, type: 'text' },
+      tab: '  ',
       toolbar: [
         'headings', 'bold', 'italic', 'strike', '|',
-        'list', 'ordered-list', 'check', 'quote', '|',
-        'code', 'inline-code', 'link', 'table', 'upload', '|',
-        'undo', 'redo', 'fullscreen',
+        'list', 'ordered-list', 'check', 'outdent', 'indent', '|',
+        'quote', 'line', 'code', 'inline-code', 'insert-before', 'insert-after', '|',
+        'link', 'table', 'upload', '|',
+        'undo', 'redo', '|',
+        'fullscreen', 'edit-mode',
       ],
-      toolbarConfig: { pin: false },
+      toolbarConfig: { pin: true },
       upload: {
         url: '/upload',
         fieldName: 'file',
         headers: token ? { Authorization: 'Bearer ' + token } : {},
         accept: 'image/*',
+        multiple: false,
+        filename: name => name.replace(/[^\w一-龥.\-]/g, '_'),
         format: (files, responseText) => {
           try {
             const data = JSON.parse(responseText);
@@ -1173,14 +1254,19 @@ export function renderPage() {
       },
       after() {
         if (gen !== vditorGen) return;
-        // Force Vditor to recalculate content-area height after modal is painted
-        window.dispatchEvent(new Event('resize'));
-        try { vditorInst && vditorInst.focus(); } catch {}
+        // Recalculate height after modal paint
+        try {
+          const h = Math.max(320, box.clientHeight || editorH);
+          if (vditorInst && typeof vditorInst.setTheme === 'function') {
+            // keep dark theme consistent with product shell
+          }
+          window.dispatchEvent(new Event('resize'));
+          vditorInst && vditorInst.focus();
+        } catch {}
 
-        // Stop wheel bubbling to modal-body when editor still has room to scroll
-        const box = document.getElementById('pmVditor');
+        // Keep wheel scrolling inside editor
         box.addEventListener('wheel', function(e) {
-          const scroller = box.querySelector('.vditor-content');
+          const scroller = box.querySelector('.vditor-content') || box.querySelector('.vditor-sv') || box;
           if (!scroller) return;
           const atTop    = scroller.scrollTop === 0 && e.deltaY < 0;
           const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1 && e.deltaY > 0;
@@ -1208,8 +1294,41 @@ export function renderPage() {
       const prev = vditorInst ? vditorInst.getValue() : keepContent;
       destroyVditor();
       document.getElementById('pmContent').value = prev || keepContent || '';
+      document.getElementById('pmContent').style.display = '';
     }
   }
+
+  function genPagePwd() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    const arr = crypto.getRandomValues(new Uint8Array(6));
+    return Array.from(arr, b => chars[b % chars.length]).join('');
+  }
+  function syncPmPwdSection() {
+    const pub = document.getElementById('pmPublic')?.checked;
+    const sec = document.getElementById('pmPwdSection');
+    if (!sec) return;
+    if (pub) sec.classList.remove('show');
+    else sec.classList.add('show');
+  }
+  function pageCopyText(p) {
+    const url = location.origin + '/p/' + p.slug;
+    if (!p.isPublic && p.accessPassword) {
+      return '内容：' + url + '\n密码：' + p.accessPassword;
+    }
+    return url;
+  }
+  function pagePreviewUrl(p) {
+    const url = location.origin + '/p/' + p.slug;
+    if (!p.isPublic && p.accessPassword) return url + '?pwd=' + encodeURIComponent(p.accessPassword);
+    return url;
+  }
+  window.cpPageAddr = function(slug, btn) {
+    const p = userPages.find(x => x.slug === slug);
+    if (!p) return;
+    const text = pageCopyText(p);
+    cp(text, btn);
+    toast(p.accessPassword ? '已复制地址与密码' : '已复制地址');
+  };
 
   // Boot
   updateUserArea();
@@ -2067,14 +2186,19 @@ export function renderPage() {
     const drag = pageSelectMode ? 'false' : 'true';
     const cls = 'page-tree-item' + (pageSelectMode ? ' selecting' : '') + (sel ? ' selected' : '');
     const clickAttr = pageSelectMode ? \`onclick="togglePageSel('\${esc(p.slug)}')"\` : '';
+    const status = p.isPublic
+      ? '公开'
+      : (p.accessPassword ? '加密' : '私密');
+    const previewHref = pagePreviewUrl(p);
     return \`<div class="\${cls}" draggable="\${drag}" data-drag-type="page" data-drag-id="\${esc(p.slug)}" data-project-id="\${esc(p.projectId||'')}" data-group-id="\${esc(p.groupId||'')}" \${clickAttr}>
       \${check}
       <span class="drag-handle" title="拖拽排序">⠿</span>
       <div class="page-item-info" style="flex:1;min-width:0">
         <div class="page-title">\${esc(p.title)} <span class="type-badge type-\${p.type==='markdown'?'md':'html'}">\${p.type}</span></div>
-        <div class="page-meta">\${p.isPublic?'公开':'私密'} · /p/\${esc(p.slug)}</div>
+        <div class="page-meta">\${status} · /p/\${esc(p.slug)}</div>
       </div>
-      <a href="/p/\${p.slug}" target="_blank" class="btn btn-ghost" style="font-size:.72rem" onclick="event.stopPropagation()">预览</a>
+      <a href="\${esc(previewHref)}" target="_blank" class="btn btn-ghost" style="font-size:.72rem" onclick="event.stopPropagation()">预览</a>
+      <button class="btn btn-ghost" onclick="event.stopPropagation();cpPageAddr('\${esc(p.slug)}',this)" style="font-size:.72rem">复制</button>
       <button class="btn btn-ghost" onclick="event.stopPropagation();editPageBySlug('\${esc(p.slug)}')" style="font-size:.72rem">编辑</button>
       <button class="btn btn-danger" onclick="event.stopPropagation();deletePage('\${esc(p.slug)}')" style="font-size:.72rem">删除</button>
     </div>\`;
@@ -2204,11 +2328,20 @@ export function renderPage() {
     document.getElementById('pmType').value = 'markdown';
     document.getElementById('pmContent').value = '';
     document.getElementById('pmPublic').checked = true;
+    document.getElementById('pmPassword').value = '';
+    syncPmPwdSection();
     updatePageProjectSelect(document.getElementById('pmProject'), '');
     updatePageGroupSelect(document.getElementById('pmGroup'), '', '');
     document.getElementById('pageModalSave').textContent = '创建';
     document.getElementById('pageModal').classList.add('show');
     setTimeout(() => initVditor(''), 50);
+  });
+
+  document.getElementById('pmPublic').addEventListener('change', () => {
+    syncPmPwdSection();
+  });
+  document.getElementById('pmPwdGen').addEventListener('click', () => {
+    document.getElementById('pmPassword').value = genPagePwd();
   });
 
   document.getElementById('pmProject').addEventListener('change', () => {
@@ -2233,12 +2366,15 @@ export function renderPage() {
     prevEl.textContent = location.origin + '/p/' + p.slug;
     setSlugSaveState(false);
     document.getElementById('pmType').value = p.type;
-    // Fetch full page content (list API omits content)
+    // Fetch full page content (list API may omit content / password)
     const res = await fetch('/api/pages/' + encodeURIComponent(slug), { headers: authH() });
     const full = res.ok ? await res.json() : null;
     const content = full?.content ?? '';
     document.getElementById('pmContent').value = content;
-    document.getElementById('pmPublic').checked = p.isPublic !== false;
+    const isPublic = (full?.isPublic ?? p.isPublic) !== false;
+    document.getElementById('pmPublic').checked = isPublic;
+    document.getElementById('pmPassword').value = (!isPublic && (full?.accessPassword || p.accessPassword)) || '';
+    syncPmPwdSection();
     updatePageProjectSelect(document.getElementById('pmProject'), p.projectId || '');
     updatePageGroupSelect(document.getElementById('pmGroup'), p.projectId || '', p.groupId || '');
     document.getElementById('pageModalSave').textContent = '保存';
@@ -2256,6 +2392,8 @@ export function renderPage() {
     const type    = document.getElementById('pmType').value;
     const content = getContent();
     const isPublic = document.getElementById('pmPublic').checked;
+    const rawPwd = document.getElementById('pmPassword').value.trim().replace(/[^A-Za-z0-9]/g, '').slice(0, 6);
+    const accessPassword = isPublic ? null : (rawPwd || null);
     const projectId = document.getElementById('pmProject')?.value || null;
     const groupId = document.getElementById('pmGroup')?.value || null;
     if (!slug) { toast('请填写后缀'); return; }
@@ -2267,7 +2405,9 @@ export function renderPage() {
 
     const url  = isEdit ? '/api/pages/' + encodeURIComponent(editingSlug) : '/api/pages';
     const meth = isEdit ? 'PATCH' : 'POST';
-    const body = isEdit ? { title, content, type, isPublic, projectId, groupId } : { slug, title, content, type, isPublic, projectId, groupId };
+    const body = isEdit
+      ? { title, content, type, isPublic, accessPassword, projectId, groupId }
+      : { slug, title, content, type, isPublic, accessPassword, projectId, groupId };
 
     const res = await fetch(url, { method: meth, headers: authH(), body: JSON.stringify(body) });
     const data = await res.json();
@@ -2279,6 +2419,17 @@ export function renderPage() {
     destroyVditor();
     document.getElementById('pageModal').classList.remove('show');
     toast(isEdit ? '已保存' : '页面已创建');
+    // optimistic local password so copy works before reload
+    if (!isEdit) {
+      // no-op, loadPages will refresh
+    } else {
+      const idx = userPages.findIndex(x => x.slug === slug);
+      if (idx !== -1) {
+        userPages[idx].isPublic = isPublic;
+        userPages[idx].accessPassword = accessPassword;
+        userPages[idx].title = title || userPages[idx].title;
+      }
+    }
     loadPages();
   });
 
