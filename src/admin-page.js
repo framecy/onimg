@@ -13,40 +13,53 @@ export function renderAdminPage() {
   <!-- ByteMD CSS/JS 按需注入（见 ensureBytemd），编辑器首次打开时加载 -->
   <style>
     :root {
-      --bg:     #0a0a0a; --bg-2: #141414; --bg-3: #1a1a1a; --bg-4: #222222; --bg-5: #2a2a2a;
-      --bg-h:   #2e2e2e; --bg-a: #353535;
-      --bd:     #2e2e2e; --bd-2: #3a3a3a; --bd-f: #6e6e6e;
-      --tx:     #f5f5f5; --tx-2: #b5b5b5; --tx-3: #858585; --tx-a: #e8e8e8;
-      --blue:   #e0e0e0; --blue-d: #b0b0b0;
-      --blue-g: rgba(200,200,200,.07); --blue-r: rgba(200,200,200,.15);
-      --green:  #34d399; --green-g: rgba(52,211,153,.11); --green-r: rgba(52,211,153,.22);
-      --amber:  #fbbf24; --amber-g: rgba(251,191,36,.1); --amber-r: rgba(251,191,36,.2);
-      --red:    #f87171; --red-g: rgba(248,113,113,.1); --red-r: rgba(248,113,113,.2);
-      --r: 10px; --r-sm: 7px; --r-xs: 5px;
-      --shadow: 0 24px 60px rgba(0,0,0,.92); --shadow-sm: 0 8px 28px rgba(0,0,0,.65);
+      /* surface — slightly lifted dark (aligned with page.js) */
+      --bg: #121212; --bg-2: #1a1a1a; --bg-3: #222222; --bg-4: #2a2a2a; --bg-5: #333333;
+      --bg-h: #383838; --bg-a: #404040;
+      --overlay: rgba(0,0,0,.64);
+      /* border / text */
+      --bd: #333333; --bd-2: #454545; --bd-f: #7a7a7a;
+      --tx: #f7f7f7; --tx-2: #c2c2c2; --tx-3: #9a9a9a; --tx-a: #ececec; --tx-inv: #121212;
+      /* accent (neutral primary; --blue* kept as aliases) */
+      --accent: #f0f0f0; --accent-hover: #ffffff; --accent-muted: rgba(255,255,255,.10);
+      --blue: var(--accent); --blue-d: var(--tx-2);
+      --blue-g: var(--accent-muted); --blue-r: rgba(255,255,255,.15);
+      --focus-ring: 0 0 0 3px rgba(255,255,255,.10);
+      /* semantic */
+      --green: #34d399; --green-g: rgba(52,211,153,.12); --green-r: rgba(52,211,153,.22);
+      --amber: #fbbf24; --amber-g: rgba(251,191,36,.1); --amber-r: rgba(251,191,36,.2);
+      --red: #f87171; --red-g: rgba(248,113,113,.1); --red-r: rgba(248,113,113,.2);
+      /* radius / type / space */
+      --r-xs: 4px; --r-sm: 6px; --r-md: 8px; --r-lg: 12px; --r-xl: 16px;
+      --r: 12px;
+      --fs-2xs: .62rem; --fs-xs: .72rem; --fs-sm: .82rem;
+      --fs-md: .9rem; --fs-lg: 1.05rem; --fs-xl: 1.35rem;
+      --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 28px; --sp-6: 40px; --sp-7: 56px;
+      --shadow: 0 24px 60px rgba(0,0,0,.92); --shadow-sm: 0 8px 28px rgba(0,0,0,.55);
       --t: all .18s ease; --t-f: all .12s ease;
-      --font: 'Outfit', system-ui, sans-serif;
+      --font: 'Outfit', system-ui, -apple-system, sans-serif;
       --mono: 'JetBrains Mono', 'Fira Code', monospace;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: var(--font); background: var(--bg); color: var(--tx); min-height: 100vh; font-weight: 450; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
     /* ── Login ── */
-    #loginScreen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--bg); background-image: radial-gradient(ellipse 80% 50% at 60% 20%, rgba(255,255,255,.025) 0%, transparent 60%); }
-    .login-card { width: 100%; max-width: 358px; background: var(--bg-3); border: 1px solid var(--bd); border-radius: 14px; padding: 38px 34px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+    #loginScreen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--bg); background-image: radial-gradient(ellipse 80% 50% at 60% 20%, rgba(255,255,255,.025) 0%, transparent 60%); padding: var(--sp-4); }
+    .login-card { width: 100%; max-width: 358px; background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-xl); padding: 38px 34px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
     .login-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.08) 50%, transparent 100%); }
     .login-logo { font-size: 1.45rem; font-weight: 800; color: var(--tx); margin-bottom: 3px; letter-spacing: -.03em; display: flex; align-items: center; gap: 8px; }
-    .login-logo .lm { width: 28px; height: 28px; background: linear-gradient(135deg, #2e2e2e 0%, #1a1a1a 100%); border: 1px solid var(--bd-2); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 800; color: var(--tx); flex-shrink: 0; box-shadow: 0 3px 10px rgba(0,0,0,.5); }
-    .login-logo .badge { font-size: .58rem; font-weight: 700; color: var(--tx-3); background: var(--bg-5); border: 1px solid var(--bd); padding: 2px 6px; border-radius: 4px; letter-spacing: .1em; text-transform: uppercase; }
-    .login-sub { font-size: .8rem; color: var(--tx-3); margin-bottom: 28px; margin-top: 4px; }
+    .login-logo .lm { width: 28px; height: 28px; background: linear-gradient(135deg, var(--bg-h) 0%, var(--bg-3) 100%); border: 1px solid var(--bd-2); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 800; color: var(--tx); flex-shrink: 0; box-shadow: 0 3px 10px rgba(0,0,0,.5); }
+    .login-logo .badge { font-size: var(--fs-2xs); font-weight: 700; color: var(--tx-3); background: var(--bg-5); border: 1px solid var(--bd); padding: 2px 6px; border-radius: var(--r-xs); letter-spacing: .1em; text-transform: uppercase; }
+    .login-sub { font-size: var(--fs-sm); color: var(--tx-3); margin-bottom: 28px; margin-top: 4px; }
     .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
-    .field label { font-size: .67rem; color: var(--tx-3); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; }
-    .field input, .field select { padding: 9px 12px; background: var(--bg-2); border: 1px solid var(--bd); border-radius: 8px; color: var(--tx); font-size: .88rem; font-family: var(--font); outline: none; transition: var(--t); appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
-    .field input:focus, .field select:focus { border-color: var(--bd-f); box-shadow: 0 0 0 3px var(--blue-g); background: var(--bg); }
-    .btn-login { width: 100%; padding: 10px; background: #e0e0e0; color: #080808; border: none; border-radius: 8px; font-size: .9rem; font-weight: 700; font-family: var(--font); cursor: pointer; margin-top: 6px; transition: var(--t); }
-    .btn-login:hover { background: #f2f2f2; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,255,255,.07); }
-    .btn-login:disabled { background: var(--bg-5); color: var(--tx-3); cursor: not-allowed; transform: none; box-shadow: none; }
-    .login-err { color: var(--red); font-size: .78rem; margin-top: 10px; text-align: center; min-height: 18px; }
+    .field label { font-size: var(--fs-2xs); color: var(--tx-3); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; }
+    .field input, .field select, .field textarea { padding: 9px 12px; background: var(--bg-2); border: 1px solid var(--bd); border-radius: var(--r-md); color: var(--tx); font-size: var(--fs-sm); font-family: var(--font); outline: none; transition: var(--t); }
+    .field select { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--bd-f); box-shadow: var(--focus-ring); background: var(--bg); }
+    .btn-login, .btn-block { width: 100%; padding: 10px; background: var(--accent); color: var(--tx-inv); border: none; border-radius: var(--r-md); font-size: var(--fs-md); font-weight: 700; font-family: var(--font); cursor: pointer; margin-top: 6px; transition: var(--t); }
+    .btn-login:hover, .btn-block:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,255,255,.07); }
+    .btn-login:disabled, .btn-block:disabled { background: var(--bg-5); color: var(--tx-3); cursor: not-allowed; transform: none; box-shadow: none; }
+    .login-err { color: var(--red); font-size: var(--fs-xs); margin-top: 10px; text-align: center; min-height: 18px; }
 
     /* ── Shell ── */
     #adminApp { display: none; }
@@ -60,13 +73,13 @@ export function renderAdminPage() {
       position: fixed; top: 0; left: 0; bottom: 0; z-index: 10;
     }
     .sidebar-logo { padding: 18px 16px 14px; border-bottom: 1px solid var(--bd); display: flex; align-items: center; gap: 10px; }
-    .sidebar-logo-mark { width: 30px; height: 30px; background: linear-gradient(135deg, #2e2e2e 0%, #1a1a1a 100%); border: 1px solid var(--bd-2); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 800; color: var(--tx); flex-shrink: 0; letter-spacing: -.01em; box-shadow: 0 3px 10px rgba(0,0,0,.5); }
+    .sidebar-logo-mark { width: 30px; height: 30px; background: linear-gradient(135deg, #2e2e2e 0%, #1a1a1a 100%); border: 1px solid var(--bd-2); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 800; color: var(--tx); flex-shrink: 0; letter-spacing: -.01em; box-shadow: 0 3px 10px rgba(0,0,0,.5); }
     .sidebar-logo-text { display: flex; flex-direction: column; gap: 1px; }
     .sidebar-logo-name { font-size: .92rem; font-weight: 700; color: var(--tx); letter-spacing: -.015em; }
     .sidebar-logo-tag { font-size: .58rem; font-weight: 600; color: var(--tx-3); text-transform: uppercase; letter-spacing: .12em; }
     .sidebar-nav-label { font-size: .58rem; font-weight: 700; color: var(--tx-3); text-transform: uppercase; letter-spacing: .12em; padding: 14px 16px 5px; }
     nav { flex: 1; padding: 4px 8px 8px; display: flex; flex-direction: column; gap: 1px; overflow-y: auto; }
-    .nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 11px; border-radius: 7px; cursor: pointer; font-size: .85rem; font-weight: 600; color: var(--tx-2); transition: var(--t); border: none; background: none; width: 100%; text-align: left; position: relative; }
+    .nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 11px; border-radius: var(--r-sm); cursor: pointer; font-size: .85rem; font-weight: 600; color: var(--tx-2); transition: var(--t); border: none; background: none; width: 100%; text-align: left; position: relative; }
     .nav-item:hover { background: var(--bg-h); color: var(--tx); }
     .nav-item.active { background: rgba(255,255,255,.09); color: var(--tx); box-shadow: inset 3px 0 0 rgba(255,255,255,.55); font-weight: 700; }
     .nav-item.active .nav-icon { color: var(--tx); }
@@ -74,33 +87,35 @@ export function renderAdminPage() {
     .nav-icon svg { width: 15px; height: 15px; }
     .nav-icon-em { font-size: .9rem; line-height: 1; }
     .sidebar-bottom { padding: 4px 8px 6px; border-top: 1px solid var(--bd); }
-    .sidebar-link { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 7px; color: var(--tx-3); font-size: .82rem; text-decoration: none; transition: var(--t); }
+    .sidebar-link { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: var(--r-sm); color: var(--tx-3); font-size: .82rem; text-decoration: none; transition: var(--t); }
     .sidebar-link:hover { background: var(--bg-h); color: var(--tx-2); }
     .sidebar-footer { padding: 10px 8px 10px; border-top: 1px solid var(--bd); }
-    .user-badge { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 8px; background: var(--bg-3); border: 1px solid var(--bd); }
-    .avatar { width: 26px; height: 26px; background: linear-gradient(135deg, #2e2e2e, #1e1e1e); border: 1px solid var(--bd-2); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: .78rem; color: var(--tx); font-weight: 700; flex-shrink: 0; }
+    .user-badge { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: var(--r-md); background: var(--bg-3); border: 1px solid var(--bd); }
+    .avatar { width: 26px; height: 26px; background: linear-gradient(135deg, #2e2e2e, #1e1e1e); border: 1px solid var(--bd-2); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: .78rem; color: var(--tx); font-weight: 700; flex-shrink: 0; }
     .user-info { flex: 1; min-width: 0; }
     .user-name { font-size: .78rem; font-weight: 600; color: var(--tx-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .user-role { font-size: .65rem; color: var(--tx-3); margin-top: 1px; }
-    .btn-logout { padding: 4px 8px; background: none; border: 1px solid var(--bd); border-radius: 5px; color: var(--tx-3); cursor: pointer; font-size: .7rem; font-family: var(--font); transition: var(--t); flex-shrink: 0; }
+    .btn-logout { padding: 4px 8px; background: none; border: 1px solid var(--bd); border-radius: var(--r-xs); color: var(--tx-3); cursor: pointer; font-size: .7rem; font-family: var(--font); transition: var(--t); flex-shrink: 0; }
     .btn-logout:hover { border-color: rgba(248,113,113,.35); color: var(--red); background: var(--red-g); }
 
     /* ── Main content ── */
     .main-content { flex: 1; margin-left: 240px; min-width: 0; background: var(--bg); }
-    .section { display: none; padding: 28px 30px 60px; }
+    .section { display: none; padding: var(--sp-6) var(--sp-6) var(--sp-7); max-width: 1120px; }
     .section.active { display: block; }
-    .page-header { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--bd); }
-    .page-title { font-size: 1.35rem; font-weight: 800; color: var(--tx); letter-spacing: -.025em; margin-bottom: 4px; }
-    .page-sub { font-size: .83rem; color: var(--tx-2); font-weight: 500; }
+    .page-header { margin-bottom: var(--sp-6); padding-bottom: var(--sp-5); border-bottom: 1px solid var(--bd); }
+    .page-title { font-size: var(--fs-xl); font-weight: 800; color: var(--tx); letter-spacing: -.03em; margin-bottom: 6px; }
+    .page-sub { font-size: var(--fs-sm); color: var(--tx-3); font-weight: 500; }
 
-    /* ── Buttons ── */
-    .btn { padding: 6px 12px; border-radius: 7px; font-size: .79rem; font-weight: 600; font-family: var(--font); cursor: pointer; transition: var(--t); border: 1px solid transparent; display: inline-flex; align-items: center; gap: 5px; }
+    /* ── Buttons — 3 variants × 2 sizes ── */
+    .btn { padding: 6px 12px; border-radius: var(--r-sm); font-size: var(--fs-sm); font-weight: 600; font-family: var(--font); cursor: pointer; transition: var(--t); border: 1px solid transparent; display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 32px; line-height: 1.2; }
+    .btn-sm { padding: 4px 10px; font-size: var(--fs-xs); min-height: 28px; border-radius: var(--r-sm); }
     .btn-ghost { background: var(--bg-4); color: var(--tx-2); border-color: var(--bd); }
     .btn-ghost:hover { background: var(--bg-h); color: var(--tx); border-color: var(--bd-2); }
     .btn-danger { background: var(--red-g); color: var(--red); border-color: var(--red-r); }
     .btn-danger:hover { background: var(--red-r); }
-    .btn-primary { background: #dcdcdc; color: #080808; }
-    .btn-primary:hover { background: #f0f0f0; box-shadow: 0 4px 16px rgba(255,255,255,.08); }
+    .btn-primary { background: var(--accent); color: var(--tx-inv); border-color: transparent; }
+    .btn-primary:hover { background: var(--accent-hover); box-shadow: 0 4px 16px rgba(255,255,255,.08); }
+    .btn-primary:disabled { background: var(--bg-5); color: var(--tx-3); cursor: not-allowed; box-shadow: none; }
     .btn-warn { background: var(--amber-g); color: var(--amber); border-color: var(--amber-r); }
     .btn-warn:hover { background: var(--amber-r); }
 
@@ -111,7 +126,7 @@ export function renderAdminPage() {
 
     /* ── Stat Cards ── */
     .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
-    .stat-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 10px; padding: 20px 20px 17px; position: relative; overflow: hidden; transition: var(--t); box-shadow: 0 1px 0 rgba(255,255,255,.025) inset, 0 2px 8px rgba(0,0,0,.3); }
+    .stat-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-lg); padding: 24px 22px 20px; position: relative; overflow: hidden; transition: var(--t); box-shadow: none; }
     .stat-card:hover { border-color: var(--bd-2); background: var(--bg-4); box-shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 4px 16px rgba(0,0,0,.4); }
     .stat-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--blue) 0%, transparent 70%); opacity: .7; }
     .stat-card-glyph { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 2.3rem; opacity: .055; pointer-events: none; user-select: none; }
@@ -120,26 +135,26 @@ export function renderAdminPage() {
     .stat-unit { font-size: .75rem; color: var(--tx-2); margin-top: 7px; font-weight: 500; }
 
     /* ── Data table ── */
-    .table-wrap { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 10px; overflow: hidden; box-shadow: 0 1px 0 rgba(255,255,255,.02) inset, 0 2px 8px rgba(0,0,0,.25); }
+    .table-wrap { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-lg); overflow: hidden; box-shadow: 0 1px 0 rgba(255,255,255,.02) inset, 0 2px 8px rgba(0,0,0,.25); }
     .data-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
     .data-table th { text-align: left; padding: 10px 13px; color: var(--tx-2); font-weight: 700; border-bottom: 1px solid var(--bd-2); font-size: .66rem; text-transform: uppercase; letter-spacing: .11em; background: rgba(0,0,0,.35); white-space: nowrap; }
     .data-table td { padding: 10px 13px; border-bottom: 1px solid var(--bd); vertical-align: middle; color: var(--tx); }
     .data-table tr:last-child td { border-bottom: none; }
     .data-table tbody tr:hover td { background: rgba(255,255,255,.025); }
-    .top-thumb { width: 32px; height: 32px; object-fit: cover; border-radius: 5px; border: 1px solid var(--bd-2); cursor: pointer; }
+    .top-thumb { width: 32px; height: 32px; object-fit: cover; border-radius: var(--r-xs); border: 1px solid var(--bd-2); cursor: pointer; }
     .view-count { font-weight: 700; color: var(--tx); font-family: var(--mono); font-size: .82rem; }
     .muted { color: var(--tx-2); font-size: .79rem; }
     .sort-th { cursor: pointer; user-select: none; }
     .sort-th:hover { color: var(--tx-2); }
 
     /* ── Gallery ── */
-    .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
-    .search-input { padding: 7px 11px; background: var(--bg-3); border: 1px solid var(--bd); border-radius: 7px; color: var(--tx); font-size: .83rem; font-family: var(--font); outline: none; width: 210px; transition: var(--t); }
+    .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: var(--sp-5); flex-wrap: wrap; }
+    .search-input { padding: 7px 11px; background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-sm); color: var(--tx); font-size: .83rem; font-family: var(--font); outline: none; width: 210px; transition: var(--t); }
     .search-input:focus { border-color: var(--bd-f); box-shadow: 0 0 0 3px var(--blue-g); }
-    .bulk-bar { display: none; align-items: center; gap: 10px; padding: 9px 13px; background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: 8px; margin-bottom: 12px; font-size: .82rem; color: var(--tx-2); }
+    .bulk-bar { display: none; align-items: center; gap: 10px; padding: 9px 13px; background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: var(--r-md); margin-bottom: 12px; font-size: .82rem; color: var(--tx-2); }
     .bulk-bar.show { display: flex; }
-    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 11px; }
-    .gitem { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 8px; overflow: hidden; cursor: pointer; transition: var(--t), transform .15s; position: relative; }
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 16px; }
+    .gitem { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-md); overflow: hidden; cursor: pointer; transition: var(--t), transform .15s; position: relative; }
     .gitem:hover { border-color: var(--bd-2); box-shadow: 0 8px 28px rgba(0,0,0,.5); transform: translateY(-2px); }
     .gitem.selected { border-color: var(--tx-2); box-shadow: 0 0 0 1px var(--tx-2); }
     .gitem img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: var(--bg-2); }
@@ -149,7 +164,7 @@ export function renderAdminPage() {
     .gitem-size { font-size: .65rem; color: var(--tx-3); }
     .gitem-views { font-size: .65rem; color: var(--tx-a); font-weight: 600; font-family: var(--mono); }
     .gitem-actions { display: flex; gap: 3px; margin-top: 6px; }
-    .checkbox { position: absolute; top: 6px; left: 6px; width: 17px; height: 17px; border-radius: 4px; background: rgba(0,0,0,.75); border: 1.5px solid var(--bd-2); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .15s; }
+    .checkbox { position: absolute; top: 6px; left: 6px; width: 17px; height: 17px; border-radius: var(--r-xs); background: rgba(0,0,0,.75); border: 1.5px solid var(--bd-2); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .15s; }
     .gitem:hover .checkbox, .gitem.selected .checkbox { opacity: 1; }
     .gitem.selected .checkbox { background: var(--tx-2); border-color: var(--tx-2); }
     .chk-svg { width: 10px; height: 10px; stroke: #fff; fill: none; stroke-width: 2.5; }
@@ -157,65 +172,65 @@ export function renderAdminPage() {
     .empty { text-align: center; padding: 60px 0; color: var(--tx-3); font-size: .86rem; }
 
     /* ── User management ── */
-    .users-table-wrap { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 10px; overflow: auto; }
-    .perm-badge { display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 4px; font-size: .68rem; font-weight: 600; }
+    .users-table-wrap { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-lg); overflow: auto; }
+    .perm-badge { display: inline-flex; align-items: center; padding: 2px 6px; border-radius: var(--r-xs); font-size: .68rem; font-weight: 600; }
     .perm-on  { background: var(--green-g); color: var(--green); border: 1px solid var(--green-r); }
     .perm-off { background: rgba(58,86,120,.1); color: var(--tx-3); border: 1px solid var(--bd); }
     .perm-admin { background: var(--blue-g); color: var(--tx-a); border: 1px solid var(--blue-r); }
-    .badge-disabled { background: var(--red-g); color: var(--red); border: 1px solid var(--red-r); padding: 2px 6px; border-radius: 4px; font-size: .68rem; font-weight: 600; }
+    .badge-disabled { background: var(--red-g); color: var(--red); border: 1px solid var(--red-r); padding: 2px 6px; border-radius: var(--r-xs); font-size: .68rem; font-weight: 600; }
 
     /* ── Page batch ops ── */
-    .pg-bulk-bar { display: none; align-items: center; gap: 10px; padding: 9px 13px; background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: 8px; margin-bottom: 12px; font-size: .82rem; color: var(--tx-2); flex-wrap: wrap; }
+    .pg-bulk-bar { display: none; align-items: center; gap: 10px; padding: 9px 13px; background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: var(--r-md); margin-bottom: 12px; font-size: .82rem; color: var(--tx-2); flex-wrap: wrap; }
     .pg-bulk-bar.show { display: flex; }
     .pg-sel-count { font-family: var(--mono); font-size: .8rem; color: var(--tx-3); }
     .pg-check { width: 15px; height: 15px; accent-color: var(--tx-2); cursor: pointer; }
     .data-table .pg-check-col { width: 30px; text-align: center; }
     .data-table .pg-check-col.selecting { display: table-cell; }
     .data-table .pg-check-col { display: none; }
-    .pg-filter-sel { padding: 5px 8px; background: var(--bg-3); border: 1px solid var(--bd); border-radius: 6px; color: var(--tx); font-size: .76rem; font-family: var(--font); outline: none; cursor: pointer; transition: var(--t); max-width: 140px; }
+    .pg-filter-sel { padding: 5px 8px; background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-sm); color: var(--tx); font-size: .76rem; font-family: var(--font); outline: none; cursor: pointer; transition: var(--t); max-width: 140px; }
     .pg-filter-sel:focus { border-color: var(--bd-f); }
     .pg-filter-sel option { background: var(--bg-3); color: var(--tx); }
 
     /* ── Settings ── */
-    .settings-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 10px; padding: 20px; margin-bottom: 14px; }
+    .settings-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-lg); padding: 20px; margin-bottom: 14px; }
     .settings-card h3 { font-size: .65rem; font-weight: 700; margin-bottom: 16px; color: var(--tx-3); text-transform: uppercase; letter-spacing: .12em; padding-bottom: 10px; border-bottom: 1px solid var(--bd); }
     .setting-row { display: flex; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--bd); gap: 16px; }
     .setting-row:last-child { border-bottom: none; }
     .setting-label { font-size: .83rem; color: var(--tx-2); width: 200px; flex-shrink: 0; }
     .setting-ctrl { flex: 1; display: flex; align-items: center; gap: 10px; }
-    .setting-ctrl input[type="number"], .setting-ctrl input[type="text"] { padding: 6px 10px; background: var(--bg-2); border: 1px solid var(--bd); border-radius: 7px; color: var(--tx); font-size: .83rem; font-family: var(--font); outline: none; width: 140px; transition: var(--t); }
+    .setting-ctrl input[type="number"], .setting-ctrl input[type="text"] { padding: 6px 10px; background: var(--bg-2); border: 1px solid var(--bd); border-radius: var(--r-sm); color: var(--tx); font-size: .83rem; font-family: var(--font); outline: none; width: 140px; transition: var(--t); }
     .setting-ctrl input:focus { border-color: var(--bd-f); box-shadow: 0 0 0 3px var(--blue-g); }
     .setting-hint { font-size: .73rem; color: var(--tx-3); }
     .types-grid { display: flex; flex-wrap: wrap; gap: 6px; }
-    .type-chip { display: flex; align-items: center; gap: 5px; padding: 4px 9px; background: var(--bg-2); border: 1px solid var(--bd); border-radius: 5px; font-size: .74rem; cursor: pointer; transition: var(--t); color: var(--tx-3); font-weight: 500; }
+    .type-chip { display: flex; align-items: center; gap: 5px; padding: 4px 9px; background: var(--bg-2); border: 1px solid var(--bd); border-radius: var(--r-xs); font-size: .74rem; cursor: pointer; transition: var(--t); color: var(--tx-3); font-weight: 500; }
     .type-chip:hover { border-color: var(--bd-2); color: var(--tx-2); }
     .type-chip.on { background: var(--blue-g); border-color: var(--blue-r); color: var(--tx-a); }
     .save-row { display: flex; justify-content: flex-end; margin-top: 16px; }
 
     /* ── Modals ── */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(4,7,16,.9); display: none; align-items: center; justify-content: center; z-index: 50; padding: 24px; backdrop-filter: blur(8px); }
+    .modal-overlay { position: fixed; inset: 0; background: var(--overlay); display: none; align-items: center; justify-content: center; z-index: 50; padding: 24px; backdrop-filter: blur(8px); }
     .modal-overlay.show { display: flex; }
-    .modal { background: var(--bg-4); border: 1px solid var(--bd-2); border-radius: 14px; width: 100%; max-width: 520px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: var(--shadow); }
+    .modal { background: var(--bg-4); border: 1px solid var(--bd-2); border-radius: var(--r-xl); width: 100%; max-width: 520px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: var(--shadow); }
     .modal-header { display: flex; align-items: center; padding: 15px 18px; border-bottom: 1px solid var(--bd); flex-shrink: 0; }
     .modal-header h3 { font-size: .93rem; font-weight: 600; flex: 1; color: var(--tx); }
-    .modal-close { background: var(--bg-5); border: 1px solid var(--bd); color: var(--tx-2); width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-size: .85rem; display: flex; align-items: center; justify-content: center; transition: var(--t); font-family: var(--font); }
+    .modal-close { background: var(--bg-5); border: 1px solid var(--bd); color: var(--tx-2); width: 28px; height: 28px; border-radius: var(--r-sm); cursor: pointer; font-size: .85rem; display: flex; align-items: center; justify-content: center; transition: var(--t); font-family: var(--font); }
     .modal-close:hover { color: var(--tx); border-color: var(--bd-2); }
     .modal-body { overflow-y: auto; padding: 16px 18px; flex: 1; }
     .modal-footer { padding: 12px 18px; border-top: 1px solid var(--bd); display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0; }
     .perm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
-    .perm-check { display: flex; align-items: center; gap: 8px; padding: 8px 11px; background: var(--bg-3); border: 1px solid var(--bd); border-radius: 7px; cursor: pointer; font-size: .82rem; color: var(--tx-2); transition: var(--t); }
+    .perm-check { display: flex; align-items: center; gap: 8px; padding: 8px 11px; background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-sm); cursor: pointer; font-size: .82rem; color: var(--tx-2); transition: var(--t); }
     .perm-check:hover { border-color: var(--bd-2); }
     .perm-check input { width: 14px; height: 14px; cursor: pointer; accent-color: var(--blue); }
     .perm-num-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
     .perm-num-row label { font-size: .8rem; color: var(--tx-2); width: 120px; flex-shrink: 0; }
-    .perm-num-row input { padding: 6px 10px; background: var(--bg-2); border: 1px solid var(--bd); border-radius: 7px; color: var(--tx); font-size: .83rem; font-family: var(--font); outline: none; width: 100px; transition: var(--t); }
+    .perm-num-row input { padding: 6px 10px; background: var(--bg-2); border: 1px solid var(--bd); border-radius: var(--r-sm); color: var(--tx); font-size: .83rem; font-family: var(--font); outline: none; width: 100px; transition: var(--t); }
     .perm-num-row input:focus { border-color: var(--bd-f); box-shadow: 0 0 0 3px var(--blue-g); }
     .perm-hint { font-size: .7rem; color: var(--tx-3); }
 
     /* ── Stats modal ── */
     .stats-modal { max-width: 680px; }
     .stat-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
-    .summary-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 8px; padding: 14px; text-align: center; }
+    .summary-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-md); padding: 14px; text-align: center; }
     .summary-card .val { font-size: 1.5rem; font-weight: 700; color: var(--tx); font-family: var(--mono); }
     .summary-card .lbl { font-size: .66rem; color: var(--tx-3); margin-top: 5px; text-transform: uppercase; letter-spacing: .07em; }
     .country-bars h4, .access-log h4 { font-size: .66rem; color: var(--tx-2); margin-bottom: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em; }
@@ -230,34 +245,34 @@ export function renderAdminPage() {
     .access-log { margin-top: 16px; }
 
     /* ── Version diff ── */
-    .pvm-ver-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 7px; padding: 9px 10px; cursor: pointer; transition: border-color .12s; }
+    .pvm-ver-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-sm); padding: 9px 10px; cursor: pointer; transition: border-color .12s; }
     .pvm-ver-card:hover { border-color: var(--bd-2); }
     .pvm-ver-card.active { border-color: var(--blue); background: var(--blue-g); }
     .pvm-ver-card.checked-a { border-color: var(--green); background: var(--green-g); }
     .pvm-ver-card.checked-b { border-color: var(--amber); background: var(--amber-g); }
-    .pvm-ver-badge { font-size: .7rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-right: 4px; background: var(--bg-5); color: var(--tx-a); font-family: var(--mono); }
+    .pvm-ver-badge { font-size: .7rem; font-weight: 700; padding: 1px 6px; border-radius: var(--r-xs); margin-right: 4px; background: var(--bg-5); color: var(--tx-a); font-family: var(--mono); }
     .pvm-ver-latest { font-size: .62rem; padding: 1px 5px; border-radius: 3px; background: var(--green-g); color: var(--green); }
     .pvm-ver-meta { font-size: .67rem; color: var(--tx-3); margin-top: 4px; font-family: var(--mono); }
     .pvm-ver-check { display: flex; align-items: center; gap: 4px; margin-top: 5px; font-size: .67rem; color: var(--tx-3); }
-    .diff-file { display: flex; align-items: center; gap: 6px; padding: 3px 6px; border-radius: 4px; font-size: .7rem; font-family: var(--mono); margin-bottom: 1px; }
+    .diff-file { display: flex; align-items: center; gap: 6px; padding: 3px 6px; border-radius: var(--r-xs); font-size: .7rem; font-family: var(--mono); margin-bottom: 1px; }
     .diff-add  { background: var(--green-g); color: var(--green); }
     .diff-rem  { background: var(--red-g); color: var(--red); }
     .diff-same { color: var(--tx-3); }
     .diff-prefix { flex-shrink: 0; width: 14px; font-weight: 700; }
     .diff-section { margin-bottom: 14px; }
-    .diff-section h4 { font-size: .7rem; font-weight: 600; margin-bottom: 5px; padding: 4px 6px; border-radius: 4px; }
+    .diff-section h4 { font-size: .7rem; font-weight: 600; margin-bottom: 5px; padding: 4px 6px; border-radius: var(--r-xs); }
     .diff-section.add  h4 { background: var(--green-g); color: var(--green); }
     .diff-section.rem  h4 { background: var(--red-g); color: var(--red); }
     .diff-section.same h4 { background: rgba(100,100,100,.06); color: var(--tx-3); }
-    .file-row { display: flex; align-items: center; gap: 6px; padding: 3px 6px; border-radius: 4px; font-size: .7rem; font-family: var(--mono); margin-bottom: 1px; color: var(--tx-3); }
+    .file-row { display: flex; align-items: center; gap: 6px; padding: 3px 6px; border-radius: var(--r-xs); font-size: .7rem; font-family: var(--mono); margin-bottom: 1px; color: var(--tx-3); }
     .file-row:hover { background: var(--bg-h); color: var(--tx-2); }
 
     /* ── R2 Panel ── */
-    .r2-panel { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 10px; padding: 16px 18px; margin-bottom: 24px; }
+    .r2-panel { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-lg); padding: 16px 18px; margin-bottom: 24px; }
     .r2-panel-hd { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
     .r2-panel-hd h3 { font-size: .86rem; font-weight: 600; color: var(--tx-2); }
-    .r2-badge { font-size: .67rem; color: var(--tx-3); background: var(--bg-2); border: 1px solid var(--bd); padding: 2px 7px; border-radius: 4px; font-weight: 500; }
-    .r2-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--bd); border-radius: 7px; overflow: hidden; }
+    .r2-badge { font-size: .67rem; color: var(--tx-3); background: var(--bg-2); border: 1px solid var(--bd); padding: 2px 7px; border-radius: var(--r-xs); font-weight: 500; }
+    .r2-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--bd); border-radius: var(--r-sm); overflow: hidden; }
     .r2-cell { background: var(--bg-2); padding: 12px 13px; }
     .r2-cell-lbl { font-size: .62rem; color: var(--tx-3); margin-bottom: 5px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; }
     .r2-cell-val { font-size: 1.25rem; font-weight: 700; line-height: 1; color: var(--tx); font-family: var(--mono); }
@@ -273,15 +288,15 @@ export function renderAdminPage() {
 
     /* ── Member Stats ── */
     .mb-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-bottom: 18px; }
-    .mb-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 8px; padding: 14px; }
+    .mb-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-md); padding: 14px; }
     .mb-card-lbl { font-size: .62rem; color: var(--tx-3); margin-bottom: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; }
     .mb-card-val { font-size: 1.65rem; font-weight: 700; line-height: 1; color: var(--tx); font-family: var(--mono); }
 
     /* ── CF Quota Panel ── */
-    .cf-panel { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 10px; margin-bottom: 24px; overflow: hidden; }
+    .cf-panel { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-lg); margin-bottom: 24px; overflow: hidden; }
     .cf-panel-hd { display: flex; align-items: center; gap: 10px; padding: 13px 16px; border-bottom: 1px solid var(--bd); }
     .cf-panel-hd h3 { font-size: .88rem; font-weight: 600; color: var(--tx); margin: 0; }
-    .cf-badge { font-size: .63rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; border: 1px solid; white-space: nowrap; font-family: var(--mono); }
+    .cf-badge { font-size: .63rem; font-weight: 600; padding: 2px 8px; border-radius: var(--r-xs); border: 1px solid; white-space: nowrap; font-family: var(--mono); }
     .cf-badge.api { color: var(--green); border-color: var(--green-r); background: var(--green-g); }
     .cf-badge.self { color: var(--amber); border-color: var(--amber-r); background: var(--amber-g); }
     .cf-badge.loading { color: var(--tx-3); border-color: var(--bd); background: var(--bg-2); }
@@ -289,7 +304,7 @@ export function renderAdminPage() {
     .cf-group:last-of-type { border-bottom: none; }
     .cf-group-lbl { font-size: .59rem; font-weight: 700; color: var(--tx-3); text-transform: uppercase; letter-spacing: .12em; margin-bottom: 10px; }
     .cf-quotas { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 9px; }
-    .cf-quota { background: var(--bg-2); border: 1px solid var(--bd); border-radius: 7px; padding: 11px 13px; }
+    .cf-quota { background: var(--bg-2); border: 1px solid var(--bd); border-radius: var(--r-sm); padding: 11px 13px; }
     .cf-quota-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; margin-bottom: 5px; }
     .cf-quota-lbl { font-size: .7rem; color: var(--tx-2); font-weight: 500; line-height: 1.3; }
     .cf-quota-method { font-size: .57rem; color: var(--tx-3); background: var(--bg-5); border: 1px solid var(--bd); padding: 1px 5px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; margin-top: 1px; font-family: var(--mono); }
@@ -301,7 +316,7 @@ export function renderAdminPage() {
     .cf-fill.warn { background: var(--amber); }
     .cf-fill.full { background: var(--red); }
     .cf-kv-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
-    .cf-kv-item { display: flex; align-items: center; gap: 8px; background: var(--bg-2); border: 1px solid var(--bd); border-radius: 7px; padding: 8px 11px; flex: 1; min-width: 120px; }
+    .cf-kv-item { display: flex; align-items: center; gap: 8px; background: var(--bg-2); border: 1px solid var(--bd); border-radius: var(--r-sm); padding: 8px 11px; flex: 1; min-width: 120px; }
     .cf-kv-icon { font-size: 1rem; flex-shrink: 0; }
     .cf-kv-val { font-size: .9rem; font-weight: 700; color: var(--tx); line-height: 1.2; font-family: var(--mono); }
     .cf-kv-lbl { font-size: .59rem; color: var(--tx-3); margin-top: 1px; }
@@ -310,50 +325,50 @@ export function renderAdminPage() {
     .cf-note a:hover { text-decoration: underline; }
 
     /* ── Proto upload UI ── */
-    .proto-upload-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 10px; padding: 18px; margin-bottom: 18px; }
+    .proto-upload-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-lg); padding: 18px; margin-bottom: 18px; }
     .proto-upload-card h3 { font-size: .65rem; font-weight: 700; color: var(--tx-3); text-transform: uppercase; letter-spacing: .12em; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--bd); }
     .proto-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-    .proto-drop-zone { border: 1.5px dashed var(--bd-2); border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; transition: var(--t); background: var(--bg-2); display: flex; flex-direction: column; align-items: center; gap: 7px; margin-bottom: 10px; }
+    .proto-drop-zone { border: 1.5px dashed var(--bd-2); border-radius: var(--r-md); padding: 20px; text-align: center; cursor: pointer; transition: var(--t); background: var(--bg-2); display: flex; flex-direction: column; align-items: center; gap: 7px; margin-bottom: 10px; }
     .proto-drop-zone:hover { border-color: var(--blue); background: var(--blue-g); }
     .proto-drop-icon { font-size: 1.4rem; }
     .proto-drop-text { font-size: .82rem; color: var(--tx-2); font-weight: 500; }
     .proto-drop-sub { font-size: .7rem; color: var(--tx-3); }
-    .proto-prog { display: none; background: var(--bd); border-radius: 4px; height: 5px; overflow: hidden; }
+    .proto-prog { display: none; background: var(--bd); border-radius: var(--r-xs); height: 5px; overflow: hidden; }
     .proto-prog.show { display: block; }
-    .proto-prog-bar { height: 5px; background: linear-gradient(90deg, var(--blue-d), var(--blue)); border-radius: 4px; transition: width .4s; width: 0%; }
+    .proto-prog-bar { height: 5px; background: linear-gradient(90deg, var(--blue-d), var(--blue)); border-radius: var(--r-xs); transition: width .4s; width: 0%; }
     .proto-prog-info { display: none; align-items: center; justify-content: space-between; margin-top: 5px; font-size: .7rem; color: var(--tx-3); }
     .proto-prog-info.show { display: flex; }
     .proto-err { font-size: .76rem; color: var(--red); min-height: 16px; margin-top: 4px; }
     .proto-upload-actions { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
 
     /* ── Lightbox ── */
-    .lightbox { position: fixed; inset: 0; background: rgba(4,7,16,.95); display: none; align-items: center; justify-content: center; z-index: 100; padding: 24px; }
+    .lightbox { position: fixed; inset: 0; background: var(--overlay); display: none; align-items: center; justify-content: center; z-index: 100; padding: 24px; }
     .lightbox.show { display: flex; }
-    .lb-inner { background: var(--bg-4); border: 1px solid var(--bd-2); border-radius: 12px; max-width: 740px; width: 100%; overflow: hidden; box-shadow: var(--shadow); }
+    .lb-inner { background: var(--bg-4); border: 1px solid var(--bd-2); border-radius: var(--r-lg); max-width: 740px; width: 100%; overflow: hidden; box-shadow: var(--shadow); }
     .lb-img-wrap { background: var(--bg); display: flex; align-items: center; justify-content: center; min-height: 260px; max-height: 55vh; }
     .lb-img-wrap img { max-width: 100%; max-height: 55vh; object-fit: contain; display: block; }
     .lb-meta { padding: 14px 18px; }
     .lb-key { font-size: .84rem; color: var(--tx-2); word-break: break-all; font-family: var(--mono); }
     .lb-detail { display: flex; gap: 14px; margin-top: 5px; font-size: .75rem; color: var(--tx-3); }
     .lb-actions { display: flex; gap: 7px; margin-top: 12px; }
-    .lb-close { position: absolute; top: 14px; right: 14px; background: var(--bg-5); border: 1px solid var(--bd); color: var(--tx-2); width: 32px; height: 32px; border-radius: 7px; cursor: pointer; font-size: .9rem; display: flex; align-items: center; justify-content: center; transition: var(--t); }
+    .lb-close { position: absolute; top: 14px; right: 14px; background: var(--bg-5); border: 1px solid var(--bd); color: var(--tx-2); width: 32px; height: 32px; border-radius: var(--r-sm); cursor: pointer; font-size: .9rem; display: flex; align-items: center; justify-content: center; transition: var(--t); }
     .lb-close:hover { color: var(--tx); border-color: var(--bd-2); }
 
     /* ── Toast ── */
-    .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--bg-5); border: 1px solid var(--bd-2); color: var(--tx); padding: 8px 18px; border-radius: 8px; font-size: .8rem; font-weight: 500; transition: transform .3s cubic-bezier(.34,1.56,.64,1); z-index: 300; white-space: nowrap; box-shadow: var(--shadow-sm); font-family: var(--font); }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--bg-3); border: 1px solid var(--bd-2); color: var(--tx); padding: 9px 18px; border-radius: var(--r-md); font-size: var(--fs-sm); font-weight: 500; transition: transform .3s cubic-bezier(.34,1.56,.64,1); z-index: 300; white-space: nowrap; box-shadow: var(--shadow-sm); font-family: var(--font); }
     .toast.show { transform: translateX(-50%) translateY(0); }
-    .toast.t-success { background: #052e16; border-color: #166534; color: #4ade80; }
-    .toast.t-warn    { background: #2d1b00; border-color: #92400e; color: #fcd34d; }
-    .toast.t-error   { background: #1c0505; border-color: #7f1d1d; color: #f87171; }
+    .toast.t-success { background: var(--green-g); border-color: var(--green-r); color: var(--green); }
+    .toast.t-warn    { background: var(--amber-g); border-color: var(--amber-r); color: var(--amber); }
+    .toast.t-error   { background: var(--red-g); border-color: var(--red-r); color: var(--red); }
 
     /* ── Admin page editor ByteMD ── */
-    #apmVditor { border-radius: 7px; overflow: hidden; border: 1px solid var(--bd); min-height: 440px; }
+    #apmVditor { border-radius: var(--r-sm); overflow: hidden; border: 1px solid var(--bd); min-height: 440px; }
     #apmVditor .bytemd { height: 440px !important; border: none !important; background: var(--bg-2) !important; }
     /* 全屏时撑满视口 */
     #apmVditor .bytemd.bytemd-fullscreen { height: 100vh !important; width: 100vw !important; }
     /* 工具栏 */
     #apmVditor .bytemd-toolbar { background: var(--bg-3) !important; border-bottom: 1px solid var(--bd) !important; padding: 3px 8px !important; }
-    #apmVditor .bytemd-toolbar-icon { color: var(--tx-2) !important; border-radius: 6px !important; }
+    #apmVditor .bytemd-toolbar-icon { color: var(--tx-2) !important; border-radius: var(--r-sm) !important; }
     #apmVditor .bytemd-toolbar-icon:hover { background: var(--bg-h) !important; color: var(--tx) !important; }
     #apmVditor .bytemd-toolbar-icon.active { color: var(--green) !important; }
     /* 编辑区 CodeMirror */
@@ -363,7 +378,7 @@ export function renderAdminPage() {
     #apmVditor .cm-header { color: var(--tx) !important; font-weight: 700 !important; }
     #apmVditor .cm-strong { color: var(--tx) !important; font-weight: 700 !important; }
     #apmVditor .cm-em { color: var(--tx-2) !important; }
-    #apmVditor .cm-link, #apmVditor .cm-url { color: #60a5fa !important; }
+    #apmVditor .cm-link, #apmVditor .cm-url { color: var(--tx-2) !important; }
     #apmVditor .cm-formatting { color: var(--tx-3) !important; }
     #apmVditor .cm-comment, #apmVditor .cm-quote { color: var(--tx-3) !important; }
     /* 分隔线 & 侧边栏 */
@@ -375,17 +390,17 @@ export function renderAdminPage() {
     #apmVditor .markdown-body { background: transparent !important; color: var(--tx) !important; font-size: 14px !important; line-height: 1.8 !important; }
     #apmVditor .markdown-body h1,#apmVditor .markdown-body h2,#apmVditor .markdown-body h3,#apmVditor .markdown-body h4 { color: var(--tx) !important; border-bottom-color: var(--bd) !important; }
     #apmVditor .markdown-body p, #apmVditor .markdown-body li { color: var(--tx) !important; }
-    #apmVditor .markdown-body a { color: #60a5fa !important; text-decoration: none !important; border-bottom: 1px solid rgba(96,165,250,.3) !important; }
-    #apmVditor .markdown-body :not(pre) > code { background: rgba(110,118,129,.14) !important; color: var(--amber) !important; border: none !important; border-radius: 5px !important; padding: 2px 6px !important; }
-    #apmVditor .markdown-body pre { background: var(--bg-4) !important; border: 1px solid var(--bd) !important; border-radius: 8px !important; padding: 14px 18px !important; }
+    #apmVditor .markdown-body a { color: var(--tx-2) !important; text-decoration: none !important; border-bottom: 1px solid rgba(96,165,250,.3) !important; }
+    #apmVditor .markdown-body :not(pre) > code { background: rgba(110,118,129,.14) !important; color: var(--amber) !important; border: none !important; border-radius: var(--r-xs) !important; padding: 2px 6px !important; }
+    #apmVditor .markdown-body pre { background: var(--bg-4) !important; border: 1px solid var(--bd) !important; border-radius: var(--r-md) !important; padding: 14px 18px !important; }
     #apmVditor .markdown-body pre code { background: none !important; color: var(--tx) !important; border: none !important; padding: 0 !important; }
-    #apmVditor .markdown-body blockquote { border-left: 3px solid #60a5fa !important; background: rgba(96,165,250,.06) !important; color: var(--tx-2) !important; border-radius: 0 6px 6px 0 !important; padding: 10px 16px !important; }
+    #apmVditor .markdown-body blockquote { border-left: 3px solid var(--tx-2) !important; background: rgba(96,165,250,.06) !important; color: var(--tx-2) !important; border-radius: 0 6px 6px 0 !important; padding: 10px 16px !important; }
     #apmVditor .markdown-body blockquote p { color: var(--tx-2) !important; }
     #apmVditor .markdown-body hr { border-top: 1px solid var(--bd) !important; background: none !important; }
     #apmVditor .markdown-body strong { color: var(--tx) !important; }
-    #apmVditor .markdown-body img { border-radius: 8px !important; max-width: 100% !important; }
+    #apmVditor .markdown-body img { border-radius: var(--r-md) !important; max-width: 100% !important; }
     /* 表格 —— 暗色 */
-    #apmVditor .markdown-body table { border-collapse: separate !important; border-spacing: 0 !important; border: 1px solid var(--bd) !important; border-radius: 8px !important; overflow: hidden !important; width: 100% !important; }
+    #apmVditor .markdown-body table { border-collapse: separate !important; border-spacing: 0 !important; border: 1px solid var(--bd) !important; border-radius: var(--r-md) !important; overflow: hidden !important; width: 100% !important; }
     #apmVditor .markdown-body table th { background: var(--bg-4) !important; color: var(--tx-2) !important; border-bottom: 1px solid var(--bd) !important; border-right: none !important; padding: 9px 14px !important; font-size: 13px !important; }
     #apmVditor .markdown-body table td { background: var(--bg-2) !important; color: var(--tx) !important; border-bottom: 1px solid var(--bg-3) !important; border-right: none !important; padding: 8px 14px !important; }
     #apmVditor .markdown-body table tr:last-child td { border-bottom: none !important; }
@@ -395,7 +410,7 @@ export function renderAdminPage() {
     /* ── 亮色预览主题（data-preview-theme="light"） ── */
     #apmVditor[data-preview-theme="light"] .bytemd-preview { background: #ffffff !important; }
     #apmVditor[data-preview-theme="light"] .markdown-body { color: #1a1a1a !important; }
-    #apmVditor[data-preview-theme="light"] .markdown-body h1,#apmVditor[data-preview-theme="light"] .markdown-body h2,#apmVditor[data-preview-theme="light"] .markdown-body h3,#apmVditor[data-preview-theme="light"] .markdown-body h4 { color: #111 !important; border-bottom-color: #e5e7eb !important; }
+    #apmVditor[data-preview-theme="light"] .markdown-body h1,#apmVditor[data-preview-theme="light"] .markdown-body h2,#apmVditor[data-preview-theme="light"] .markdown-body h3,#apmVditor[data-preview-theme="light"] .markdown-body h4 { color: var(--bg-2) !important; border-bottom-color: #e5e7eb !important; }
     #apmVditor[data-preview-theme="light"] .markdown-body p,#apmVditor[data-preview-theme="light"] .markdown-body li { color: #374151 !important; }
     #apmVditor[data-preview-theme="light"] .markdown-body a { color: #2563eb !important; border-bottom-color: rgba(37,99,235,.3) !important; }
     #apmVditor[data-preview-theme="light"] .markdown-body :not(pre) > code { background: #f3f4f6 !important; color: #dc2626 !important; }
@@ -403,14 +418,14 @@ export function renderAdminPage() {
     #apmVditor[data-preview-theme="light"] .markdown-body pre code { color: #d4d4d4 !important; }
     #apmVditor[data-preview-theme="light"] .markdown-body blockquote { border-left-color: #2563eb !important; background: rgba(37,99,235,.05) !important; color: #6b7280 !important; }
     #apmVditor[data-preview-theme="light"] .markdown-body blockquote p { color: #6b7280 !important; }
-    #apmVditor[data-preview-theme="light"] .markdown-body strong { color: #111 !important; }
+    #apmVditor[data-preview-theme="light"] .markdown-body strong { color: var(--bg-2) !important; }
     #apmVditor[data-preview-theme="light"] .markdown-body hr { border-top-color: #e5e7eb !important; }
     #apmVditor[data-preview-theme="light"] .markdown-body table { border-color: #e5e7eb !important; }
     #apmVditor[data-preview-theme="light"] .markdown-body table th { background: #f9fafb !important; color: #374151 !important; border-bottom-color: #e5e7eb !important; }
     #apmVditor[data-preview-theme="light"] .markdown-body table td { background: #fff !important; color: #374151 !important; border-bottom-color: #f3f4f6 !important; }
     #apmVditor[data-preview-theme="light"] .markdown-body table tr:nth-child(even) td { background: #f9fafb !important; }
     /* 主题切换按钮 */
-    #apmPreviewThemeBtn { padding: 3px 10px; border-radius: 6px; font-size: .72rem; font-weight: 600; font-family: var(--font); cursor: pointer; border: 1px solid var(--bd); background: var(--bg-4); color: var(--tx-2); transition: var(--t); }
+    #apmPreviewThemeBtn { padding: 3px 10px; border-radius: var(--r-sm); font-size: .72rem; font-weight: 600; font-family: var(--font); cursor: pointer; border: 1px solid var(--bd); background: var(--bg-4); color: var(--tx-2); transition: var(--t); }
 
     /* ── Login enhancements ── */
     @keyframes loginSpin { to { transform: rotate(360deg); } }
@@ -428,13 +443,13 @@ export function renderAdminPage() {
     #expiryBanner.show { display: flex; }
 
     /* ── Dashboard Stats Tabs ── */
-    .dash-tabs-panel { border: 1px solid var(--bd); border-radius: 10px; overflow: hidden; margin-top: 24px; background: var(--bg-3); box-shadow: 0 1px 0 rgba(255,255,255,.02) inset, 0 2px 8px rgba(0,0,0,.25); }
+    .dash-tabs-panel { border: 1px solid var(--bd); border-radius: var(--r-lg); overflow: hidden; margin-top: 24px; background: var(--bg-3); box-shadow: 0 1px 0 rgba(255,255,255,.02) inset, 0 2px 8px rgba(0,0,0,.25); }
     .dash-tabs-hd { display: flex; align-items: stretch; padding: 0 12px; border-bottom: 1px solid var(--bd-2); background: rgba(0,0,0,.3); }
     .dash-tabs-nav { display: flex; align-items: stretch; gap: 0; }
     .dash-tab { display: flex; align-items: center; gap: 7px; padding: 11px 15px; font-size: .82rem; font-weight: 600; color: var(--tx-2); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-family: var(--font); transition: var(--t); margin-bottom: -1px; white-space: nowrap; }
     .dash-tab:hover { color: var(--tx); background: rgba(255,255,255,.035); }
     .dash-tab.active { color: var(--tx); border-bottom-color: var(--tx); font-weight: 700; }
-    .dash-tab-count { font-size: .65rem; font-weight: 700; padding: 1px 7px; border-radius: 8px; background: var(--bg-5); color: var(--tx-2); font-family: var(--mono); line-height: 1.5; transition: var(--t); border: 1px solid var(--bd); }
+    .dash-tab-count { font-size: .65rem; font-weight: 700; padding: 1px 7px; border-radius: var(--r-md); background: var(--bg-5); color: var(--tx-2); font-family: var(--mono); line-height: 1.5; transition: var(--t); border: 1px solid var(--bd); }
     .dash-tab.active .dash-tab-count { background: rgba(255,255,255,.12); color: var(--tx); border-color: var(--bd-2); }
     .dash-tab-hint { font-size: .68rem; color: var(--tx-2); margin-left: auto; align-self: center; padding-right: 4px; font-weight: 500; }
     .dash-tab-pane { display: none; }
@@ -448,7 +463,7 @@ export function renderAdminPage() {
 
     /* ── Mobile sidebar ── */
     .mob-header { display: none; position: fixed; top: 0; left: 0; right: 0; height: 50px; background: var(--bg-2); border-bottom: 1px solid var(--bd); z-index: 20; align-items: center; gap: 14px; padding: 0 16px; }
-    .mob-hamburger { background: none; border: 1px solid var(--bd); color: var(--tx-3); width: 32px; height: 32px; border-radius: 7px; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; }
+    .mob-hamburger { background: none; border: 1px solid var(--bd); color: var(--tx-3); width: 32px; height: 32px; border-radius: var(--r-sm); cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; }
     .mob-hamburger:hover { color: var(--tx); border-color: var(--bd-2); }
     .sidebar-mask { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 9; }
     .sidebar-mask.show { display: block; }
@@ -457,7 +472,12 @@ export function renderAdminPage() {
       aside.open { transform: translateX(0); z-index: 15; }
       .mob-header { display: flex; }
       .main-content { margin-left: 0 !important; }
-      .section { padding-top: 66px; }
+      .section { padding: 72px 18px 48px; }
+      .page-header { margin-bottom: 24px; }
+      .toolbar { gap: 12px; margin-bottom: 20px; }
+      .stat-card { padding: 20px 18px; }
+      .gallery-grid { gap: 12px; }
+      .btn, .btn-sm, .nav-item { min-height: 40px; }
       .stats-row { grid-template-columns: repeat(2, 1fr); }
     }
     @media (min-width: 769px) { .mob-header { display: none !important; } }
@@ -984,7 +1004,7 @@ export function renderAdminPage() {
       <button class="modal-close" id="userModalClose">✕</button>
     </div>
     <div class="modal-body">
-      <div class="field" id="fieldUsername"><label>用户名 <span style="color:#5a7090">(字母/数字/_- 2-32位)</span></label><input type="text" id="umUsername" placeholder="alice"></div>
+      <div class="field" id="fieldUsername"><label>用户名 <span style="color:var(--tx-3)">(字母/数字/_- 2-32位)</span></label><input type="text" id="umUsername" placeholder="alice"></div>
       <div class="field" id="fieldPassword"><label id="umPassLabel">密码</label><input type="password" id="umPassword" placeholder="留空则不修改"></div>
       <div class="field" style="margin-top:4px"><label style="margin-bottom:8px;display:block">权限</label>
         <div class="perm-grid">
@@ -1029,7 +1049,7 @@ export function renderAdminPage() {
       <div class="field">
         <label>Slug（URL 后缀）</label>
         <input type="text" id="apmSlug" placeholder="my-blog-post">
-        <span style="font-size:.72rem;color:#5a7090;margin-top:4px">访问地址：<span id="apmSlugPreview" style="color:#60a5fa"></span></span>
+        <span style="font-size:.72rem;color:var(--tx-3);margin-top:4px">访问地址：<span id="apmSlugPreview" style="color:var(--tx-2)"></span></span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="field"><label>类型</label><select id="apmType"><option value="markdown">Markdown</option><option value="html">HTML</option></select></div>
@@ -1043,10 +1063,10 @@ export function renderAdminPage() {
         <label>访问密码</label>
         <div style="display:flex;gap:8px;align-items:center">
           <input type="text" id="apmPassword" maxlength="6" autocomplete="off" spellcheck="false"
-            style="font-family:monospace;letter-spacing:.18em;font-size:.95rem;width:110px;padding:8px 10px;background:#0b0f1a;border:1px solid #2a3650;border-radius:7px;color:#e8edf5;outline:none">
+            style="font-family:monospace;letter-spacing:.18em;font-size:.95rem;width:110px;padding:8px 10px;background:var(--bg-2);border:1px solid var(--bd-2);border-radius:7px;color:var(--tx);outline:none">
           <button type="button" id="apmPwdGen" class="btn btn-ghost" style="white-space:nowrap;flex-shrink:0">重新生成</button>
         </div>
-        <span style="font-size:.7rem;color:#5a7090;margin-top:4px;display:block">6位字母+数字，访客凭密码访问私密页面</span>
+        <span style="font-size:.7rem;color:var(--tx-3);margin-top:4px;display:block">6位字母+数字，访客凭密码访问私密页面</span>
       </div>
       <div class="field" style="flex:1;display:flex;flex-direction:column;min-height:0">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
@@ -1054,7 +1074,7 @@ export function renderAdminPage() {
           <button id="apmPreviewThemeBtn" class="btn btn-ghost" style="display:none;padding:3px 10px;font-size:.72rem">☀ 亮色预览</button>
         </div>
         <div id="apmVditor" style="display:none"></div>
-        <textarea id="apmContent" rows="14" style="resize:vertical;min-height:200px;font-family:monospace;font-size:.82rem;padding:10px 12px;background:#0b0f1a;border:1px solid #2a3650;border-radius:8px;color:#e8edf5;outline:none;width:100%" placeholder="# Hello\n\n内容…"></textarea>
+        <textarea id="apmContent" rows="14" style="resize:vertical;min-height:200px;font-family:monospace;font-size:.82rem;padding:10px 12px;background:var(--bg-2);border:1px solid var(--bd-2);border-radius:8px;color:var(--tx);outline:none;width:100%" placeholder="# Hello\n\n内容…"></textarea>
       </div>
     </div>
     <div class="modal-footer">
@@ -1099,7 +1119,7 @@ export function renderAdminPage() {
 <div class="modal-overlay" id="pageStatsModal">
   <div class="modal stats-modal">
     <div class="modal-header">
-      <h3>页面统计 <span style="font-size:.72rem;color:#5a7090;font-weight:400" id="psmTitle"></span></h3>
+      <h3>页面统计 <span style="font-size:.72rem;color:var(--tx-3);font-weight:400" id="psmTitle"></span></h3>
       <button class="modal-close" id="psmClose">✕</button>
     </div>
     <div class="modal-body">
@@ -1128,7 +1148,7 @@ export function renderAdminPage() {
 <div class="modal-overlay" id="statsModal">
   <div class="modal stats-modal">
     <div class="modal-header">
-      <h3>访问统计 <span style="font-size:.72rem;color:#5a7090;font-weight:400" id="statsModalKey"></span></h3>
+      <h3>访问统计 <span style="font-size:.72rem;color:var(--tx-3);font-weight:400" id="statsModalKey"></span></h3>
       <button class="modal-close" id="statsModalClose">✕</button>
     </div>
     <div class="modal-body">
@@ -1172,7 +1192,7 @@ export function renderAdminPage() {
 <div class="modal-overlay" id="protoStatsModal">
   <div class="modal stats-modal">
     <div class="modal-header">
-      <h3>原型统计 <span style="font-size:.72rem;color:#555;font-weight:400" id="prsTitle"></span></h3>
+      <h3>原型统计 <span style="font-size:.72rem;color:var(--tx-3);font-weight:400" id="prsTitle"></span></h3>
       <button class="modal-close" id="prsClose">✕</button>
     </div>
     <div class="modal-body">
@@ -1197,7 +1217,7 @@ export function renderAdminPage() {
 <div class="modal-overlay" id="protoVersionModal">
   <div class="modal" style="max-width:900px;width:95vw;max-height:85vh;height:85vh;display:flex;flex-direction:column">
     <div class="modal-header" style="flex-shrink:0">
-      <h3>版本历史 <span style="font-size:.72rem;color:#555;font-weight:400" id="pvmTitle"></span></h3>
+      <h3>版本历史 <span style="font-size:.72rem;color:var(--tx-3);font-weight:400" id="pvmTitle"></span></h3>
       <button class="modal-close" id="pvmClose">✕</button>
     </div>
     <div style="display:flex;flex:1;min-height:0">
@@ -1207,14 +1227,14 @@ export function renderAdminPage() {
       <div style="flex:1;display:flex;flex-direction:column;min-width:0">
         <!-- Toolbar -->
         <div style="padding:10px 14px;border-bottom:1px solid #1a1a1a;display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap">
-          <span style="font-size:.78rem;color:#555" id="pvmMode">点击版本号查看文件列表，勾选两个版本进行对比</span>
+          <span style="font-size:.78rem;color:var(--tx-3)" id="pvmMode">点击版本号查看文件列表，勾选两个版本进行对比</span>
           <div style="flex:1"></div>
-          <input type="text" id="pvmSearch" placeholder="搜索文件…" style="padding:4px 8px;background:#111;border:1px solid #222;border-radius:6px;color:#ccc;font-size:.78rem;width:160px;outline:none">
+          <input type="text" id="pvmSearch" placeholder="搜索文件…" style="padding:4px 8px;background:var(--bg-2);border:1px solid var(--bd);border-radius:6px;color:var(--tx-2);font-size:.78rem;width:160px;outline:none">
           <button class="btn btn-ghost" id="pvmDiffBtn" style="padding:4px 10px;font-size:.78rem;display:none">对比选中版本</button>
         </div>
         <!-- Content area -->
         <div style="flex:1;overflow-y:auto;padding:14px 16px" id="pvmContent">
-          <div style="color:#333;text-align:center;padding:60px 0;font-size:.85rem">← 点击左侧版本号查看文件列表</div>
+          <div style="color:var(--tx-3);text-align:center;padding:60px 0;font-size:.85rem">← 点击左侧版本号查看文件列表</div>
         </div>
       </div>
     </div>
@@ -1637,7 +1657,7 @@ export function renderAdminPage() {
 
   // ── User Management ──────────────────────────────────────────────────────────
   async function loadUsers() {
-    document.getElementById('usersBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#333;padding:24px">加载中…</td></tr>';
+    document.getElementById('usersBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--tx-3);padding:24px">加载中…</td></tr>';
     const res = await adminFetch('/admin/users', { headers: authH() });
     if (!res.ok) return;
     const { users } = await res.json();
@@ -1682,8 +1702,8 @@ export function renderAdminPage() {
             p.canDelete ? '<span class="perm-badge perm-on">删除</span>' : '',
             p.canEdit   ? '<span class="perm-badge perm-on">编辑</span>' : '',
           ].filter(Boolean).join(' ');
-      const quota = u.isAdmin ? '<span style="color:#555">—</span>' : (u.quota ? \`今日 \${u.quota.daily} 次 · 共 \${u.quota.total} 次\` : '—');
-      const limits = u.isAdmin ? '<span style="color:#555">无限制</span>' : \`每日 \${p.dailyUploadLimit===-1?'∞':p.dailyUploadLimit} · 总量 \${p.maxTotalUploads===-1?'∞':p.maxTotalUploads}\`;
+      const quota = u.isAdmin ? '<span style="color:var(--tx-3)">—</span>' : (u.quota ? \`今日 \${u.quota.daily} 次 · 共 \${u.quota.total} 次\` : '—');
+      const limits = u.isAdmin ? '<span style="color:var(--tx-3)">无限制</span>' : \`每日 \${p.dailyUploadLimit===-1?'∞':p.dailyUploadLimit} · 总量 \${p.maxTotalUploads===-1?'∞':p.maxTotalUploads}\`;
       const disabled = u.disabled ? '<span class="badge-disabled">已禁用</span> ' : '';
       const actions = u.isAdmin ? '' : \`
         <button class="btn btn-ghost" style="padding:4px 8px;font-size:.75rem" onclick="openEditUser('\${u.username}')">编辑</button>
@@ -1696,7 +1716,7 @@ export function renderAdminPage() {
         \${renderLoginStatus(u)}
         <td>\${actions}</td>
       </tr>\`;
-    }).join('') || '<tr><td colspan="6" style="text-align:center;color:#333;padding:24px">暂无用户</td></tr>';
+    }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--tx-3);padding:24px">暂无用户</td></tr>';
   }
 
   document.getElementById('createUserBtn').addEventListener('click', () => openUserModal(null));
@@ -1819,7 +1839,7 @@ export function renderAdminPage() {
     document.getElementById('smCountries').textContent = '…';
     document.getElementById('smLast').textContent = '…';
     document.getElementById('countryBars').innerHTML = '';
-    document.getElementById('accessLogBody').innerHTML = '<tr><td colspan="5" style="color:#333;text-align:center;padding:16px">加载中…</td></tr>';
+    document.getElementById('accessLogBody').innerHTML = '<tr><td colspan="5" style="color:var(--tx-3);text-align:center;padding:16px">加载中…</td></tr>';
     document.getElementById('statsModal').classList.add('show');
     try {
       const res = await adminFetch('/admin/image-stats/' + encodeURIComponent(key), { headers: authH() });
@@ -1831,11 +1851,11 @@ export function renderAdminPage() {
       const maxV = cl[0]?.[1]??1;
       document.getElementById('countryBars').innerHTML = cl.slice(0,8).map(([cc,cnt]) =>
         \`<div class="country-row"><span class="country-name">\${cc}</span><div class="bar-wrap"><div class="bar" style="width:\${(cnt/maxV*100).toFixed(1)}%"></div></div><span class="country-count">\${cnt}</span></div>\`
-      ).join('') || '<span style="color:#333;font-size:.82rem">暂无数据</span>';
+      ).join('') || '<span style="color:var(--tx-3);font-size:.82rem">暂无数据</span>';
       document.getElementById('accessLogBody').innerHTML = (data.accesses??[]).slice(0,50).map(a =>
-        \`<tr><td>\${new Date(a.ts).toLocaleString('zh-CN')}</td><td>\${a.ip}</td><td>\${a.country}</td><td>\${[a.city,a.region].filter(x=>x&&x!=='—').join(' ')}</td><td style="color:#444">\${a.org!=='—'?a.org:''}</td></tr>\`
-      ).join('') || '<tr><td colspan="5" style="color:#333;text-align:center">暂无记录</td></tr>';
-    } catch { document.getElementById('accessLogBody').innerHTML = '<tr><td colspan="5" style="color:#555;text-align:center">加载失败</td></tr>'; }
+        \`<tr><td>\${new Date(a.ts).toLocaleString('zh-CN')}</td><td>\${a.ip}</td><td>\${a.country}</td><td>\${[a.city,a.region].filter(x=>x&&x!=='—').join(' ')}</td><td style="color:var(--tx-3)">\${a.org!=='—'?a.org:''}</td></tr>\`
+      ).join('') || '<tr><td colspan="5" style="color:var(--tx-3);text-align:center">暂无记录</td></tr>';
+    } catch { document.getElementById('accessLogBody').innerHTML = '<tr><td colspan="5" style="color:var(--tx-3);text-align:center">加载失败</td></tr>'; }
   }
   document.getElementById('statsModalClose').addEventListener('click', () => document.getElementById('statsModal').classList.remove('show'));
   document.getElementById('statsModal').addEventListener('click', e => { if (e.target===document.getElementById('statsModal')) document.getElementById('statsModal').classList.remove('show'); });
@@ -1848,7 +1868,7 @@ export function renderAdminPage() {
     document.getElementById('psmLast').textContent = '…';
     document.getElementById('psmCountryBars').innerHTML = '';
     document.getElementById('psmIpBars').innerHTML = '';
-    document.getElementById('psmLogBody').innerHTML = '<tr><td colspan="5" style="color:#333;text-align:center;padding:16px">加载中…</td></tr>';
+    document.getElementById('psmLogBody').innerHTML = '<tr><td colspan="5" style="color:var(--tx-3);text-align:center;padding:16px">加载中…</td></tr>';
     document.getElementById('pageStatsModal').classList.add('show');
     try {
       const res = await adminFetch('/admin/page-stats/' + encodeURIComponent(slug), { headers: authH() });
@@ -1862,21 +1882,21 @@ export function renderAdminPage() {
       const maxC = cl[0]?.[1] ?? 1;
       document.getElementById('psmCountryBars').innerHTML = cl.slice(0,8).map(([cc,cnt]) =>
         \`<div class="country-row"><span class="country-name">\${cc}</span><div class="bar-wrap"><div class="bar" style="width:\${(cnt/maxC*100).toFixed(1)}%"></div></div><span class="country-count">\${cnt}</span></div>\`
-      ).join('') || '<span style="color:#333;font-size:.82rem">暂无数据</span>';
+      ).join('') || '<span style="color:var(--tx-3);font-size:.82rem">暂无数据</span>';
 
       // IP bars
       const il = Object.entries(data.ips ?? {}).sort((a,b) => b[1]-a[1]).slice(0,10);
       const maxI = il[0]?.[1] ?? 1;
       document.getElementById('psmIpBars').innerHTML = il.map(([ip,cnt]) =>
         \`<div class="country-row"><span style="width:120px;font-family:monospace;font-size:.75rem;color:#aaa;flex-shrink:0;overflow:hidden;text-overflow:ellipsis">\${ip}</span><div class="bar-wrap"><div class="bar" style="width:\${(cnt/maxI*100).toFixed(1)}%"></div></div><span class="country-count">\${cnt}</span></div>\`
-      ).join('') || '<span style="color:#333;font-size:.82rem">暂无数据</span>';
+      ).join('') || '<span style="color:var(--tx-3);font-size:.82rem">暂无数据</span>';
 
       // Access log
       document.getElementById('psmLogBody').innerHTML = (data.accesses ?? []).slice(0,50).map(a =>
-        \`<tr><td>\${new Date(a.ts).toLocaleString('zh-CN')}</td><td style="font-family:monospace">\${a.ip}</td><td>\${a.country}</td><td>\${[a.city,a.region].filter(x=>x&&x!=='—').join(' ')}</td><td style="color:#444">\${a.org!=='—'?a.org:''}</td></tr>\`
-      ).join('') || '<tr><td colspan="5" style="color:#333;text-align:center">暂无记录</td></tr>';
+        \`<tr><td>\${new Date(a.ts).toLocaleString('zh-CN')}</td><td style="font-family:monospace">\${a.ip}</td><td>\${a.country}</td><td>\${[a.city,a.region].filter(x=>x&&x!=='—').join(' ')}</td><td style="color:var(--tx-3)">\${a.org!=='—'?a.org:''}</td></tr>\`
+      ).join('') || '<tr><td colspan="5" style="color:var(--tx-3);text-align:center">暂无记录</td></tr>';
     } catch {
-      document.getElementById('psmLogBody').innerHTML = '<tr><td colspan="5" style="color:#555;text-align:center">加载失败</td></tr>';
+      document.getElementById('psmLogBody').innerHTML = '<tr><td colspan="5" style="color:var(--tx-3);text-align:center">加载失败</td></tr>';
     }
   }
   document.getElementById('psmClose').addEventListener('click', () => document.getElementById('pageStatsModal').classList.remove('show'));
@@ -1889,7 +1909,7 @@ export function renderAdminPage() {
     document.getElementById('prsUniqueIps').textContent = '…';
     document.getElementById('prsLast').textContent = '…';
     document.getElementById('prsCountryBars').innerHTML = '';
-    document.getElementById('prsLogBody').innerHTML = '<tr><td colspan="3" style="color:#333;text-align:center">加载中…</td></tr>';
+    document.getElementById('prsLogBody').innerHTML = '<tr><td colspan="3" style="color:var(--tx-3);text-align:center">加载中…</td></tr>';
     document.getElementById('protoStatsModal').classList.add('show');
     try {
       const res = await adminFetch('/admin/proto-stats/' + encodeURIComponent(protoId), { headers: authH() });
@@ -1902,12 +1922,12 @@ export function renderAdminPage() {
       const maxC = cl[0]?.[1] ?? 1;
       document.getElementById('prsCountryBars').innerHTML = cl.map(([c,cnt]) =>
         \`<div class="country-row"><span class="country-name">\${c}</span><div class="bar-wrap"><div class="bar" style="width:\${(cnt/maxC*100).toFixed(1)}%"></div></div><span class="country-count">\${cnt}</span></div>\`
-      ).join('') || '<span style="color:#333;font-size:.82rem">暂无数据</span>';
+      ).join('') || '<span style="color:var(--tx-3);font-size:.82rem">暂无数据</span>';
       document.getElementById('prsLogBody').innerHTML = (data.accesses ?? []).slice(0,50).map(a =>
         \`<tr><td>\${new Date(a.ts).toLocaleString('zh-CN')}</td><td style="font-family:monospace;font-size:.75rem">\${a.ip}</td><td>\${a.country}</td></tr>\`
-      ).join('') || '<tr><td colspan="3" style="color:#333;text-align:center">暂无记录</td></tr>';
+      ).join('') || '<tr><td colspan="3" style="color:var(--tx-3);text-align:center">暂无记录</td></tr>';
     } catch {
-      document.getElementById('prsLogBody').innerHTML = '<tr><td colspan="3" style="color:#555;text-align:center">加载失败</td></tr>';
+      document.getElementById('prsLogBody').innerHTML = '<tr><td colspan="3" style="color:var(--tx-3);text-align:center">加载失败</td></tr>';
     }
   }
   document.getElementById('prsClose').addEventListener('click', () => document.getElementById('protoStatsModal').classList.remove('show'));
@@ -1929,7 +1949,7 @@ export function renderAdminPage() {
     document.getElementById('pvmSearch').value = '';
     document.getElementById('pvmDiffBtn').style.display = 'none';
     document.getElementById('pvmMode').textContent = '点击版本号查看文件列表，勾选两个版本进行对比';
-    document.getElementById('pvmContent').innerHTML = '<div style="color:#333;text-align:center;padding:60px 0;font-size:.85rem">← 点击左侧版本号查看文件列表</div>';
+    document.getElementById('pvmContent').innerHTML = '<div style="color:var(--tx-3);text-align:center;padding:60px 0;font-size:.85rem">← 点击左侧版本号查看文件列表</div>';
 
     pvmRenderVersionList();
     document.getElementById('protoVersionModal').classList.add('show');
@@ -1974,7 +1994,7 @@ export function renderAdminPage() {
     pvmChecked = pvmChecked.filter(v => v !== ver);
     if (pvmActiveVer === ver) {
       pvmActiveVer = null;
-      document.getElementById('pvmContent').innerHTML = '<div style="color:#333;text-align:center;padding:60px 0;font-size:.85rem">← 点击左侧版本号查看文件列表</div>';
+      document.getElementById('pvmContent').innerHTML = '<div style="color:var(--tx-3);text-align:center;padding:60px 0;font-size:.85rem">← 点击左侧版本号查看文件列表</div>';
     }
     // Also sync adminProtosCache
     const cacheEntry = adminProtosCache.find(p => p.protoId === pid);
@@ -2024,19 +2044,19 @@ export function renderAdminPage() {
   }
 
   function pvmShowLoading() {
-    document.getElementById('pvmContent').innerHTML = '<div style="color:#333;text-align:center;padding:40px 0">加载中…</div>';
+    document.getElementById('pvmContent').innerHTML = '<div style="color:var(--tx-3);text-align:center;padding:40px 0">加载中…</div>';
   }
 
   function pvmShowFileList(files, title) {
     const q = document.getElementById('pvmSearch').value.toLowerCase();
     if (!files) {
-      document.getElementById('pvmContent').innerHTML = \`<div style="color:#555;font-size:.82rem;text-align:center;padding:40px 0">该版本无文件记录（旧版本上传未记录文件列表）</div>\`;
+      document.getElementById('pvmContent').innerHTML = \`<div style="color:var(--tx-3);font-size:.82rem;text-align:center;padding:40px 0">该版本无文件记录（旧版本上传未记录文件列表）</div>\`;
       return;
     }
     const filtered = q ? files.filter(f => f.toLowerCase().includes(q)) : files;
     document.getElementById('pvmContent').innerHTML = \`
-      <div style="font-size:.75rem;color:#555;margin-bottom:10px;font-weight:500">\${title}\${q ? \` — 过滤 "\${q}"\` : ''}</div>
-      <div>\${filtered.map(f => \`<div class="file-row">\${esc(f)}</div>\`).join('') || '<div style="color:#333;font-size:.82rem;padding:20px 0">无匹配文件</div>'}</div>\`;
+      <div style="font-size:.75rem;color:var(--tx-3);margin-bottom:10px;font-weight:500">\${title}\${q ? \` — 过滤 "\${q}"\` : ''}</div>
+      <div>\${filtered.map(f => \`<div class="file-row">\${esc(f)}</div>\`).join('') || '<div style="color:var(--tx-3);font-size:.82rem;padding:20px 0">无匹配文件</div>'}</div>\`;
   }
 
   document.getElementById('pvmDiffBtn').addEventListener('click', async () => {
@@ -2045,12 +2065,12 @@ export function renderAdminPage() {
     pvmShowLoading();
     const [filesA, filesB] = await Promise.all([pvmFetchFiles(a), pvmFetchFiles(b)]);
     if (!filesA && !filesB) {
-      document.getElementById('pvmContent').innerHTML = '<div style="color:#555;text-align:center;padding:40px 0;font-size:.82rem">两个版本均无文件记录（旧版本上传未记录文件列表）</div>';
+      document.getElementById('pvmContent').innerHTML = '<div style="color:var(--tx-3);text-align:center;padding:40px 0;font-size:.82rem">两个版本均无文件记录（旧版本上传未记录文件列表）</div>';
       return;
     }
     if (!filesA || !filesB) {
       const missing = !filesA ? \`v\${a}\` : \`v\${b}\`;
-      document.getElementById('pvmContent').innerHTML = \`<div style="color:#555;text-align:center;padding:40px 0;font-size:.82rem">\${missing} 无文件记录，无法对比</div>\`;
+      document.getElementById('pvmContent').innerHTML = \`<div style="color:var(--tx-3);text-align:center;padding:40px 0;font-size:.82rem">\${missing} 无文件记录，无法对比</div>\`;
       return;
     }
     pvmRenderDiff(filesA, filesB, a, b);
@@ -2072,7 +2092,7 @@ export function renderAdminPage() {
       <span>v\${verA} → v\${verB}</span>
       <span style="color:#10b981">+\${added.length} 新增</span>
       <span style="color:#ef4444">-\${removed.length} 删除</span>
-      <span style="color:#555">\${same.length} 不变</span>
+      <span style="color:var(--tx-3)">\${same.length} 不变</span>
     </div>\`;
 
     const mkRows = (files, cls, prefix) =>
@@ -2086,7 +2106,7 @@ export function renderAdminPage() {
     if (same.length)
       html += \`<div class="diff-section same"><h4>· 未变动 \${same.length} 个文件</h4>\${mkRows(same,'diff-same',' ')}</div>\`;
     if (!added.length && !removed.length && !same.length)
-      html += '<div style="color:#333;text-align:center;padding:40px 0;font-size:.82rem">无匹配文件</div>';
+      html += '<div style="color:var(--tx-3);text-align:center;padding:40px 0;font-size:.82rem">无匹配文件</div>';
 
     document.getElementById('pvmContent').innerHTML = html;
   }
@@ -2275,7 +2295,7 @@ export function renderAdminPage() {
         case 'updated': default: va = a.updatedAt||0; vb = b.updatedAt||0; return adminPageSortAsc ? va - vb : vb - va;
       }
     });
-    const TYPE_LABEL = { markdown: '<span style="background:rgba(59,130,246,.1);color:#3b82f6;padding:2px 6px;border-radius:4px;font-size:.72rem">MD</span>', html: '<span style="background:rgba(245,158,11,.1);color:#f59e0b;padding:2px 6px;border-radius:4px;font-size:.72rem">HTML</span>' };
+    const TYPE_LABEL = { markdown: '<span style="background:rgba(59,130,246,.1);color:var(--accent);padding:2px 6px;border-radius:4px;font-size:.72rem">MD</span>', html: '<span style="background:rgba(245,158,11,.1);color:#f59e0b;padding:2px 6px;border-radius:4px;font-size:.72rem">HTML</span>' };
     const selMode = adminPageSelectMode;
     const checkCol = selMode ? 'pg-check-col selecting' : 'pg-check-col';
     document.getElementById('adminPagesBody').innerHTML = sorted.length
@@ -2582,11 +2602,11 @@ export function renderAdminPage() {
   async function loadAdminProtos() {
     const tbody = document.getElementById('adminProtosBody');
     const empty = document.getElementById('adminProtosEmpty');
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#333;padding:24px">加载中…</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--tx-3);padding:24px">加载中…</td></tr>';
     empty.style.display = 'none';
     try {
       const res = await adminFetch('/admin/protos', { headers: authH() });
-      if (!res.ok) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#555;padding:24px">加载失败</td></tr>'; return; }
+      if (!res.ok) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--tx-3);padding:24px">加载失败</td></tr>'; return; }
       const { protos } = await res.json();
       if (!protos.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
       tbody.innerHTML = protos.map(p => {
@@ -2603,7 +2623,7 @@ export function renderAdminPage() {
         return \`<tr>
           <td>
             <div style="font-weight:500;font-size:.88rem;display:flex;align-items:center;gap:4px;flex-wrap:wrap">\${esc(p.title || p.protoId)} \${lock}\${priv}</div>
-            <div style="font-family:monospace;font-size:.68rem;color:#444">\${p.protoId}</div>
+            <div style="font-family:monospace;font-size:.68rem;color:var(--tx-3)">\${p.protoId}</div>
           </td>
           <td class="muted">@\${esc(p.owner || '—')}</td>
           <td class="muted">\${p.fileCount ?? '—'}</td>
@@ -2619,7 +2639,7 @@ export function renderAdminPage() {
           </td>
         </tr>\`;
       }).join('');
-    } catch { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#555;padding:24px">加载失败</td></tr>'; }
+    } catch { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--tx-3);padding:24px">加载失败</td></tr>'; }
   }
 
   async function adminDeleteProto(protoId) {
@@ -2757,7 +2777,7 @@ export function renderAdminPage() {
 
   // drag-drop for admin proto
   const adminProtoDropZone = document.getElementById('adminProtoDropZone');
-  adminProtoDropZone.addEventListener('dragover', e => { e.preventDefault(); adminProtoDropZone.style.borderColor = '#3b82f6'; adminProtoDropZone.style.color = '#3b82f6'; });
+  adminProtoDropZone.addEventListener('dragover', e => { e.preventDefault(); adminProtoDropZone.style.borderColor = 'var(--accent)'; adminProtoDropZone.style.color = 'var(--accent)'; });
   adminProtoDropZone.addEventListener('dragleave', () => { adminProtoDropZone.style.borderColor = ''; adminProtoDropZone.style.color = ''; });
   adminProtoDropZone.addEventListener('drop', e => {
     e.preventDefault(); adminProtoDropZone.style.borderColor = ''; adminProtoDropZone.style.color = '';
@@ -2919,12 +2939,12 @@ export function renderAdminPage() {
       const usedPct = Math.min(100, (d.storage / 10737418240) * 100);
       const bar = document.getElementById('r2FreeBar');
       bar.style.width      = usedPct.toFixed(2) + '%';
-      bar.style.background = usedPct >= 90 ? '#ef4444' : usedPct >= 70 ? '#f59e0b' : '#3b82f6';
+      bar.style.background = usedPct >= 90 ? '#ef4444' : usedPct >= 70 ? '#f59e0b' : 'var(--accent)';
       // Donut chart (r=22, circumference ≈ 138.23)
       const circumference = 2 * Math.PI * 22;
       const arc = document.getElementById('r2DonutArc');
       arc.setAttribute('stroke-dashoffset', (circumference * (1 - usedPct / 100)).toFixed(2));
-      arc.setAttribute('stroke', usedPct >= 90 ? '#ef4444' : usedPct >= 70 ? '#f59e0b' : '#3b82f6');
+      arc.setAttribute('stroke', usedPct >= 90 ? '#ef4444' : usedPct >= 70 ? '#f59e0b' : 'var(--accent)');
       document.getElementById('r2DonutLabel').textContent = usedPct.toFixed(1) + '%';
     } catch {}
   }
@@ -2934,7 +2954,7 @@ export function renderAdminPage() {
 
   async function loadMemberStats() {
     document.getElementById('memberTableBody').innerHTML =
-      '<tr><td colspan="7" style="text-align:center;color:#333;padding:32px">加载中…</td></tr>';
+      '<tr><td colspan="7" style="text-align:center;color:var(--tx-3);padding:32px">加载中…</td></tr>';
     const res = await adminFetch('/admin/member-stats', { headers: authH() });
     if (!res.ok) return;
     const { users } = await res.json();
@@ -2970,7 +2990,7 @@ export function renderAdminPage() {
 
     if (!sorted.length) {
       document.getElementById('memberTableBody').innerHTML =
-        '<tr><td colspan="7" style="text-align:center;color:#333;padding:32px">暂无成员账号</td></tr>';
+        '<tr><td colspan="7" style="text-align:center;color:var(--tx-3);padding:32px">暂无成员账号</td></tr>';
       return;
     }
 
@@ -2987,9 +3007,9 @@ export function renderAdminPage() {
       const dClass = dPct >= 100 ? ' full' : dPct >= 80 ? ' warn' : '';
       let todayCell;
       if (dLim === -1) {
-        todayCell = '<span style="font-size:.82rem">' + u.uploads.today + ' <span style="color:#555">/ ∞</span></span>';
+        todayCell = '<span style="font-size:.82rem">' + u.uploads.today + ' <span style="color:var(--tx-3)">/ ∞</span></span>';
       } else {
-        todayCell = '<div style="font-size:.82rem">' + u.uploads.today + ' <span style="color:#555">/ ' + dLim + '</span></div>'
+        todayCell = '<div style="font-size:.82rem">' + u.uploads.today + ' <span style="color:var(--tx-3)">/ ' + dLim + '</span></div>'
           + '<div class="quota-bar"><div class="quota-fill' + dClass + '" style="width:' + dPct.toFixed(0) + '%"></div></div>';
       }
 
@@ -2999,9 +3019,9 @@ export function renderAdminPage() {
       const tClass = tPct >= 100 ? ' full' : tPct >= 80 ? ' warn' : '';
       let totalCell;
       if (tLim === -1) {
-        totalCell = '<span style="font-size:.82rem">' + u.uploads.total + ' <span style="color:#555">/ ∞</span></span>';
+        totalCell = '<span style="font-size:.82rem">' + u.uploads.total + ' <span style="color:var(--tx-3)">/ ∞</span></span>';
       } else {
-        totalCell = '<div style="font-size:.82rem">' + u.uploads.total + ' <span style="color:#555">/ ' + tLim + '</span></div>'
+        totalCell = '<div style="font-size:.82rem">' + u.uploads.total + ' <span style="color:var(--tx-3)">/ ' + tLim + '</span></div>'
           + '<div class="quota-bar"><div class="quota-fill' + tClass + '" style="width:' + tPct.toFixed(0) + '%"></div></div>';
       }
 
@@ -3016,7 +3036,7 @@ export function renderAdminPage() {
         + '<td>' + statusDot + '</td>'
         + '<td style="min-width:110px">' + todayCell + '</td>'
         + '<td style="min-width:110px">' + totalCell + '</td>'
-        + '<td style="text-align:center;color:' + (u.pages ? '#e0e0e0' : '#444') + '">' + u.pages + '</td>'
+        + '<td style="text-align:center;color:' + (u.pages ? 'var(--tx)' : 'var(--tx-3)') + '">' + u.pages + '</td>'
         + '<td>' + permsList + '</td>'
         + '<td class="muted">' + (u.createdAt ? timeAgo(u.createdAt) : '—') + '</td>'
         + '</tr>';

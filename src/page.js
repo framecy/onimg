@@ -13,17 +13,28 @@ export function renderPage() {
   <!-- Vditor CSS/JS 改为编辑器打开时按需注入（见 ensureVditor），避免每次访问加载 ~0.5MB 编辑器 -->
   <style>
     :root {
-      --bg:     #0a0a0a; --bg-2: #141414; --bg-3: #1a1a1a; --bg-4: #222222; --bg-5: #2a2a2a;
-      --bg-h:   #2e2e2e;
-      --bd:     #2e2e2e; --bd-2: #3a3a3a; --bd-f: #6e6e6e;
-      --tx:     #f5f5f5; --tx-2: #b5b5b5; --tx-3: #858585; --tx-a: #e8e8e8;
-      --accent: #e0e0e0;
-      --green:  #34d399; --green-g: rgba(52,211,153,.12); --green-r: rgba(52,211,153,.22);
-      --amber:  #fbbf24; --amber-g: rgba(251,191,36,.1);  --amber-r: rgba(251,191,36,.2);
-      --red:    #f87171; --red-g: rgba(248,113,113,.1);   --red-r: rgba(248,113,113,.2);
-      --r: 10px; --r-sm: 7px; --r-xs: 5px;
+      /* surface — slightly lifted dark */
+      --bg: #121212; --bg-2: #1a1a1a; --bg-3: #222222; --bg-4: #2a2a2a; --bg-5: #333333;
+      --bg-h: #383838; --bg-a: #404040;
+      --overlay: rgba(0,0,0,.64);
+      /* border / text */
+      --bd: #333333; --bd-2: #454545; --bd-f: #7a7a7a;
+      --tx: #f7f7f7; --tx-2: #c2c2c2; --tx-3: #9a9a9a; --tx-a: #ececec; --tx-inv: #121212;
+      /* accent (neutral primary, a touch brighter) */
+      --accent: #f0f0f0; --accent-hover: #ffffff; --accent-muted: rgba(255,255,255,.10);
+      --focus-ring: 0 0 0 3px rgba(255,255,255,.10);
+      /* semantic */
+      --green: #34d399; --green-g: rgba(52,211,153,.12); --green-r: rgba(52,211,153,.22);
+      --amber: #fbbf24; --amber-g: rgba(251,191,36,.1);  --amber-r: rgba(251,191,36,.2);
+      --red: #f87171; --red-g: rgba(248,113,113,.1);   --red-r: rgba(248,113,113,.2);
+      /* radius / type / space */
+      --r-xs: 4px; --r-sm: 6px; --r-md: 8px; --r-lg: 12px; --r-xl: 16px;
+      --r: 12px;
+      --fs-2xs: .62rem; --fs-xs: .72rem; --fs-sm: .82rem;
+      --fs-md: .9rem; --fs-lg: 1.05rem; --fs-xl: 1.35rem;
+      --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 28px; --sp-6: 40px; --sp-7: 56px;
       --shadow: 0 24px 60px rgba(0,0,0,.92); --shadow-sm: 0 8px 28px rgba(0,0,0,.55);
-      --t: all .18s ease;
+      --t: all .18s ease; --t-f: all .12s ease;
       --font: 'Outfit', system-ui, -apple-system, sans-serif;
       --mono: 'JetBrains Mono', 'Fira Code', monospace;
     }
@@ -41,13 +52,13 @@ export function renderPage() {
       position: fixed; top: 0; left: 0; bottom: 0; z-index: 10;
     }
     .sidebar-logo { padding: 18px 16px 14px; border-bottom: 1px solid var(--bd); display: flex; align-items: center; gap: 10px; }
-    .sidebar-logo-mark { width: 30px; height: 30px; background: linear-gradient(135deg, #2e2e2e 0%, #1a1a1a 100%); border: 1px solid var(--bd-2); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 800; color: var(--tx); flex-shrink: 0; letter-spacing: -.01em; box-shadow: 0 3px 10px rgba(0,0,0,.5); }
+    .sidebar-logo-mark { width: 30px; height: 30px; background: linear-gradient(135deg, #2e2e2e 0%, #1a1a1a 100%); border: 1px solid var(--bd-2); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 800; color: var(--tx); flex-shrink: 0; letter-spacing: -.01em; box-shadow: 0 3px 10px rgba(0,0,0,.5); }
     .sidebar-logo-text { display: flex; flex-direction: column; gap: 1px; }
     .sidebar-logo-name { font-size: .92rem; font-weight: 700; color: var(--tx); letter-spacing: -.015em; }
     .sidebar-logo-tag { font-size: .58rem; font-weight: 600; color: var(--tx-3); text-transform: uppercase; letter-spacing: .12em; }
     .sidebar-nav-label { font-size: .58rem; font-weight: 700; color: var(--tx-3); text-transform: uppercase; letter-spacing: .12em; padding: 14px 16px 5px; }
     nav.sidebar-nav { flex: 1; padding: 4px 8px 8px; display: flex; flex-direction: column; gap: 1px; overflow-y: auto; }
-    .tab { display: flex; align-items: center; gap: 9px; padding: 9px 11px; border-radius: 7px; cursor: pointer; font-size: .85rem; font-weight: 600; color: var(--tx-2); transition: var(--t); border: none; background: none; width: 100%; text-align: left; position: relative; font-family: var(--font); overflow: hidden; }
+    .tab { display: flex; align-items: center; gap: 9px; padding: 9px 11px; border-radius: var(--r-sm); cursor: pointer; font-size: .85rem; font-weight: 600; color: var(--tx-2); transition: var(--t); border: none; background: none; width: 100%; text-align: left; position: relative; font-family: var(--font); overflow: hidden; }
     .tab:hover { background: var(--bg-h); color: var(--tx); }
     .tab.active { background: rgba(255,255,255,.09); color: var(--tx); box-shadow: inset 3px 0 0 rgba(255,255,255,.55); font-weight: 700; }
     .tab .nav-icon { width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: .9rem; line-height: 1; }
@@ -55,28 +66,28 @@ export function renderPage() {
     @keyframes navRipple { to { transform: translate(-50%,-50%) scale(4); opacity: 0; } }
     .nav-ripple { position: absolute; width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,.08); transform: translate(-50%,-50%) scale(0); animation: navRipple .55s ease-out forwards; pointer-events: none; }
     .sidebar-bottom { padding: 0 8px 6px; }
-    .sidebar-link { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 7px; color: var(--tx-2); font-size: .82rem; text-decoration: none; transition: var(--t); font-weight: 500; }
+    .sidebar-link { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: var(--r-sm); color: var(--tx-2); font-size: .82rem; text-decoration: none; transition: var(--t); font-weight: 500; }
     .sidebar-link:hover { background: var(--bg-h); color: var(--tx); }
     .sidebar-footer { padding: 10px 8px 12px; border-top: 1px solid var(--bd); position: relative; }
 
     /* ── User area (sidebar bottom) ── */
     #userArea { position: relative; }
-    #userArea > .btn-sm { width: 100%; padding: 9px 12px; background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: 8px; color: var(--tx); font-size: .85rem; font-weight: 600; cursor: pointer; font-family: var(--font); text-align: center; transition: var(--t); }
+    #userArea > .btn-sm { width: 100%; padding: 9px 12px; background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: var(--r-md); color: var(--tx); font-size: .85rem; font-weight: 600; cursor: pointer; font-family: var(--font); text-align: center; transition: var(--t); }
     #userArea > .btn-sm:hover { background: var(--bg-4); border-color: var(--bd-f); }
-    .user-chip { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 8px; background: var(--bg-3); border: 1px solid var(--bd); cursor: pointer; user-select: none; transition: var(--t); }
+    .user-chip { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: var(--r-md); background: var(--bg-3); border: 1px solid var(--bd); cursor: pointer; user-select: none; transition: var(--t); }
     .user-chip:hover { border-color: var(--bd-2); background: var(--bg-4); }
     .user-chip .dot-green { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; box-shadow: 0 0 6px rgba(52,211,153,.5); }
     .user-chip > span:nth-of-type(1) { font-size: .82rem; font-weight: 600; color: var(--tx); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .user-chip .caret { font-size: .65rem; color: var(--tx-3); transition: transform .15s; flex-shrink: 0; }
     .user-chip.open .caret { transform: rotate(180deg); }
     /* Dropdown opens upward from sidebar bottom */
-    .user-dropdown { position: absolute; bottom: calc(100% + 6px); left: 8px; right: 8px; background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: 10px; box-shadow: var(--shadow-sm); z-index: 100; overflow: hidden; display: none; }
+    .user-dropdown { position: absolute; bottom: calc(100% + 6px); left: 8px; right: 8px; background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); z-index: 100; overflow: hidden; display: none; }
     .user-dropdown.show { display: block; }
     .ud-header { padding: 12px 14px 10px; border-bottom: 1px solid var(--bd); }
     .ud-name { font-size: .88rem; font-weight: 700; color: var(--tx); }
     .ud-role { font-size: .7rem; color: var(--tx-2); margin-top: 2px; font-weight: 500; }
     .ud-perms { padding: 10px 14px; border-bottom: 1px solid var(--bd); display: flex; flex-wrap: wrap; gap: 5px; }
-    .ud-perm { font-size: .66rem; padding: 2px 7px; border-radius: 4px; font-weight: 600; }
+    .ud-perm { font-size: .66rem; padding: 2px 7px; border-radius: var(--r-xs); font-weight: 600; }
     .perm-on    { background: var(--green-g); color: var(--green); border: 1px solid var(--green-r); }
     .perm-off   { background: rgba(255,255,255,.04); color: var(--tx-3); border: 1px solid var(--bd); }
     .perm-admin { background: rgba(255,255,255,.07); color: var(--tx); border: 1px solid var(--bd-2); }
@@ -89,7 +100,7 @@ export function renderPage() {
 
     /* ── Mobile sidebar ── */
     .mob-header { display: none; position: fixed; top: 0; left: 0; right: 0; height: 50px; background: var(--bg-2); border-bottom: 1px solid var(--bd); z-index: 20; align-items: center; gap: 14px; padding: 0 16px; }
-    .mob-hamburger { background: none; border: 1px solid var(--bd); color: var(--tx-2); width: 32px; height: 32px; border-radius: 7px; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; }
+    .mob-hamburger { background: none; border: 1px solid var(--bd); color: var(--tx-2); width: 32px; height: 32px; border-radius: var(--r-sm); cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; }
     .mob-hamburger:hover { color: var(--tx); border-color: var(--bd-2); }
     .mob-title { font-size: .92rem; font-weight: 700; color: var(--tx); }
     .sidebar-mask { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 9; }
@@ -97,28 +108,42 @@ export function renderPage() {
     @media (max-width: 768px) {
       aside { transform: translateX(-240px); transition: transform .22s ease; }
       aside.open { transform: translateX(0); z-index: 15; }
-      .main-content { margin-left: 0; padding-top: 50px; }
+      .main-content { margin-left: 0; padding-top: 52px; }
       .mob-header { display: flex; }
+      main { padding: 20px 18px 56px; }
+      .tab, .sidebar-link { min-height: 44px; }
+      .btn, .btn-sm { min-height: 40px; }
+      .toolbar { flex-direction: column; align-items: stretch; gap: 12px; margin-bottom: 20px; }
+      .search-input { width: 100% !important; max-width: none; }
+      .gallery-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+      .page-header { margin-bottom: 24px; padding-bottom: 18px; gap: 12px; }
+      .page-header .page-title { font-size: 1.2rem; }
+      .drop-zone { padding: 40px 20px; margin-bottom: 18px; }
+      .login-card { padding: 32px 22px; }
+      .modal { max-height: 100dvh; border-radius: 16px 16px 0 0; }
+      .modal-body { max-height: calc(100dvh - 140px); padding: 18px; }
+      .page-batch-bar, .batch-bar { gap: 8px; padding: 12px; margin-bottom: 16px; }
+      .page-header .btn, .page-header .btn-ghost, .page-header .btn-primary { flex: 1 1 auto; }
     }
 
     .spacer { flex: 1; }
     .dot-green { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
-    .btn-sm { padding: 6px 12px; border: 1px solid var(--bd); border-radius: 6px; background: transparent; color: var(--tx-2); cursor: pointer; font-size: .8rem; white-space: nowrap; font-family: var(--font); font-weight: 500; transition: var(--t); }
-    .btn-sm:hover { color: var(--tx); border-color: var(--bd-2); }
+    .btn-sm { padding: 6px 12px; border: 1px solid var(--bd); border-radius: var(--r-sm); background: transparent; color: var(--tx-2); cursor: pointer; font-size: var(--fs-sm); white-space: nowrap; font-family: var(--font); font-weight: 500; transition: var(--t); display: inline-flex; align-items: center; gap: 5px; min-height: 32px; }
+    .btn-sm:hover { color: var(--tx); border-color: var(--bd-2); background: var(--bg-h); }
 
     /* Login overlay */
-    #loginOverlay { position: fixed; inset: 0; background: rgba(0,0,0,.85); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 24px; }
-    .login-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 14px; padding: 36px 32px; width: 100%; max-width: 360px; box-shadow: var(--shadow); }
-    .login-card h2 { font-size: 1.1rem; font-weight: 800; letter-spacing: -.02em; margin-bottom: 28px; color: var(--tx); }
+    #loginOverlay { position: fixed; inset: 0; background: var(--overlay); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 50; padding: var(--sp-5); }
+    .login-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-xl); padding: 36px 32px; width: 100%; max-width: 360px; box-shadow: var(--shadow); }
+    .login-card h2 { font-size: var(--fs-lg); font-weight: 800; letter-spacing: -.02em; margin-bottom: 28px; color: var(--tx); }
     .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
-    .field label { font-size: .67rem; color: var(--tx-2); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; }
-    .field input, .field select, .field textarea { padding: 9px 12px; background: var(--bg-2); border: 1px solid var(--bd); border-radius: 8px; color: var(--tx); font-size: .88rem; font-family: var(--font); outline: none; transition: var(--t); }
+    .field label { font-size: var(--fs-2xs); color: var(--tx-3); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; }
+    .field input, .field select, .field textarea { padding: 9px 12px; background: var(--bg-2); border: 1px solid var(--bd); border-radius: var(--r-md); color: var(--tx); font-size: var(--fs-sm); font-family: var(--font); outline: none; transition: var(--t); }
     .field select { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
-    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--bd-f); background: var(--bg); box-shadow: 0 0 0 3px rgba(255,255,255,.04); }
-    .field textarea { resize: vertical; min-height: 120px; font-family: var(--mono); font-size: .82rem; }
-    .btn-full { width: 100%; padding: 10px; background: #e0e0e0; color: #0a0a0a; border: none; border-radius: 8px; font-size: .9rem; font-weight: 700; font-family: var(--font); cursor: pointer; margin-top: 6px; transition: var(--t); }
-    .btn-full:hover { background: #f2f2f2; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,255,255,.07); }
-    .btn-full:disabled { background: var(--bg-5); color: var(--tx-3); cursor: not-allowed; transform: none; box-shadow: none; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--bd-f); background: var(--bg); box-shadow: var(--focus-ring); }
+    .field textarea { resize: vertical; min-height: 120px; font-family: var(--mono); font-size: var(--fs-sm); }
+    .btn-full, .btn-block { width: 100%; padding: 10px; background: var(--accent); color: var(--tx-inv); border: none; border-radius: var(--r-md); font-size: var(--fs-md); font-weight: 700; font-family: var(--font); cursor: pointer; margin-top: 6px; transition: var(--t); }
+    .btn-full:hover, .btn-block:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,255,255,.07); }
+    .btn-full:disabled, .btn-block:disabled { background: var(--bg-5); color: var(--tx-3); cursor: not-allowed; transform: none; box-shadow: none; }
     .login-err { color: var(--red); font-size: .78rem; margin-top: 10px; text-align: center; min-height: 18px; }
     /* Login enhancements */
     @keyframes loginSpin { to { transform: rotate(360deg); } }
@@ -131,29 +156,29 @@ export function renderPage() {
     .pass-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--tx-3); cursor: pointer; padding: 4px; line-height: 1; font-size: .9rem; }
     .pass-toggle:hover { color: var(--tx); }
     /* Toast types */
-    .toast.t-success { background: rgba(52,211,153,.12); border-color: var(--green-r); color: var(--green); }
-    .toast.t-warn    { background: var(--amber-g);  border-color: var(--amber-r); color: var(--amber); }
-    .toast.t-error   { background: var(--red-g);    border-color: var(--red-r);   color: var(--red); }
+    .toast.t-success { background: var(--green-g); border-color: var(--green-r); color: var(--green); }
+    .toast.t-warn    { background: var(--amber-g); border-color: var(--amber-r); color: var(--amber); }
+    .toast.t-error   { background: var(--red-g);   border-color: var(--red-r);   color: var(--red); }
 
-    main { flex: 1; padding: 28px 30px 40px; max-width: 1280px; margin: 0 auto; width: 100%; }
+    main { flex: 1; padding: var(--sp-6) var(--sp-6) var(--sp-7); max-width: 1080px; margin: 0 auto; width: 100%; }
     .panel { display: none; }
     .panel.active { display: block; }
-    .page-header { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--bd); display: flex; align-items: flex-end; gap: 14px; }
+    .page-header { margin-bottom: var(--sp-6); padding-bottom: var(--sp-5); border-bottom: 1px solid var(--bd); display: flex; align-items: flex-end; gap: var(--sp-4); flex-wrap: wrap; }
     .page-header-text { flex: 1; min-width: 0; }
-    .page-header .page-title { font-size: 1.35rem; font-weight: 800; color: var(--tx); letter-spacing: -.025em; margin-bottom: 4px; }
-    .page-header .page-sub { font-size: .83rem; color: var(--tx-2); font-weight: 500; }
+    .page-header .page-title { font-size: var(--fs-xl); font-weight: 800; color: var(--tx); letter-spacing: -.03em; margin-bottom: 6px; }
+    .page-header .page-sub { font-size: var(--fs-sm); color: var(--tx-3); font-weight: 500; letter-spacing: .01em; }
 
     /* Upload */
-    .quota-bar { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 8px; padding: 10px 14px; font-size: .82rem; display: flex; gap: 18px; margin-bottom: 14px; box-shadow: 0 1px 0 rgba(255,255,255,.02) inset; }
+    .quota-bar { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-lg); padding: 12px 16px; font-size: var(--fs-sm); display: flex; gap: 20px; margin-bottom: var(--sp-4); box-shadow: none; }
     .quota-bar span { color: var(--tx-2); font-weight: 500; }
     .quota-bar strong { color: var(--tx); font-weight: 700; font-family: var(--mono); }
-    .drop-zone { border: 1.5px dashed var(--bd-2); border-radius: 14px; padding: 52px 32px; text-align: center; cursor: pointer; color: var(--tx-3); transition: var(--t); margin-bottom: 14px; background: rgba(255,255,255,.012); }
+    .drop-zone { border: 1px dashed var(--bd-2); border-radius: var(--r-xl); padding: 64px 36px; text-align: center; cursor: pointer; color: var(--tx-3); transition: var(--t); margin-bottom: var(--sp-4); background: transparent; }
     .drop-zone:hover, .drop-zone.over { border-color: var(--tx-2); color: var(--tx); background: rgba(255,255,255,.03); }
     .drop-zone:hover .dz-icon, .drop-zone.over .dz-icon { color: var(--tx); }
     .drop-zone input { display: none; }
     .dz-icon { display: block; margin: 0 auto 16px; width: 42px; height: 42px; color: var(--tx-3); transition: color .2s; }
-    .btn-upload { width: 100%; padding: 11px; background: #e0e0e0; color: #0a0a0a; border: none; border-radius: 8px; font-size: .92rem; font-weight: 700; cursor: pointer; font-family: var(--font); transition: var(--t); }
-    .btn-upload:hover { background: #f2f2f2; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,255,255,.07); }
+    .btn-upload { width: 100%; padding: 11px; background: var(--accent); color: var(--tx-inv); border: none; border-radius: var(--r-md); font-size: var(--fs-md); font-weight: 700; cursor: pointer; font-family: var(--font); transition: var(--t); }
+    .btn-upload:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,255,255,.07); }
     .btn-upload:disabled { background: var(--bg-5); color: var(--tx-3); cursor: not-allowed; transform: none; box-shadow: none; }
     .progress { height: 3px; background: var(--bg-3); border-radius: 99px; margin: 10px 0; overflow: hidden; display: none; }
     .progress.show { display: block; }
@@ -163,30 +188,34 @@ export function renderPage() {
     .progress-info .pct { font-weight: 700; color: var(--tx); min-width: 34px; font-family: var(--mono); }
     .progress-info .bytes { color: var(--tx-3); font-family: var(--mono); }
     .result-list { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
-    .result-item { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 9px; padding: 10px 14px; display: flex; align-items: center; gap: 12px; }
-    .result-item img { width: 44px; height: 44px; object-fit: cover; border-radius: 5px; border: 1px solid var(--bd); }
+    .result-item { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-lg); padding: 10px 14px; display: flex; align-items: center; gap: 12px; }
+    .result-item img { width: 44px; height: 44px; object-fit: cover; border-radius: var(--r-xs); border: 1px solid var(--bd); }
     .result-item .info { flex: 1; min-width: 0; }
     .result-item .name { font-size: .8rem; color: var(--tx); font-weight: 500; }
     .url-row { display: flex; gap: 5px; margin-top: 4px; }
-    .url-input { flex: 1; background: var(--bg-2); border: 1px solid var(--bd); border-radius: 5px; color: var(--tx); font-size: .75rem; padding: 3px 8px; outline: none; min-width: 0; font-family: var(--mono); }
+    .url-input { flex: 1; background: var(--bg-2); border: 1px solid var(--bd); border-radius: var(--r-xs); color: var(--tx); font-size: .75rem; padding: 3px 8px; outline: none; min-width: 0; font-family: var(--mono); }
     .err { color: var(--red); font-size: .8rem; margin-top: 8px; }
 
-    /* Buttons */
-    .btn { padding: 6px 12px; border: none; border-radius: 6px; font-size: .8rem; font-weight: 600; cursor: pointer; transition: var(--t); font-family: var(--font); }
-    .btn-ghost { background: var(--bg-3); color: var(--tx-2); border: 1px solid var(--bd); }
-    .btn-ghost:hover { background: var(--bg-4); color: var(--tx); border-color: var(--bd-2); }
-    .btn-danger { background: var(--red-g); color: var(--red); border: 1px solid var(--red-r); }
+    /* Buttons — 3 variants × 2 sizes + block */
+    .btn { padding: 6px 12px; border: 1px solid transparent; border-radius: var(--r-sm); font-size: var(--fs-sm); font-weight: 600; cursor: pointer; transition: var(--t); font-family: var(--font); display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 32px; line-height: 1.2; }
+    .btn-sm { padding: 4px 10px; font-size: var(--fs-xs); min-height: 28px; border-radius: var(--r-sm); }
+    .btn-primary { background: var(--accent); color: var(--tx-inv); border-color: transparent; }
+    .btn-primary:hover { background: var(--accent-hover); box-shadow: 0 4px 16px rgba(255,255,255,.08); }
+    .btn-primary:disabled { background: var(--bg-5); color: var(--tx-3); cursor: not-allowed; box-shadow: none; }
+    .btn-ghost { background: var(--bg-3); color: var(--tx-2); border-color: var(--bd); }
+    .btn-ghost:hover { background: var(--bg-h); color: var(--tx); border-color: var(--bd-2); }
+    .btn-danger { background: var(--red-g); color: var(--red); border-color: var(--red-r); }
     .btn-danger:hover { background: rgba(248,113,113,.18); }
-    .btn-public  { background: var(--green-g); color: var(--green); font-size: .7rem; padding: 3px 9px; border-radius: 10px; border: 1px solid var(--green-r); cursor: pointer; font-weight: 600; }
-    .btn-private { background: rgba(255,255,255,.04); color: var(--tx-3); font-size: .7rem; padding: 3px 9px; border-radius: 10px; border: 1px solid var(--bd); cursor: pointer; font-weight: 600; }
+    .btn-public  { background: var(--green-g); color: var(--green); font-size: var(--fs-xs); padding: 3px 9px; border-radius: 999px; border: 1px solid var(--green-r); cursor: pointer; font-weight: 600; min-height: 0; }
+    .btn-private { background: var(--accent-muted); color: var(--tx-3); font-size: var(--fs-xs); padding: 3px 9px; border-radius: 999px; border: 1px solid var(--bd); cursor: pointer; font-weight: 600; min-height: 0; }
 
     /* Gallery grid */
-    .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
-    .search-input { padding: 8px 12px; background: var(--bg-3); border: 1px solid var(--bd); border-radius: 7px; color: var(--tx); font-size: .84rem; outline: none; width: 220px; font-family: var(--font); transition: var(--t); }
+    .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: var(--sp-5); flex-wrap: wrap; }
+    .search-input { padding: 8px 12px; background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-sm); color: var(--tx); font-size: .84rem; outline: none; width: 220px; font-family: var(--font); transition: var(--t); }
     .search-input:focus { border-color: var(--bd-f); box-shadow: 0 0 0 3px rgba(255,255,255,.04); }
-    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
-    .gitem { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 10px; overflow: hidden; transition: var(--t); box-shadow: 0 1px 0 rgba(255,255,255,.02) inset; }
-    .gitem:hover { border-color: var(--bd-2); box-shadow: 0 6px 24px rgba(0,0,0,.5); transform: translateY(-2px); }
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 18px; }
+    .gitem { background: var(--bg-3); border: 1px solid transparent; border-radius: var(--r-lg); overflow: hidden; transition: var(--t); box-shadow: 0 0 0 1px var(--bd); }
+    .gitem:hover { box-shadow: 0 0 0 1px var(--bd-2), 0 12px 32px rgba(0,0,0,.35); transform: translateY(-2px); }
     .gitem img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: var(--bg-2); cursor: pointer; }
     .gitem-info { padding: 9px 11px; }
     .gitem-key { font-size: .72rem; color: var(--tx-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--mono); font-weight: 500; }
@@ -197,13 +226,13 @@ export function renderPage() {
     .batch-check { display: flex; align-items: center; gap: 6px; font-size: .82rem; color: var(--tx-2); cursor: pointer; user-select: none; }
     .batch-count { font-size: .8rem; color: var(--tx-3); font-family: var(--mono); }
     .gitem { position: relative; }
-    .gitem-sel { position: absolute; top: 8px; left: 8px; z-index: 3; width: 20px; height: 20px; cursor: pointer; accent-color: #e0e0e0; display: none; }
+    .gitem-sel { position: absolute; top: 8px; left: 8px; z-index: 3; width: 20px; height: 20px; cursor: pointer; accent-color: var(--accent); display: none; }
     .gallery-grid.selecting .gitem-sel { display: block; }
     .gallery-grid.selecting .gitem img { cursor: pointer; }
     .gitem.selected { border-color: var(--tx-2); box-shadow: 0 0 0 2px var(--tx-2) inset; }
     /* Tags */
     .gitem-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-    .tag-chip { font-size: .64rem; padding: 1px 7px; border-radius: 10px; background: rgba(255,255,255,.05); color: var(--tx-2); border: 1px solid var(--bd); font-weight: 600; white-space: nowrap; }
+    .tag-chip { font-size: .64rem; padding: 1px 7px; border-radius: var(--r-lg); background: rgba(255,255,255,.05); color: var(--tx-2); border: 1px solid var(--bd); font-weight: 600; white-space: nowrap; }
     .tag-filter-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 14px; }
     .tag-filter { font-size: .72rem; padding: 3px 11px; border-radius: 12px; background: var(--bg-3); color: var(--tx-2); border: 1px solid var(--bd); cursor: pointer; font-weight: 600; transition: var(--t); font-family: var(--font); }
     .tag-filter:hover { border-color: var(--bd-2); color: var(--tx); }
@@ -218,26 +247,26 @@ export function renderPage() {
     /* Pages */
     .pages-header { display: flex; align-items: center; margin-bottom: 16px; }
     .pages-list { display: flex; flex-direction: column; gap: 8px; }
-    .page-item { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; transition: var(--t); }
+    .page-item { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-lg); padding: 14px 16px; display: flex; align-items: center; gap: 14px; transition: var(--t); }
     .page-item:hover { border-color: var(--bd-2); background: var(--bg-4); }
     .page-item-info { flex: 1; min-width: 0; }
     .page-title { font-size: .92rem; font-weight: 600; color: var(--tx); }
     .page-slug { font-size: .75rem; color: var(--tx-2); font-family: var(--mono); margin-top: 3px; }
     .page-meta { font-size: .72rem; color: var(--tx-3); margin-top: 3px; font-weight: 500; }
-    .type-badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: .66rem; font-weight: 700; }
+    .type-badge { display: inline-block; padding: 2px 7px; border-radius: var(--r-xs); font-size: .66rem; font-weight: 700; }
     .type-md   { background: rgba(255,255,255,.07); color: var(--tx); border: 1px solid var(--bd-2); }
     .type-html { background: var(--amber-g); color: var(--amber); border: 1px solid var(--amber-r); }
     /* Page tree view */
-    .pages-tree { display: flex; flex-direction: column; gap: 6px; }
-    .page-project { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 10px; overflow: hidden; }
-    .page-project-header { display: flex; align-items: center; padding: 10px 14px; cursor: pointer; gap: 8px; user-select: none; }
+    .pages-tree { display: flex; flex-direction: column; gap: 14px; }
+    .page-project { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-lg); overflow: hidden; }
+    .page-project-header { display: flex; align-items: center; padding: 14px 16px; cursor: pointer; gap: 10px; user-select: none; }
     .page-project-header:hover { background: var(--bg-4); }
     .expand-icon { font-size: .6rem; transition: transform .15s; color: var(--tx-3); width: 14px; text-align: center; flex-shrink: 0; }
     .expand-icon.open { transform: rotate(90deg); }
     .project-name, .group-name { flex: 1; font-weight: 600; font-size: .88rem; color: var(--tx); }
-    .count-badge { font-size: .66rem; color: var(--tx-3); background: var(--bg-5); padding: 2px 7px; border-radius: 4px; font-weight: 600; }
+    .count-badge { font-size: .66rem; color: var(--tx-3); background: var(--bg-5); padding: 2px 7px; border-radius: var(--r-xs); font-weight: 600; }
     .proj-actions, .grp-actions { display: flex; gap: 3px; margin-left: 6px; }
-    .proj-act-btn, .grp-act-btn { background: none; border: 1px solid transparent; color: var(--tx-3); cursor: pointer; font-size: .74rem; padding: 3px 8px; border-radius: 5px; transition: var(--t); }
+    .proj-act-btn, .grp-act-btn { background: none; border: 1px solid transparent; color: var(--tx-3); cursor: pointer; font-size: .74rem; padding: 3px 8px; border-radius: var(--r-xs); transition: var(--t); }
     .proj-act-btn:hover, .grp-act-btn:hover { background: var(--bg-5); color: var(--tx); border-color: var(--bd); }
     .page-project-body { border-top: 1px solid var(--bd); }
     .page-group { margin-left: 18px; border-left: 2px solid var(--bd); }
@@ -245,7 +274,7 @@ export function renderPage() {
     .page-group-header:hover { background: var(--bg-4); }
     .page-group-body {}
     .page-tree-docs { margin-left: 18px; border-left: 2px solid var(--bd); }
-    .page-tree-item { background: var(--bg-2); border: 1px solid transparent; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; margin: 2px 0; transition: var(--t); }
+    .page-tree-item { background: var(--bg-2); border: 1px solid transparent; border-radius: var(--r-md); padding: 10px 14px; display: flex; align-items: center; gap: 10px; margin: 2px 0; transition: var(--t); }
     .page-tree-item:hover { border-color: var(--bd); background: var(--bg-3); }
     .drag-handle { cursor: grab; color: var(--tx-3); font-size: .78rem; padding: 0 2px; }
     .drag-handle:active { cursor: grabbing; }
@@ -259,7 +288,7 @@ export function renderPage() {
 
     /* Public gallery */
     .pub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
-    .pub-item { border-radius: 10px; overflow: hidden; background: var(--bg-3); border: 1px solid var(--bd); cursor: pointer; transition: var(--t); box-shadow: 0 1px 0 rgba(255,255,255,.02) inset; }
+    .pub-item { border-radius: var(--r-lg); overflow: hidden; background: var(--bg-3); border: 1px solid var(--bd); cursor: pointer; transition: var(--t); box-shadow: 0 1px 0 rgba(255,255,255,.02) inset; }
     .pub-item:hover { border-color: var(--bd-2); box-shadow: 0 6px 24px rgba(0,0,0,.5); transform: translateY(-2px); }
     .pub-item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: var(--bg-2); }
     .pub-item-info { padding: 8px 12px; font-size: .74rem; color: var(--tx-2); font-family: var(--mono); font-weight: 500; }
@@ -267,30 +296,30 @@ export function renderPage() {
     /* Lightbox */
     .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.94); display: none; align-items: center; justify-content: center; z-index: 100; padding: 24px; }
     .lightbox.show { display: flex; }
-    .lb-inner { background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: 14px; max-width: 760px; width: 100%; overflow: hidden; box-shadow: var(--shadow); }
+    .lb-inner { background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: var(--r-xl); max-width: 760px; width: 100%; overflow: hidden; box-shadow: var(--shadow); }
     .lb-img-wrap { background: var(--bg-2); display: flex; align-items: center; justify-content: center; min-height: 280px; max-height: 55vh; }
     .lb-img-wrap img { max-width: 100%; max-height: 55vh; object-fit: contain; }
     .lb-meta { padding: 14px 18px; }
     .lb-key { font-size: .85rem; color: var(--tx); word-break: break-all; font-family: var(--mono); }
     .lb-actions { display: flex; gap: 7px; margin-top: 12px; }
-    .lb-close { position: absolute; top: 14px; right: 14px; background: var(--bg-3); border: 1px solid var(--bd-2); color: var(--tx-2); width: 32px; height: 32px; border-radius: 7px; cursor: pointer; font-size: .95rem; display: flex; align-items: center; justify-content: center; transition: var(--t); }
+    .lb-close { position: absolute; top: 14px; right: 14px; background: var(--bg-3); border: 1px solid var(--bd-2); color: var(--tx-2); width: 32px; height: 32px; border-radius: var(--r-sm); cursor: pointer; font-size: .95rem; display: flex; align-items: center; justify-content: center; transition: var(--t); }
     .lb-close:hover { color: var(--tx); border-color: var(--bd-f); }
-    .lb-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,.6); border: 1px solid var(--bd-2); color: var(--tx); width: 40px; height: 60px; border-radius: 8px; cursor: pointer; font-size: 1.6rem; display: flex; align-items: center; justify-content: center; transition: var(--t); z-index: 101; }
+    .lb-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,.6); border: 1px solid var(--bd-2); color: var(--tx); width: 40px; height: 60px; border-radius: var(--r-md); cursor: pointer; font-size: 1.6rem; display: flex; align-items: center; justify-content: center; transition: var(--t); z-index: 101; }
     .lb-nav:hover { background: var(--bg-h); border-color: var(--bd-f); }
     .lb-nav-prev { left: 14px; }
     .lb-nav-next { right: 14px; }
     .load-more { display: flex; justify-content: center; margin-top: 20px; }
     .empty { text-align: center; padding: 48px; color: var(--tx-3); font-size: .88rem; font-weight: 500; }
-    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--bg-3); border: 1px solid var(--bd-2); color: var(--tx); padding: 9px 18px; border-radius: 8px; font-size: .82rem; transition: transform .25s; z-index: 200; white-space: nowrap; font-weight: 500; box-shadow: var(--shadow-sm); }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--bg-3); border: 1px solid var(--bd-2); color: var(--tx); padding: 9px 18px; border-radius: var(--r-md); font-size: var(--fs-sm); transition: transform .25s; z-index: 200; white-space: nowrap; font-weight: 500; box-shadow: var(--shadow-sm); font-family: var(--font); }
     .toast.show { transform: translateX(-50%) translateY(0); }
 
     /* Page editor modal */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.85); backdrop-filter: blur(2px); display: none; align-items: center; justify-content: center; z-index: 60; padding: 24px; }
+    .modal-overlay { position: fixed; inset: 0; background: var(--overlay); backdrop-filter: blur(2px); display: none; align-items: center; justify-content: center; z-index: 60; padding: 24px; }
     .modal-overlay.show { display: flex; }
-    .modal { background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: 14px; width: 100%; max-width: 860px; max-height: 96vh; display: flex; flex-direction: column; box-shadow: var(--shadow); }
+    .modal { background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: var(--r-xl); width: 100%; max-width: 860px; max-height: 96vh; display: flex; flex-direction: column; box-shadow: var(--shadow); }
     .modal-body { padding: 18px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
     /* Vditor container */
-    #pmVditor { border-radius: 8px; overflow: hidden; flex-shrink: 0; border: 1px solid var(--bd-2); max-height: min(520px, calc(96vh - 280px)); min-width: 0; max-width: 100%; }
+    #pmVditor { border-radius: var(--r-md); overflow: hidden; flex-shrink: 0; border: 1px solid var(--bd-2); max-height: min(520px, calc(96vh - 280px)); min-width: 0; max-width: 100%; }
     #pmVditor .vditor { max-height: inherit !important; max-width: 100% !important; }
     /* Force-hide outline regardless of Vditor internal state */
     #pmVditor .vditor-outline { display: none !important; }
@@ -318,28 +347,26 @@ export function renderPage() {
     /* Upload file queue */
     .upload-queue { display: none; flex-direction: column; gap: 6px; margin: 0 0 10px; }
     .upload-queue.show { display: flex; }
-    .upload-q-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: var(--bg-3); border: 1px solid var(--bd); border-radius: 7px; font-size: .78rem; color: var(--tx-2); }
+    .upload-q-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-sm); font-size: .78rem; color: var(--tx-2); }
     .upload-q-item .uq-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .upload-q-item .uq-size { color: var(--tx-3); flex-shrink: 0; }
     .upload-q-item .uq-rm { background: none; border: none; color: var(--tx-3); cursor: pointer; font-size: .9rem; padding: 0 4px; line-height: 1; }
     .upload-q-item .uq-rm:hover { color: var(--red); }
     /* Page multi-select */
-    .page-batch-bar { display: none; align-items: center; gap: 10px; padding: 9px 13px; background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: 8px; margin-bottom: 12px; font-size: .82rem; color: var(--tx-2); flex-wrap: wrap; }
+    .page-batch-bar { display: none; align-items: center; gap: 10px; padding: 9px 13px; background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: var(--r-md); margin-bottom: 12px; font-size: .82rem; color: var(--tx-2); flex-wrap: wrap; }
     .page-batch-bar.show { display: flex; }
     .page-tree-item.selecting { cursor: pointer; }
-    .page-tree-item.selected { border-color: var(--accent, #3b82f6); background: rgba(59,130,246,.08); }
-    .page-check { width: 15px; height: 15px; flex-shrink: 0; accent-color: #3b82f6; cursor: pointer; }
-    .page-drop-zone.drag-over-zone { outline: 1px dashed var(--accent, #3b82f6); outline-offset: -2px; background: rgba(59,130,246,.05); min-height: 28px; }
+    .page-tree-item.selected { border-color: var(--accent); background: var(--accent-muted); }
+    .page-check { width: 15px; height: 15px; flex-shrink: 0; accent-color: var(--accent); cursor: pointer; }
+    .page-drop-zone.drag-over-zone { outline: 1px dashed var(--accent); outline-offset: -2px; background: var(--accent-muted); min-height: 28px; }
     .pages-independent { margin-top: 8px; }
     .indep-label, .uncat-label { font-size: .72rem; font-weight: 700; color: var(--tx-3); letter-spacing: .06em; text-transform: uppercase; margin: 10px 0 6px 2px; }
     .modal-header { display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--bd); flex-shrink: 0; }
     .modal-header h3 { flex: 1; font-size: .98rem; font-weight: 700; color: var(--tx); letter-spacing: -.01em; }
-    .modal-close { background: var(--bg-2); border: 1px solid var(--bd-2); color: var(--tx-2); width: 30px; height: 30px; border-radius: 6px; cursor: pointer; transition: var(--t); }
+    .modal-close { background: var(--bg-2); border: 1px solid var(--bd-2); color: var(--tx-2); width: 30px; height: 30px; border-radius: var(--r-sm); cursor: pointer; transition: var(--t); }
     .modal-close:hover { color: var(--tx); border-color: var(--bd-f); }
     .modal-body { padding: 18px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px; }
     .modal-footer { padding: 12px 20px; border-top: 1px solid var(--bd); display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0; }
-    .btn-primary { background: #e0e0e0; color: #0a0a0a; font-weight: 700; }
-    .btn-primary:hover { background: #f2f2f2; }
     /* Skeleton shimmer */
     @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
     .gitem img:not(.loaded), .pub-item img:not(.loaded) {
@@ -349,8 +376,8 @@ export function renderPage() {
     }
     .gitem img.loaded, .pub-item img.loaded { animation: none; background: var(--bg-2); }
     /* Loading skeletons */
-    .skel { background: linear-gradient(90deg, var(--bg-3) 25%, var(--bg-4) 50%, var(--bg-3) 75%); background-size: 400% 100%; animation: shimmer 1.4s ease infinite; border-radius: 6px; }
-    .skel-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 10px; overflow: hidden; }
+    .skel { background: linear-gradient(90deg, var(--bg-3) 25%, var(--bg-4) 50%, var(--bg-3) 75%); background-size: 400% 100%; animation: shimmer 1.4s ease infinite; border-radius: var(--r-sm); }
+    .skel-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-lg); overflow: hidden; }
     .skel-card .skel-thumb { width: 100%; aspect-ratio: 1; }
     .skel-card .skel-meta { padding: 10px 11px; display: flex; flex-direction: column; gap: 7px; }
     .skel-card .skel-line { height: 9px; }
@@ -398,30 +425,30 @@ export function renderPage() {
     .proto-td-actions .btn { font-size: .75rem; padding: 4px 9px; }
     .proto-muted { color: var(--tx-2); font-size: .79rem; }
     /* badges */
-    .proto-lock     { font-size: .68rem; background: var(--amber-g); color: var(--amber); border: 1px solid var(--amber-r); border-radius: 4px; padding: 1px 6px; font-weight: 600; }
-    .proto-version  { font-size: .66rem; background: rgba(255,255,255,.06); color: var(--tx); border: 1px solid var(--bd-2); border-radius: 4px; padding: 1px 6px; font-weight: 700; font-family: var(--mono); }
-    .proto-private  { font-size: .68rem; background: var(--red-g); color: var(--red); border: 1px solid var(--red-r); border-radius: 4px; padding: 1px 6px; font-weight: 600; }
-    .proto-expired  { font-size: .68rem; background: rgba(255,255,255,.04); color: var(--tx-3); border: 1px solid var(--bd); border-radius: 4px; padding: 1px 6px; font-weight: 600; }
+    .proto-lock     { font-size: .68rem; background: var(--amber-g); color: var(--amber); border: 1px solid var(--amber-r); border-radius: var(--r-xs); padding: 1px 6px; font-weight: 600; }
+    .proto-version  { font-size: .66rem; background: rgba(255,255,255,.06); color: var(--tx); border: 1px solid var(--bd-2); border-radius: var(--r-xs); padding: 1px 6px; font-weight: 700; font-family: var(--mono); }
+    .proto-private  { font-size: .68rem; background: var(--red-g); color: var(--red); border: 1px solid var(--red-r); border-radius: var(--r-xs); padding: 1px 6px; font-weight: 600; }
+    .proto-expired  { font-size: .68rem; background: rgba(255,255,255,.04); color: var(--tx-3); border: 1px solid var(--bd); border-radius: var(--r-xs); padding: 1px 6px; font-weight: 600; }
     /* version diff modal */
-    .pvm-ver-card { background: var(--bg-2); border: 1px solid var(--bd); border-radius: 8px; padding: 9px 10px; cursor: pointer; transition: var(--t); }
+    .pvm-ver-card { background: var(--bg-2); border: 1px solid var(--bd); border-radius: var(--r-md); padding: 9px 10px; cursor: pointer; transition: var(--t); }
     .pvm-ver-card:hover { border-color: var(--bd-2); }
     .pvm-ver-card.active   { border-color: var(--bd-f); background: rgba(255,255,255,.04); }
     .pvm-ver-card.checked-a { border-color: var(--green); background: var(--green-g); }
     .pvm-ver-card.checked-b { border-color: var(--amber); background: var(--amber-g); }
-    .pvm-ver-badge  { font-size: .72rem; font-weight: 700; padding: 1px 7px; border-radius: 4px; margin-right: 4px; background: rgba(255,255,255,.08); color: var(--tx); border: 1px solid var(--bd-2); font-family: var(--mono); }
+    .pvm-ver-badge  { font-size: .72rem; font-weight: 700; padding: 1px 7px; border-radius: var(--r-xs); margin-right: 4px; background: rgba(255,255,255,.08); color: var(--tx); border: 1px solid var(--bd-2); font-family: var(--mono); }
     .pvm-ver-latest { font-size: .65rem; padding: 1px 6px; border-radius: 3px; background: var(--green-g); color: var(--green); font-weight: 700; border: 1px solid var(--green-r); }
     .pvm-ver-meta   { font-size: .7rem; color: var(--tx-2); margin-top: 4px; font-weight: 500; }
     .pvm-ver-check  { display: flex; align-items: center; gap: 5px; margin-top: 5px; font-size: .7rem; color: var(--tx-2); }
-    .diff-file { display: flex; align-items: center; gap: 6px; padding: 3px 6px; border-radius: 4px; font-size: .72rem; font-family: var(--mono); margin-bottom: 1px; }
+    .diff-file { display: flex; align-items: center; gap: 6px; padding: 3px 6px; border-radius: var(--r-xs); font-size: .72rem; font-family: var(--mono); margin-bottom: 1px; }
     .diff-add  { background: var(--green-g); color: var(--green); }
     .diff-rem  { background: var(--red-g); color: var(--red); }
     .diff-prefix { flex-shrink: 0; width: 14px; font-weight: 700; }
     .diff-section { margin-bottom: 16px; }
-    .diff-section h4 { font-size: .72rem; font-weight: 700; margin-bottom: 6px; padding: 5px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: .08em; }
+    .diff-section h4 { font-size: .72rem; font-weight: 700; margin-bottom: 6px; padding: 5px 8px; border-radius: var(--r-xs); text-transform: uppercase; letter-spacing: .08em; }
     .diff-section.add  h4 { background: var(--green-g); color: var(--green); }
     .diff-section.rem  h4 { background: var(--red-g); color: var(--red); }
     .diff-section.same h4 { background: rgba(255,255,255,.04); color: var(--tx-3); }
-    .file-row { display: flex; align-items: center; padding: 3px 6px; border-radius: 4px; font-size: .72rem; font-family: var(--mono); margin-bottom: 1px; color: var(--tx-2); }
+    .file-row { display: flex; align-items: center; padding: 3px 6px; border-radius: var(--r-xs); font-size: .72rem; font-family: var(--mono); margin-bottom: 1px; color: var(--tx-2); }
     .file-row:hover { background: var(--bg-h); color: var(--tx); }
   </style>
 </head>
@@ -465,7 +492,7 @@ export function renderPage() {
     <div class="login-card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px">
         <h2 style="margin:0">登录 Onimg</h2>
-        <button id="loginOverlayClose" style="background:none;border:none;color:#555;font-size:1.2rem;cursor:pointer;line-height:1;padding:4px">✕</button>
+        <button id="loginOverlayClose" style="background:none;border:none;color:var(--tx-3);font-size:1.2rem;cursor:pointer;line-height:1;padding:4px">✕</button>
       </div>
       <div class="field"><label>用户名</label><input type="text" id="lu" autocomplete="username" placeholder="username"></div>
       <div class="field"><label>密码</label><div class="pass-wrap"><input type="password" id="lp" autocomplete="current-password" placeholder="••••••••"><button type="button" class="pass-toggle" id="lpToggle" title="显示/隐藏密码">👁</button></div></div>
@@ -499,7 +526,7 @@ export function renderPage() {
       <div class="quota-bar" id="quotaBar" style="display:none">
         <span>今日 <strong id="qDaily">—</strong></span>
         <span>总计 <strong id="qTotal">—</strong></span>
-        <span id="qLimits" style="color:#444"></span>
+        <span id="qLimits" style="color:var(--tx-3)"></span>
       </div>
       <div class="drop-zone" id="dropZone">
         <input type="file" id="fileInput" accept="image/*" multiple>
@@ -512,9 +539,9 @@ export function renderPage() {
         <small style="display:block;margin-top:8px;font-size:.76rem">JPG · PNG · GIF · WebP · SVG · 可多次添加</small>
       </div>
       <div class="upload-queue" id="uploadQueue"></div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:.82rem;color:#555">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:.82rem;color:var(--tx-3)">
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none">
-          <input type="checkbox" id="uploadPublic" style="accent-color:#3b82f6">
+          <input type="checkbox" id="uploadPublic" style="accent-color:var(--accent)">
           <span>上传后加入公开图库</span>
         </label>
       </div>
@@ -639,9 +666,9 @@ export function renderPage() {
       <div style="background:var(--bg-3);border:1px solid var(--bd);border-radius:10px;overflow:hidden;box-shadow:0 1px 0 rgba(255,255,255,.02) inset">
         <table class="proto-table">
           <thead><tr>
-            <th style="width:36px;color:#333">#</th><th>名称</th><th>文件数</th><th>大小</th><th>密码</th><th>版本</th><th>访问</th><th>上传时间</th><th>更新时间</th><th></th>
+            <th style="width:36px;color:var(--tx-3)">#</th><th>名称</th><th>文件数</th><th>大小</th><th>密码</th><th>版本</th><th>访问</th><th>上传时间</th><th>更新时间</th><th></th>
           </tr></thead>
-          <tbody id="protoTableBody"><tr><td colspan="10" style="text-align:center;color:#333;padding:32px">加载中…</td></tr></tbody>
+          <tbody id="protoTableBody"><tr><td colspan="10" style="text-align:center;color:var(--tx-3);padding:32px">加载中…</td></tr></tbody>
         </table>
       </div>
       <div class="empty" id="protoEmpty" style="display:none;margin-top:12px">暂无原型，请上传 ZIP 文件</div>
@@ -704,7 +731,7 @@ export function renderPage() {
       <button class="modal-close" id="protoUpdateClose">✕</button>
     </div>
     <div class="modal-body">
-      <p style="font-size:.82rem;color:#555;margin-bottom:14px">上传新版本将替换现有内容，URL 保持不变，版本号自动递增。</p>
+      <p style="font-size:.82rem;color:var(--tx-3);margin-bottom:14px">上传新版本将替换现有内容，URL 保持不变，版本号自动递增。</p>
       <div class="proto-upload-box" id="puDropZone" style="padding:20px">
         <input type="file" id="puFileInput" accept=".zip,application/zip,application/x-zip-compressed" style="display:none">
         <input type="file" id="puFolderInput" webkitdirectory multiple style="display:none">
@@ -716,7 +743,7 @@ export function renderPage() {
       </div>
       <div class="progress" id="puProgress"><div class="progress-bar" id="puProgressBar"></div></div>
       <div class="progress-info" id="puProgressInfo"><span class="pct" id="puProgressPct">0%</span></div>
-      <div id="puStatusText" style="display:none;font-size:.78rem;color:#7aabee;margin-top:2px;margin-bottom:4px;min-height:1.2em"></div>
+      <div id="puStatusText" style="display:none;font-size:.78rem;color:var(--tx-2);margin-top:2px;margin-bottom:4px;min-height:1.2em"></div>
       <div class="err" id="puErr"></div>
     </div>
     <div class="modal-footer">
@@ -750,20 +777,20 @@ export function renderPage() {
 <div class="modal-overlay" id="userProtoVersionModal">
   <div class="modal" style="max-width:860px;width:95vw;max-height:85vh;height:85vh;display:flex;flex-direction:column">
     <div class="modal-header" style="flex-shrink:0">
-      <h3>版本历史 <span style="font-size:.72rem;color:#555;font-weight:400" id="upvmTitle"></span></h3>
+      <h3>版本历史 <span style="font-size:.72rem;color:var(--tx-3);font-weight:400" id="upvmTitle"></span></h3>
       <button class="modal-close" id="upvmClose">✕</button>
     </div>
     <div style="display:flex;flex:1;min-height:0">
       <div style="width:200px;flex-shrink:0;border-right:1px solid #1a1a1a;overflow-y:auto;padding:12px 10px;display:flex;flex-direction:column;gap:6px" id="upvmVersionList"></div>
       <div style="flex:1;display:flex;flex-direction:column;min-width:0">
         <div style="padding:10px 14px;border-bottom:1px solid #1a1a1a;display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap">
-          <span style="font-size:.78rem;color:#555" id="upvmMode">点击版本号查看文件列表，勾选两个版本进行对比</span>
+          <span style="font-size:.78rem;color:var(--tx-3)" id="upvmMode">点击版本号查看文件列表，勾选两个版本进行对比</span>
           <div style="flex:1"></div>
           <input type="text" id="upvmSearch" placeholder="搜索文件…" style="padding:4px 8px;background:#111;border:1px solid #222;border-radius:6px;color:#ccc;font-size:.78rem;width:160px;outline:none">
           <button class="btn btn-ghost" id="upvmDiffBtn" style="padding:4px 10px;font-size:.78rem;display:none">对比选中版本</button>
         </div>
         <div style="flex:1;overflow-y:auto;padding:14px 16px" id="upvmContent">
-          <div style="color:#333;text-align:center;padding:60px 0;font-size:.85rem">← 点击左侧版本号查看文件列表</div>
+          <div style="color:var(--tx-3);text-align:center;padding:60px 0;font-size:.85rem">← 点击左侧版本号查看文件列表</div>
         </div>
       </div>
     </div>
@@ -802,7 +829,7 @@ export function renderPage() {
       <div class="field">
         <label>自定义后缀（URL）</label>
         <input type="text" id="pmSlug" placeholder="my-blog-post  或  docs/intro">
-        <span style="font-size:.72rem;color:#444;margin-top:4px">访问地址：<span id="pmSlugPreview" style="color:#3b82f6"></span></span>
+        <span style="font-size:.72rem;color:var(--tx-3);margin-top:4px">访问地址：<span id="pmSlugPreview" style="color:var(--accent)"></span></span>
       </div>
       <div class="field">
         <label>类型</label>
@@ -1200,8 +1227,8 @@ export function renderPage() {
     if (perms.canEdit)   badges.push('<span class="ud-perm perm-on">允许编辑</span>');
     const dl = perms.dailyUploadLimit  === -1 ? '∞' : perms.dailyUploadLimit;
     const tl = perms.maxTotalUploads   === -1 ? '∞' : perms.maxTotalUploads;
-    badges.push(\`<span class="ud-perm perm-off" style="color:#555">每日 \${dl}</span>\`);
-    badges.push(\`<span class="ud-perm perm-off" style="color:#555">总量 \${tl}</span>\`);
+    badges.push(\`<span class="ud-perm perm-off" style="color:var(--tx-3)">每日 \${dl}</span>\`);
+    badges.push(\`<span class="ud-perm perm-off" style="color:var(--tx-3)">总量 \${tl}</span>\`);
     return badges.join('');
   }
 
@@ -1272,7 +1299,7 @@ export function renderPage() {
     updateUserArea();
     document.getElementById('mineGrid').innerHTML = '';
     document.getElementById('pagesTree').innerHTML = '';
-    document.getElementById('protoTableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:#333;padding:32px">加载中…</td></tr>';
+    document.getElementById('protoTableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--tx-3);padding:32px">加载中…</td></tr>';
     userProtos = [];
     toast('已退出登录');
   }
@@ -1659,7 +1686,7 @@ export function renderPage() {
           \${tagsHtml}
           <div class="gitem-row">
             <button class="\${item.isPublic?'btn-public':'btn-private'}" id="vis-\${item.key}" onclick="toggleVis('\${item.key}', this)">\${item.isPublic?'公开':'私密'}</button>
-            <span style="font-size:.68rem;color:#444">\${fmtSize(item.size)}</span>
+            <span style="font-size:.68rem;color:var(--tx-3)">\${fmtSize(item.size)}</span>
           </div>
           <div class="gitem-actions">
             <button class="btn btn-ghost" onclick="cp('\${url}',this)" style="padding:3px 8px">复制</button>
@@ -2150,7 +2177,7 @@ export function renderPage() {
       prev.textContent = reason;
     } else {
       el.style.borderColor = '';
-      prev.style.color = '#3b82f6';
+      prev.style.color = 'var(--accent)';
       prev.textContent = s ? location.origin + '/p/' + s : '';
     }
     setSlugSaveState(!!reason);
@@ -2171,7 +2198,7 @@ export function renderPage() {
     slugEl.style.opacity = '';
     slugEl.style.borderColor = '';
     const prevEl = document.getElementById('pmSlugPreview');
-    prevEl.style.color = '#3b82f6';
+    prevEl.style.color = 'var(--accent)';
     prevEl.textContent = '';
     setSlugSaveState(false);
     document.getElementById('pmType').value = 'markdown';
@@ -2202,7 +2229,7 @@ export function renderPage() {
     slugEl.style.opacity = '0.5';
     slugEl.style.borderColor = '';
     const prevEl = document.getElementById('pmSlugPreview');
-    prevEl.style.color = '#3b82f6';
+    prevEl.style.color = 'var(--accent)';
     prevEl.textContent = location.origin + '/p/' + p.slug;
     setSlugSaveState(false);
     document.getElementById('pmType').value = p.type;
@@ -3078,14 +3105,14 @@ export function renderPage() {
 
   async function loadProtos(silent = false) {
     if (!token) return;
-    if (!silent) document.getElementById('protoTableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:#333;padding:32px">加载中…</td></tr>';
+    if (!silent) document.getElementById('protoTableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--tx-3);padding:32px">加载中…</td></tr>';
     try {
       const res = await fetch('/api/protos', { headers: { Authorization: 'Bearer ' + token } });
       if (!res.ok) return;
       const { protos } = await res.json();
       userProtos = protos || [];
       renderProtos();
-    } catch { if (!silent) document.getElementById('protoTableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:#555;padding:32px">加载失败</td></tr>'; }
+    } catch { if (!silent) document.getElementById('protoTableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--tx-3);padding:32px">加载失败</td></tr>'; }
   }
 
   function formatExpiry(ts) {
@@ -3106,7 +3133,7 @@ export function renderPage() {
     const tbody = document.getElementById('protoTableBody');
     const empty = document.getElementById('protoEmpty');
     if (!userProtos.length) {
-      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#333;padding:32px">暂无原型</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--tx-3);padding:32px">暂无原型</td></tr>';
       empty.style.display = 'none';
       return;
     }
@@ -3116,7 +3143,7 @@ export function renderPage() {
       const previewUrl = url + (p.accessPassword ? '?pwd=' + encodeURIComponent(p.accessPassword) : '');
       const lock       = p.hasPassword ? \`<span class="proto-lock">🔒 密码</span>\` : '';
       const priv       = p.isPrivate   ? \`<span class="proto-private">私有</span>\` : '';
-      const pwdInfo    = p.hasPassword ? \`<div style="font-size:.65rem;color:#555;margin-top:2px">有效期：\${formatExpiry(p.passwordExpiry)}</div>\` : '<span class="proto-muted">无</span>';
+      const pwdInfo    = p.hasPassword ? \`<div style="font-size:.65rem;color:var(--tx-3);margin-top:2px">有效期：\${formatExpiry(p.passwordExpiry)}</div>\` : '<span class="proto-muted">无</span>';
       const verCount   = (p.versions ?? []).length;
       const verBadge   = \`<span class="proto-version" style="cursor:pointer;text-decoration:underline" onclick="upvmOpen(\${idx})">v\${p.version||1}\${verCount>1?' ('+verCount+')':''} ↗</span>\`;
       const visits = p.visitCount ?? 0;
@@ -3185,7 +3212,7 @@ export function renderPage() {
     document.getElementById('upvmSearch').value = '';
     document.getElementById('upvmDiffBtn').style.display = 'none';
     document.getElementById('upvmMode').textContent = '点击版本号查看文件列表，勾选两个版本进行对比';
-    document.getElementById('upvmContent').innerHTML = '<div style="color:#333;text-align:center;padding:60px 0;font-size:.85rem">← 点击左侧版本号查看文件列表</div>';
+    document.getElementById('upvmContent').innerHTML = '<div style="color:var(--tx-3);text-align:center;padding:60px 0;font-size:.85rem">← 点击左侧版本号查看文件列表</div>';
     upvmRenderList();
     document.getElementById('userProtoVersionModal').classList.add('show');
   }
@@ -3233,7 +3260,7 @@ export function renderPage() {
   async function upvmFetch(ver) {
     const key = \`v\${ver}\`;
     if (upvmFileCache[key] !== undefined) return upvmFileCache[key];
-    document.getElementById('upvmContent').innerHTML = '<div style="color:#333;text-align:center;padding:40px 0">加载中…</div>';
+    document.getElementById('upvmContent').innerHTML = '<div style="color:var(--tx-3);text-align:center;padding:40px 0">加载中…</div>';
     try {
       const pid = upvmProto.protoId;
       const res = await fetch(\`/api/proto-vfiles/\${encodeURIComponent(pid)}/\${key}\`, { headers: { Authorization: 'Bearer ' + token } });
@@ -3244,17 +3271,17 @@ export function renderPage() {
 
   function upvmShowFileList(files, title) {
     const q = document.getElementById('upvmSearch').value.toLowerCase();
-    if (!files) { document.getElementById('upvmContent').innerHTML = '<div style="color:#555;text-align:center;padding:40px 0;font-size:.82rem">该版本无文件记录（旧版本上传未记录文件列表）</div>'; return; }
+    if (!files) { document.getElementById('upvmContent').innerHTML = '<div style="color:var(--tx-3);text-align:center;padding:40px 0;font-size:.82rem">该版本无文件记录（旧版本上传未记录文件列表）</div>'; return; }
     const fl = q ? files.filter(f => f.toLowerCase().includes(q)) : files;
-    document.getElementById('upvmContent').innerHTML = \`<div style="font-size:.75rem;color:#555;margin-bottom:10px;font-weight:500">\${title}\${q?' — 过滤 "'+q+'"':''}</div><div>\${fl.map(f=>\`<div class="file-row">\${esc(f)}</div>\`).join('')||'<div style="color:#333;font-size:.82rem;padding:20px 0">无匹配文件</div>'}</div>\`;
+    document.getElementById('upvmContent').innerHTML = \`<div style="font-size:.75rem;color:var(--tx-3);margin-bottom:10px;font-weight:500">\${title}\${q?' — 过滤 "'+q+'"':''}</div><div>\${fl.map(f=>\`<div class="file-row">\${esc(f)}</div>\`).join('')||'<div style="color:var(--tx-3);font-size:.82rem;padding:20px 0">无匹配文件</div>'}</div>\`;
   }
 
   document.getElementById('upvmDiffBtn').addEventListener('click', async () => {
     if (upvmChecked.length < 2) return;
     const [a,b] = upvmChecked;
-    document.getElementById('upvmContent').innerHTML = '<div style="color:#333;text-align:center;padding:40px 0">加载中…</div>';
+    document.getElementById('upvmContent').innerHTML = '<div style="color:var(--tx-3);text-align:center;padding:40px 0">加载中…</div>';
     const [fa,fb] = await Promise.all([upvmFetch(a), upvmFetch(b)]);
-    if (!fa || !fb) { document.getElementById('upvmContent').innerHTML = '<div style="color:#555;text-align:center;padding:40px 0;font-size:.82rem">版本无文件记录，无法对比</div>'; return; }
+    if (!fa || !fb) { document.getElementById('upvmContent').innerHTML = '<div style="color:var(--tx-3);text-align:center;padding:40px 0;font-size:.82rem">版本无文件记录，无法对比</div>'; return; }
     upvmRenderDiff(fa, fb, a, b);
   });
 
@@ -3266,11 +3293,11 @@ export function renderPage() {
     let same    = fa.filter(f => sb.has(f));
     if (q) { added=added.filter(f=>f.toLowerCase().includes(q)); removed=removed.filter(f=>f.toLowerCase().includes(q)); same=same.filter(f=>f.toLowerCase().includes(q)); }
     const mkRows = (files, cls, pfx) => files.map(f=>\`<div class="diff-file \${cls}"><span class="diff-prefix">\${pfx}</span>\${esc(f)}</div>\`).join('');
-    let html = \`<div style="display:flex;gap:12px;margin-bottom:16px;font-size:.78rem;flex-wrap:wrap"><span>v\${a} → v\${b}</span><span style="color:#10b981">+\${added.length} 新增</span><span style="color:#ef4444">-\${removed.length} 删除</span><span style="color:#555">\${same.length} 不变</span></div>\`;
+    let html = \`<div style="display:flex;gap:12px;margin-bottom:16px;font-size:.78rem;flex-wrap:wrap"><span>v\${a} → v\${b}</span><span style="color:#10b981">+\${added.length} 新增</span><span style="color:#ef4444">-\${removed.length} 删除</span><span style="color:var(--tx-3)">\${same.length} 不变</span></div>\`;
     if (added.length)   html += \`<div class="diff-section add"><h4>✦ 新增 \${added.length} 个文件（v\${b} 新增）</h4>\${mkRows(added,'diff-add','+')}</div>\`;
     if (removed.length) html += \`<div class="diff-section rem"><h4>✦ 删除 \${removed.length} 个文件（v\${b} 移除）</h4>\${mkRows(removed,'diff-rem','−')}</div>\`;
     if (same.length)    html += \`<div class="diff-section same"><h4>· 未变动 \${same.length} 个文件</h4>\${mkRows(same,'','·')}</div>\`;
-    document.getElementById('upvmContent').innerHTML = html || '<div style="color:#333;text-align:center;padding:40px 0;font-size:.82rem">无匹配文件</div>';
+    document.getElementById('upvmContent').innerHTML = html || '<div style="color:var(--tx-3);text-align:center;padding:40px 0;font-size:.82rem">无匹配文件</div>';
   }
 
   document.getElementById('upvmSearch').addEventListener('input', () => {
@@ -3289,7 +3316,7 @@ export function renderPage() {
     upvmProto.versions = (upvmProto.versions??[]).filter(v=>v.v!==ver);
     delete upvmFileCache[\`v\${ver}\`];
     upvmChecked = upvmChecked.filter(v=>v!==ver);
-    if (upvmActiveVer===ver) { upvmActiveVer=null; document.getElementById('upvmContent').innerHTML='<div style="color:#333;text-align:center;padding:60px 0;font-size:.85rem">← 点击左侧版本号查看文件列表</div>'; }
+    if (upvmActiveVer===ver) { upvmActiveVer=null; document.getElementById('upvmContent').innerHTML='<div style="color:var(--tx-3);text-align:center;padding:60px 0;font-size:.85rem">← 点击左侧版本号查看文件列表</div>'; }
     const cp = userProtos.find(p=>p.protoId===upvmProto.protoId);
     if (cp) cp.versions = upvmProto.versions;
     upvmRenderList(); toast(\`v\${ver} 已删除\`);
