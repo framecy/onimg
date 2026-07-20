@@ -1313,7 +1313,7 @@ export function renderPage() {
   function pageCopyText(p) {
     const url = location.origin + '/p/' + p.slug;
     if (!p.isPublic && p.accessPassword) {
-      return '内容：' + url + '\n密码：' + p.accessPassword;
+      return '内容：' + url + '\\n密码：' + p.accessPassword;
     }
     return url;
   }
