@@ -10,7 +10,7 @@ export function renderAdminPage() {
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"></noscript>
-  <!-- ByteMD CSS/JS 按需注入（见 ensureBytemd），编辑器首次打开时加载 -->
+  <!-- Vditor CSS/JS CDN 按需注入（见 ensureApmVditor），编辑器首次打开时加载 -->
   <style>
     :root {
       /* surface — slightly lifted dark (aligned with page.js) */
@@ -361,71 +361,79 @@ export function renderAdminPage() {
     .toast.t-warn    { background: var(--amber-g); border-color: var(--amber-r); color: var(--amber); }
     .toast.t-error   { background: var(--red-g); border-color: var(--red-r); color: var(--red); }
 
-    /* ── Admin page editor ByteMD ── */
-    #apmVditor { border-radius: var(--r-sm); overflow: hidden; border: 1px solid var(--bd); min-height: 440px; }
-    #apmVditor .bytemd { height: 440px !important; border: none !important; background: var(--bg-2) !important; }
-    /* 全屏时撑满视口 */
-    #apmVditor .bytemd.bytemd-fullscreen { height: 100vh !important; width: 100vw !important; }
-    /* 工具栏 */
-    #apmVditor .bytemd-toolbar { background: var(--bg-3) !important; border-bottom: 1px solid var(--bd) !important; padding: 3px 8px !important; }
-    #apmVditor .bytemd-toolbar-icon { color: var(--tx-2) !important; border-radius: var(--r-sm) !important; }
-    #apmVditor .bytemd-toolbar-icon:hover { background: var(--bg-h) !important; color: var(--tx) !important; }
-    #apmVditor .bytemd-toolbar-icon.active { color: var(--green) !important; }
-    /* 编辑区 CodeMirror */
-    #apmVditor .CodeMirror { background: var(--bg-2) !important; color: var(--tx) !important; font-family: var(--mono) !important; font-size: 13.5px !important; line-height: 1.75 !important; }
-    #apmVditor .CodeMirror-cursor { border-left-color: var(--tx) !important; }
-    #apmVditor .CodeMirror-selected { background: rgba(255,255,255,.08) !important; }
-    #apmVditor .cm-header { color: var(--tx) !important; font-weight: 700 !important; }
-    #apmVditor .cm-strong { color: var(--tx) !important; font-weight: 700 !important; }
-    #apmVditor .cm-em { color: var(--tx-2) !important; }
-    #apmVditor .cm-link, #apmVditor .cm-url { color: var(--tx-2) !important; }
-    #apmVditor .cm-formatting { color: var(--tx-3) !important; }
-    #apmVditor .cm-comment, #apmVditor .cm-quote { color: var(--tx-3) !important; }
-    /* 分隔线 & 侧边栏 */
-    #apmVditor .bytemd-split { background: var(--bd) !important; }
-    #apmVditor .bytemd-sidebar { background: var(--bg-3) !important; border-left: 1px solid var(--bd) !important; color: var(--tx-2) !important; }
-    #apmVditor .bytemd-sidebar-close { color: var(--tx-3) !important; }
-    /* 预览区 */
-    #apmVditor .bytemd-preview { background: var(--bg-2) !important; border-left: 1px solid var(--bd) !important; padding: 16px 22px !important; }
-    #apmVditor .markdown-body { background: transparent !important; color: var(--tx) !important; font-size: 14px !important; line-height: 1.8 !important; }
-    #apmVditor .markdown-body h1,#apmVditor .markdown-body h2,#apmVditor .markdown-body h3,#apmVditor .markdown-body h4 { color: var(--tx) !important; border-bottom-color: var(--bd) !important; }
-    #apmVditor .markdown-body p, #apmVditor .markdown-body li { color: var(--tx) !important; }
-    #apmVditor .markdown-body a { color: var(--tx-2) !important; text-decoration: none !important; border-bottom: 1px solid rgba(96,165,250,.3) !important; }
-    #apmVditor .markdown-body :not(pre) > code { background: rgba(110,118,129,.14) !important; color: var(--amber) !important; border: none !important; border-radius: var(--r-xs) !important; padding: 2px 6px !important; }
-    #apmVditor .markdown-body pre { background: var(--bg-4) !important; border: 1px solid var(--bd) !important; border-radius: var(--r-md) !important; padding: 14px 18px !important; }
-    #apmVditor .markdown-body pre code { background: none !important; color: var(--tx) !important; border: none !important; padding: 0 !important; }
-    #apmVditor .markdown-body blockquote { border-left: 3px solid var(--tx-2) !important; background: rgba(96,165,250,.06) !important; color: var(--tx-2) !important; border-radius: 0 6px 6px 0 !important; padding: 10px 16px !important; }
-    #apmVditor .markdown-body blockquote p { color: var(--tx-2) !important; }
-    #apmVditor .markdown-body hr { border-top: 1px solid var(--bd) !important; background: none !important; }
-    #apmVditor .markdown-body strong { color: var(--tx) !important; }
-    #apmVditor .markdown-body img { border-radius: var(--r-md) !important; max-width: 100% !important; }
-    /* 表格 —— 暗色 */
-    #apmVditor .markdown-body table { border-collapse: separate !important; border-spacing: 0 !important; border: 1px solid var(--bd) !important; border-radius: var(--r-md) !important; overflow: hidden !important; width: 100% !important; }
-    #apmVditor .markdown-body table th { background: var(--bg-4) !important; color: var(--tx-2) !important; border-bottom: 1px solid var(--bd) !important; border-right: none !important; padding: 9px 14px !important; font-size: 13px !important; }
-    #apmVditor .markdown-body table td { background: var(--bg-2) !important; color: var(--tx) !important; border-bottom: 1px solid var(--bg-3) !important; border-right: none !important; padding: 8px 14px !important; }
-    #apmVditor .markdown-body table tr:last-child td { border-bottom: none !important; }
-    #apmVditor .markdown-body table tr:nth-child(even) td { background: var(--bg-3) !important; }
-    /* 状态栏 */
-    #apmVditor .bytemd-status { background: var(--bg-3) !important; border-top: 1px solid var(--bd) !important; color: var(--tx-3) !important; font-size: .7rem !important; }
-    /* ── 亮色预览主题（data-preview-theme="light"） ── */
-    #apmVditor[data-preview-theme="light"] .bytemd-preview { background: #ffffff !important; }
-    #apmVditor[data-preview-theme="light"] .markdown-body { color: #1a1a1a !important; }
-    #apmVditor[data-preview-theme="light"] .markdown-body h1,#apmVditor[data-preview-theme="light"] .markdown-body h2,#apmVditor[data-preview-theme="light"] .markdown-body h3,#apmVditor[data-preview-theme="light"] .markdown-body h4 { color: var(--bg-2) !important; border-bottom-color: #e5e7eb !important; }
-    #apmVditor[data-preview-theme="light"] .markdown-body p,#apmVditor[data-preview-theme="light"] .markdown-body li { color: #374151 !important; }
-    #apmVditor[data-preview-theme="light"] .markdown-body a { color: #2563eb !important; border-bottom-color: rgba(37,99,235,.3) !important; }
-    #apmVditor[data-preview-theme="light"] .markdown-body :not(pre) > code { background: #f3f4f6 !important; color: #dc2626 !important; }
-    #apmVditor[data-preview-theme="light"] .markdown-body pre { background: #1e1e1e !important; border-color: #e5e7eb !important; }
-    #apmVditor[data-preview-theme="light"] .markdown-body pre code { color: #d4d4d4 !important; }
-    #apmVditor[data-preview-theme="light"] .markdown-body blockquote { border-left-color: #2563eb !important; background: rgba(37,99,235,.05) !important; color: #6b7280 !important; }
-    #apmVditor[data-preview-theme="light"] .markdown-body blockquote p { color: #6b7280 !important; }
-    #apmVditor[data-preview-theme="light"] .markdown-body strong { color: var(--bg-2) !important; }
-    #apmVditor[data-preview-theme="light"] .markdown-body hr { border-top-color: #e5e7eb !important; }
-    #apmVditor[data-preview-theme="light"] .markdown-body table { border-color: #e5e7eb !important; }
-    #apmVditor[data-preview-theme="light"] .markdown-body table th { background: #f9fafb !important; color: #374151 !important; border-bottom-color: #e5e7eb !important; }
-    #apmVditor[data-preview-theme="light"] .markdown-body table td { background: #fff !important; color: #374151 !important; border-bottom-color: #f3f4f6 !important; }
-    #apmVditor[data-preview-theme="light"] .markdown-body table tr:nth-child(even) td { background: #f9fafb !important; }
-    /* 主题切换按钮 */
-    #apmPreviewThemeBtn { padding: 3px 10px; border-radius: var(--r-sm); font-size: .72rem; font-weight: 600; font-family: var(--font); cursor: pointer; border: 1px solid var(--bd); background: var(--bg-4); color: var(--tx-2); transition: var(--t); }
+    /* ── Admin page editor Vditor ── */
+    #apmVditor {
+      border-radius: var(--r-md);
+      overflow: hidden;
+      flex: 1 1 auto;
+      min-height: 320px;
+      border: 1px solid var(--bd);
+      min-width: 0;
+      max-width: 100%;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-2);
+    }
+    #apmVditor .vditor {
+      height: 100% !important;
+      max-width: 100% !important;
+      border: none !important;
+      background: var(--bg-2) !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+    #apmVditor .vditor-toolbar {
+      flex-shrink: 0 !important;
+      flex-wrap: wrap !important;
+      overflow-x: auto;
+      background: var(--bg-3) !important;
+      border-bottom: 1px solid var(--bd) !important;
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 10 !important;
+    }
+    #apmVditor .vditor-content {
+      flex: 1 1 auto !important;
+      height: auto !important;
+      min-height: 0 !important;
+      overflow-y: auto !important;
+      overscroll-behavior: contain;
+      min-width: 0;
+    }
+    #apmVditor .vditor-ir,
+    #apmVditor .vditor-sv,
+    #apmVditor .vditor-wysiwyg {
+      min-height: 100% !important;
+    }
+    #apmVditor .vditor-ir pre.vditor-reset,
+    #apmVditor .vditor-sv pre.vditor-reset,
+    #apmVditor .vditor-wysiwyg pre.vditor-reset {
+      max-width: 100% !important;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      color: var(--tx) !important;
+      background: transparent !important;
+      font-size: 14.5px !important;
+      line-height: 1.75 !important;
+      padding: 14px 16px !important;
+    }
+    #apmVditor .vditor-outline { display: none !important; }
+    #apmContent {
+      flex: 1 1 auto;
+      min-height: 360px;
+      resize: vertical;
+      font-family: var(--mono);
+      font-size: .84rem;
+      line-height: 1.7;
+      padding: 12px 14px;
+      background: var(--bg-2);
+      border: 1px solid var(--bd-2);
+      border-radius: var(--r-md);
+      color: var(--tx);
+      width: 100%;
+    }
+    #adminPageModal .modal { max-width: 960px; height: min(92vh, 900px); max-height: 96vh; }
+    #adminPageModal .modal-body { overflow: hidden; }
 
     /* ── Login enhancements ── */
     @keyframes loginSpin { to { transform: rotate(360deg); } }
@@ -1039,12 +1047,12 @@ export function renderAdminPage() {
 
 <!-- Admin Page Editor Modal -->
 <div class="modal-overlay" id="adminPageModal">
-  <div class="modal" style="max-width:860px;max-height:96vh;display:flex;flex-direction:column">
+  <div class="modal" style="max-width:960px;height:min(92vh,900px);max-height:96vh;display:flex;flex-direction:column">
     <div class="modal-header">
       <h3>页面编辑</h3>
       <button class="modal-close" id="apmClose">✕</button>
     </div>
-    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;min-height:0">
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;min-height:0;overflow:hidden">
       <div class="field"><label>标题</label><input type="text" id="apmTitle" placeholder="My Page"></div>
       <div class="field">
         <label>Slug（URL 后缀）</label>
@@ -1068,13 +1076,10 @@ export function renderAdminPage() {
         </div>
         <span style="font-size:.7rem;color:var(--tx-3);margin-top:4px;display:block">6位字母+数字，访客凭密码访问私密页面</span>
       </div>
-      <div class="field" style="flex:1;display:flex;flex-direction:column;min-height:0">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          <label style="margin:0">内容</label>
-          <button id="apmPreviewThemeBtn" class="btn btn-ghost" style="display:none;padding:3px 10px;font-size:.72rem">☀ 亮色预览</button>
-        </div>
+      <div class="field" style="flex:1;min-height:0;display:flex;flex-direction:column">
+        <label id="apmContentLabel">内容</label>
         <div id="apmVditor" style="display:none"></div>
-        <textarea id="apmContent" rows="14" style="resize:vertical;min-height:200px;font-family:monospace;font-size:.82rem;padding:10px 12px;background:var(--bg-2);border:1px solid var(--bd-2);border-radius:8px;color:var(--tx);outline:none;width:100%" placeholder="# Hello\n\n内容…"></textarea>
+        <textarea id="apmContent" rows="14" placeholder="# Hello World\n\n写点什么…"></textarea>
       </div>
     </div>
     <div class="modal-footer">
@@ -1268,7 +1273,6 @@ export function renderAdminPage() {
   let allImages = [], allStats = {}, galleryCursor = null, selected = new Set(), lbKey = null;
   let editingUser = null;
   let apmVditorInst = null;
-  let apmEditorValue = '';
   let expiryTimerId = null;
 
   const authH = () => ({ 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' });
@@ -2156,81 +2160,148 @@ export function renderAdminPage() {
   // ── Admin Pages ───────────────────────────────────────────────────────────────
   let adminEditingSlug = null;
 
-  // Lazily load ByteMD bundle the first time the editor is opened
-  let bytemdLoading = null;
-  const _BYTEMD_BASE = '/static';
-  function ensureBytemd() {
-    if (window.ByteMD) return Promise.resolve(true);
-    if (bytemdLoading) return bytemdLoading;
-    [_BYTEMD_BASE + '/bytemd.css', _BYTEMD_BASE + '/highlight.css'].forEach((href, i) => {
-      if (!document.getElementById('bytemdCss' + i)) {
-        const l = document.createElement('link');
-        l.id = 'bytemdCss' + i; l.rel = 'stylesheet'; l.href = href;
-        document.head.appendChild(l);
-      }
-    });
-    bytemdLoading = new Promise(resolve => {
+  // Vditor editor management (mirrors the front-end page editor)
+  let apmVditorGen = 0;
+  let apmVditorLoading = null;
+  function getApmContent() {
+    return apmVditorInst ? apmVditorInst.getValue() : document.getElementById('apmContent').value;
+  }
+  function ensureApmVditor() {
+    if (window.Vditor) return Promise.resolve(true);
+    if (apmVditorLoading) return apmVditorLoading;
+    if (!document.getElementById('apmVditorCss')) {
+      const l = document.createElement('link');
+      l.id = 'apmVditorCss'; l.rel = 'stylesheet';
+      l.href = 'https://cdn.jsdelivr.net/npm/vditor/dist/index.css';
+      document.head.appendChild(l);
+    }
+    apmVditorLoading = new Promise(resolve => {
       const s = document.createElement('script');
-      s.src = _BYTEMD_BASE + '/bytemd.bundle.js';
+      s.src = 'https://cdn.jsdelivr.net/npm/vditor/dist/index.min.js';
       s.onload = () => resolve(true);
-      s.onerror = () => { bytemdLoading = null; resolve(false); };
+      s.onerror = () => { apmVditorLoading = null; resolve(false); };
       document.body.appendChild(s);
     });
-    return bytemdLoading;
+    return apmVditorLoading;
   }
 
-  async function initBytemdEditor(initialContent) {
-    const ok = await ensureBytemd();
-    if (!ok) {
+  async function initApmVditor(content) {
+    const gen = ++apmVditorGen;
+    const seed = () => {
       const ta = document.getElementById('apmContent');
-      ta.value = initialContent || ''; ta.style.display = '';
+      if (ta && ta.value) return ta.value;
+      return content || '';
+    };
+    const ok = await ensureApmVditor();
+    if (gen !== apmVditorGen) return;
+    if (!ok || !window.Vditor) {
+      const ta = document.getElementById('apmContent');
+      ta.value = seed(); ta.style.display = '';
       return;
     }
+    if (apmVditorInst) {
+      if (gen !== apmVditorGen) return;
+      apmVditorInst.setValue(seed());
+      return;
+    }
+
     const box = document.getElementById('apmVditor');
-    box.style.display = 'block';
+    box.style.display = 'flex';
     document.getElementById('apmContent').style.display = 'none';
-    apmEditorValue = initialContent || '';
-    if (apmVditorInst) { apmVditorInst.$set({ value: apmEditorValue }); return; }
-    const { Editor, gfm, highlight } = ByteMD;
-    apmVditorInst = new Editor({
-      target: box,
-      props: { value: apmEditorValue, plugins: [gfm(), highlight()] },
+
+    const finalContent = seed();
+    const modalBody = box.closest('.modal-body');
+    let editorH = 420;
+    if (modalBody) {
+      const used = Array.from(modalBody.children).reduce((sum, el) => {
+        if (el === box.parentElement) return sum;
+        return sum + el.getBoundingClientRect().height + 12;
+      }, 0);
+      editorH = Math.max(320, Math.min(640, modalBody.clientHeight - used - 28));
+    } else {
+      editorH = Math.min(560, Math.max(360, window.innerHeight - 320));
+    }
+
+    apmVditorInst = new Vditor('apmVditor', {
+      height: editorH,
+      mode: 'sv',
+      theme: 'dark',
+      lang: 'zh_CN',
+      cdn: 'https://cdn.jsdelivr.net/npm/vditor',
+      cache: { enable: false },
+      value: finalContent,
+      outline: { enable: false },
+      preview: {
+        theme: { current: 'dark' },
+        hljs: { style: 'native', lineNumber: false },
+        markdown: { toc: false, mark: true },
+      },
+      counter: { enable: true, type: 'text' },
+      tab: '  ',
+      toolbar: [
+        'headings', 'bold', 'italic', 'strike', '|',
+        'list', 'ordered-list', 'check', 'outdent', 'indent', '|',
+        'quote', 'line', 'code', 'inline-code', 'insert-before', 'insert-after', '|',
+        'link', 'table', 'upload', '|',
+        'undo', 'redo', '|',
+        'fullscreen', 'edit-mode',
+      ],
+      toolbarConfig: { pin: true },
+      upload: {
+        url: '/upload',
+        fieldName: 'file',
+        headers: adminToken ? { Authorization: 'Bearer ' + adminToken } : {},
+        accept: 'image/*',
+        multiple: false,
+        filename: name => name.replace(/[^\w一-龥.\-]/g, '_'),
+        format: (files, responseText) => {
+          try {
+            const data = JSON.parse(responseText);
+            if (data.url) {
+              return JSON.stringify({
+                code: 0, msg: '',
+                data: { errFiles: [], succMap: { [files[0]?.name || 'image']: data.url } },
+              });
+            }
+          } catch {}
+          return JSON.stringify({ code: -1, msg: '上传失败' });
+        },
+      },
+      after() {
+        if (gen !== apmVditorGen) return;
+        try {
+          window.dispatchEvent(new Event('resize'));
+          apmVditorInst && apmVditorInst.focus();
+        } catch {}
+        box.addEventListener('wheel', function(e) {
+          const scroller = box.querySelector('.vditor-content') || box.querySelector('.vditor-sv') || box;
+          if (!scroller) return;
+          const atTop    = scroller.scrollTop === 0 && e.deltaY < 0;
+          const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1 && e.deltaY > 0;
+          if (!atTop && !atBottom) e.stopPropagation();
+        }, { passive: true });
+      },
     });
-    apmVditorInst.$on('change', e => {
-      apmEditorValue = e.detail.value;
-      apmVditorInst.$set({ value: apmEditorValue });
-    });
-    // 文档内锚点跳转（TOC + 内容链接）
-    box.addEventListener('click', e => {
-      const a = e.target.closest('a[href^="#"]');
-      if (!a) return;
-      e.preventDefault();
-      const id = decodeURIComponent(a.getAttribute('href').slice(1));
-      const preview = box.querySelector('.bytemd-preview');
-      const target = preview?.querySelector('[id="' + id.replace(/"/g, '\\"') + '"]');
-      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, true);
-    // 亮/暗色预览切换按钮（默认亮色）
-    const themeBtn = document.getElementById('apmPreviewThemeBtn');
-    themeBtn.style.display = '';
-    box.dataset.previewTheme = 'light';
-    themeBtn.textContent = '☀ 亮色预览';
-    themeBtn.onclick = () => {
-      const isLight = box.dataset.previewTheme === 'light';
-      box.dataset.previewTheme = isLight ? 'dark' : 'light';
-      themeBtn.textContent = isLight ? '🌙 暗色预览' : '☀ 亮色预览';
-    };
+  }
+
+  function destroyApmVditor() {
+    apmVditorGen++;
+    if (apmVditorInst) { try { apmVditorInst.destroy(); } catch {} apmVditorInst = null; }
+    const box = document.getElementById('apmVditor');
+    if (box) { box.style.display = 'none'; box.innerHTML = ''; }
+    document.getElementById('apmContent').style.display = '';
   }
 
   function switchApmEditorToType(type, content) {
     if (type === 'markdown') {
-      setTimeout(() => initBytemdEditor(content || ''), 50);
-    } else {
-      if (apmVditorInst) { apmVditorInst.$destroy(); apmVditorInst = null; apmEditorValue = ''; }
-      document.getElementById('apmVditor').style.display = 'none';
       const ta = document.getElementById('apmContent');
-      ta.style.display = '';
-      ta.value = content || '';
+      if (ta) ta.value = content || '';
+      initApmVditor(content || '');
+    } else {
+      const prev = apmVditorInst ? apmVditorInst.getValue() : content;
+      destroyApmVditor();
+      document.getElementById('apmContent').value = prev || content || '';
+      document.getElementById('apmContent').style.display = '';
     }
   }
 
@@ -2547,7 +2618,7 @@ export function renderAdminPage() {
 
   document.getElementById('apmType').addEventListener('change', () => {
     const type = document.getElementById('apmType').value;
-    const currentContent = apmVditorInst ? apmEditorValue : document.getElementById('apmContent').value;
+    const currentContent = getApmContent();
     switchApmEditorToType(type, currentContent);
   });
 
@@ -2559,8 +2630,8 @@ export function renderAdminPage() {
     const slug    = document.getElementById('apmSlug').value.trim();
     const title   = document.getElementById('apmTitle').value.trim();
     const type    = document.getElementById('apmType').value;
-    const content = apmVditorInst && type === 'markdown'
-      ? apmEditorValue
+    const content = type === 'markdown' && apmVditorInst
+      ? apmVditorInst.getValue()
       : document.getElementById('apmContent').value;
     const isPublic = document.getElementById('apmPublic').checked;
     const accessPassword = !isPublic ? (document.getElementById('apmPassword').value.trim() || null) : null;
@@ -2576,23 +2647,14 @@ export function renderAdminPage() {
     const res = await fetch(url, { method:meth, headers:authH(), body:JSON.stringify(body) });
     const data = await res.json();
     if (!res.ok) { toast('失败: ' + data.error); return; }
-    if (apmVditorInst) { apmVditorInst.$destroy(); apmVditorInst = null; apmEditorValue = ''; }
-    document.getElementById('apmVditor').style.display = 'none';
-    document.getElementById('apmContent').style.display = '';
+    destroyApmVditor();
     document.getElementById('adminPageModal').classList.remove('show');
     toast(isEdit ? '已保存' : '页面已创建');
     loadAdminPages();
   });
   function closeApmModal() {
     document.getElementById('adminPageModal').classList.remove('show');
-    if (apmVditorInst) { apmVditorInst.$destroy(); apmVditorInst = null; apmEditorValue = ''; }
-    const box = document.getElementById('apmVditor');
-    box.style.display = 'none';
-    delete box.dataset.previewTheme;
-    const themeBtn = document.getElementById('apmPreviewThemeBtn');
-    themeBtn.style.display = 'none';
-    themeBtn.textContent = '☀ 亮色预览';
-    document.getElementById('apmContent').style.display = '';
+    destroyApmVditor();
     document.getElementById('apmPwdSection').style.display = 'none';
     document.getElementById('apmPassword').value = '';
   }
