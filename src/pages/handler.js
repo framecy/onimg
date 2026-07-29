@@ -47,6 +47,60 @@ function renderMdPage(page, body, headings) {
   const hasToc = headings.length >= 2;
   const minLevel = hasToc ? Math.min(...headings.map(h => h.level)) : 1;
 
+  // 扩展语法按需加载：只有正文用到才注入对应 CDN 资源
+  const hasMermaid = body.includes('<pre class="mermaid">');
+  const hasMath = body.includes('class="math ');
+  const hasCode = body.includes('<code class="language-');
+
+  const mathHead = hasMath
+    ? `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">`
+    : '';
+  const codeHead = hasCode
+    ? `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/styles/github-dark.min.css">`
+    : '';
+
+  const mermaidScript = hasMermaid ? `
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, securityLevel: 'strict', theme: 'neutral' });
+</script>` : '';
+
+  const mathScript = hasMath ? `
+<script type="module">
+  import katex from 'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.mjs';
+  document.querySelectorAll('.math').forEach(function(el) {
+    try {
+      katex.render(el.textContent, el, { displayMode: el.classList.contains('math-block'), throwOnError: false });
+    } catch (e) { /* 保留源码文本 */ }
+  });
+</script>` : '';
+
+  const codeScript = hasCode ? `
+<script type="module">
+  import hljs from 'https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/es/highlight.min.js';
+  // hljs 模块名别名；语言名做白名单校验，避免拼出任意 CDN 路径
+  const ALIAS = { js: 'javascript', ts: 'typescript', sh: 'bash', shell: 'bash', yml: 'yaml', py: 'python', md: 'markdown', html: 'xml', jsx: 'javascript', tsx: 'typescript' };
+  const langs = new Set();
+  document.querySelectorAll('code[class^="language-"]').forEach(function(el) {
+    const raw = el.className.slice('language-'.length);
+    if (!/^[a-z0-9+#-]{1,20}$/.test(raw)) return;
+    langs.add(ALIAS[raw] || raw);
+  });
+  await Promise.all([...langs].map(async function(name) {
+    try {
+      const mod = await import('https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/es/languages/' + name + '.min.js');
+      hljs.registerLanguage(name, mod.default);
+    } catch (e) { /* 未知语言：跳过高亮 */ }
+  }));
+  document.querySelectorAll('code[class^="language-"]').forEach(function(el) {
+    const raw = el.className.slice('language-'.length);
+    const name = ALIAS[raw] || raw;
+    if (!hljs.getLanguage(name)) return;
+    el.className = 'language-' + name;
+    hljs.highlightElement(el);
+  });
+</script>` : '';
+
   const tocItems = hasToc ? headings.map(h => {
     const indent = h.level - minLevel;
     return `        <a href="#${h.id}" class="toc-a toc-l${indent}">${esc(h.text)}</a>`;
@@ -71,6 +125,7 @@ ${tocItems}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+${mathHead}${codeHead}
 <style>
   *, *::before, *::after { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -157,6 +212,36 @@ ${tocItems}
     box-shadow: 0 8px 24px rgba(0,0,0,.12);
   }
   pre code { background: none; padding: 0; border: none; color: inherit; font-size: .88em; }
+  /* mermaid 图表容器：渲染前隐藏源码，渲染后为浅色画布 */
+  pre.mermaid {
+    background: #fffefb;
+    color: transparent;
+    border: 1px solid #ebe8e1;
+    box-shadow: none;
+    text-align: center;
+    overflow-x: auto;
+  }
+  pre.mermaid[data-processed="true"] { color: inherit; }
+  pre.mermaid svg { max-width: 100%; height: auto; }
+  /* hljs 主题只负责着色，容器样式沿用 pre */
+  pre code.hljs { background: none; padding: 0; }
+
+  /* 数学公式 */
+  .math-block { margin: 1.5em 0; text-align: center; overflow-x: auto; overflow-y: hidden; }
+  .math-inline { white-space: nowrap; }
+
+  /* GitHub 警告块 */
+  blockquote.alert { border-left-width: 3px; background: #f7f5f0; }
+  .alert-title { font-weight: 700; margin: 0 0 .3em; font-size: .9em; letter-spacing: .02em; }
+  .alert-note      { border-left-color: #6b8fd4; } .alert-note .alert-title      { color: #3f63a8; }
+  .alert-tip       { border-left-color: #62a87c; } .alert-tip .alert-title       { color: #3d7a55; }
+  .alert-important { border-left-color: #9a7ec8; } .alert-important .alert-title { color: #6f52a0; }
+  .alert-warning   { border-left-color: #d8a94a; } .alert-warning .alert-title   { color: #9c751f; }
+  .alert-caution   { border-left-color: #d47a72; } .alert-caution .alert-title   { color: #a8443b; }
+
+  /* 任务列表 */
+  li:has(> input[type="checkbox"]) { list-style: none; margin-left: -1.2em; }
+  li > input[type="checkbox"] { margin-right: .5em; accent-color: #4a4a4a; }
 
   blockquote {
     border-left: 3px solid #d8d4cc;
@@ -287,7 +372,7 @@ ${body}
   window.addEventListener('scroll', update, { passive: true });
   update();
 })();
-</script>
+</script>${mermaidScript}${mathScript}${codeScript}
 </body>
 </html>`;
 }

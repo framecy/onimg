@@ -10,13 +10,66 @@ function slugify(text) {
     .trim() || 'heading';
 }
 
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 // Module-level state reset before each parse (marked.parse is synchronous).
 let _usedIds = {};
+
+const ALERT_LABELS = {
+  note: '注意', tip: '提示', important: '重要', warning: '警告', caution: '当心',
+};
+
+// $$...$$ / $...$ 交给前端 KaTeX 渲染，服务端只做标记与转义
+const mathExtensions = [
+  {
+    name: 'mathBlock',
+    level: 'block',
+    start(src) { return src.indexOf('$$'); },
+    tokenizer(src) {
+      const m = /^\$\$([\s\S]+?)\$\$(?:\n+|$)/.exec(src);
+      if (m) return { type: 'mathBlock', raw: m[0], text: m[1].trim() };
+    },
+    renderer(token) { return `<div class="math math-block">${escapeHtml(token.text)}</div>\n`; },
+  },
+  {
+    name: 'mathInline',
+    level: 'inline',
+    start(src) { return src.indexOf('$'); },
+    tokenizer(src) {
+      const m = /^\$(?!\s)((?:\\\$|[^$\n])+?)(?<!\s)\$(?!\d)/.exec(src);
+      if (m) return { type: 'mathInline', raw: m[0], text: m[1] };
+    },
+    renderer(token) { return `<span class="math math-inline">${escapeHtml(token.text)}</span>`; },
+  },
+];
 
 marked.use({
   gfm: true,
   breaks: false,
+  extensions: mathExtensions,
   renderer: {
+    // mermaid 代码块交给前端 mermaid.js 渲染，不能进 <pre><code>
+    code({ text, lang }) {
+      const info = (lang || '').trim().split(/\s+/)[0].toLowerCase();
+      if (info === 'mermaid') return `<pre class="mermaid">${escapeHtml(text)}</pre>\n`;
+      const cls = info ? ` class="language-${escapeHtml(info)}"` : '';
+      return `<pre><code${cls}>${escapeHtml(text)}</code></pre>\n`;
+    },
+    // GitHub 警告块：> [!NOTE] / [!TIP] / [!IMPORTANT] / [!WARNING] / [!CAUTION]
+    blockquote({ tokens }) {
+      const body = this.parser.parse(tokens);
+      const m = /^\s*<p>\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*/i.exec(body);
+      if (!m) return `<blockquote>\n${body}</blockquote>\n`;
+      const type = m[1].toLowerCase();
+      const rest = body.slice(m[0].length).replace(/^<\/p>\n?/, '');
+      return `<blockquote class="alert alert-${type}">\n<p class="alert-title">${ALERT_LABELS[type]}</p>\n${rest.startsWith('<') ? rest : '<p>' + rest}</blockquote>\n`;
+    },
     heading({ tokens, depth }) {
       const text = this.parser.parseInline(tokens);
       const base = slugify(text.replace(/<[^>]+>/g, ''));
