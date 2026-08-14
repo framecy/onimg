@@ -138,6 +138,10 @@ async function _fetchCfAnalytics(env, today, month, monthStart) {
       body: JSON.stringify({ query, variables: vars }),
     });
     const j = await res.json();
+    // CF's GraphQL API returns 200 with an `errors` array on bad queries (wrong field
+    // name, bad filter, etc) — data stays null, so silently falling back below would
+    // just look like "0 usage" forever. Log it so a broken query is visible in tail.
+    if (j?.errors?.length) console.error('[cf-quota] GraphQL error:', JSON.stringify(j.errors));
     return j?.data?.viewer?.accounts?.[0] ?? {};
   };
 
@@ -157,7 +161,7 @@ async function _fetchCfAnalytics(env, today, month, monthStart) {
     // KV 操作（本月，按 actionType 分组）
     kvNsId ? gql(`query($a:String!,$s:Date!,$u:Date!,$n:String!){
       viewer{accounts(filter:{accountTag:$a}){
-        workersKvOperationsAdaptiveGroups(limit:200
+        kvOperationsAdaptiveGroups(limit:200
           filter:{date_geq:$s,date_leq:$u,namespaceId:$n}){
           sum{requests} dimensions{actionType}
         }
@@ -167,7 +171,7 @@ async function _fetchCfAnalytics(env, today, month, monthStart) {
     // KV 操作（今日，按 actionType 分组）
     kvNsId ? gql(`query($a:String!,$s:Date!,$n:String!){
       viewer{accounts(filter:{accountTag:$a}){
-        workersKvOperationsAdaptiveGroups(limit:200
+        kvOperationsAdaptiveGroups(limit:200
           filter:{date_geq:$s,date_leq:$s,namespaceId:$n}){
           sum{requests} dimensions{actionType}
         }
@@ -177,7 +181,7 @@ async function _fetchCfAnalytics(env, today, month, monthStart) {
     // Workers 今日请求
     gql(`query($a:String!,$s:Date!,$sc:String!){
       viewer{accounts(filter:{accountTag:$a}){
-        workersInvocationsAdaptiveGroups(limit:200
+        workersInvocationsAdaptive(limit:200
           filter:{date_geq:$s,date_leq:$s,scriptName:$sc}){
           sum{requests}
         }
@@ -187,7 +191,7 @@ async function _fetchCfAnalytics(env, today, month, monthStart) {
     // Workers 本月请求
     gql(`query($a:String!,$s:Date!,$u:Date!,$sc:String!){
       viewer{accounts(filter:{accountTag:$a}){
-        workersInvocationsAdaptiveGroups(limit:200
+        workersInvocationsAdaptive(limit:200
           filter:{date_geq:$s,date_leq:$u,scriptName:$sc}){
           sum{requests}
         }
@@ -215,11 +219,11 @@ async function _fetchCfAnalytics(env, today, month, monthStart) {
     }
     return m;
   };
-  const kvM = _kvParse(kvMonth.workersKvOperationsAdaptiveGroups);
-  const kvD = _kvParse(kvToday.workersKvOperationsAdaptiveGroups);
+  const kvM = _kvParse(kvMonth.kvOperationsAdaptiveGroups);
+  const kvD = _kvParse(kvToday.kvOperationsAdaptiveGroups);
 
   // 解析 Workers
-  const _wkSum = (d) => (d.workersInvocationsAdaptiveGroups ?? [])
+  const _wkSum = (d) => (d.workersInvocationsAdaptive ?? [])
     .reduce((s, g) => s + (g.sum?.requests ?? 0), 0);
 
   return {
