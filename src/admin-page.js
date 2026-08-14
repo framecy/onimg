@@ -89,7 +89,7 @@ export function renderAdminPage() {
 </head>
 <body>
 
-<div class="fixed top-[33px] left-0 right-0 md:left-60 z-30 hidden md:block pointer-events-none">
+<div class="absolute top-[33px] left-0 right-0 md:left-60 z-30 hidden md:block pointer-events-none">
   <div class="max-w-[1600px] mx-auto px-8 flex justify-end">
     <div class="theme-switch pointer-events-auto flex items-center gap-0.5 rounded-md border border-bd-2 bg-bg-2 p-0.5">
       <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="system" title="跟随系统"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="13" height="9" rx="1"/><line x1="5.5" y1="13.5" x2="10.5" y2="13.5"/><line x1="8" y1="11.5" x2="8" y2="13.5"/></svg></button>
