@@ -449,11 +449,19 @@ export function renderAdminPage() {
         <div class="section-header flex flex-wrap items-center gap-[10px] mb-3">
           <h3 class="text-[.8rem] font-semibold text-tx-2">所有页面</h3>
           <input class="w-[210px] rounded-sm border border-bd bg-bg-3 px-[11px] py-[7px] font-sans text-[.83rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)] !max-w-[200px]" id="adminPageSearch" type="text" placeholder="搜索标题/slug/作者…">
-          <select class="max-w-[140px] cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-1.5 font-sans text-[.76rem] text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx ml-2" id="adminPageProjFilter"><option value="all">全部项目</option></select>
-          <select class="max-w-[140px] cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-1.5 font-sans text-[.76rem] text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx ml-1" id="adminPageGrpFilter"><option value="all">全部分组</option></select>
+          <div class="inline-flex items-center gap-1">
+            <select class="max-w-[140px] cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-1.5 font-sans text-[.76rem] text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx ml-2" id="adminPageProjFilter"><option value="all">全部项目</option></select>
+            <span class="inline-flex items-center gap-[3px]" id="adminProjActions"></span>
+          </div>
+          <div class="inline-flex items-center gap-1">
+            <select class="max-w-[140px] cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-1.5 font-sans text-[.76rem] text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx ml-1" id="adminPageGrpFilter"><option value="all">全部分组</option></select>
+            <span class="inline-flex items-center gap-[3px]" id="adminGrpActions"></span>
+          </div>
           <select class="max-w-[140px] cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-1.5 font-sans text-[.76rem] text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx ml-1" id="adminPageTypeFilter"><option value="all">全部类型</option><option value="markdown">Markdown</option><option value="html">HTML</option></select>
           <div class="min-w-[20px] flex-1"></div>
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.78rem]" id="pageSelectToggle">选择</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.78rem]" id="adminImportBtn">导入</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.78rem]" id="adminNewProjectBtn">+ 新建项目</button>
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.78rem]" id="adminNewGroupBtn">+ 新建分组</button>
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="adminNewPageBtn">+ 新建页面</button>
         </div>
@@ -461,11 +469,15 @@ export function renderAdminPage() {
           <span class="font-mono text-[.8rem] text-tx-3" id="adminPageSelCount">已选 0</span>
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-[10px] !py-1 !text-[.76rem]" id="adminPageBulkDelete">批量删除</button>
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-[10px] !py-1 !text-[.76rem]" id="adminPageBulkMove">更改项目/分组</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-[10px] !py-1 !text-[.76rem]" id="adminPageBulkPublic">设为公开</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-[10px] !py-1 !text-[.76rem]" id="adminPageBulkPrivate">设为私密</button>
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-[10px] !py-1 !text-[.76rem]" id="adminPageCancelSel">取消</button>
         </div>
+        <div class="pg-reorder-hint hidden mb-2 text-[.72rem] text-tx-3" id="adminPageReorderHint">已定位到单个项目/分组，可拖动 <span class="text-tx-2">⠿</span> 手柄调整顺序</div>
         <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-[0_1px_0_rgba(255,255,255,.02)_inset,0_2px_8px_rgba(0,0,0,.25)]">
           <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-black/35 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-white/[.025]">
             <thead><tr>
+              <th class="pg-drag-col hidden w-[24px] text-center [&.scoped]:table-cell" id="pgDragHead"></th>
               <th class="pg-check-col hidden w-[30px] text-center [&.selecting]:table-cell" id="pgCheckHead"><input type="checkbox" class="h-[15px] w-[15px] cursor-pointer accent-tx-2" id="adminPageSelectAll"></th>
               <th class="cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('title')">标题 / Slug</th>
               <th class="cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('type')">类型</th>
@@ -475,7 +487,7 @@ export function renderAdminPage() {
               <th class="cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('updated')">更新</th>
               <th></th>
             </tr></thead>
-            <tbody id="adminPagesBody"><tr><td colspan="9" class="text-center text-tx-3 p-6">加载中…</td></tr></tbody>
+            <tbody id="adminPagesBody"><tr><td colspan="10" class="text-center text-tx-3 p-6">加载中…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -704,10 +716,10 @@ export function renderAdminPage() {
   </div>
 </div>
 
-<!-- New Group Modal -->
+<!-- New/Edit Group Modal -->
 <div class="fixed inset-0 z-50 hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="adminNewGroupModal">
   <div class="flex w-full max-w-[520px] max-h-[90vh] flex-col overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]"><h3 class="flex-1 text-[.93rem] font-semibold text-tx">新建分组</h3><button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-2 hover:text-tx" id="apgNewGrpClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button></div>
+    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]"><h3 class="flex-1 text-[.93rem] font-semibold text-tx" id="apgGrpModalTitle">新建分组</h3><button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-2 hover:text-tx" id="apgNewGrpClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button></div>
     <div class="modal-body flex-1 overflow-y-auto px-[18px] py-4">
       <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属项目 <span class="text-tx-3 font-normal">（可选）</span></label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="apgNewGrpProject"><option value="">-- 独立分组 --</option></select></div>
       <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">分组名称</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="apgNewGrpName" placeholder="分组名称" maxlength="60"></div>
@@ -715,6 +727,47 @@ export function renderAdminPage() {
     <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
       <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="apgNewGrpCancel">取消</button>
       <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="apgNewGrpConfirm">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- New/Edit Project Modal -->
+<div class="fixed inset-0 z-50 hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="adminProjectModal">
+  <div class="flex w-full max-w-[520px] max-h-[90vh] flex-col overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow">
+    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]"><h3 class="flex-1 text-[.93rem] font-semibold text-tx" id="apjModalTitle">新建项目</h3><button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-2 hover:text-tx" id="apjModalClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button></div>
+    <div class="modal-body flex-1 overflow-y-auto px-[18px] py-4">
+      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">项目名称</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="apjName" placeholder="项目名称" maxlength="64"></div>
+    </div>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="apjModalCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="apjModalSave">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import Markdown / HTML Modal -->
+<div class="fixed inset-0 z-50 hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="adminImportModal">
+  <div class="flex w-full max-w-[540px] max-h-[90vh] flex-col overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow">
+    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]"><h3 class="flex-1 text-[.93rem] font-semibold text-tx">导入页面</h3><button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-2 hover:text-tx" id="aimClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button></div>
+    <div class="modal-body flex-1 overflow-y-auto px-[18px] py-4">
+      <div class="text-tx-3 transition hover:text-tx p-7 text-center border-2 border-dashed border-bd-2 rounded-[10px] cursor-pointer" id="aimDropZone">
+        <input class="hidden" type="file" id="aimFileInput" accept=".md,.markdown,.html,.htm,text/markdown,text/html">
+        <div class="mb-2"><svg class="h-6 w-6 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6V2z"/><path d="M15 2v5h5"/></svg></div>
+        <div class="text-tx-2 text-[.84rem]">点击或拖拽 .md / .html 文件到此处</div>
+        <div class="text-tx-3 text-[.72rem] mt-1">支持 YAML frontmatter（title, slug, projectId, groupId, type, isPublic）</div>
+      </div>
+      <div id="aimPreview" style="display:none">
+        <div class="flex flex-col gap-[5px] mb-3.5 mt-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">标题</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="aimTitle"></div>
+        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">Slug</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="aimSlug"></div>
+        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">类型</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="aimType"><option value="markdown">Markdown</option><option value="html">HTML</option></select></div>
+        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属项目</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="aimProject"><option value="">-- 无 --</option></select></div>
+        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属分组</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="aimGroup"><option value="">-- 无 --</option></select></div>
+        <div class="flex flex-col gap-[5px] mb-3.5"><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="aimPublic" checked> 公开访问</label></div>
+      </div>
+    </div>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="aimCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="aimSave" disabled>导入</button>
     </div>
   </div>
 </div>
@@ -2041,7 +2094,7 @@ export function renderAdminPage() {
   const adminPageSelected = new Set();
 
   async function loadAdminPages() {
-    document.getElementById('adminPagesBody').innerHTML = '<tr><td colspan="9" class="text-center text-tx-3 p-6">加载中…</td></tr>';
+    document.getElementById('adminPagesBody').innerHTML = '<tr><td colspan="10" class="text-center text-tx-3 p-6">加载中…</td></tr>';
     const res = await adminFetch('/admin/pages', { headers: authH() });
     if (!res.ok) return;
     const data = await res.json();
@@ -2049,6 +2102,8 @@ export function renderAdminPage() {
     adminAllProjects = data.projects || [];
     adminAllGroups = data.groups || [];
     updateAdminPageProjFilter();
+    updateAdminPageGrpFilter(true);
+    updateAdminOrgActions();
     renderAdminPages();
   }
 
@@ -2061,15 +2116,55 @@ export function renderAdminPage() {
     sel.value = adminAllProjects.some(p => p.id === cur) ? cur : 'all';
   }
 
-  function updateAdminPageGrpFilter() {
+  function updateAdminPageGrpFilter(preserveSelection) {
     const projSel = document.getElementById('adminPageProjFilter');
     const grpSel = document.getElementById('adminPageGrpFilter');
     if (!projSel || !grpSel) return;
+    const cur = grpSel.value;
     const pid = projSel.value;
     const grps = pid && pid !== 'all' && pid !== '_none_' ? adminAllGroups.filter(g => g.projectId === pid) : [];
     grpSel.innerHTML = '<option value="all">全部分组</option>' +
       (grps.length ? '<option value="_none_">未分组</option>' : '') +
       grps.map(g => '<option value="'+esc(g.id)+'">'+esc(g.name)+'</option>').join('');
+    if (preserveSelection && (cur === '_none_' || grps.some(g => g.id === cur))) grpSel.value = cur;
+  }
+
+  // A single project+group is selected → pages in view share one reorder scope
+  // (mirrors the backend's inScope() check in handleReorderPages).
+  function currentAdminPageScope() {
+    const projFilter = document.getElementById('adminPageProjFilter')?.value || 'all';
+    const grpFilter = document.getElementById('adminPageGrpFilter')?.value || 'all';
+    if (projFilter === '_none_') return { scoped: true, projectId: null, groupId: null };
+    if (projFilter !== 'all') {
+      const hasGroups = adminAllGroups.some(g => g.projectId === projFilter);
+      if (!hasGroups) return { scoped: true, projectId: projFilter, groupId: null };
+      if (grpFilter !== 'all') return { scoped: true, projectId: projFilter, groupId: grpFilter === '_none_' ? null : grpFilter };
+    }
+    return { scoped: false, projectId: null, groupId: null };
+  }
+
+  const ICON_EDIT = '<svg class="h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2l3 3-8 8-3.5 1 1-3.5 8-8z"/></svg>';
+  const ICON_TRASH = '<svg class="h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4h11M6 4V2.5h4V4M4 4l.7 9.5a1 1 0 0 0 1 .9h4.6a1 1 0 0 0 1-.9L12 4"/></svg>';
+  const ORG_ACTION_BTN = 'flex h-6 w-6 items-center justify-center rounded-xs border border-transparent bg-transparent text-tx-3 transition cursor-pointer hover:border-bd hover:bg-bg-5 hover:text-tx';
+  const ORG_ACTION_BTN_DANGER = 'flex h-6 w-6 items-center justify-center rounded-xs border border-transparent bg-transparent text-tx-3 transition cursor-pointer hover:border-red-r hover:bg-red-g hover:text-red';
+
+  // Edit/delete icons next to the project & group filters — they double as the
+  // "currently selected" management target, so there's no separate tree UI to build.
+  function updateAdminOrgActions() {
+    const projFilter = document.getElementById('adminPageProjFilter')?.value || 'all';
+    const grpFilter = document.getElementById('adminPageGrpFilter')?.value || 'all';
+    const projActions = document.getElementById('adminProjActions');
+    const grpActions = document.getElementById('adminGrpActions');
+    if (projActions) {
+      projActions.innerHTML = (projFilter !== 'all' && projFilter !== '_none_')
+        ? \`<button class="\${ORG_ACTION_BTN}" title="编辑项目" onclick="adminEditProject('\${esc(projFilter)}')">\${ICON_EDIT}</button><button class="\${ORG_ACTION_BTN_DANGER}" title="删除项目" onclick="adminDeleteProject('\${esc(projFilter)}')">\${ICON_TRASH}</button>\`
+        : '';
+    }
+    if (grpActions) {
+      grpActions.innerHTML = (grpFilter !== 'all' && grpFilter !== '_none_')
+        ? \`<button class="\${ORG_ACTION_BTN}" title="编辑分组" onclick="adminEditGroup('\${esc(grpFilter)}')">\${ICON_EDIT}</button><button class="\${ORG_ACTION_BTN_DANGER}" title="删除分组" onclick="adminDeleteGroup('\${esc(grpFilter)}')">\${ICON_TRASH}</button>\`
+        : '';
+    }
   }
 
   function renderAdminPages() {
@@ -2088,7 +2183,12 @@ export function renderAdminPage() {
     else if (projFilter !== 'all') filtered = filtered.filter(p => p.projectId === projFilter);
     if (grpFilter === '_none_') filtered = filtered.filter(p => !p.groupId);
     else if (grpFilter !== 'all') filtered = filtered.filter(p => p.groupId === grpFilter);
+    const pageScope = currentAdminPageScope();
     const sorted = [...filtered].sort((a, b) => {
+      // Scoped to one project/group: always show true drag order, not the column sort
+      // (the reorder API also bumps updatedAt, so sorting by "updated" here would
+      // immediately re-shuffle rows right after a drag and make it look broken).
+      if (pageScope.scoped) return (a.sort ?? 0) - (b.sort ?? 0);
       let va, vb;
       switch (adminPageSortKey) {
         case 'title': va = (a.title||'').toLowerCase(); vb = (b.title||'').toLowerCase(); return adminPageSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
@@ -2101,8 +2201,13 @@ export function renderAdminPage() {
     const TYPE_LABEL = { markdown: '<span class="bg-[rgba(59,130,246,.1)] text-accent px-1.5 py-0.5 rounded text-[.72rem]">MD</span>', html: '<span class="bg-[rgba(245,158,11,.1)] text-[#f59e0b] px-1.5 py-0.5 rounded text-[.72rem]">HTML</span>' };
     const selMode = adminPageSelectMode;
     const checkCol = (selMode ? 'pg-check-col selecting' : 'pg-check-col') + ' hidden w-[30px] text-center [&.selecting]:table-cell';
+    const scope = pageScope;
+    document.getElementById('pgDragHead')?.classList.toggle('scoped', scope.scoped);
+    document.getElementById('adminPageReorderHint')?.classList.toggle('hidden', !scope.scoped);
+    const dragCol = 'pg-drag-col' + (scope.scoped ? ' scoped' : '') + ' hidden w-[24px] text-center [&.scoped]:table-cell';
     document.getElementById('adminPagesBody').innerHTML = sorted.length
-      ? sorted.map(p => \`<tr>
+      ? sorted.map(p => \`<tr data-slug="\${esc(p.slug)}" \${scope.scoped ? 'draggable="true"' : ''} class="\${scope.scoped ? 'pg-drag-row' : ''}">
+          <td class="\${dragCol} cursor-grab select-none text-tx-3 active:cursor-grabbing">\${scope.scoped ? '⠿' : ''}</td>
           <td class="\${checkCol}"><input type="checkbox" class="h-[15px] w-[15px] cursor-pointer accent-tx-2" data-slug="\${esc(p.slug)}" \${adminPageSelected.has(p.slug)?'checked':''} onchange="adminPageToggleSel('\${esc(p.slug)}',this.checked)"></td>
           <td>
             <div class="font-medium text-[.88rem]">\${esc(p.title)}</div>
@@ -2121,13 +2226,58 @@ export function renderAdminPage() {
             <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-1 !text-[.75rem]" onclick="adminDeletePage('\${p.slug}')">删除</button>
           </td>
         </tr>\`).join('')
-      : '<tr><td colspan="9" class="text-center text-tx-3 p-6">暂无页面</td></tr>';
+      : '<tr><td colspan="10" class="text-center text-tx-3 p-6">暂无页面</td></tr>';
     // update select-all checkbox state
     const allCbs = document.querySelectorAll('#adminPagesBody .pg-check');
     const visSlugs = [...allCbs].map(cb => cb.dataset.slug);
     const allSel = visSlugs.length > 0 && visSlugs.every(s => adminPageSelected.has(s));
     const saCb = document.getElementById('adminPageSelectAll');
     if (saCb) saCb.checked = allSel;
+    initAdminPageDnD(scope);
+  }
+
+  // ── Drag-to-reorder (only when the table is scoped to one project+group) ──
+  let adminDragSlug = null;
+  function initAdminPageDnD(scope) {
+    if (!scope?.scoped || adminPageSelectMode) return;
+    document.querySelectorAll('#adminPagesBody tr.pg-drag-row').forEach(row => {
+      row.addEventListener('dragstart', (e) => {
+        if (e.target.closest('button, a, input, select')) { e.preventDefault(); return; }
+        adminDragSlug = row.dataset.slug;
+        row.classList.add('opacity-30');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      row.addEventListener('dragend', () => {
+        row.classList.remove('opacity-30');
+        document.querySelectorAll('#adminPagesBody tr').forEach(r => r.classList.remove('border-t-2', 'border-t-accent'));
+        adminDragSlug = null;
+      });
+      row.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (!adminDragSlug || row.dataset.slug === adminDragSlug) return;
+        document.querySelectorAll('#adminPagesBody tr').forEach(r => r.classList.remove('border-t-2', 'border-t-accent'));
+        row.classList.add('border-t-2', 'border-t-accent');
+      });
+      row.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        row.classList.remove('border-t-2', 'border-t-accent');
+        if (!adminDragSlug || row.dataset.slug === adminDragSlug) return;
+        const rows = [...document.querySelectorAll('#adminPagesBody tr.pg-drag-row')];
+        const order = rows.map(r => r.dataset.slug);
+        const from = order.indexOf(adminDragSlug);
+        let to = order.indexOf(row.dataset.slug);
+        if (from === -1 || to === -1) return;
+        order.splice(from, 1);
+        to = order.indexOf(row.dataset.slug);
+        order.splice(to, 0, adminDragSlug);
+        await adminFetch('/admin/pages/reorder', {
+          method: 'PATCH', headers: authH(),
+          body: JSON.stringify({ projectId: scope.projectId, groupId: scope.groupId, order }),
+        });
+        loadAdminPages();
+      });
+    });
   }
 
   window.adminPageSort = function(key) {
@@ -2205,6 +2355,20 @@ export function renderAdminPage() {
     loadAdminPages();
   });
 
+  // ── Page batch visibility ──
+  async function adminPageBulkPatch(body, label) {
+    const slugs = [...adminPageSelected];
+    if (!slugs.length) return;
+    await runAdminPagePool(slugs, 6, async slug => {
+      await adminFetch('/admin/pages/' + encodeURIComponent(slug), { method:'PATCH', headers:authH(), body:JSON.stringify(body) });
+    });
+    toast(label + ' ' + slugs.length + ' 个页面');
+    adminPageSelected.clear();
+    loadAdminPages();
+  }
+  document.getElementById('adminPageBulkPublic')?.addEventListener('click', () => adminPageBulkPatch({ isPublic: true }, '已设为公开'));
+  document.getElementById('adminPageBulkPrivate')?.addEventListener('click', () => adminPageBulkPatch({ isPublic: false }, '已设为私密'));
+
   // ── Page batch move ──
   document.getElementById('adminPageBulkMove')?.addEventListener('click', () => {
     const slugs = [...adminPageSelected];
@@ -2239,32 +2403,183 @@ export function renderAdminPage() {
   });
   ['apgMoveClose','apgMoveCancel'].forEach(id => document.getElementById(id)?.addEventListener('click', () => document.getElementById('adminPageBulkMoveModal').classList.remove('show')));
 
-  // ── New group modal ──
+  // ── New/edit group modal ──
+  let adminEditingGroupId = null;
   document.getElementById('adminNewGroupBtn')?.addEventListener('click', () => {
+    adminEditingGroupId = null;
+    document.getElementById('apgGrpModalTitle').textContent = '新建分组';
+    document.getElementById('apgNewGrpConfirm').textContent = '创建';
     const sel = document.getElementById('apgNewGrpProject');
     sel.innerHTML = '<option value="">-- 独立分组 --</option>' +
       adminAllProjects.map(p => '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('');
     document.getElementById('apgNewGrpName').value = '';
     document.getElementById('adminNewGroupModal').classList.add('show');
   });
+  window.adminEditGroup = function(id) {
+    const grp = adminAllGroups.find(g => g.id === id);
+    if (!grp) return;
+    adminEditingGroupId = id;
+    document.getElementById('apgGrpModalTitle').textContent = '编辑分组';
+    document.getElementById('apgNewGrpConfirm').textContent = '保存';
+    const sel = document.getElementById('apgNewGrpProject');
+    sel.innerHTML = '<option value="">-- 独立分组 --</option>' +
+      adminAllProjects.map(p => '<option value="'+esc(p.id)+'"'+(p.id===grp.projectId?' selected':'')+'>'+esc(p.name)+'</option>').join('');
+    document.getElementById('apgNewGrpName').value = grp.name;
+    document.getElementById('adminNewGroupModal').classList.add('show');
+  };
+  window.adminDeleteGroup = async function(id) {
+    const grp = adminAllGroups.find(g => g.id === id);
+    if (!grp) return;
+    if (!confirm('确认删除分组「' + grp.name + '」？其下页面将变为未分组')) return;
+    await adminFetch('/admin/groups/' + encodeURIComponent(id), { method:'DELETE', headers:authH() });
+    toast('分组已删除');
+    document.getElementById('adminPageGrpFilter').value = 'all';
+    loadAdminPages();
+  };
   document.getElementById('apgNewGrpConfirm')?.addEventListener('click', async () => {
     const projectId = document.getElementById('apgNewGrpProject').value || null;
     const name = document.getElementById('apgNewGrpName').value.trim();
     if (!name) { toast('请输入分组名称'); return; }
-    const body = projectId ? { projectId, name } : { name };
-    const res = await adminFetch('/admin/groups', { method:'POST', headers:{...authH(),'Content-Type':'application/json'}, body:JSON.stringify(body) });
-    const data = await res.json();
-    if (!res.ok) { toast('创建失败: ' + data.error); return; }
+    const isEdit = !!adminEditingGroupId;
+    const url = isEdit ? '/admin/groups/' + encodeURIComponent(adminEditingGroupId) : '/admin/groups';
+    const meth = isEdit ? 'PATCH' : 'POST';
+    const body = isEdit ? { name, projectId } : (projectId ? { projectId, name } : { name });
+    const res = await adminFetch(url, { method: meth, headers: authH(), body: JSON.stringify(body) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { toast('失败: ' + (data.error || '')); return; }
     document.getElementById('adminNewGroupModal').classList.remove('show');
-    toast('分组已创建');
+    toast(isEdit ? '分组已更新' : '分组已创建');
     loadAdminPages();
   });
   ['apgNewGrpClose','apgNewGrpCancel'].forEach(id => document.getElementById(id)?.addEventListener('click', () => document.getElementById('adminNewGroupModal').classList.remove('show')));
 
+  // ── New/edit/delete project modal ──
+  let adminEditingProjectId = null;
+  document.getElementById('adminNewProjectBtn')?.addEventListener('click', () => {
+    adminEditingProjectId = null;
+    document.getElementById('apjModalTitle').textContent = '新建项目';
+    document.getElementById('apjModalSave').textContent = '创建';
+    document.getElementById('apjName').value = '';
+    document.getElementById('adminProjectModal').classList.add('show');
+  });
+  window.adminEditProject = function(id) {
+    const proj = adminAllProjects.find(p => p.id === id);
+    if (!proj) return;
+    adminEditingProjectId = id;
+    document.getElementById('apjModalTitle').textContent = '编辑项目';
+    document.getElementById('apjModalSave').textContent = '保存';
+    document.getElementById('apjName').value = proj.name;
+    document.getElementById('adminProjectModal').classList.add('show');
+  };
+  window.adminDeleteProject = async function(id) {
+    const proj = adminAllProjects.find(p => p.id === id);
+    if (!proj) return;
+    if (!confirm('确认删除项目「' + proj.name + '」？其下所有文档将变为未分类')) return;
+    await adminFetch('/admin/projects/' + encodeURIComponent(id), { method:'DELETE', headers:authH() });
+    toast('项目已删除');
+    document.getElementById('adminPageProjFilter').value = 'all';
+    loadAdminPages();
+  };
+  document.getElementById('apjModalSave')?.addEventListener('click', async () => {
+    const name = document.getElementById('apjName').value.trim();
+    if (!name) { toast('请输入项目名称'); return; }
+    const isEdit = !!adminEditingProjectId;
+    const url = isEdit ? '/admin/projects/' + encodeURIComponent(adminEditingProjectId) : '/admin/projects';
+    const meth = isEdit ? 'PATCH' : 'POST';
+    const res = await adminFetch(url, { method: meth, headers: authH(), body: JSON.stringify({ name }) });
+    if (!res.ok) { toast('失败'); return; }
+    document.getElementById('adminProjectModal').classList.remove('show');
+    toast(isEdit ? '项目已更新' : '项目已创建');
+    loadAdminPages();
+  });
+  ['apjModalClose','apjModalCancel'].forEach(id => document.getElementById(id)?.addEventListener('click', () => document.getElementById('adminProjectModal').classList.remove('show')));
+
+  // ── Import ──
+  let adminImportFile = null, adminImportMd = '';
+  document.getElementById('adminImportBtn')?.addEventListener('click', () => {
+    adminImportFile = null; adminImportMd = '';
+    document.getElementById('aimDropZone').style.display = '';
+    document.getElementById('aimPreview').style.display = 'none';
+    document.getElementById('aimSave').disabled = true;
+    document.getElementById('adminImportModal').classList.add('show');
+  });
+  document.getElementById('aimDropZone')?.addEventListener('click', () => document.getElementById('aimFileInput').click());
+  document.getElementById('aimFileInput')?.addEventListener('change', (e) => { const f = e.target.files[0]; if (f) processAdminImportFile(f); });
+  document.getElementById('aimDropZone')?.addEventListener('dragover', (e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--accent)'; });
+  document.getElementById('aimDropZone')?.addEventListener('dragleave', (e) => { e.currentTarget.style.borderColor = ''; });
+  document.getElementById('aimDropZone')?.addEventListener('drop', (e) => {
+    e.preventDefault(); e.currentTarget.style.borderColor = '';
+    const f = e.dataTransfer.files[0]; if (f) processAdminImportFile(f);
+  });
+  function adminParseFrontmatter(text) {
+    const match = text.match(/^---\\r?\\n([\\s\\S]*?)\\r?\\n---\\r?\\n?/);
+    if (!match) return { metadata: {}, content: text };
+    const yaml = match[1];
+    const metadata = {};
+    for (const line of yaml.split('\\n')) {
+      const colonIdx = line.indexOf(':');
+      if (colonIdx === -1) continue;
+      const key = line.slice(0, colonIdx).trim();
+      const val = line.slice(colonIdx + 1).trim();
+      if (key === 'isPublic') metadata[key] = val === 'true';
+      else metadata[key] = val;
+    }
+    return { metadata, content: text.slice(match[0].length) };
+  }
+  function adminSlugFromFile(filename) {
+    return filename.replace(/\\.(md|markdown|html?|htm)$/i, '').replace(/[^a-zA-Z0-9_-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 120) || 'imported-' + Date.now();
+  }
+  function processAdminImportFile(file) {
+    adminImportFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      adminImportMd = e.target.result;
+      const { metadata } = adminParseFrontmatter(adminImportMd);
+      const isHtml = /\.(html?|htm)$/i.test(file.name);
+      document.getElementById('aimTitle').value = metadata.title || file.name.replace(/\\.(md|markdown|html?|htm)$/i, '');
+      document.getElementById('aimSlug').value = metadata.slug || adminSlugFromFile(file.name);
+      document.getElementById('aimType').value = metadata.type || (isHtml ? 'html' : 'markdown');
+      document.getElementById('aimPublic').checked = metadata.isPublic !== false;
+      const projSel = document.getElementById('aimProject');
+      projSel.innerHTML = '<option value="">-- 无 --</option>' + adminAllProjects.map(p => '<option value="'+esc(p.id)+'"'+(p.id===metadata.projectId?' selected':'')+'>'+esc(p.name)+'</option>').join('');
+      adminUpdateImportGroupSelect(metadata.projectId || '', metadata.groupId || '');
+      document.getElementById('aimDropZone').style.display = 'none';
+      document.getElementById('aimPreview').style.display = '';
+      document.getElementById('aimSave').disabled = false;
+    };
+    reader.readAsText(file);
+  }
+  function adminUpdateImportGroupSelect(projectId, selectedId) {
+    const sel = document.getElementById('aimGroup');
+    const grps = projectId ? adminAllGroups.filter(g => g.projectId === projectId) : [];
+    sel.innerHTML = '<option value="">-- 无 --</option>' + grps.map(g => '<option value="'+esc(g.id)+'"'+(g.id===selectedId?' selected':'')+'>'+esc(g.name)+'</option>').join('');
+  }
+  document.getElementById('aimProject')?.addEventListener('change', function() { adminUpdateImportGroupSelect(this.value, ''); });
+  document.getElementById('aimSave')?.addEventListener('click', async () => {
+    if (!adminImportFile || !adminImportMd) return;
+    const fd = new FormData();
+    fd.append('file', adminImportFile);
+    fd.append('title', document.getElementById('aimTitle').value.trim());
+    fd.append('slug', document.getElementById('aimSlug').value.trim());
+    fd.append('type', document.getElementById('aimType').value);
+    fd.append('isPublic', document.getElementById('aimPublic').checked ? 'true' : 'false');
+    const pid = document.getElementById('aimProject').value;
+    const gid = document.getElementById('aimGroup').value;
+    if (pid) fd.append('projectId', pid);
+    if (gid) fd.append('groupId', gid);
+    const res = await adminFetch('/admin/pages/import', { method: 'POST', headers: { Authorization: 'Bearer ' + adminToken }, body: fd });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { toast('导入失败: ' + (data.error || '')); return; }
+    document.getElementById('adminImportModal').classList.remove('show');
+    toast('页面已导入');
+    loadAdminPages();
+  });
+  ['aimClose','aimCancel'].forEach(id => document.getElementById(id)?.addEventListener('click', () => document.getElementById('adminImportModal').classList.remove('show')));
+
   // ── Page filters ──
   document.getElementById('adminPageSearch')?.addEventListener('input', renderAdminPages);
-  document.getElementById('adminPageProjFilter')?.addEventListener('change', () => { updateAdminPageGrpFilter(); renderAdminPages(); });
-  document.getElementById('adminPageGrpFilter')?.addEventListener('change', renderAdminPages);
+  document.getElementById('adminPageProjFilter')?.addEventListener('change', () => { updateAdminPageGrpFilter(); updateAdminOrgActions(); renderAdminPages(); });
+  document.getElementById('adminPageGrpFilter')?.addEventListener('change', () => { updateAdminOrgActions(); renderAdminPages(); });
   document.getElementById('adminPageTypeFilter')?.addEventListener('change', renderAdminPages);
   initCustomSelect(document.getElementById('adminPageProjFilter'));
   initCustomSelect(document.getElementById('adminPageGrpFilter'));
