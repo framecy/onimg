@@ -34,6 +34,9 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Build CSS (Tailwind — generated file is gitignored)
+        run: npm run build:css
+
       - name: Build check (wrangler dry-run)
         run: npx wrangler deploy --dry-run --outdir /tmp/wrangler-check
         env:
@@ -58,6 +61,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Build CSS (Tailwind — generated file is gitignored)
+        run: npm run build:css
 
       - name: Deploy to Cloudflare Workers
         run: npx wrangler deploy
