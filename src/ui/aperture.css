@@ -1,0 +1,200 @@
+/* Aperture design system — image-first quiet chrome
+   Tailwind v4 单一来源：@theme 声明全部 token，驱动工具类；
+   :root 下再输出短名别名，让现有手写组件类继续工作（阶段2/3 改完后再删别名桥）。
+   构建产物 aperture.generated.js 由 build:css 生成，被三端 <style> 内联。 */
+
+@import "tailwindcss";
+
+/* ── 扫描范围（HTML 内联在 JS 字符串里，显式声明防漏扫） ── */
+@source "../page.js";
+@source "../admin-page.js";
+@source "../index.js";
+@source "../admin/**/*.js";
+@source "../pages/**/*.js";
+@source "../proto/**/*.js";
+/* 排掉与 Tailwind class 无关的大内联库，提速 + 防误报 */
+@source not "../fflate-inline.js";
+/* 阶段3 起逐步补全 JS 运行时动态拼接的 class（扫描器读不到模板字面量里的变量取值）。
+   先占位，改造到对应模板时追加。 */
+@source inline("");
+
+/* ─────────────────────────────────────────────────────────────
+   @theme —— 命名空间化 token（驱动 bg-/text-/border-/rounded- 等工具类）
+   ───────────────────────────────────────────────────────────── */
+@theme {
+  /* ── 颜色（暖石墨 + 电靛紫，2026-08 改版） ── */
+  --color-bg:        #0c0b10;
+  --color-bg-2:      #131118;
+  --color-bg-3:      #1a171f;
+  --color-bg-4:      #221e29;
+  --color-bg-5:      #2d2735;
+  --color-bg-hover:  #292330;
+  --color-bg-active: #362f3f;
+  --color-overlay:   rgba(8,7,11,.72);
+
+  --color-bd:        #2c2733;
+  --color-bd-2:      #3d3548;
+  --color-bd-focus: #7a7288;
+
+  --color-tx:        #f5f3f7;
+  --color-tx-2:      #bcb6c4;
+  --color-tx-3:      #8b8494;
+  --color-tx-a:      #ece7f0;
+  --color-tx-inv:    #0c0b10;
+
+  --color-brand:        #7c5cff;
+  --color-brand-hover:  #9478ff;
+  --color-brand-muted:  rgba(124,92,255,.16);
+  --color-brand-ring:   rgba(124,92,255,.32);
+  --color-brand-d:      #5f47c9;   /* 深 brand 变体（旧 --blue-d，用于进度条渐变深端） */
+  --color-accent:       #e6dfff;
+  --color-accent-hover: #f2ecff;
+  --color-accent-muted: rgba(124,92,255,.16);
+
+  --color-green: #3ecf8e;
+  --color-green-g: rgba(62,207,142,.12);
+  --color-green-r: rgba(62,207,142,.24);
+  --color-amber: #f0b94a;
+  --color-amber-g: rgba(240,185,74,.14);
+  --color-amber-r: rgba(240,185,74,.26);
+  --color-red:   #f2717a;
+  --color-red-g:   rgba(242,113,122,.14);
+  --color-red-r:   rgba(242,113,122,.26);
+
+  /* ── 圆角 ── */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  /* 裸名 rounded 的默认值，对齐设计系统 --r: 12px */
+  --radius: 12px;
+
+  /* ── 字体 ── */
+  --font-sans: 'Outfit', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* ── 间距基础单位（v4 据此派生 p-1=4px p-4=16px p-8=32px…，取代 --sp-1..8） ── */
+  --spacing: 0.25rem;
+
+  /* ── 字号 + 行高成对 ── */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1.25;
+  --text-xs:  0.75rem;
+  --text-xs--line-height:  1.5;
+  --text-sm:  0.8125rem;
+  --text-sm--line-height:  1.5;
+  --text-base-sm: 0.9375rem;          /* 介于 base 与 sm 之间的 md 档 */
+  --text-base-sm--line-height: 1.5;
+  --text-lg-sm: 1.0625rem;
+  --text-lg-sm--line-height: 1.25;
+  --text-xl-sm: 1.375rem;
+  --text-xl-sm--line-height: 1.25;
+  /* 行高别名（用于 leading-* 工具类） */
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-loose: 1.65;
+
+  /* ── 阴影 ── */
+  --shadow-sm:  0 4px 16px rgba(0,0,0,.35);
+  --shadow:     0 18px 48px rgba(0,0,0,.55);
+  --shadow-lg:  0 28px 64px rgba(0,0,0,.65);
+
+  /* ── 缓动 ── */
+  --ease-aperture: cubic-bezier(.2,.8,.2,1);
+
+  /* ── 自定义断点（现有响应式用 480/600 max-width，768 复用默认 md:） ── */
+  --breakpoint-xs: 480px;
+  --breakpoint-mob: 600px;
+
+  /* ── z-index 层级（驱动 z-sidebar 等；v4 支持 --z-* 但命名不常用，这里以普通变量保留） ── */
+  --z-sidebar: 20;
+  --z-sticky: 30;
+  --z-dropdown: 40;
+  --z-modal: 50;
+  --z-toast: 60;
+  --z-lightbox: 70;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   别名桥（阶段1 临时）：@theme 用命名空间 token，现有手写组件类
+   仍用 var(--bg)/var(--brand) 短名，这里把短名指向新 token。
+   阶段3 组件类全部 Tailwind 化后整段删除。
+   ───────────────────────────────────────────────────────────── */
+:root {
+  --bg:        var(--color-bg);
+  --bg-2:      var(--color-bg-2);
+  --bg-3:      var(--color-bg-3);
+  --bg-4:      var(--color-bg-4);
+  --bg-5:      var(--color-bg-5);
+  --bg-h:      var(--color-bg-hover);
+  --bg-a:      var(--color-bg-active);
+  --overlay:   var(--color-overlay);
+
+  --bd:        var(--color-bd);
+  --bd-2:      var(--color-bd-2);
+  --bd-f:      var(--color-bd-focus);
+
+  --tx:        var(--color-tx);
+  --tx-2:      var(--color-tx-2);
+  --tx-3:      var(--color-tx-3);
+  --tx-a:      var(--color-tx-a);
+  --tx-inv:    var(--color-tx-inv);
+
+  --brand:        var(--color-brand);
+  --brand-hover:  var(--color-brand-hover);
+  --brand-muted:  var(--color-brand-muted);
+  --brand-ring:   var(--color-brand-ring);
+  --brand-d:      var(--color-brand-d);
+  --accent:       var(--color-accent);
+  --accent-hover: var(--color-accent-hover);
+  --accent-muted: var(--color-brand-muted);
+
+  --focus-ring: 0 0 0 3px var(--color-brand-ring);
+
+  --green:    var(--color-green);
+  --green-g:  var(--color-green-g);
+  --green-r:  var(--color-green-r);
+  --amber:    var(--color-amber);
+  --amber-g:  var(--color-amber-g);
+  --amber-r:  var(--color-amber-r);
+  --red:      var(--color-red);
+  --red-g:    var(--color-red-g);
+  --red-r:    var(--color-red-r);
+
+  --r-xs: var(--radius-xs);
+  --r-sm: var(--radius-sm);
+  --r-md: var(--radius-md);
+  --r-lg: var(--radius-lg);
+  --r-xl: var(--radius-xl);
+  --r:    var(--radius);
+
+  --fs-2xs: var(--text-2xs);
+  --fs-xs:  var(--text-xs);
+  --fs-sm:  var(--text-sm);
+  --fs-md:  var(--text-base-sm);
+  --fs-lg:  var(--text-lg-sm);
+  --fs-xl:  var(--text-xl-sm);
+  --lh-tight: var(--leading-tight);
+  --lh:      var(--leading-normal);
+  --lh-loose: var(--leading-loose);
+
+  /* --sp-1..8 被 v4 的 --spacing 派生体系取代；这里保留常用别名
+     仅为阶段过渡期手写类引用，阶段3 清理。 */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
+
+  /* --shadow 系列已由 @theme 的 --shadow/--shadow-sm/--shadow-lg 提供，此处无需重复 */
+
+  --ease: var(--ease-aperture);
+  --t: color .15s var(--ease-aperture), background .15s var(--ease-aperture),
+       border-color .15s var(--ease-aperture), box-shadow .15s var(--ease-aperture),
+       transform .15s var(--ease-aperture), opacity .15s var(--ease-aperture);
+  --t-f: all .1s var(--ease-aperture);
+
+  --font: var(--font-sans);
+  --mono: var(--font-mono);
+
+  /* 后台遗留 --blue* 别名已被替换为 --brand*，别名桥的历史糖在此移除 */
+}
+

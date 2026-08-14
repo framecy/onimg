@@ -7,9 +7,14 @@
     "deploy": "wrangler deploy",
     "secret": "wrangler secret put AUTH_KEY",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "build:css": "tailwindcss -i ./src/ui/aperture.css -o ./src/ui/aperture.generated.css --minify && node scripts/wrap-css.mjs",
+    "predev": "npm run build:css",
+    "predeploy": "npm run build:css"
   },
   "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "tailwindcss": "^4.3.3",
     "vitest": "^4.1.6",
     "wrangler": "^4.90.0"
   },

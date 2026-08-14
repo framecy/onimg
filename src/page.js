@@ -1,4 +1,5 @@
 import { FFLATE_UMD } from './fflate-inline.js';
+import apertureCss from './ui/aperture.generated.js';
 export function renderPage() {
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -12,312 +13,24 @@ export function renderPage() {
   <noscript><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"></noscript>
   <!-- Vditor CSS/JS 改为编辑器打开时按需注入（见 ensureVditor），避免每次访问加载 ~0.5MB 编辑器 -->
   <style>
-    :root {
-      /* surface — slightly lifted dark */
-      --bg: #121212; --bg-2: #1a1a1a; --bg-3: #222222; --bg-4: #2a2a2a; --bg-5: #333333;
-      --bg-h: #383838; --bg-a: #404040;
-      --overlay: rgba(0,0,0,.64);
-      /* border / text */
-      --bd: #333333; --bd-2: #454545; --bd-f: #7a7a7a;
-      --tx: #f7f7f7; --tx-2: #c2c2c2; --tx-3: #9a9a9a; --tx-a: #ececec; --tx-inv: #121212;
-      /* accent (neutral primary, a touch brighter) */
-      --accent: #f0f0f0; --accent-hover: #ffffff; --accent-muted: rgba(255,255,255,.10);
-      --focus-ring: 0 0 0 3px rgba(255,255,255,.10);
-      /* semantic */
-      --green: #34d399; --green-g: rgba(52,211,153,.12); --green-r: rgba(52,211,153,.22);
-      --amber: #fbbf24; --amber-g: rgba(251,191,36,.1);  --amber-r: rgba(251,191,36,.2);
-      --red: #f87171; --red-g: rgba(248,113,113,.1);   --red-r: rgba(248,113,113,.2);
-      /* radius / type / space */
-      --r-xs: 4px; --r-sm: 6px; --r-md: 8px; --r-lg: 12px; --r-xl: 16px;
-      --r: 12px;
-      --fs-2xs: .62rem; --fs-xs: .72rem; --fs-sm: .82rem;
-      --fs-md: .9rem; --fs-lg: 1.05rem; --fs-xl: 1.35rem;
-      --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 28px; --sp-6: 40px; --sp-7: 56px;
-      --shadow: 0 24px 60px rgba(0,0,0,.92); --shadow-sm: 0 8px 28px rgba(0,0,0,.55);
-      --t: all .18s ease; --t-f: all .12s ease;
-      --font: 'Outfit', system-ui, -apple-system, sans-serif;
-      --mono: 'JetBrains Mono', 'Fira Code', monospace;
-    }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: var(--font); background: var(--bg); color: var(--tx); min-height: 100vh; font-weight: 450; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    /* Aperture token（@theme）+ 别名桥 + Tailwind 工具类，由 build:css 生成 */
+    ${apertureCss}
 
-    /* ── Shell ── */
-    .shell { display: flex; min-height: 100vh; }
 
-    /* ── Sidebar ── */
-    aside {
-      width: 240px; flex-shrink: 0; background: var(--bg-2);
-      border-right: 1px solid var(--bd);
-      display: flex; flex-direction: column;
-      position: fixed; top: 0; left: 0; bottom: 0; z-index: 10;
-    }
-    .sidebar-logo { padding: 18px 16px 14px; border-bottom: 1px solid var(--bd); display: flex; align-items: center; gap: 10px; }
-    .sidebar-logo-mark { width: 30px; height: 30px; background: linear-gradient(135deg, #2e2e2e 0%, #1a1a1a 100%); border: 1px solid var(--bd-2); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 800; color: var(--tx); flex-shrink: 0; letter-spacing: -.01em; box-shadow: 0 3px 10px rgba(0,0,0,.5); }
-    .sidebar-logo-text { display: flex; flex-direction: column; gap: 1px; }
-    .sidebar-logo-name { font-size: .92rem; font-weight: 700; color: var(--tx); letter-spacing: -.015em; }
-    .sidebar-logo-tag { font-size: .58rem; font-weight: 600; color: var(--tx-3); text-transform: uppercase; letter-spacing: .12em; }
-    .sidebar-nav-label { font-size: .58rem; font-weight: 700; color: var(--tx-3); text-transform: uppercase; letter-spacing: .12em; padding: 14px 16px 5px; }
-    nav.sidebar-nav { flex: 1; padding: 4px 8px 8px; display: flex; flex-direction: column; gap: 1px; overflow-y: auto; }
-    .tab { display: flex; align-items: center; gap: 9px; padding: 9px 11px; border-radius: var(--r-sm); cursor: pointer; font-size: .85rem; font-weight: 600; color: var(--tx-2); transition: var(--t); border: none; background: none; width: 100%; text-align: left; position: relative; font-family: var(--font); overflow: hidden; }
-    .tab:hover { background: var(--bg-h); color: var(--tx); }
-    .tab.active { background: rgba(255,255,255,.09); color: var(--tx); box-shadow: inset 3px 0 0 rgba(255,255,255,.55); font-weight: 700; }
-    .tab .nav-icon { width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: .9rem; line-height: 1; }
-    .tab:active { transform: scale(.972); }
-    @keyframes navRipple { to { transform: translate(-50%,-50%) scale(4); opacity: 0; } }
-    .nav-ripple { position: absolute; width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,.08); transform: translate(-50%,-50%) scale(0); animation: navRipple .55s ease-out forwards; pointer-events: none; }
-    .sidebar-bottom { padding: 0 8px 6px; }
-    .sidebar-link { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: var(--r-sm); color: var(--tx-2); font-size: .82rem; text-decoration: none; transition: var(--t); font-weight: 500; }
-    .sidebar-link:hover { background: var(--bg-h); color: var(--tx); }
-    .sidebar-footer { padding: 10px 8px 12px; border-top: 1px solid var(--bd); position: relative; }
-
-    /* ── User area (sidebar bottom) ── */
-    #userArea { position: relative; }
-    #userArea > .btn-sm { width: 100%; padding: 9px 12px; background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: var(--r-md); color: var(--tx); font-size: .85rem; font-weight: 600; cursor: pointer; font-family: var(--font); text-align: center; transition: var(--t); }
-    #userArea > .btn-sm:hover { background: var(--bg-4); border-color: var(--bd-f); }
-    .user-chip { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: var(--r-md); background: var(--bg-3); border: 1px solid var(--bd); cursor: pointer; user-select: none; transition: var(--t); }
-    .user-chip:hover { border-color: var(--bd-2); background: var(--bg-4); }
-    .user-chip .dot-green { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; box-shadow: 0 0 6px rgba(52,211,153,.5); }
-    .user-chip > span:nth-of-type(1) { font-size: .82rem; font-weight: 600; color: var(--tx); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .user-chip .caret { font-size: .65rem; color: var(--tx-3); transition: transform .15s; flex-shrink: 0; }
-    .user-chip.open .caret { transform: rotate(180deg); }
-    /* Dropdown opens upward from sidebar bottom */
-    .user-dropdown { position: absolute; bottom: calc(100% + 6px); left: 8px; right: 8px; background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); z-index: 100; overflow: hidden; display: none; }
-    .user-dropdown.show { display: block; }
-    .ud-header { padding: 12px 14px 10px; border-bottom: 1px solid var(--bd); }
-    .ud-name { font-size: .88rem; font-weight: 700; color: var(--tx); }
-    .ud-role { font-size: .7rem; color: var(--tx-2); margin-top: 2px; font-weight: 500; }
-    .ud-perms { padding: 10px 14px; border-bottom: 1px solid var(--bd); display: flex; flex-wrap: wrap; gap: 5px; }
-    .ud-perm { font-size: .66rem; padding: 2px 7px; border-radius: var(--r-xs); font-weight: 600; }
-    .perm-on    { background: var(--green-g); color: var(--green); border: 1px solid var(--green-r); }
-    .perm-off   { background: rgba(255,255,255,.04); color: var(--tx-3); border: 1px solid var(--bd); }
-    .perm-admin { background: rgba(255,255,255,.07); color: var(--tx); border: 1px solid var(--bd-2); }
-    .ud-action { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 14px; background: none; border: none; color: var(--tx-2); font-size: .82rem; cursor: pointer; text-align: left; transition: background .12s, color .12s; font-family: var(--font); font-weight: 500; }
-    .ud-action:hover { background: var(--bg-h); color: var(--tx); }
-    .ud-action.danger:hover { color: var(--red); background: var(--red-g); }
-
-    /* ── Main content ── */
-    .main-content { flex: 1; margin-left: 240px; min-width: 0; background: var(--bg); display: flex; flex-direction: column; min-height: 100vh; }
-
-    /* ── Mobile sidebar ── */
-    .mob-header { display: none; position: fixed; top: 0; left: 0; right: 0; height: 50px; background: var(--bg-2); border-bottom: 1px solid var(--bd); z-index: 20; align-items: center; gap: 14px; padding: 0 16px; }
-    .mob-hamburger { background: none; border: 1px solid var(--bd); color: var(--tx-2); width: 32px; height: 32px; border-radius: var(--r-sm); cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; }
-    .mob-hamburger:hover { color: var(--tx); border-color: var(--bd-2); }
-    .mob-title { font-size: .92rem; font-weight: 700; color: var(--tx); }
-    .sidebar-mask { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 9; }
-    .sidebar-mask.show { display: block; }
     @media (max-width: 768px) {
-      aside { transform: translateX(-240px); transition: transform .22s ease; }
-      aside.open { transform: translateX(0); z-index: 15; }
-      .main-content { margin-left: 0; padding-top: 52px; }
-      .mob-header { display: flex; }
       main { padding: 20px 18px 56px; }
-      .tab, .sidebar-link { min-height: 44px; }
-      .btn, .btn-sm { min-height: 40px; }
-      .toolbar { flex-direction: column; align-items: stretch; gap: 12px; margin-bottom: 20px; }
-      .search-input { width: 100% !important; max-width: none; }
-      .gallery-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
-      .page-header { margin-bottom: 24px; padding-bottom: 18px; gap: 12px; }
-      .page-header .page-title { font-size: 1.2rem; }
-      .drop-zone { padding: 40px 20px; margin-bottom: 18px; }
-      .login-card { padding: 32px 22px; }
-      .modal { max-height: 100dvh; border-radius: 16px 16px 0 0; }
-      .modal-body { max-height: calc(100dvh - 140px); padding: 18px; }
       .page-batch-bar, .batch-bar { gap: 8px; padding: 12px; margin-bottom: 16px; }
-      .page-header .btn, .page-header .btn-ghost, .page-header .btn-primary { flex: 1 1 auto; }
     }
 
-    .spacer { flex: 1; }
-    .dot-green { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
-    .btn-sm { padding: 6px 12px; border: 1px solid var(--bd); border-radius: var(--r-sm); background: transparent; color: var(--tx-2); cursor: pointer; font-size: var(--fs-sm); white-space: nowrap; font-family: var(--font); font-weight: 500; transition: var(--t); display: inline-flex; align-items: center; gap: 5px; min-height: 32px; }
-    .btn-sm:hover { color: var(--tx); border-color: var(--bd-2); background: var(--bg-h); }
-
-    /* Login overlay */
-    #loginOverlay { position: fixed; inset: 0; background: var(--overlay); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 50; padding: var(--sp-5); }
-    .login-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-xl); padding: 36px 32px; width: 100%; max-width: 360px; box-shadow: var(--shadow); }
-    .login-card h2 { font-size: var(--fs-lg); font-weight: 800; letter-spacing: -.02em; margin-bottom: 28px; color: var(--tx); }
-    .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
-    .field label { font-size: var(--fs-2xs); color: var(--tx-3); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; }
-    .field input, .field select, .field textarea { padding: 9px 12px; background: var(--bg-2); border: 1px solid var(--bd); border-radius: var(--r-md); color: var(--tx); font-size: var(--fs-sm); font-family: var(--font); outline: none; transition: var(--t); }
-    .field select { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
-    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--bd-f); background: var(--bg); box-shadow: var(--focus-ring); }
-    .field textarea { resize: vertical; min-height: 120px; font-family: var(--mono); font-size: var(--fs-sm); }
-    .btn-full, .btn-block { width: 100%; padding: 10px; background: var(--accent); color: var(--tx-inv); border: none; border-radius: var(--r-md); font-size: var(--fs-md); font-weight: 700; font-family: var(--font); cursor: pointer; margin-top: 6px; transition: var(--t); }
-    .btn-full:hover, .btn-block:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,255,255,.07); }
-    .btn-full:disabled, .btn-block:disabled { background: var(--bg-5); color: var(--tx-3); cursor: not-allowed; transform: none; box-shadow: none; }
-    .login-err { color: var(--red); font-size: .78rem; margin-top: 10px; text-align: center; min-height: 18px; }
-    /* Login enhancements */
+    /* Login enhancements — keyframes kept, referenced via Tailwind arbitrary animate-[] values */
     @keyframes loginSpin { to { transform: rotate(360deg); } }
     @keyframes loginShake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
-    .btn-full.loading { pointer-events: none; }
-    .btn-full.loading::before { content:''; display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:loginSpin .6s linear infinite; margin-right:8px; vertical-align:middle; }
-    .login-card.shake { animation: loginShake .35s ease; }
-    .pass-wrap { position: relative; }
-    .pass-wrap input { padding-right: 38px; width: 100%; }
-    .pass-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--tx-3); cursor: pointer; padding: 4px; line-height: 1; font-size: .9rem; }
-    .pass-toggle:hover { color: var(--tx); }
-    /* Toast types */
-    .toast.t-success { background: var(--green-g); border-color: var(--green-r); color: var(--green); }
-    .toast.t-warn    { background: var(--amber-g); border-color: var(--amber-r); color: var(--amber); }
-    .toast.t-error   { background: var(--red-g);   border-color: var(--red-r);   color: var(--red); }
 
     main { flex: 1; padding: var(--sp-6) var(--sp-6) var(--sp-7); max-width: 1080px; margin: 0 auto; width: 100%; }
-    .panel { display: none; }
-    .panel.active { display: block; }
-    .page-header { margin-bottom: var(--sp-6); padding-bottom: var(--sp-5); border-bottom: 1px solid var(--bd); display: flex; align-items: flex-end; gap: var(--sp-4); flex-wrap: wrap; }
-    .page-header-text { flex: 1; min-width: 0; }
-    .page-header .page-title { font-size: var(--fs-xl); font-weight: 800; color: var(--tx); letter-spacing: -.03em; margin-bottom: 6px; }
-    .page-header .page-sub { font-size: var(--fs-sm); color: var(--tx-3); font-weight: 500; letter-spacing: .01em; }
-
-    /* Upload */
-    .quota-bar { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-lg); padding: 12px 16px; font-size: var(--fs-sm); display: flex; gap: 20px; margin-bottom: var(--sp-4); box-shadow: none; }
-    .quota-bar span { color: var(--tx-2); font-weight: 500; }
-    .quota-bar strong { color: var(--tx); font-weight: 700; font-family: var(--mono); }
-    .drop-zone { border: 1px dashed var(--bd-2); border-radius: var(--r-xl); padding: 64px 36px; text-align: center; cursor: pointer; color: var(--tx-3); transition: var(--t); margin-bottom: var(--sp-4); background: transparent; }
-    .drop-zone:hover, .drop-zone.over { border-color: var(--tx-2); color: var(--tx); background: rgba(255,255,255,.03); }
-    .drop-zone:hover .dz-icon, .drop-zone.over .dz-icon { color: var(--tx); }
-    .drop-zone input { display: none; }
-    .dz-icon { display: block; margin: 0 auto 16px; width: 42px; height: 42px; color: var(--tx-3); transition: color .2s; }
-    .btn-upload { width: 100%; padding: 11px; background: var(--accent); color: var(--tx-inv); border: none; border-radius: var(--r-md); font-size: var(--fs-md); font-weight: 700; cursor: pointer; font-family: var(--font); transition: var(--t); }
-    .btn-upload:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,255,255,.07); }
-    .btn-upload:disabled { background: var(--bg-5); color: var(--tx-3); cursor: not-allowed; transform: none; box-shadow: none; }
-    .progress { height: 3px; background: var(--bg-3); border-radius: 99px; margin: 10px 0; overflow: hidden; display: none; }
-    .progress.show { display: block; }
-    .progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width .25s; }
-    .progress-info { display: none; align-items: center; gap: 10px; margin-top: -4px; margin-bottom: 6px; font-size: .76rem; color: var(--tx-2); }
-    .progress-info.show { display: flex; }
-    .progress-info .pct { font-weight: 700; color: var(--tx); min-width: 34px; font-family: var(--mono); }
-    .progress-info .bytes { color: var(--tx-3); font-family: var(--mono); }
-    .result-list { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
-    .result-item { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-lg); padding: 10px 14px; display: flex; align-items: center; gap: 12px; }
-    .result-item img { width: 44px; height: 44px; object-fit: cover; border-radius: var(--r-xs); border: 1px solid var(--bd); }
-    .result-item .info { flex: 1; min-width: 0; }
-    .result-item .name { font-size: .8rem; color: var(--tx); font-weight: 500; }
-    .url-row { display: flex; gap: 5px; margin-top: 4px; }
-    .url-input { flex: 1; background: var(--bg-2); border: 1px solid var(--bd); border-radius: var(--r-xs); color: var(--tx); font-size: .75rem; padding: 3px 8px; outline: none; min-width: 0; font-family: var(--mono); }
-    .err { color: var(--red); font-size: .8rem; margin-top: 8px; }
-
-    /* Buttons — 3 variants × 2 sizes + block */
-    .btn { padding: 6px 12px; border: 1px solid transparent; border-radius: var(--r-sm); font-size: var(--fs-sm); font-weight: 600; cursor: pointer; transition: var(--t); font-family: var(--font); display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 32px; line-height: 1.2; }
-    .btn-sm { padding: 4px 10px; font-size: var(--fs-xs); min-height: 28px; border-radius: var(--r-sm); }
-    .btn-primary { background: var(--accent); color: var(--tx-inv); border-color: transparent; }
-    .btn-primary:hover { background: var(--accent-hover); box-shadow: 0 4px 16px rgba(255,255,255,.08); }
-    .btn-primary:disabled { background: var(--bg-5); color: var(--tx-3); cursor: not-allowed; box-shadow: none; }
-    .btn-ghost { background: var(--bg-3); color: var(--tx-2); border-color: var(--bd); }
-    .btn-ghost:hover { background: var(--bg-h); color: var(--tx); border-color: var(--bd-2); }
-    .btn-danger { background: var(--red-g); color: var(--red); border-color: var(--red-r); }
-    .btn-danger:hover { background: rgba(248,113,113,.18); }
-    .btn-public  { background: var(--green-g); color: var(--green); font-size: var(--fs-xs); padding: 3px 9px; border-radius: 999px; border: 1px solid var(--green-r); cursor: pointer; font-weight: 600; min-height: 0; }
-    .btn-private { background: var(--accent-muted); color: var(--tx-3); font-size: var(--fs-xs); padding: 3px 9px; border-radius: 999px; border: 1px solid var(--bd); cursor: pointer; font-weight: 600; min-height: 0; }
-
-    /* Gallery grid */
-    .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: var(--sp-5); flex-wrap: wrap; }
-    .search-input { padding: 8px 12px; background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-sm); color: var(--tx); font-size: .84rem; outline: none; width: 220px; font-family: var(--font); transition: var(--t); }
-    .search-input:focus { border-color: var(--bd-f); box-shadow: 0 0 0 3px rgba(255,255,255,.04); }
-    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 18px; }
-    .gitem { background: var(--bg-3); border: 1px solid transparent; border-radius: var(--r-lg); overflow: hidden; transition: var(--t); box-shadow: 0 0 0 1px var(--bd); }
-    .gitem:hover { box-shadow: 0 0 0 1px var(--bd-2), 0 12px 32px rgba(0,0,0,.35); transform: translateY(-2px); }
-    .gitem img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: var(--bg-2); cursor: pointer; }
-    .gitem-info { padding: 9px 11px; }
-    .gitem-key { font-size: .72rem; color: var(--tx-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--mono); font-weight: 500; }
-    .gitem-row { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; }
-    .gitem-actions { display: flex; gap: 4px; margin-top: 6px; }
-    /* Batch selection */
-    .batch-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding: 9px 14px; background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: 9px; flex-wrap: wrap; }
-    .batch-check { display: flex; align-items: center; gap: 6px; font-size: .82rem; color: var(--tx-2); cursor: pointer; user-select: none; }
-    .batch-count { font-size: .8rem; color: var(--tx-3); font-family: var(--mono); }
-    .gitem { position: relative; }
-    .gitem-sel { position: absolute; top: 8px; left: 8px; z-index: 3; width: 20px; height: 20px; cursor: pointer; accent-color: var(--accent); display: none; }
-    .gallery-grid.selecting .gitem-sel { display: block; }
-    .gallery-grid.selecting .gitem img { cursor: pointer; }
-    .gitem.selected { border-color: var(--tx-2); box-shadow: 0 0 0 2px var(--tx-2) inset; }
-    /* Tags */
-    .gitem-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-    .tag-chip { font-size: .64rem; padding: 1px 7px; border-radius: var(--r-lg); background: rgba(255,255,255,.05); color: var(--tx-2); border: 1px solid var(--bd); font-weight: 600; white-space: nowrap; }
-    .tag-filter-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 14px; }
-    .tag-filter { font-size: .72rem; padding: 3px 11px; border-radius: 12px; background: var(--bg-3); color: var(--tx-2); border: 1px solid var(--bd); cursor: pointer; font-weight: 600; transition: var(--t); font-family: var(--font); }
-    .tag-filter:hover { border-color: var(--bd-2); color: var(--tx); }
-    .tag-filter.active { background: rgba(255,255,255,.1); color: var(--tx); border-color: var(--bd-f); }
-    .tag-filter-label { font-size: .68rem; color: var(--tx-3); text-transform: uppercase; letter-spacing: .1em; font-weight: 700; margin-right: 2px; }
     /* Tag editor modal */
-    .tag-edit-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; min-height: 28px; }
-    .tag-edit-item { display: inline-flex; align-items: center; gap: 5px; font-size: .76rem; padding: 3px 6px 3px 10px; border-radius: 12px; background: rgba(255,255,255,.06); color: var(--tx); border: 1px solid var(--bd-2); font-weight: 600; }
-    .tag-edit-item button { background: none; border: none; color: var(--tx-3); cursor: pointer; font-size: .9rem; line-height: 1; padding: 0; }
-    .tag-edit-item button:hover { color: var(--red); }
 
-    /* Pages */
-    .pages-header { display: flex; align-items: center; margin-bottom: 16px; }
-    .pages-list { display: flex; flex-direction: column; gap: 8px; }
-    .page-item { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-lg); padding: 14px 16px; display: flex; align-items: center; gap: 14px; transition: var(--t); }
-    .page-item:hover { border-color: var(--bd-2); background: var(--bg-4); }
-    .page-item-info { flex: 1; min-width: 0; }
-    .page-title { font-size: .92rem; font-weight: 600; color: var(--tx); }
-    .page-slug { font-size: .75rem; color: var(--tx-2); font-family: var(--mono); margin-top: 3px; }
-    .page-meta { font-size: .72rem; color: var(--tx-3); margin-top: 3px; font-weight: 500; }
-    .type-badge { display: inline-block; padding: 2px 7px; border-radius: var(--r-xs); font-size: .66rem; font-weight: 700; }
-    .type-md   { background: rgba(255,255,255,.07); color: var(--tx); border: 1px solid var(--bd-2); }
-    .type-html { background: var(--amber-g); color: var(--amber); border: 1px solid var(--amber-r); }
-    /* Page tree view */
-    .pages-tree { display: flex; flex-direction: column; gap: 14px; }
-    .page-project { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-lg); overflow: hidden; }
-    .page-project-header { display: flex; align-items: center; padding: 14px 16px; cursor: pointer; gap: 10px; user-select: none; }
-    .page-project-header:hover { background: var(--bg-4); }
-    .expand-icon { font-size: .6rem; transition: transform .15s; color: var(--tx-3); width: 14px; text-align: center; flex-shrink: 0; }
-    .expand-icon.open { transform: rotate(90deg); }
-    .project-name, .group-name { flex: 1; font-weight: 600; font-size: .88rem; color: var(--tx); }
-    .count-badge { font-size: .66rem; color: var(--tx-3); background: var(--bg-5); padding: 2px 7px; border-radius: var(--r-xs); font-weight: 600; }
-    .proj-actions, .grp-actions { display: flex; gap: 3px; margin-left: 6px; }
-    .proj-act-btn, .grp-act-btn { background: none; border: 1px solid transparent; color: var(--tx-3); cursor: pointer; font-size: .74rem; padding: 3px 8px; border-radius: var(--r-xs); transition: var(--t); }
-    .proj-act-btn:hover, .grp-act-btn:hover { background: var(--bg-5); color: var(--tx); border-color: var(--bd); }
-    .page-project-body { border-top: 1px solid var(--bd); }
-    .page-group { margin-left: 18px; border-left: 2px solid var(--bd); }
-    .page-group-header { display: flex; align-items: center; padding: 8px 12px; cursor: pointer; gap: 7px; user-select: none; }
-    .page-group-header:hover { background: var(--bg-4); }
-    .page-group-body {}
-    .page-tree-docs { margin-left: 18px; border-left: 2px solid var(--bd); }
-    .page-tree-item { background: var(--bg-2); border: 1px solid transparent; border-radius: var(--r-md); padding: 10px 14px; display: flex; align-items: center; gap: 10px; margin: 2px 0; transition: var(--t); }
-    .page-tree-item:hover { border-color: var(--bd); background: var(--bg-3); }
-    .drag-handle { cursor: grab; color: var(--tx-3); font-size: .78rem; padding: 0 2px; }
-    .drag-handle:active { cursor: grabbing; }
-    .pages-uncategorized { border-top: 1px dashed var(--bd-2); padding-top: 10px; margin-top: 6px; }
-    .uncat-label { font-size: .72rem; color: var(--tx-3); font-weight: 600; letter-spacing: .04em; margin-bottom: 6px; }
-    .page-tree-item.dragging { opacity: 0.3; border-style: dashed; border-color: var(--bd-2); }
-    .page-tree-item.drag-over-top { border-top: 2px solid var(--accent); margin-top: -2px; }
-    .page-tree-item.drag-over-bot { border-bottom: 2px solid var(--accent); margin-bottom: -2px; }
-    .page-project.drag-over-proj { border-color: var(--accent); }
-    .page-group-header.drag-over-grp { background: var(--bg-5); }
 
-    /* Public gallery */
-    .pub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
-    .pub-item { border-radius: var(--r-lg); overflow: hidden; background: var(--bg-3); border: 1px solid var(--bd); cursor: pointer; transition: var(--t); box-shadow: 0 1px 0 rgba(255,255,255,.02) inset; }
-    .pub-item:hover { border-color: var(--bd-2); box-shadow: 0 6px 24px rgba(0,0,0,.5); transform: translateY(-2px); }
-    .pub-item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: var(--bg-2); }
-    .pub-item-info { padding: 8px 12px; font-size: .74rem; color: var(--tx-2); font-family: var(--mono); font-weight: 500; }
 
-    /* Lightbox */
-    .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.94); display: none; align-items: center; justify-content: center; z-index: 100; padding: 24px; }
-    .lightbox.show { display: flex; }
-    .lb-inner { background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: var(--r-xl); max-width: 760px; width: 100%; overflow: hidden; box-shadow: var(--shadow); }
-    .lb-img-wrap { background: var(--bg-2); display: flex; align-items: center; justify-content: center; min-height: 280px; max-height: 55vh; }
-    .lb-img-wrap img { max-width: 100%; max-height: 55vh; object-fit: contain; }
-    .lb-meta { padding: 14px 18px; }
-    .lb-key { font-size: .85rem; color: var(--tx); word-break: break-all; font-family: var(--mono); }
-    .lb-actions { display: flex; gap: 7px; margin-top: 12px; }
-    .lb-close { position: absolute; top: 14px; right: 14px; background: var(--bg-3); border: 1px solid var(--bd-2); color: var(--tx-2); width: 32px; height: 32px; border-radius: var(--r-sm); cursor: pointer; font-size: .95rem; display: flex; align-items: center; justify-content: center; transition: var(--t); }
-    .lb-close:hover { color: var(--tx); border-color: var(--bd-f); }
-    .lb-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,.6); border: 1px solid var(--bd-2); color: var(--tx); width: 40px; height: 60px; border-radius: var(--r-md); cursor: pointer; font-size: 1.6rem; display: flex; align-items: center; justify-content: center; transition: var(--t); z-index: 101; }
-    .lb-nav:hover { background: var(--bg-h); border-color: var(--bd-f); }
-    .lb-nav-prev { left: 14px; }
-    .lb-nav-next { right: 14px; }
-    .load-more { display: flex; justify-content: center; margin-top: 20px; }
-    .empty { text-align: center; padding: 48px; color: var(--tx-3); font-size: .88rem; font-weight: 500; }
-    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--bg-3); border: 1px solid var(--bd-2); color: var(--tx); padding: 9px 18px; border-radius: var(--r-md); font-size: var(--fs-sm); transition: transform .25s; z-index: 200; white-space: nowrap; font-weight: 500; box-shadow: var(--shadow-sm); font-family: var(--font); }
-    .toast.show { transform: translateX(-50%) translateY(0); }
-
-    /* Page editor modal */
-    .modal-overlay { position: fixed; inset: 0; background: var(--overlay); backdrop-filter: blur(2px); display: none; align-items: center; justify-content: center; z-index: 60; padding: 24px; }
-    .modal-overlay.show { display: flex; }
-    .modal { background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: var(--r-xl); width: 100%; max-width: 860px; max-height: 96vh; display: flex; flex-direction: column; box-shadow: var(--shadow); }
-    .modal-body { padding: 18px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
     /* Vditor container — fills remaining modal height, owns scroll */
     #pmVditor {
       border-radius: var(--r-md);
@@ -375,47 +88,8 @@ export function renderPage() {
       padding: 14px 16px !important;
     }
     #pmVditor .vditor-outline { display: none !important; }
-    #pmContent {
-      flex: 1 1 auto;
-      min-height: 360px;
-      resize: vertical;
-      font-family: var(--mono);
-      font-size: .84rem;
-      line-height: 1.7;
-      padding: 12px 14px;
-      background: var(--bg-2);
-      border: 1px solid var(--bd-2);
-      border-radius: var(--r-md);
-      color: var(--tx);
-      width: 100%;
-    }
-    #pageModal .modal { max-width: 960px; height: min(92vh, 900px); max-height: 96vh; }
-    #pageModal .modal-body { overflow: hidden; }
     #pmPwdSection { display: none; }
     #pmPwdSection.show { display: block; }
-    /* Upload file queue */
-    .upload-queue { display: none; flex-direction: column; gap: 6px; margin: 0 0 10px; }
-    .upload-queue.show { display: flex; }
-    .upload-q-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-sm); font-size: .78rem; color: var(--tx-2); }
-    .upload-q-item .uq-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .upload-q-item .uq-size { color: var(--tx-3); flex-shrink: 0; }
-    .upload-q-item .uq-rm { background: none; border: none; color: var(--tx-3); cursor: pointer; font-size: .9rem; padding: 0 4px; line-height: 1; }
-    .upload-q-item .uq-rm:hover { color: var(--red); }
-    /* Page multi-select */
-    .page-batch-bar { display: none; align-items: center; gap: 10px; padding: 9px 13px; background: var(--bg-3); border: 1px solid var(--bd-2); border-radius: var(--r-md); margin-bottom: 12px; font-size: .82rem; color: var(--tx-2); flex-wrap: wrap; }
-    .page-batch-bar.show { display: flex; }
-    .page-tree-item.selecting { cursor: pointer; }
-    .page-tree-item.selected { border-color: var(--accent); background: var(--accent-muted); }
-    .page-check { width: 15px; height: 15px; flex-shrink: 0; accent-color: var(--accent); cursor: pointer; }
-    .page-drop-zone.drag-over-zone { outline: 1px dashed var(--accent); outline-offset: -2px; background: var(--accent-muted); min-height: 28px; }
-    .pages-independent { margin-top: 8px; }
-    .indep-label, .uncat-label { font-size: .72rem; font-weight: 700; color: var(--tx-3); letter-spacing: .06em; text-transform: uppercase; margin: 10px 0 6px 2px; }
-    .modal-header { display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--bd); flex-shrink: 0; }
-    .modal-header h3 { flex: 1; font-size: .98rem; font-weight: 700; color: var(--tx); letter-spacing: -.01em; }
-    .modal-close { background: var(--bg-2); border: 1px solid var(--bd-2); color: var(--tx-2); width: 30px; height: 30px; border-radius: var(--r-sm); cursor: pointer; transition: var(--t); }
-    .modal-close:hover { color: var(--tx); border-color: var(--bd-f); }
-    .modal-body { padding: 18px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px; }
-    .modal-footer { padding: 12px 20px; border-top: 1px solid var(--bd); display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0; }
     /* Skeleton shimmer */
     @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
     .gitem img:not(.loaded), .pub-item img:not(.loaded) {
@@ -424,422 +98,365 @@ export function renderPage() {
       animation: shimmer 1.4s ease infinite;
     }
     .gitem img.loaded, .pub-item img.loaded { animation: none; background: var(--bg-2); }
-    /* Loading skeletons */
-    .skel { background: linear-gradient(90deg, var(--bg-3) 25%, var(--bg-4) 50%, var(--bg-3) 75%); background-size: 400% 100%; animation: shimmer 1.4s ease infinite; border-radius: var(--r-sm); }
-    .skel-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-lg); overflow: hidden; }
-    .skel-card .skel-thumb { width: 100%; aspect-ratio: 1; }
-    .skel-card .skel-meta { padding: 10px 11px; display: flex; flex-direction: column; gap: 7px; }
-    .skel-card .skel-line { height: 9px; }
-    .skel-row { height: 58px; border: 1px solid var(--bd); border-radius: 9px; margin-bottom: 10px; }
     /* Responsive */
     @media (max-width: 600px) {
       main { padding: 16px 16px 28px; }
-      .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-      .pub-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-      .search-input { width: 100%; max-width: 260px; }
-      .drop-zone { padding: 36px 20px; }
-      .page-header .page-title { font-size: 1.15rem; }
     }
     /* Phones — denser 3-up gallery */
     @media (max-width: 480px) {
-      .gallery-grid, .pub-grid { grid-template-columns: repeat(3, 1fr); gap: 7px; }
-      .gitem-info, .pub-item-info { padding: 6px 8px; }
-      .gitem-key { font-size: .64rem; }
+      .pub-grid { grid-template-columns: repeat(3, 1fr); gap: 7px; }
+      .pub-item-info { padding: 6px 8px; }
       .batch-bar { gap: 7px; padding: 8px 10px; }
     }
 
-    /* Protos — upload box */
-    .proto-upload-section { background: var(--bg-3); border: 1px solid var(--bd); border-radius: 12px; margin-bottom: 20px; overflow: hidden; box-shadow: 0 1px 0 rgba(255,255,255,.02) inset; }
-    .proto-upload-head { display: flex; align-items: center; padding: 13px 16px; cursor: pointer; user-select: none; gap: 8px; }
-    .proto-upload-head h3 { font-size: .9rem; font-weight: 700; flex: 1; color: var(--tx); letter-spacing: -.01em; }
-    .proto-upload-head .toggle-icon { font-size: .65rem; color: var(--tx-3); transition: transform .2s; }
-    .proto-upload-head .toggle-icon.open { transform: rotate(180deg); }
-    .proto-upload-body { padding: 16px; border-top: 1px solid var(--bd); }
-    .proto-upload-box { border: 1.5px dashed var(--bd-2); border-radius: 12px; padding: 28px; text-align: center; color: var(--tx-3); transition: var(--t); margin-bottom: 14px; cursor: pointer; background: rgba(255,255,255,.012); }
-    .proto-upload-box:hover, .proto-upload-box.over { border-color: var(--tx-2); color: var(--tx); background: rgba(255,255,255,.03); }
-    .proto-upload-box input { display: none; }
-    .proto-fields { display: flex; gap: 10px; margin-bottom: 10px; }
-    .proto-fields .field { flex: 1; margin-bottom: 0; }
-    .proto-fields .field-pwd { flex: 0 0 160px; }
-    /* Protos — table */
-    .proto-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
-    .proto-table th { text-align: left; padding: 10px 13px; color: var(--tx-2); font-weight: 700; border-bottom: 1px solid var(--bd-2); white-space: nowrap; font-size: .66rem; text-transform: uppercase; letter-spacing: .11em; background: rgba(0,0,0,.3); }
-    .proto-table td { padding: 10px 13px; border-bottom: 1px solid var(--bd); vertical-align: middle; color: var(--tx); }
-    .proto-table tr:last-child td { border-bottom: none; }
-    .proto-table tr:hover td { background: rgba(255,255,255,.025); }
-    .proto-td-name { max-width: 280px; }
-    .proto-td-name .name { font-weight: 600; font-size: .88rem; color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .proto-td-name .id { font-family: var(--mono); font-size: .66rem; color: var(--tx-3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .proto-td-actions { white-space: nowrap; text-align: right; }
-    .proto-td-actions .btn { font-size: .75rem; padding: 4px 9px; }
-    .proto-muted { color: var(--tx-2); font-size: .79rem; }
-    /* badges */
-    .proto-lock     { font-size: .68rem; background: var(--amber-g); color: var(--amber); border: 1px solid var(--amber-r); border-radius: var(--r-xs); padding: 1px 6px; font-weight: 600; }
-    .proto-version  { font-size: .66rem; background: rgba(255,255,255,.06); color: var(--tx); border: 1px solid var(--bd-2); border-radius: var(--r-xs); padding: 1px 6px; font-weight: 700; font-family: var(--mono); }
-    .proto-private  { font-size: .68rem; background: var(--red-g); color: var(--red); border: 1px solid var(--red-r); border-radius: var(--r-xs); padding: 1px 6px; font-weight: 600; }
-    .proto-expired  { font-size: .68rem; background: rgba(255,255,255,.04); color: var(--tx-3); border: 1px solid var(--bd); border-radius: var(--r-xs); padding: 1px 6px; font-weight: 600; }
-    /* version diff modal */
-    .pvm-ver-card { background: var(--bg-2); border: 1px solid var(--bd); border-radius: var(--r-md); padding: 9px 10px; cursor: pointer; transition: var(--t); }
-    .pvm-ver-card:hover { border-color: var(--bd-2); }
-    .pvm-ver-card.active   { border-color: var(--bd-f); background: rgba(255,255,255,.04); }
-    .pvm-ver-card.checked-a { border-color: var(--green); background: var(--green-g); }
-    .pvm-ver-card.checked-b { border-color: var(--amber); background: var(--amber-g); }
-    .pvm-ver-badge  { font-size: .72rem; font-weight: 700; padding: 1px 7px; border-radius: var(--r-xs); margin-right: 4px; background: rgba(255,255,255,.08); color: var(--tx); border: 1px solid var(--bd-2); font-family: var(--mono); }
-    .pvm-ver-latest { font-size: .65rem; padding: 1px 6px; border-radius: 3px; background: var(--green-g); color: var(--green); font-weight: 700; border: 1px solid var(--green-r); }
-    .pvm-ver-meta   { font-size: .7rem; color: var(--tx-2); margin-top: 4px; font-weight: 500; }
-    .pvm-ver-check  { display: flex; align-items: center; gap: 5px; margin-top: 5px; font-size: .7rem; color: var(--tx-2); }
-    .diff-file { display: flex; align-items: center; gap: 6px; padding: 3px 6px; border-radius: var(--r-xs); font-size: .72rem; font-family: var(--mono); margin-bottom: 1px; }
-    .diff-add  { background: var(--green-g); color: var(--green); }
-    .diff-rem  { background: var(--red-g); color: var(--red); }
-    .diff-prefix { flex-shrink: 0; width: 14px; font-weight: 700; }
-    .diff-section { margin-bottom: 16px; }
-    .diff-section h4 { font-size: .72rem; font-weight: 700; margin-bottom: 6px; padding: 5px 8px; border-radius: var(--r-xs); text-transform: uppercase; letter-spacing: .08em; }
-    .diff-section.add  h4 { background: var(--green-g); color: var(--green); }
-    .diff-section.rem  h4 { background: var(--red-g); color: var(--red); }
-    .diff-section.same h4 { background: rgba(255,255,255,.04); color: var(--tx-3); }
-    .file-row { display: flex; align-items: center; padding: 3px 6px; border-radius: var(--r-xs); font-size: .72rem; font-family: var(--mono); margin-bottom: 1px; color: var(--tx-2); }
-    .file-row:hover { background: var(--bg-h); color: var(--tx); }
   </style>
 </head>
-<body>
-<div class="mob-header">
-  <button class="mob-hamburger" id="mobHamburger" aria-label="菜单">☰</button>
-  <div class="mob-title">Onimg</div>
+<body class="min-h-screen max-w-full overflow-x-hidden bg-bg font-sans font-[450] text-tx antialiased">
+<div class="mob-header fixed inset-x-0 top-0 z-20 flex h-[50px] items-center gap-[14px] border-b border-bd bg-bg-2 px-4 md:hidden">
+  <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-transparent text-tx-2 cursor-pointer transition hover:border-bd-2 hover:text-tx" id="mobHamburger" aria-label="菜单"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/></svg></button>
+  <div class="text-[.92rem] font-bold text-tx">Onimg</div>
 </div>
-<div class="sidebar-mask" id="sidebarMask"></div>
-<div class="shell">
-  <aside id="sidebar">
-    <div class="sidebar-logo">
-      <div class="sidebar-logo-mark">O</div>
-      <div class="sidebar-logo-text">
-        <span class="sidebar-logo-name">Onimg</span>
-        <span class="sidebar-logo-tag">IMAGE HOST</span>
+<div class="sidebar-mask fixed inset-0 z-[9] hidden bg-black/60 [&.show]:block" id="sidebarMask"></div>
+<div class="flex min-h-screen">
+  <aside class="fixed inset-y-0 left-0 z-10 flex w-60 shrink-0 -translate-x-60 flex-col border-r border-bd bg-bg-2 transition-transform duration-[.22s] ease-in-out md:translate-x-0 [&.open]:translate-x-0 [&.open]:z-[15]" id="sidebar">
+    <div class="flex items-center gap-2.5 border-b border-bd px-4 pt-[18px] pb-3.5">
+      <div class="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-sm border border-brand/30 bg-gradient-to-br from-[#242836] to-[#14161d] text-[.78rem] font-extrabold tracking-[-.01em] text-accent shadow-[0_3px_10px_rgba(0,0,0,.45)]">O</div>
+      <div class="flex flex-col gap-px">
+        <span class="text-[.92rem] font-bold text-tx tracking-[-.015em]">Onimg</span>
+        <span class="text-[.58rem] font-semibold uppercase tracking-[.12em] text-tx-3">IMAGE HOST</span>
       </div>
     </div>
-    <div class="sidebar-nav-label">导航</div>
-    <nav class="sidebar-nav">
-      <button class="tab active" data-tab="gallery-pub"><span class="nav-icon">🌐</span><span>公开图库</span></button>
-      <button class="tab" data-tab="upload"        id="tabUpload"><span class="nav-icon">⬆</span><span>上传</span></button>
-      <button class="tab" data-tab="gallery-mine"  id="tabMine"><span class="nav-icon">🖼</span><span>我的图库</span></button>
-      <button class="tab" data-tab="pages"         id="tabPages"><span class="nav-icon">📄</span><span>我的页面</span></button>
-      <button class="tab" data-tab="protos"        id="tabProtos"><span class="nav-icon">📐</span><span>我的原型</span></button>
+    <div class="px-4 pt-[14px] pb-[5px] text-2xs font-bold uppercase tracking-[.12em] text-tx-3">导航</div>
+    <nav class="flex flex-1 flex-col gap-px overflow-y-auto px-2 pt-1 pb-2">
+      <button class="tab active relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] max-md:min-h-[44px]" data-tab="gallery-pub"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><ellipse cx="8" cy="8" rx="2.8" ry="6.5"/><line x1="1.5" y1="8" x2="14.5" y2="8"/></svg></span><span>公开图库</span></button>
+      <button class="tab relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] max-md:min-h-[44px]" data-tab="upload"        id="tabUpload"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="14" x2="8" y2="3"/><polyline points="3.5,7.5 8,3 12.5,7.5"/></svg></span><span>上传</span></button>
+      <button class="tab relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] max-md:min-h-[44px]" data-tab="gallery-mine"  id="tabMine"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2.5" width="14" height="11" rx="1.5"/><circle cx="5.2" cy="6.3" r="1.3"/><path d="M1.5 11l4-4 2.5 2.5 2-2 4.5 4.5"/></svg></span><span>我的图库</span></button>
+      <button class="tab relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] max-md:min-h-[44px]" data-tab="pages"         id="tabPages"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 1h7l4 4v10H3V1z"/><polyline points="10,1 10,5 14,5"/><line x1="4" y1="8" x2="12" y2="8"/><line x1="4" y1="11" x2="9" y2="11"/></svg></span><span>我的页面</span></button>
+      <button class="tab relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] max-md:min-h-[44px]" data-tab="protos"        id="tabProtos"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v5l-8 8H2V2z"/><line x1="5" y1="2" x2="5" y2="5"/><line x1="8" y1="2" x2="8" y2="4"/><line x1="11" y1="2" x2="11" y2="5"/></svg></span><span>我的原型</span></button>
     </nav>
-    <div class="sidebar-bottom">
+    <div class="border-t border-bd px-2 pt-1 pb-1.5">
       <span id="footerAdmin"></span>
     </div>
-    <div class="sidebar-footer">
+    <div class="relative border-t border-bd px-2 pt-[10px] pb-3">
       <div id="userArea">
-        <button class="btn-sm" id="loginTrigger">登录</button>
+        <button class="w-full rounded-md border border-bd-2 bg-bg-3 px-3 py-[9px] text-center text-[.85rem] font-semibold text-tx transition hover:border-bd-focus hover:bg-bg-4" id="loginTrigger">登录</button>
       </div>
     </div>
   </aside>
 
-  <div class="main-content">
+  <div class="flex min-w-0 flex-1 flex-col min-h-screen bg-bg pt-[52px] md:ml-60 md:pt-0">
 
   <!-- Login overlay -->
-  <div id="loginOverlay" style="display:none">
-    <div class="login-card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px">
-        <h2 style="margin:0">登录 Onimg</h2>
-        <button id="loginOverlayClose" style="background:none;border:none;color:var(--tx-3);font-size:1.2rem;cursor:pointer;line-height:1;padding:4px">✕</button>
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-6 backdrop-blur-[6px]" id="loginOverlay" style="display:none">
+    <div class="login-card relative w-full max-w-[380px] overflow-hidden rounded-xl border border-bd bg-bg-3 py-9 px-7 shadow md:py-11 md:px-10 [&.shake]:animate-[loginShake_.35s_ease]">
+      <div class="mb-8 flex items-start justify-between">
+        <div class="flex items-center gap-2.5">
+          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[linear-gradient(135deg,var(--color-brand)_0%,var(--color-brand-d)_100%)] text-[.75rem] font-extrabold text-white shadow-[0_6px_16px_rgba(124,92,255,.3)]">OI</span>
+          <div>
+            <div class="text-[1.05rem] font-extrabold leading-[1.15] tracking-[-.01em] text-tx">登录 Onimg</div>
+            <div class="mt-px text-xs text-tx-3">登录后即可上传与管理图片</div>
+          </div>
+        </div>
+        <button class="border-none bg-transparent p-1 text-[1.2rem] leading-none text-tx-3 cursor-pointer" id="loginOverlayClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
       </div>
-      <div class="field"><label>用户名</label><input type="text" id="lu" autocomplete="username" placeholder="username"></div>
-      <div class="field"><label>密码</label><div class="pass-wrap"><input type="password" id="lp" autocomplete="current-password" placeholder="••••••••"><button type="button" class="pass-toggle" id="lpToggle" title="显示/隐藏密码">👁</button></div></div>
-      <button class="btn-full" id="doLogin">登录</button>
-      <div class="login-err" id="loginErr"></div>
+      <div class="flex flex-col gap-2 mb-5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">用户名</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3.5 py-[11px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="lu" autocomplete="username" placeholder="username"></div>
+      <div class="flex flex-col gap-2 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">密码</label><div class="relative"><input class="w-full rounded-md border border-bd bg-bg-2 px-3.5 py-[11px] pr-10 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="password" id="lp" autocomplete="current-password" placeholder="••••••••"><button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center border-none bg-transparent p-0 text-tx-3 cursor-pointer transition hover:text-tx" id="lpToggle" title="显示/隐藏密码"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg></button></div></div>
+      <label class="mb-6 flex items-center gap-2 cursor-pointer select-none text-[.8rem] text-tx-2"><input class="h-3.5 w-3.5 cursor-pointer accent-brand" type="checkbox" id="loginRemember">记住我 30 天</label>
+      <button class="btn-full w-full rounded-md border-none bg-brand px-3 py-3 font-sans text-base-sm font-bold text-white shadow-[0_4px_14px_rgba(124,92,255,.3)] transition hover:-translate-y-px hover:bg-brand-hover hover:shadow-[0_8px_22px_rgba(124,92,255,.4)] disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none [&.loading]:pointer-events-none [&.loading]:before:content-[''] [&.loading]:before:inline-block [&.loading]:before:mr-2 [&.loading]:before:h-[14px] [&.loading]:before:w-[14px] [&.loading]:before:align-middle [&.loading]:before:rounded-full [&.loading]:before:border-2 [&.loading]:before:border-white/30 [&.loading]:before:border-t-white [&.loading]:before:animate-[loginSpin_.6s_linear_infinite]" id="doLogin">登录</button>
+      <div class="login-err mt-3 min-h-[18px] text-center text-xs text-red" id="loginErr"></div>
     </div>
   </div>
 
   <main>
     <!-- Public Gallery -->
-    <div class="panel active" id="panel-gallery-pub">
-      <div class="page-header">
-        <div class="page-header-text">
-          <div class="page-title">公开图库</div>
-          <div class="page-sub">所有用户公开分享的图片</div>
+    <div class="panel active hidden [&.active]:block" id="panel-gallery-pub">
+      <div class="page-header flex flex-wrap items-end gap-3 border-b border-bd mb-6 pb-[18px] md:mb-8 md:gap-4 md:pb-6">
+        <div class="min-w-0 flex-1">
+          <div class="page-title mb-1.5 text-[1.15rem] font-extrabold tracking-[-.03em] text-tx mob:text-[1.2rem] md:text-[1.375rem]">公开图库</div>
+          <div class="text-sm font-medium tracking-[.01em] text-tx-3">所有用户公开分享的图片</div>
         </div>
-        <button class="btn btn-ghost" id="refreshPub">刷新</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx max-md:flex-1" id="refreshPub">刷新</button>
       </div>
-      <div class="pub-grid" id="pubGrid"></div>
-      <div class="empty" id="pubEmpty" style="display:none">暂无公开图片</div>
+      <div class="pub-grid grid grid-cols-3 gap-[7px] xs:grid-cols-[repeat(auto-fill,minmax(150px,1fr))] xs:gap-3 mob:grid-cols-[repeat(auto-fill,minmax(210px,1fr))] mob:gap-[14px]" id="pubGrid"></div>
+      <div class="p-12 text-center text-[.88rem] font-medium text-tx-3" id="pubEmpty" style="display:none">暂无公开图片</div>
     </div>
 
     <!-- Upload -->
-    <div class="panel" id="panel-upload">
-      <div class="page-header">
-        <div class="page-header-text">
-          <div class="page-title">上传图片</div>
-          <div class="page-sub">支持 JPG / PNG / GIF / WebP / SVG，单文件 10 MB 内</div>
+    <div class="panel hidden [&.active]:block" id="panel-upload">
+      <div class="page-header flex flex-wrap items-end gap-3 border-b border-bd mb-6 pb-[18px] md:mb-8 md:gap-4 md:pb-6">
+        <div class="min-w-0 flex-1">
+          <div class="page-title mb-1.5 text-[1.15rem] font-extrabold tracking-[-.03em] text-tx mob:text-[1.2rem] md:text-[1.375rem]">上传图片</div>
+          <div class="text-sm font-medium tracking-[.01em] text-tx-3">支持 JPG / PNG / GIF / WebP / SVG，单文件 10 MB 内</div>
         </div>
       </div>
-      <div class="quota-bar" id="quotaBar" style="display:none">
-        <span>今日 <strong id="qDaily">—</strong></span>
-        <span>总计 <strong id="qTotal">—</strong></span>
-        <span id="qLimits" style="color:var(--tx-3)"></span>
+      <div class="quota-bar mb-4 flex gap-5 rounded-lg border border-bd bg-bg-3 px-4 py-3 text-sm shadow-none" id="quotaBar" style="display:none">
+        <span class="font-medium text-tx-2">今日 <strong class="font-mono font-bold text-tx" id="qDaily">—</strong></span>
+        <span class="font-medium text-tx-2">总计 <strong class="font-mono font-bold text-tx" id="qTotal">—</strong></span>
+        <span class="text-tx-3" id="qLimits"></span>
       </div>
-      <div class="drop-zone" id="dropZone">
-        <input type="file" id="fileInput" accept="image/*" multiple>
-        <svg class="dz-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <div class="drop-zone group mb-[18px] cursor-pointer border border-dashed border-bd-2 bg-transparent px-5 py-9 text-center text-tx-3 transition hover:border-tx-2 hover:bg-white/[.03] hover:text-tx [&.over]:border-tx-2 [&.over]:bg-white/[.03] [&.over]:text-tx mob:px-5 mob:py-10 md:mb-4 md:px-9 md:py-16 rounded-xl" id="dropZone">
+        <input class="hidden" type="file" id="fileInput" accept="image/*" multiple>
+        <svg class="dz-icon mx-auto mb-4 block h-[42px] w-[42px] text-tx-3 transition-colors duration-200 group-hover:text-tx group-[.over]:text-tx" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="16 16 12 12 8 16"></polyline>
           <line x1="12" y1="12" x2="12" y2="21"></line>
           <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
         </svg>
-        <p id="dropZoneHint" style="font-size:.9rem;font-weight:500;color:inherit">点击或拖拽图片上传</p>
-        <small style="display:block;margin-top:8px;font-size:.76rem">JPG · PNG · GIF · WebP · SVG · 可多次添加</small>
+        <p class="text-[.9rem] font-medium text-inherit" id="dropZoneHint">点击或拖拽图片上传</p>
+        <small class="block mt-2 text-[.76rem]">JPG · PNG · GIF · WebP · SVG · 可多次添加</small>
       </div>
-      <div class="upload-queue" id="uploadQueue"></div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:.82rem;color:var(--tx-3)">
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none">
-          <input type="checkbox" id="uploadPublic" style="accent-color:var(--accent)">
+      <div class="upload-queue hidden flex-col gap-1.5 mb-[10px] [&.show]:flex" id="uploadQueue"></div>
+      <div class="flex items-center gap-2 mb-[10px] text-[.82rem] text-tx-3">
+        <label class="flex items-center gap-1.5 cursor-pointer select-none">
+          <input class="accent-accent" type="checkbox" id="uploadPublic">
           <span>上传后加入公开图库</span>
         </label>
       </div>
-      <button class="btn-upload" id="uploadBtn" disabled>上传</button>
-      <div class="progress" id="progress"><div class="progress-bar" id="progressBar"></div></div>
-      <div class="progress-info" id="imgProgressInfo"><span class="pct" id="imgProgressPct">0%</span><span class="bytes" id="imgProgressBytes"></span><span class="bytes" id="imgProgressCount"></span></div>
-      <div class="err" id="uploadErr"></div>
-      <div class="result-list" id="resultList"></div>
+      <button class="w-full rounded-md bg-accent px-3 py-[11px] text-base-sm font-bold text-tx-inv transition hover:-translate-y-px hover:bg-accent-hover hover:shadow-[0_8px_24px_rgba(255,255,255,.07)] disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="uploadBtn" disabled>上传</button>
+      <div class="progress hidden my-[10px] h-[3px] overflow-hidden rounded-full bg-bg-3 [&.show]:block" id="progress"><div class="progress-bar h-full w-0 bg-accent transition-[width] duration-[.25s]" id="progressBar"></div></div>
+      <div class="progress-info hidden items-center gap-[10px] -mt-1 mb-1.5 text-[.76rem] text-tx-2 [&.show]:flex" id="imgProgressInfo"><span class="min-w-[34px] font-mono font-bold text-tx" id="imgProgressPct">0%</span><span class="font-mono text-tx-3" id="imgProgressBytes"></span><span class="font-mono text-tx-3" id="imgProgressCount"></span></div>
+      <div class="mt-2 text-[.8rem] text-red" id="uploadErr"></div>
+      <div class="mt-3.5 flex flex-col gap-2" id="resultList"></div>
     </div>
 
     <!-- My Gallery -->
-    <div class="panel" id="panel-gallery-mine">
-      <div class="page-header">
-        <div class="page-header-text">
-          <div class="page-title">我的图库</div>
-          <div class="page-sub">管理你上传的所有图片</div>
+    <div class="panel hidden [&.active]:block" id="panel-gallery-mine">
+      <div class="page-header flex flex-wrap items-end gap-3 border-b border-bd mb-6 pb-[18px] md:mb-8 md:gap-4 md:pb-6">
+        <div class="min-w-0 flex-1">
+          <div class="page-title mb-1.5 text-[1.15rem] font-extrabold tracking-[-.03em] text-tx mob:text-[1.2rem] md:text-[1.375rem]">我的图库</div>
+          <div class="text-sm font-medium tracking-[.01em] text-tx-3">管理你上传的所有图片</div>
         </div>
       </div>
-      <div class="toolbar">
-        <input class="search-input" id="mineSearch" type="text" placeholder="搜索文件名或标签…">
-        <select class="search-input" id="mineVisFilter" style="width:auto;cursor:pointer">
+      <div class="toolbar flex flex-col items-stretch gap-3 mb-5 md:flex-row md:items-center md:gap-[10px] md:mb-6">
+        <input class="search-input w-full max-w-[260px] rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-[.84rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)] mob:max-w-none md:w-[220px]" id="mineSearch" type="text" placeholder="搜索文件名或标签…">
+        <select class="search-input w-full max-w-[260px] rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-[.84rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)] mob:max-w-none md:w-[220px] !w-auto cursor-pointer" id="mineVisFilter">
           <option value="all">全部</option>
           <option value="public">仅公开</option>
           <option value="private">仅私密</option>
         </select>
-        <select class="search-input" id="mineSort" style="width:auto;cursor:pointer">
+        <select class="search-input w-full max-w-[260px] rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-[.84rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)] mob:max-w-none md:w-[220px] !w-auto cursor-pointer" id="mineSort">
           <option value="new">最新优先</option>
           <option value="old">最早优先</option>
           <option value="big">体积降序</option>
           <option value="name">名称排序</option>
         </select>
-        <div class="spacer"></div>
-        <button class="btn btn-ghost" id="mineSelectToggle">选择</button>
-        <button class="btn btn-ghost" id="trashBtn">🗑 回收站</button>
-        <button class="btn btn-ghost" id="refreshMine">刷新</button>
+        <div class="flex-1"></div>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="mineSelectToggle">选择</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="trashBtn"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4h11M6 4V2.5h4V4M4 4l.7 9.5a1 1 0 0 0 1 .9h4.6a1 1 0 0 0 1-.9L12 4"/></svg>回收站</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="refreshMine">刷新</button>
       </div>
-      <div class="batch-bar" id="mineBatchBar" style="display:none">
-        <label class="batch-check"><input type="checkbox" id="mineSelectAll"> 全选</label>
-        <span class="batch-count" id="mineSelCount">已选 0</span>
-        <div class="spacer"></div>
-        <button class="btn btn-ghost" id="batchPublic">设为公开</button>
-        <button class="btn btn-ghost" id="batchPrivate">设为私密</button>
-        <button class="btn btn-danger" id="batchDelete">删除选中</button>
+      <div class="batch-bar flex flex-wrap items-center gap-[10px] mb-3.5 rounded-[9px] border border-bd-2 bg-bg-3 px-[14px] py-[9px]" id="mineBatchBar" style="display:none">
+        <label class="flex cursor-pointer items-center gap-1.5 select-none text-[.82rem] text-tx-2"><input type="checkbox" id="mineSelectAll"> 全选</label>
+        <span class="font-mono text-[.8rem] text-tx-3" id="mineSelCount">已选 0</span>
+        <div class="flex-1"></div>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="batchPublic">设为公开</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="batchPrivate">设为私密</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r" id="batchDelete">删除选中</button>
       </div>
-      <div class="tag-filter-bar" id="mineTagFilter" style="display:none"></div>
-      <div class="gallery-grid" id="mineGrid"></div>
-      <div class="empty" id="mineEmpty" style="display:none">暂无图片，去上传吧</div>
+      <div class="flex flex-wrap items-center gap-1.5 mb-3.5" id="mineTagFilter" style="display:none"></div>
+      <div class="gallery-grid group/grid grid grid-cols-2 gap-3 md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] md:gap-[18px]" id="mineGrid"></div>
+      <div class="p-12 text-center text-[.88rem] font-medium text-tx-3" id="mineEmpty" style="display:none">暂无图片，去上传吧</div>
     </div>
 
     <!-- Pages -->
-    <div class="panel" id="panel-pages">
-      <div class="page-header">
-        <div class="page-header-text">
-          <div class="page-title">我的页面</div>
-          <div class="page-sub">托管的 Markdown / HTML 文档</div>
+    <div class="panel hidden [&.active]:block" id="panel-pages">
+      <div class="page-header flex flex-wrap items-end gap-3 border-b border-bd mb-6 pb-[18px] md:mb-8 md:gap-4 md:pb-6">
+        <div class="min-w-0 flex-1">
+          <div class="page-title mb-1.5 text-[1.15rem] font-extrabold tracking-[-.03em] text-tx mob:text-[1.2rem] md:text-[1.375rem]">我的页面</div>
+          <div class="text-sm font-medium tracking-[.01em] text-tx-3">托管的 Markdown / HTML 文档</div>
         </div>
-        <button class="btn btn-ghost" id="newProjectBtn" style="padding:7px 10px;font-size:.78rem">+ 项目</button>
-        <button class="btn btn-ghost" id="newGroupBtn" style="padding:7px 10px;font-size:.78rem">+ 分组</button>
-        <button class="btn btn-ghost" id="importPageBtn" style="padding:7px 10px;font-size:.78rem">导入</button>
-        <button class="btn btn-primary" id="newPageBtn" style="padding:7px 14px;font-size:.82rem">+ 新建页面</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx max-md:flex-1 !px-[10px] !py-[7px] !text-[.78rem]" id="newProjectBtn">+ 项目</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx max-md:flex-1 !px-[10px] !py-[7px] !text-[.78rem]" id="newGroupBtn">+ 分组</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx max-md:flex-1 !px-[10px] !py-[7px] !text-[.78rem]" id="importPageBtn">导入</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none max-md:flex-1 !px-[14px] !py-[7px] !text-[.82rem]" id="newPageBtn">+ 新建页面</button>
       </div>
-      <div class="toolbar">
-        <input class="search-input" id="pageSearch" type="text" placeholder="搜索标题或 slug…">
-        <select class="search-input" id="pageProjectFilter" style="width:auto;cursor:pointer">
+      <div class="toolbar flex flex-col items-stretch gap-3 mb-5 md:flex-row md:items-center md:gap-[10px] md:mb-6">
+        <input class="search-input w-full max-w-[260px] rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-[.84rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)] mob:max-w-none md:w-[220px]" id="pageSearch" type="text" placeholder="搜索标题或 slug…">
+        <select class="search-input w-full max-w-[260px] rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-[.84rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)] mob:max-w-none md:w-[220px] !w-auto cursor-pointer" id="pageProjectFilter">
           <option value="all">全部项目</option>
         </select>
-        <div class="spacer"></div>
-        <button class="btn btn-ghost" id="pageSelectToggle" style="font-size:.78rem">选择</button>
-        <button class="btn btn-ghost" id="refreshPages" style="font-size:.78rem">刷新</button>
+        <div class="flex-1"></div>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.78rem]" id="pageSelectToggle">选择</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.78rem]" id="refreshPages">刷新</button>
       </div>
-      <div class="page-batch-bar" id="pageBatchBar">
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none"><input type="checkbox" id="pageSelectAll"> 全选</label>
+      <div class="page-batch-bar hidden flex-wrap items-center gap-[10px] mb-3 rounded-md border border-bd-2 bg-bg-3 px-[13px] py-[9px] text-[.82rem] text-tx-2 [&.show]:flex" id="pageBatchBar">
+        <label class="flex items-center gap-1.5 cursor-pointer select-none"><input type="checkbox" id="pageSelectAll"> 全选</label>
         <span id="pageSelCount">已选 0</span>
-        <div class="spacer"></div>
-        <button class="btn btn-ghost" id="pageBatchMove" style="font-size:.78rem">移动</button>
-        <button class="btn btn-ghost" id="pageBatchPublic" style="font-size:.78rem">设为公开</button>
-        <button class="btn btn-ghost" id="pageBatchPrivate" style="font-size:.78rem">设为私密</button>
-        <button class="btn btn-danger" id="pageBatchDelete" style="font-size:.78rem">删除</button>
+        <div class="flex-1"></div>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.78rem]" id="pageBatchMove">移动</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.78rem]" id="pageBatchPublic">设为公开</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.78rem]" id="pageBatchPrivate">设为私密</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !text-[.78rem]" id="pageBatchDelete">删除</button>
       </div>
-      <div class="pages-tree" id="pagesTree"></div>
-      <div class="empty" id="pagesEmpty" style="display:none">暂无页面</div>
+      <div class="pages-tree flex flex-col gap-[14px]" id="pagesTree"></div>
+      <div class="p-12 text-center text-[.88rem] font-medium text-tx-3" id="pagesEmpty" style="display:none">暂无页面</div>
     </div>
 
     <!-- Protos -->
-    <div class="panel" id="panel-protos">
-      <div class="page-header">
-        <div class="page-header-text">
-          <div class="page-title">我的原型</div>
-          <div class="page-sub">AxureRP 等静态原型托管 · 支持版本管理与密码保护</div>
+    <div class="panel hidden [&.active]:block" id="panel-protos">
+      <div class="page-header flex flex-wrap items-end gap-3 border-b border-bd mb-6 pb-[18px] md:mb-8 md:gap-4 md:pb-6">
+        <div class="min-w-0 flex-1">
+          <div class="page-title mb-1.5 text-[1.15rem] font-extrabold tracking-[-.03em] text-tx mob:text-[1.2rem] md:text-[1.375rem]">我的原型</div>
+          <div class="text-sm font-medium tracking-[.01em] text-tx-3">AxureRP 等静态原型托管 · 支持版本管理与密码保护</div>
         </div>
-        <button class="btn btn-ghost" id="refreshProtos" style="font-size:.8rem">刷新</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx max-md:flex-1 !text-[.8rem]" id="refreshProtos">刷新</button>
       </div>
       <!-- Upload section (collapsible) -->
-      <div class="proto-upload-section">
-        <div class="proto-upload-head" id="protoUploadToggle">
-          <h3>上传原型</h3>
-          <span class="toggle-icon open" id="protoUploadIcon">▾</span>
+      <div class="mb-5 overflow-hidden rounded-xl border border-bd bg-bg-3 shadow-[0_1px_0_rgba(255,255,255,.02)_inset]">
+        <div class="flex cursor-pointer select-none items-center gap-2 px-4 py-[13px]" id="protoUploadToggle">
+          <h3 class="flex-1 text-[.9rem] font-bold text-tx tracking-[-.01em]">上传原型</h3>
+          <span class="toggle-icon open text-[.65rem] text-tx-3 transition-transform duration-200 [&.open]:rotate-180" id="protoUploadIcon">▾</span>
         </div>
-        <div class="proto-upload-body" id="protoUploadBody">
-          <div class="proto-upload-box" id="protoDropZone">
+        <div class="border-t border-bd p-4" id="protoUploadBody">
+          <div class="proto-upload-box mb-3.5 cursor-pointer rounded-xl border-[1.5px] border-dashed border-bd-2 bg-white/[.012] px-4 py-7 text-center text-tx-3 transition hover:border-tx-2 hover:bg-white/[.03] hover:text-tx [&.over]:border-tx-2 [&.over]:bg-white/[.03] [&.over]:text-tx" id="protoDropZone">
             <input type="file" id="protoFileInput" accept=".zip,application/zip,application/x-zip-compressed">
-            <input type="file" id="protoFolderInput" webkitdirectory multiple style="display:none">
-            <p style="color:var(--tx);font-size:.9rem;font-weight:500">点击选择 <strong>ZIP 文件</strong>，或拖拽文件夹到此处</p>
-            <small style="display:block;margin-top:8px;color:var(--tx-3);font-size:.76rem">支持 AxureRP 导出目录（自动打包）或 ZIP 文件，最大 50 MB</small>
-            <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
-              <button type="button" onclick="event.stopPropagation();document.getElementById('protoFileInput').click()" style="padding:6px 14px;background:var(--bg-3);border:1px solid var(--bd-2);border-radius:6px;color:var(--tx-2);font-size:.78rem;cursor:pointer;font-family:var(--font);font-weight:500">选择 ZIP</button>
-              <button type="button" onclick="event.stopPropagation();document.getElementById('protoFolderInput').click()" style="padding:6px 14px;background:var(--bg-3);border:1px solid var(--bd-2);border-radius:6px;color:var(--tx-2);font-size:.78rem;cursor:pointer;font-family:var(--font);font-weight:500">选择文件夹</button>
+            <input class="hidden" type="file" id="protoFolderInput" webkitdirectory multiple>
+            <p class="text-tx text-[.9rem] font-medium">点击选择 <strong>ZIP 文件</strong>，或拖拽文件夹到此处</p>
+            <small class="block mt-2 text-tx-3 text-[.76rem]">支持 AxureRP 导出目录（自动打包）或 ZIP 文件，最大 50 MB</small>
+            <div class="flex gap-2 justify-center mt-3">
+              <button class="rounded-md border border-bd-2 bg-bg-3 px-[14px] py-1.5 font-sans text-[.78rem] font-medium text-tx-2 cursor-pointer" type="button" onclick="event.stopPropagation();document.getElementById('protoFileInput').click()">选择 ZIP</button>
+              <button class="rounded-md border border-bd-2 bg-bg-3 px-[14px] py-1.5 font-sans text-[.78rem] font-medium text-tx-2 cursor-pointer" type="button" onclick="event.stopPropagation();document.getElementById('protoFolderInput').click()">选择文件夹</button>
             </div>
           </div>
-          <div class="proto-fields">
-            <div class="field"><label>原型名称 <span style="color:var(--tx-3);font-weight:400;text-transform:none;letter-spacing:0">（可选）</span></label><input type="text" id="protoTitle" placeholder="留空自动命名" maxlength="100"></div>
-            <div class="field field-pwd"><label>访问密码（可选）</label><input type="text" id="protoPassword" placeholder="最多 6 位字母数字" maxlength="6" autocomplete="off"></div>
+          <div class="flex gap-2.5 mb-2.5">
+            <div class="flex flex-1 flex-col gap-[5px]"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">原型名称 <span class="text-tx-3 font-normal normal-case tracking-normal">（可选）</span></label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="protoTitle" placeholder="留空自动命名" maxlength="100"></div>
+            <div class="flex w-40 shrink-0 grow-0 flex-col gap-[5px]"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">访问密码（可选）</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="protoPassword" placeholder="最多 6 位字母数字" maxlength="6" autocomplete="off"></div>
           </div>
-          <button class="btn-upload" id="protoUploadBtn" disabled>上传原型</button>
-          <div class="progress" id="protoProgress"><div class="progress-bar" id="protoProgressBar"></div></div>
-          <div class="progress-info" id="protoProgressInfo"><span class="pct" id="protoProgressPct">0%</span></div>
-          <div id="protoStatusText" style="display:none;font-size:.78rem;color:var(--tx-2);margin-top:2px;margin-bottom:4px;min-height:1.2em"></div>
-          <div class="err" id="protoErr"></div>
+          <button class="w-full rounded-md bg-accent px-3 py-[11px] text-base-sm font-bold text-tx-inv transition hover:-translate-y-px hover:bg-accent-hover hover:shadow-[0_8px_24px_rgba(255,255,255,.07)] disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="protoUploadBtn" disabled>上传原型</button>
+          <div class="progress hidden my-[10px] h-[3px] overflow-hidden rounded-full bg-bg-3 [&.show]:block" id="protoProgress"><div class="progress-bar h-full w-0 bg-accent transition-[width] duration-[.25s]" id="protoProgressBar"></div></div>
+          <div class="progress-info hidden items-center gap-[10px] -mt-1 mb-1.5 text-[.76rem] text-tx-2 [&.show]:flex" id="protoProgressInfo"><span class="min-w-[34px] font-mono font-bold text-tx" id="protoProgressPct">0%</span></div>
+          <div class="hidden text-[.78rem] text-tx-2 mt-0.5 mb-1 min-h-[1.2em]" id="protoStatusText"></div>
+          <div class="mt-2 text-[.8rem] text-red" id="protoErr"></div>
         </div>
       </div>
 
-      <div style="background:var(--bg-3);border:1px solid var(--bd);border-radius:10px;overflow:hidden;box-shadow:0 1px 0 rgba(255,255,255,.02) inset">
-        <table class="proto-table">
+      <div class="bg-bg-3 border border-bd rounded-[10px] overflow-hidden shadow-[0_1px_0_rgba(255,255,255,.02)_inset]">
+        <table class="w-full border-collapse text-[.83rem] [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tr:hover_td]:bg-white/[.025]">
           <thead><tr>
-            <th style="width:36px;color:var(--tx-3)">#</th><th>名称</th><th>文件数</th><th>大小</th><th>密码</th><th>版本</th><th>访问</th><th>上传时间</th><th>更新时间</th><th></th>
+            <th class="whitespace-nowrap border-b border-bd-2 bg-black/30 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2 w-9 !text-tx-3">#</th><th class="whitespace-nowrap border-b border-bd-2 bg-black/30 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">名称</th><th class="whitespace-nowrap border-b border-bd-2 bg-black/30 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">文件数</th><th class="whitespace-nowrap border-b border-bd-2 bg-black/30 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">大小</th><th class="whitespace-nowrap border-b border-bd-2 bg-black/30 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">密码</th><th class="whitespace-nowrap border-b border-bd-2 bg-black/30 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">版本</th><th class="whitespace-nowrap border-b border-bd-2 bg-black/30 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">访问</th><th class="whitespace-nowrap border-b border-bd-2 bg-black/30 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">上传时间</th><th class="whitespace-nowrap border-b border-bd-2 bg-black/30 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">更新时间</th><th class="whitespace-nowrap border-b border-bd-2 bg-black/30 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2"></th>
           </tr></thead>
-          <tbody id="protoTableBody"><tr><td colspan="10" style="text-align:center;color:var(--tx-3);padding:32px">加载中…</td></tr></tbody>
+          <tbody id="protoTableBody"><tr><td class="text-center text-tx-3 p-8" colspan="10">加载中…</td></tr></tbody>
         </table>
       </div>
-      <div class="empty" id="protoEmpty" style="display:none;margin-top:12px">暂无原型，请上传 ZIP 文件</div>
+      <div class="p-12 text-center text-[.88rem] font-medium text-tx-3 mt-3" id="protoEmpty" style="display:none">暂无原型，请上传 ZIP 文件</div>
     </div>
   </main>
-  <footer style="border-top:1px solid var(--bd);padding:14px 30px;display:flex;align-items:center;gap:10px;font-size:.75rem;color:var(--tx-3);flex-wrap:wrap;font-weight:500">
+  <footer class="border-t border-bd px-[30px] py-[14px] flex items-center gap-[10px] text-[.75rem] text-tx-3 flex-wrap font-medium">
     <span>图片存储于</span>
-    <span style="color:#f97316;font-weight:700">Cloudflare R2</span>
-    <span style="color:var(--bd-2)">·</span>
+    <span class="text-[#f97316] font-bold">Cloudflare R2</span>
+    <span class="text-bd-2">·</span>
     <span>10 GB 免费存储额度</span>
-    <span style="color:var(--bd-2)">·</span>
+    <span class="text-bd-2">·</span>
     <span>无出口流量费用</span>
-    <span style="color:var(--bd-2)">·</span>
+    <span class="text-bd-2">·</span>
     <span>全球 CDN 加速</span>
   </footer>
   </div>
 </div>
 
 <!-- Proto Edit Modal -->
-<div class="modal-overlay" id="protoEditModal">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-header">
-      <h3 id="protoEditTitle">编辑原型</h3>
-      <button class="modal-close" id="protoEditClose">✕</button>
+<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="protoEditModal">
+  <div class="flex w-full max-w-[860px] max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:rounded-xl !max-w-[480px]">
+    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
+      <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]" id="protoEditTitle">编辑原型</h3>
+      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="protoEditClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body">
-      <div class="field"><label>名称</label><input type="text" id="peTitle" maxlength="100"></div>
-      <div class="field">
-        <label>访问密码（留空表示删除密码）</label>
-        <input type="text" id="pePassword" placeholder="最多 6 位字母数字" maxlength="6" autocomplete="off">
+    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-[18px] max-h-[calc(100dvh-140px)] md:max-h-none md:py-[18px] md:px-5">
+      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">名称</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="peTitle" maxlength="100"></div>
+      <div class="flex flex-col gap-[5px] mb-3.5">
+        <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">访问密码（留空表示删除密码）</label>
+        <input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="pePassword" placeholder="最多 6 位字母数字" maxlength="6" autocomplete="off">
       </div>
-      <div class="field" id="peExpiryField">
-        <label>密码有效期</label>
-        <select id="peExpiry">
+      <div class="flex flex-col gap-[5px] mb-3.5" id="peExpiryField">
+        <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">密码有效期</label>
+        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="peExpiry">
           <option value="14">14 天</option>
           <option value="30">30 天</option>
           <option value="90">90 天</option>
           <option value="0">永久</option>
         </select>
       </div>
-      <div class="field">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+      <div class="flex flex-col gap-[5px] mb-3.5">
+        <label class="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" id="pePrivate"> 设为私有（禁止公开访问）
         </label>
       </div>
-      <div class="err" id="peErr"></div>
+      <div class="mt-2 text-[.8rem] text-red" id="peErr"></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" id="protoEditCancel">取消</button>
-      <button class="btn btn-primary" id="protoEditSave">保存</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="protoEditCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="protoEditSave">保存</button>
     </div>
   </div>
 </div>
 
 <!-- Proto content update modal -->
-<div class="modal-overlay" id="protoUpdateModal">
-  <div class="modal" style="max-width:520px">
-    <div class="modal-header">
-      <h3>更新原型内容</h3>
-      <button class="modal-close" id="protoUpdateClose">✕</button>
+<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="protoUpdateModal">
+  <div class="flex w-full max-w-[860px] max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:rounded-xl !max-w-[520px]">
+    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
+      <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]">更新原型内容</h3>
+      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="protoUpdateClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body">
-      <p style="font-size:.82rem;color:var(--tx-3);margin-bottom:14px">上传新版本将替换现有内容，URL 保持不变，版本号自动递增。</p>
-      <div class="proto-upload-box" id="puDropZone" style="padding:20px">
-        <input type="file" id="puFileInput" accept=".zip,application/zip,application/x-zip-compressed" style="display:none">
-        <input type="file" id="puFolderInput" webkitdirectory multiple style="display:none">
+    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-[18px] max-h-[calc(100dvh-140px)] md:max-h-none md:py-[18px] md:px-5">
+      <p class="text-[.82rem] text-tx-3 mb-3.5">上传新版本将替换现有内容，URL 保持不变，版本号自动递增。</p>
+      <div class="proto-upload-box mb-3.5 cursor-pointer rounded-xl border-[1.5px] border-dashed border-bd-2 bg-white/[.012] text-center text-tx-3 transition hover:border-tx-2 hover:bg-white/[.03] hover:text-tx [&.over]:border-tx-2 [&.over]:bg-white/[.03] [&.over]:text-tx p-5" id="puDropZone">
+        <input class="hidden" type="file" id="puFileInput" accept=".zip,application/zip,application/x-zip-compressed">
+        <input class="hidden" type="file" id="puFolderInput" webkitdirectory multiple>
         <p id="puFileName">选择 ZIP 或文件夹</p>
-        <div style="display:flex;gap:8px;justify-content:center;margin-top:10px">
-          <button type="button" onclick="event.stopPropagation();document.getElementById('puFileInput').click()" style="padding:5px 12px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;color:#888;font-size:.78rem;cursor:pointer">选择 ZIP</button>
-          <button type="button" onclick="event.stopPropagation();document.getElementById('puFolderInput').click()" style="padding:5px 12px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;color:#888;font-size:.78rem;cursor:pointer">选择文件夹</button>
+        <div class="flex gap-2 justify-center mt-[10px]">
+          <button class="rounded-md border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-[5px] text-[.78rem] text-[#888] cursor-pointer" type="button" onclick="event.stopPropagation();document.getElementById('puFileInput').click()">选择 ZIP</button>
+          <button class="rounded-md border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-[5px] text-[.78rem] text-[#888] cursor-pointer" type="button" onclick="event.stopPropagation();document.getElementById('puFolderInput').click()">选择文件夹</button>
         </div>
       </div>
-      <div class="progress" id="puProgress"><div class="progress-bar" id="puProgressBar"></div></div>
-      <div class="progress-info" id="puProgressInfo"><span class="pct" id="puProgressPct">0%</span></div>
-      <div id="puStatusText" style="display:none;font-size:.78rem;color:var(--tx-2);margin-top:2px;margin-bottom:4px;min-height:1.2em"></div>
-      <div class="err" id="puErr"></div>
+      <div class="progress hidden my-[10px] h-[3px] overflow-hidden rounded-full bg-bg-3 [&.show]:block" id="puProgress"><div class="progress-bar h-full w-0 bg-accent transition-[width] duration-[.25s]" id="puProgressBar"></div></div>
+      <div class="progress-info hidden items-center gap-[10px] -mt-1 mb-1.5 text-[.76rem] text-tx-2 [&.show]:flex" id="puProgressInfo"><span class="min-w-[34px] font-mono font-bold text-tx" id="puProgressPct">0%</span></div>
+      <div class="hidden text-[.78rem] text-tx-2 mt-0.5 mb-1 min-h-[1.2em]" id="puStatusText"></div>
+      <div class="mt-2 text-[.8rem] text-red" id="puErr"></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" id="protoUpdateCancel">取消</button>
-      <button class="btn btn-primary" id="protoUpdateUpload" disabled>上传新版本</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="protoUpdateCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="protoUpdateUpload" disabled>上传新版本</button>
     </div>
   </div>
 </div>
 
 <!-- Change Password Modal -->
-<div class="modal-overlay" id="changePwdModal">
-  <div class="modal" style="max-width:380px">
-    <div class="modal-header">
-      <h3>修改密码</h3>
-      <button class="modal-close" id="changePwdClose">✕</button>
+<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="changePwdModal">
+  <div class="flex w-full max-w-[860px] max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:rounded-xl !max-w-[380px]">
+    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
+      <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]">修改密码</h3>
+      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="changePwdClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body">
-      <div class="field"><label>当前密码</label><input type="password" id="cpCurrent" placeholder="当前密码" autocomplete="current-password"></div>
-      <div class="field"><label>新密码</label><input type="password" id="cpNew" placeholder="至少 6 位" autocomplete="new-password"></div>
-      <div class="field"><label>确认新密码</label><input type="password" id="cpConfirm" placeholder="再次输入新密码" autocomplete="new-password"></div>
-      <div id="cpErr" style="color:#ef4444;font-size:.78rem;min-height:16px"></div>
+    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-[18px] max-h-[calc(100dvh-140px)] md:max-h-none md:py-[18px] md:px-5">
+      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">当前密码</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="password" id="cpCurrent" placeholder="当前密码" autocomplete="current-password"></div>
+      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">新密码</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="password" id="cpNew" placeholder="至少 6 位" autocomplete="new-password"></div>
+      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">确认新密码</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="password" id="cpConfirm" placeholder="再次输入新密码" autocomplete="new-password"></div>
+      <div class="text-[#ef4444] text-[.78rem] min-h-4" id="cpErr"></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" id="changePwdCancel">取消</button>
-      <button class="btn btn-primary" id="changePwdSave">确认修改</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="changePwdCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="changePwdSave">确认修改</button>
     </div>
   </div>
 </div>
 
 <!-- Proto Version History & Diff Modal (user) -->
-<div class="modal-overlay" id="userProtoVersionModal">
-  <div class="modal" style="max-width:860px;width:95vw;max-height:85vh;height:85vh;display:flex;flex-direction:column">
-    <div class="modal-header" style="flex-shrink:0">
-      <h3>版本历史 <span style="font-size:.72rem;color:var(--tx-3);font-weight:400" id="upvmTitle"></span></h3>
-      <button class="modal-close" id="upvmClose">✕</button>
+<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="userProtoVersionModal">
+  <div class="flex w-full max-w-[860px] max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:rounded-xl !max-w-[860px] !w-[95vw] !max-h-[85vh] !h-[85vh]">
+    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
+      <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]">版本历史 <span class="text-[.72rem] text-tx-3 font-normal" id="upvmTitle"></span></h3>
+      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="upvmClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div style="display:flex;flex:1;min-height:0">
-      <div style="width:200px;flex-shrink:0;border-right:1px solid #1a1a1a;overflow-y:auto;padding:12px 10px;display:flex;flex-direction:column;gap:6px" id="upvmVersionList"></div>
-      <div style="flex:1;display:flex;flex-direction:column;min-width:0">
-        <div style="padding:10px 14px;border-bottom:1px solid #1a1a1a;display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap">
-          <span style="font-size:.78rem;color:var(--tx-3)" id="upvmMode">点击版本号查看文件列表，勾选两个版本进行对比</span>
-          <div style="flex:1"></div>
-          <input type="text" id="upvmSearch" placeholder="搜索文件…" style="padding:4px 8px;background:#111;border:1px solid #222;border-radius:6px;color:#ccc;font-size:.78rem;width:160px;outline:none">
-          <button class="btn btn-ghost" id="upvmDiffBtn" style="padding:4px 10px;font-size:.78rem;display:none">对比选中版本</button>
+    <div class="flex flex-1 min-h-0">
+      <div class="w-[200px] shrink-0 border-r border-[#1a1a1a] overflow-y-auto p-[12px_10px] flex flex-col gap-1.5" id="upvmVersionList"></div>
+      <div class="flex-1 flex flex-col min-w-0">
+        <div class="px-[14px] py-[10px] border-b border-[#1a1a1a] flex items-center gap-2 shrink-0 flex-wrap">
+          <span class="text-[.78rem] text-tx-3" id="upvmMode">点击版本号查看文件列表，勾选两个版本进行对比</span>
+          <div class="flex-1"></div>
+          <input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)] !w-[160px] !px-2 !py-1 !bg-[#111] !border-[#222] !text-[#ccc] !text-[.78rem]" type="text" id="upvmSearch" placeholder="搜索文件…">
+          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx hidden !px-[10px] !py-1 !text-[.78rem]" id="upvmDiffBtn">对比选中版本</button>
         </div>
-        <div style="flex:1;overflow-y:auto;padding:14px 16px" id="upvmContent">
-          <div style="color:var(--tx-3);text-align:center;padding:60px 0;font-size:.85rem">← 点击左侧版本号查看文件列表</div>
+        <div class="flex-1 overflow-y-auto px-4 py-[14px]" id="upvmContent">
+          <div class="text-tx-3 text-center py-[60px] text-[.85rem]"><svg class="inline-block h-4 w-4 -mt-0.5 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="13" y1="8" x2="3" y2="8"/><polyline points="7,4 3,8 7,12"/></svg>点击左侧版本号查看文件列表</div>
         </div>
       </div>
     </div>
@@ -847,227 +464,245 @@ export function renderPage() {
 </div>
 
 <!-- Lightbox -->
-<div class="lightbox" id="lightbox">
-  <button class="lb-close" id="lbClose">✕</button>
-  <button class="lb-nav lb-nav-prev" id="lbPrev">‹</button>
-  <button class="lb-nav lb-nav-next" id="lbNext">›</button>
-  <div class="lb-inner">
-    <div class="lb-img-wrap"><img id="lbImg" src="" alt=""></div>
-    <div class="lb-meta">
-      <div class="lb-key" id="lbKey"></div>
-      <div class="lb-actions">
-        <button class="btn btn-ghost" id="lbCopy">复制链接</button>
-        <button class="btn btn-ghost" id="lbMd">复制 MD</button>
-        <button class="btn btn-ghost" id="lbBbcode">复制 BBCode</button>
-        <div style="flex:1"></div>
-        <button class="btn btn-danger" id="lbDelete" style="display:none">删除</button>
+<div class="lightbox fixed inset-0 z-[100] hidden items-center justify-center bg-overlay p-6 [&.show]:flex" id="lightbox">
+  <button class="absolute right-[14px] top-[14px] flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="lbClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+  <button class="absolute left-[14px] top-1/2 z-[101] flex h-[60px] w-10 -translate-y-1/2 items-center justify-center rounded-md border border-bd-2 bg-black/60 text-[1.6rem] text-tx transition hover:border-bd-focus hover:bg-bg-hover" id="lbPrev">‹</button>
+  <button class="absolute right-[14px] top-1/2 z-[101] flex h-[60px] w-10 -translate-y-1/2 items-center justify-center rounded-md border border-bd-2 bg-black/60 text-[1.6rem] text-tx transition hover:border-bd-focus hover:bg-bg-hover" id="lbNext">›</button>
+  <div class="w-full max-w-[760px] overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow">
+    <div class="flex min-h-[280px] max-h-[55vh] items-center justify-center bg-bg-2"><img class="max-h-[55vh] max-w-full object-contain" id="lbImg" src="" alt=""></div>
+    <div class="px-[18px] py-[14px]">
+      <div class="break-all font-mono text-[.85rem] text-tx" id="lbKey"></div>
+      <div class="mt-3 flex gap-[7px]">
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbCopy">复制链接</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbMd">复制 MD</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbBbcode">复制 BBCode</button>
+        <div class="flex-1"></div>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r" id="lbDelete" style="display:none">删除</button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- Page Editor Modal -->
-<div class="modal-overlay" id="pageModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3 id="pageModalTitle">新建页面</h3>
-      <button class="modal-close" id="pageModalClose">✕</button>
+<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="pageModal">
+  <div class="flex w-full max-w-[860px]! max-h-[100dvh] md:max-h-[96vh]! md:h-[min(92vh,900px)]! flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-w-[960px]! md:rounded-xl">
+    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
+      <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]" id="pageModalTitle">新建页面</h3>
+      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="pageModalClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body">
-      <div class="field"><label>标题</label><input type="text" id="pmTitle" placeholder="My Page"></div>
-      <div class="field">
-        <label>自定义后缀（URL）</label>
-        <input type="text" id="pmSlug" placeholder="my-blog-post  或  docs/intro">
-        <span style="font-size:.72rem;color:var(--tx-3);margin-top:4px">访问地址：<span id="pmSlugPreview" style="color:var(--accent)"></span></span>
+    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-hidden! p-[18px] max-h-[calc(100dvh-140px)] md:max-h-none md:py-[18px] md:px-5">
+      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">标题</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="pmTitle" placeholder="My Page"></div>
+      <div class="flex flex-col gap-[5px] mb-3.5">
+        <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">自定义后缀（URL）</label>
+        <input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="pmSlug" placeholder="my-blog-post  或  docs/intro">
+        <span class="text-[.72rem] text-tx-3 mt-1">访问地址：<span class="text-accent" id="pmSlugPreview"></span></span>
       </div>
-      <div class="field">
-        <label>类型</label>
-        <select id="pmType">
+      <div class="flex flex-col gap-[5px] mb-3.5">
+        <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">类型</label>
+        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="pmType">
           <option value="markdown">Markdown</option>
           <option value="html">HTML</option>
         </select>
       </div>
-      <div class="field">
-        <label>所属项目</label>
-        <select id="pmProject">
+      <div class="flex flex-col gap-[5px] mb-3.5">
+        <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属项目</label>
+        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="pmProject">
           <option value="">-- 无 --</option>
         </select>
       </div>
-      <div class="field">
-        <label>所属分组</label>
-        <select id="pmGroup">
+      <div class="flex flex-col gap-[5px] mb-3.5">
+        <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属分组</label>
+        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="pmGroup">
           <option value="">-- 无 --</option>
         </select>
       </div>
-      <div class="field">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+      <div class="flex flex-col gap-[5px] mb-3.5">
+        <label class="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" id="pmPublic" checked> 公开访问
         </label>
       </div>
-      <div class="field" id="pmPwdSection">
-        <label>访问密码 <span style="color:var(--tx-3);font-weight:400;text-transform:none;letter-spacing:0">（可选，6 位字母数字）</span></label>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input type="text" id="pmPassword" maxlength="6" autocomplete="off" spellcheck="false"
-            placeholder="留空则仅登录可见"
-            style="font-family:var(--mono);letter-spacing:.14em;font-size:.92rem;width:140px;padding:8px 10px;background:var(--bg-2);border:1px solid var(--bd-2);border-radius:var(--r-md);color:var(--tx);outline:none">
-          <button type="button" id="pmPwdGen" class="btn btn-ghost" style="white-space:nowrap;flex-shrink:0">生成</button>
+      <div class="flex flex-col gap-[5px] mb-3.5" id="pmPwdSection">
+        <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">访问密码 <span class="text-tx-3 font-normal normal-case tracking-normal">（可选，6 位字母数字）</span></label>
+        <div class="flex gap-2 items-center">
+          <input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)] !w-[140px] !px-[10px] !py-2 !border-bd-2 font-mono tracking-[.14em] !text-[.92rem]" type="text" id="pmPassword" maxlength="6" autocomplete="off" spellcheck="false"
+            placeholder="留空则仅登录可见">
+          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx whitespace-nowrap shrink-0" type="button" id="pmPwdGen">生成</button>
         </div>
-        <span style="font-size:.7rem;color:var(--tx-3);margin-top:4px;display:block">设置后访客可通过密码访问；复制地址时会附带密码</span>
+        <span class="text-[.7rem] text-tx-3 mt-1 block">设置后访客可通过密码访问；复制地址时会附带密码</span>
       </div>
-      <div class="field" style="flex:1;min-height:0;display:flex;flex-direction:column">
-        <label id="pmContentLabel">内容</label>
+      <div class="flex flex-col gap-[5px] mb-3.5 flex-1 min-h-0">
+        <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3" id="pmContentLabel">内容</label>
         <div id="pmVditor" style="display:none"></div>
-        <textarea id="pmContent" rows="14" placeholder="# Hello World\n\n写点什么…"></textarea>
+        <textarea class="w-full flex-1 min-h-[360px] resize-y rounded-md border border-bd-2 bg-bg-2 px-[14px] py-3 font-mono text-[.84rem] leading-[1.7] text-tx" id="pmContent" rows="14" placeholder="# Hello World\n\n写点什么…"></textarea>
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" id="pageModalCancel">取消</button>
-      <button class="btn btn-primary" id="pageModalSave">创建</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="pageModalCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="pageModalSave">创建</button>
     </div>
   </div>
 </div>
 
 <!-- Project Modal -->
-<div class="modal-overlay" id="projectModal">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-header">
-      <h3 id="projModalTitle">新建项目</h3>
-      <button class="modal-close" id="projModalClose">✕</button>
+<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="projectModal">
+  <div class="flex w-full max-w-[860px] max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:rounded-xl !max-w-[420px]">
+    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
+      <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]" id="projModalTitle">新建项目</h3>
+      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="projModalClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body">
-      <div class="field"><label>项目名称</label><input type="text" id="projName" placeholder="我的知识库" maxlength="64"></div>
+    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-[18px] max-h-[calc(100dvh-140px)] md:max-h-none md:py-[18px] md:px-5">
+      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">项目名称</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="projName" placeholder="我的知识库" maxlength="64"></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" id="projModalCancel">取消</button>
-      <button class="btn btn-primary" id="projModalSave">创建</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="projModalCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="projModalSave">创建</button>
     </div>
   </div>
 </div>
 
 <!-- Group Modal -->
-<div class="modal-overlay" id="groupModal">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-header">
-      <h3 id="grpModalTitle">新建分组</h3>
-      <button class="modal-close" id="grpModalClose">✕</button>
+<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="groupModal">
+  <div class="flex w-full max-w-[860px] max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:rounded-xl !max-w-[420px]">
+    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
+      <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]" id="grpModalTitle">新建分组</h3>
+      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="grpModalClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body">
-      <div class="field"><label>分组名称</label><input type="text" id="grpName" placeholder="入门指南" maxlength="64"></div>
-      <div class="field">
-        <label>所属项目 <span style="color:var(--tx-3);font-weight:400;text-transform:none">（可选，不选则为独立分组）</span></label>
-        <select id="grpProjectId"><option value="">-- 独立分组 --</option></select>
+    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-[18px] max-h-[calc(100dvh-140px)] md:max-h-none md:py-[18px] md:px-5">
+      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">分组名称</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="grpName" placeholder="入门指南" maxlength="64"></div>
+      <div class="flex flex-col gap-[5px] mb-3.5">
+        <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属项目 <span class="text-tx-3 font-normal normal-case">（可选，不选则为独立分组）</span></label>
+        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="grpProjectId"><option value="">-- 独立分组 --</option></select>
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" id="grpModalCancel">取消</button>
-      <button class="btn btn-primary" id="grpModalSave">创建</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="grpModalCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="grpModalSave">创建</button>
     </div>
   </div>
 </div>
 
 <!-- Page batch move modal -->
-<div class="modal-overlay" id="pageMoveModal">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-header">
-      <h3>批量移动</h3>
-      <button class="modal-close" id="pageMoveModalClose">✕</button>
+<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="pageMoveModal">
+  <div class="flex w-full max-w-[860px] max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:rounded-xl !max-w-[420px]">
+    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
+      <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]">批量移动</h3>
+      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="pageMoveModalClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body">
-      <div class="field">
-        <label>目标项目</label>
-        <select id="pageMoveProject"><option value="">-- 无 / 未分类 --</option></select>
+    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-[18px] max-h-[calc(100dvh-140px)] md:max-h-none md:py-[18px] md:px-5">
+      <div class="flex flex-col gap-[5px] mb-3.5">
+        <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">目标项目</label>
+        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="pageMoveProject"><option value="">-- 无 / 未分类 --</option></select>
       </div>
-      <div class="field">
-        <label>目标分组</label>
-        <select id="pageMoveGroup"><option value="">-- 无 --</option></select>
+      <div class="flex flex-col gap-[5px] mb-3.5">
+        <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">目标分组</label>
+        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="pageMoveGroup"><option value="">-- 无 --</option></select>
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" id="pageMoveModalCancel">取消</button>
-      <button class="btn btn-primary" id="pageMoveModalSave">移动</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="pageMoveModalCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="pageMoveModalSave">移动</button>
     </div>
   </div>
 </div>
 
 <!-- Import Markdown / HTML Modal -->
-<div class="modal-overlay" id="importModal">
-  <div class="modal" style="max-width:520px">
-    <div class="modal-header">
-      <h3>导入页面</h3>
-      <button class="modal-close" id="importModalClose">✕</button>
+<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="importModal">
+  <div class="flex w-full max-w-[860px] max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:rounded-xl !max-w-[520px]">
+    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
+      <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]">导入页面</h3>
+      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="importModalClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body">
-      <div class="drop-zone" id="importDropZone" style="padding:28px;text-align:center;border:2px dashed var(--bd-2);border-radius:10px;cursor:pointer;transition:var(--t)">
-        <input type="file" id="importFileInput" accept=".md,.markdown,.html,.htm,text/markdown,text/html" style="display:none">
-        <div style="font-size:1.4rem;margin-bottom:8px">📄</div>
-        <div style="color:var(--tx-2);font-size:.84rem">点击或拖拽 .md / .html 文件到此处</div>
-        <div style="color:var(--tx-3);font-size:.72rem;margin-top:4px">支持 YAML frontmatter (title, slug, projectId, groupId, type, isPublic)</div>
+    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-[18px] max-h-[calc(100dvh-140px)] md:max-h-none md:py-[18px] md:px-5">
+      <div class="text-tx-3 transition hover:text-tx p-7 text-center border-2 border-dashed border-bd-2 rounded-[10px] cursor-pointer" id="importDropZone">
+        <input class="hidden" type="file" id="importFileInput" accept=".md,.markdown,.html,.htm,text/markdown,text/html">
+        <div class="mb-2"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6V2z"/><path d="M15 2v5h5"/></svg></div>
+        <div class="text-tx-2 text-[.84rem]">点击或拖拽 .md / .html 文件到此处</div>
+        <div class="text-tx-3 text-[.72rem] mt-1">支持 YAML frontmatter (title, slug, projectId, groupId, type, isPublic)</div>
       </div>
       <div id="importPreview" style="display:none">
-        <div class="field"><label>标题</label><input type="text" id="importTitle"></div>
-        <div class="field"><label>Slug</label><input type="text" id="importSlug"></div>
-        <div class="field">
-          <label>类型</label>
-          <select id="importType"><option value="markdown">Markdown</option><option value="html">HTML</option></select>
+        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">标题</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="importTitle"></div>
+        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">Slug</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="importSlug"></div>
+        <div class="flex flex-col gap-[5px] mb-3.5">
+          <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">类型</label>
+          <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="importType"><option value="markdown">Markdown</option><option value="html">HTML</option></select>
         </div>
-        <div class="field">
-          <label>所属项目</label>
-          <select id="importProject"><option value="">-- 无 --</option></select>
+        <div class="flex flex-col gap-[5px] mb-3.5">
+          <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属项目</label>
+          <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="importProject"><option value="">-- 无 --</option></select>
         </div>
-        <div class="field">
-          <label>所属分组</label>
-          <select id="importGroup"><option value="">-- 无 --</option></select>
+        <div class="flex flex-col gap-[5px] mb-3.5">
+          <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属分组</label>
+          <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="importGroup"><option value="">-- 无 --</option></select>
         </div>
-        <div class="field">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <div class="flex flex-col gap-[5px] mb-3.5">
+          <label class="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" id="importPublic" checked> 公开访问
           </label>
         </div>
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" id="importModalCancel">取消</button>
-      <button class="btn btn-primary" id="importModalSave" disabled>导入</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="importModalCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="importModalSave" disabled>导入</button>
     </div>
   </div>
 </div>
 
 <!-- Tag Editor Modal -->
-<div class="modal-overlay" id="tagModal">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-header">
-      <h3>编辑标签 <span id="tagModalTarget" style="font-size:.72rem;color:var(--tx-3);font-weight:400"></span></h3>
-      <button class="modal-close" id="tagModalClose">✕</button>
+<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="tagModal">
+  <div class="flex w-full max-w-[860px] max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:rounded-xl !max-w-[420px]">
+    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
+      <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]">编辑标签 <span class="text-[.72rem] text-tx-3 font-normal" id="tagModalTarget"></span></h3>
+      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="tagModalClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body">
-      <div class="tag-edit-list" id="tagEditList"></div>
-      <div class="field">
-        <label>添加标签（回车确认，最多 10 个）</label>
-        <input type="text" id="tagInput" placeholder="输入标签后按回车" maxlength="24" autocomplete="off">
+    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-[18px] max-h-[calc(100dvh-140px)] md:max-h-none md:py-[18px] md:px-5">
+      <div class="flex flex-wrap gap-1.5 mb-[10px] min-h-[28px]" id="tagEditList"></div>
+      <div class="flex flex-col gap-[5px] mb-3.5">
+        <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">添加标签（回车确认，最多 10 个）</label>
+        <input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="tagInput" placeholder="输入标签后按回车" maxlength="24" autocomplete="off">
       </div>
-      <div class="err" id="tagErr"></div>
+      <div class="mt-2 text-[.8rem] text-red" id="tagErr"></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" id="tagModalCancel">取消</button>
-      <button class="btn btn-primary" id="tagModalSave">保存</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="tagModalCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="tagModalSave">保存</button>
     </div>
   </div>
 </div>
 
 <!-- Trash / Recycle Bin Modal -->
-<div class="modal-overlay" id="trashModal">
-  <div class="modal" style="max-width:760px;width:92vw;max-height:86vh;display:flex;flex-direction:column">
-    <div class="modal-header">
-      <h3>回收站 <span style="font-size:.72rem;color:var(--tx-3);font-weight:400">删除项保留 30 天，到期自动清除</span></h3>
-      <button class="modal-close" id="trashClose">✕</button>
+<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="trashModal">
+  <div class="flex w-full max-w-[860px] max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:rounded-xl !max-w-[760px] !w-[92vw] !max-h-[86vh]">
+    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
+      <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]">回收站 <span class="text-[.72rem] text-tx-3 font-normal">删除项保留 30 天，到期自动清除</span></h3>
+      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="trashClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body" id="trashBody" style="min-height:200px"><div class="empty">加载中…</div></div>
+    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-[18px] max-h-[calc(100dvh-140px)] md:max-h-none md:py-[18px] md:px-5 !min-h-[200px]" id="trashBody"><div class="p-12 text-center text-[.88rem] font-medium text-tx-3">加载中…</div></div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast fixed bottom-6 left-1/2 z-[300] -translate-x-1/2 translate-y-20 whitespace-nowrap rounded-md border border-bd-2 bg-bg-3 px-[18px] py-[9px] font-sans text-sm font-medium text-tx shadow-sm transition-transform duration-300 ease-[cubic-bezier(.34,1.56,.64,1)] [&.show]:translate-y-0 [&.t-success]:border-green-r [&.t-success]:bg-green-g [&.t-success]:text-green [&.t-warn]:border-amber-r [&.t-warn]:bg-amber-g [&.t-warn]:text-amber [&.t-error]:border-red-r [&.t-error]:bg-red-g [&.t-error]:text-red" id="toast"></div>
 
 <script>
+  // Tailwind utility-class constants for elements whose className is fully
+  // reassigned at runtime (className=, not classList.add) — declared once
+  // here so they survive every reassignment site.
+  const UD_PERM_BASE = 'rounded-xs px-[7px] py-0.5 text-[.66rem] font-semibold';
+  const UD_PERM_ON = UD_PERM_BASE + ' border border-green-r bg-green-g text-green';
+  const UD_PERM_OFF = UD_PERM_BASE + ' border border-bd bg-[rgba(255,255,255,.04)] text-tx-3';
+  const UD_PERM_ADMIN = UD_PERM_BASE + ' border border-brand-ring bg-brand-muted text-tx-a';
+  const UD_ACTION = 'flex w-full items-center gap-2 border-none bg-transparent px-[14px] py-[10px] text-left font-sans text-[.82rem] font-medium text-tx-2 transition hover:bg-bg-hover hover:text-tx';
+  const UD_ACTION_DANGER = 'flex w-full items-center gap-2 border-none bg-transparent px-[14px] py-[10px] text-left font-sans text-[.82rem] font-medium text-tx-2 transition hover:bg-red-g hover:text-red';
+  const BTN_PUBLIC = 'rounded-full border border-green-r bg-green-g px-[9px] py-[3px] text-xs font-semibold text-green cursor-pointer min-h-0';
+  const BTN_PRIVATE = 'rounded-full border border-bd bg-brand-muted px-[9px] py-[3px] text-xs font-semibold text-tx-3 cursor-pointer min-h-0';
+  const TOAST_BASE = 'fixed bottom-6 left-1/2 z-[300] -translate-x-1/2 translate-y-20 whitespace-nowrap rounded-md border border-bd-2 bg-bg-3 px-[18px] py-[9px] font-sans text-sm font-medium text-tx shadow-sm transition-transform duration-300 ease-[cubic-bezier(.34,1.56,.64,1)] [&.show]:translate-y-0 [&.t-success]:border-green-r [&.t-success]:bg-green-g [&.t-success]:text-green [&.t-warn]:border-amber-r [&.t-warn]:bg-amber-g [&.t-warn]:text-amber [&.t-error]:border-red-r [&.t-error]:bg-red-g [&.t-error]:text-red';
+  // Ghost/primary button pairs for buttons whose whole className is swapped at runtime
+  // (classList.toggle('btn-primary', ...) no longer has CSS behind it — swap the full string instead).
+  const BTN_GHOST_TOGGLE = 'inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx';
+  const BTN_PRIMARY_TOGGLE = 'inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none';
+  const ICON_EYE = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg>';
+  const ICON_EYE_OFF = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l12 12"/><path d="M6.6 3.4C7 3.3 7.5 3 8 3c4.5 0 7 5 7 5a13 13 0 0 1-2.3 3M4.2 4.2A13 13 0 0 0 1 8s2.5 5 7 5c1 0 1.9-.2 2.7-.6M6.2 6.2a2 2 0 0 0 2.6 2.6"/></svg>';
+
   function _fflate() {
     // Lazy-execute the inlined fflate bundle on first use (zip/unzip).
     // Inline <script> exec is CSP-allowed (unsafe-inline); avoids parsing 32KB on every page load.
@@ -1337,17 +972,17 @@ export function renderPage() {
 
   function buildPermBadges() {
     if (!perms) return '';
-    if (isAdminUser) return '<span class="ud-perm perm-admin">超级管理员</span>';
+    if (isAdminUser) return \`<span class="\${UD_PERM_ADMIN}">超级管理员</span>\`;
     const badges = [];
     badges.push(perms.canUpload
-      ? '<span class="ud-perm perm-on">允许上传</span>'
-      : '<span class="ud-perm perm-off">禁止上传</span>');
-    if (perms.canDelete) badges.push('<span class="ud-perm perm-on">允许删除</span>');
-    if (perms.canEdit)   badges.push('<span class="ud-perm perm-on">允许编辑</span>');
+      ? \`<span class="\${UD_PERM_ON}">允许上传</span>\`
+      : \`<span class="\${UD_PERM_OFF}">禁止上传</span>\`);
+    if (perms.canDelete) badges.push(\`<span class="\${UD_PERM_ON}">允许删除</span>\`);
+    if (perms.canEdit)   badges.push(\`<span class="\${UD_PERM_ON}">允许编辑</span>\`);
     const dl = perms.dailyUploadLimit  === -1 ? '∞' : perms.dailyUploadLimit;
     const tl = perms.maxTotalUploads   === -1 ? '∞' : perms.maxTotalUploads;
-    badges.push(\`<span class="ud-perm perm-off" style="color:var(--tx-3)">每日 \${dl}</span>\`);
-    badges.push(\`<span class="ud-perm perm-off" style="color:var(--tx-3)">总量 \${tl}</span>\`);
+    badges.push(\`<span class="\${UD_PERM_OFF}">每日 \${dl}</span>\`);
+    badges.push(\`<span class="\${UD_PERM_OFF}">总量 \${tl}</span>\`);
     return badges.join('');
   }
 
@@ -1355,19 +990,19 @@ export function renderPage() {
     const el = document.getElementById('userArea');
     if (token) {
       el.innerHTML = \`
-        <div class="user-chip" id="userChip">
-          <div class="dot-green"></div>
-          <span>\${username}</span>
-          <span class="caret">▾</span>
+        <div class="user-chip flex cursor-pointer select-none items-center gap-[9px] rounded-md border border-bd bg-bg-3 px-[10px] py-2 transition hover:border-bd-2 hover:bg-bg-4" id="userChip">
+          <div class="h-[7px] w-[7px] shrink-0 rounded-full bg-green shadow-[0_0_6px_rgba(52,211,153,.5)]"></div>
+          <span class="flex-1 min-w-0 truncate text-[.82rem] font-semibold text-tx">\${username}</span>
+          <span class="shrink-0 text-[.65rem] text-tx-3 transition-transform duration-150 [.user-chip.open_&]:rotate-180">▾</span>
         </div>
-        <div class="user-dropdown" id="userDropdown">
-          <div class="ud-header">
-            <div class="ud-name">\${username}</div>
-            <div class="ud-role">\${isAdminUser ? '管理员' : '普通用户'}</div>
+        <div class="user-dropdown absolute inset-x-2 bottom-[calc(100%+6px)] z-[100] hidden overflow-hidden rounded-lg border border-bd-2 bg-bg-3 shadow-sm [&.show]:block" id="userDropdown">
+          <div class="border-b border-bd px-[14px] pt-3 pb-[10px]">
+            <div class="text-[.88rem] font-bold text-tx">\${username}</div>
+            <div class="mt-0.5 text-[.7rem] font-medium text-tx-2">\${isAdminUser ? '管理员' : '普通用户'}</div>
           </div>
-          <div class="ud-perms">\${buildPermBadges()}</div>
-          \${!isAdminUser ? '<button class="ud-action" id="changePwdBtn">🔑 修改密码</button>' : ''}
-          <button class="ud-action danger" id="logoutBtn">退出登录</button>
+          <div class="flex flex-wrap gap-[5px] border-b border-bd px-[14px] py-[10px]">\${buildPermBadges()}</div>
+          \${!isAdminUser ? \`<button class="\${UD_ACTION}" id="changePwdBtn"><svg class="h-4 w-4 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="5" r="3.2"/><path d="M7.2 7.2 14 14M11 11l1.5-1.5M13 13l1.5-1.5"/></svg>修改密码</button>\` : ''}
+          <button class="\${UD_ACTION_DANGER}" id="logoutBtn">退出登录</button>
         </div>\`;
       document.getElementById('userChip').addEventListener('click', toggleUserMenu);
       document.getElementById('logoutBtn').addEventListener('click', logout);
@@ -1384,12 +1019,12 @@ export function renderPage() {
       }
       document.getElementById('uploadBtn').disabled = !(perms?.canUpload ?? true);
     } else {
-      el.innerHTML = \`<button class="btn-sm" id="loginTrigger">登录</button>\`;
+      el.innerHTML = \`<button class="w-full rounded-md border border-bd-2 bg-bg-3 px-3 py-[9px] text-center text-[.85rem] font-semibold text-tx transition hover:border-bd-focus hover:bg-bg-4" id="loginTrigger">登录</button>\`;
       document.getElementById('loginTrigger').addEventListener('click', openLoginOverlay);
       document.getElementById('uploadBtn').disabled = true;
     }
     document.getElementById('footerAdmin').innerHTML = isAdminUser
-      ? \`<a href="/admin" class="sidebar-link"><span class="nav-icon">⚙</span><span>Admin Panel</span><span style="margin-left:auto;color:var(--tx-3);font-size:.7rem">↗</span></a>\`
+      ? \`<a href="/admin" class="flex items-center gap-[9px] rounded-sm px-[10px] py-2 text-[.82rem] font-medium text-tx-2 no-underline transition hover:bg-bg-hover hover:text-tx max-md:min-h-[44px]"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M12.95 3.05l-1.41 1.41M4.46 11.54l-1.41 1.41"/></svg></span><span>Admin Panel</span><span class="ml-auto text-tx-3"><svg class="h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="12" y2="4"/><polyline points="5,4 12,4 12,11"/></svg></span></a>\`
       : '';
   }
 
@@ -1418,7 +1053,7 @@ export function renderPage() {
     updateUserArea();
     document.getElementById('mineGrid').innerHTML = '';
     document.getElementById('pagesTree').innerHTML = '';
-    document.getElementById('protoTableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--tx-3);padding:32px">加载中…</td></tr>';
+    document.getElementById('protoTableBody').innerHTML = '<tr><td class="text-center text-tx-3 p-8" colspan="10">加载中…</td></tr>';
     userProtos = [];
     toast('已退出登录');
   }
@@ -1440,7 +1075,7 @@ export function renderPage() {
   document.getElementById('lpToggle').addEventListener('click', () => {
     const inp = document.getElementById('lp');
     const tog = document.getElementById('lpToggle');
-    if (inp.type === 'password') { inp.type = 'text'; tog.textContent = '🙈'; } else { inp.type = 'password'; tog.textContent = '👁'; }
+    if (inp.type === 'password') { inp.type = 'text'; tog.innerHTML = ICON_EYE_OFF; } else { inp.type = 'password'; tog.innerHTML = ICON_EYE; }
   });
 
   document.getElementById('lu').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('lp').focus(); });
@@ -1459,7 +1094,8 @@ export function renderPage() {
     }
     btn.classList.add('loading'); btn.textContent = '登录中…'; err.textContent = '';
     try {
-      const res = await fetch('/auth/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username:u,password:p}) });
+      const remember = document.getElementById('loginRemember').checked;
+      const res = await fetch('/auth/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username:u,password:p,remember}) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       token = data.token; perms = data.permissions; username = data.username; isAdminUser = !!data.isAdmin;
@@ -1499,7 +1135,7 @@ export function renderPage() {
     t.addEventListener('click', (e) => {
       // Ripple effect
       const r = document.createElement('span');
-      r.className = 'nav-ripple';
+      r.className = 'absolute h-[60px] w-[60px] rounded-full bg-white/[.08] pointer-events-none [transform:translate(-50%,-50%)_scale(0)] animate-[navRipple_.55s_ease-out_forwards]';
       const rect = t.getBoundingClientRect();
       r.style.left = (e.clientX - rect.left) + 'px';
       r.style.top  = (e.clientY - rect.top)  + 'px';
@@ -1528,9 +1164,9 @@ export function renderPage() {
     const { items } = await res.json();
     document.getElementById('pubEmpty').style.display = items.length ? 'none' : 'block';
     document.getElementById('pubGrid').innerHTML = items.map(item =>
-      \`<div class="pub-item" onclick="openLb('\${item.key}', false, 'pub')">
-        <img src="\${location.origin}/\${item.key}" loading="lazy" onload="this.classList.add('loaded')">
-        <div class="pub-item-info">@\${item.owner || '—'}</div>
+      \`<div class="pub-item cursor-pointer overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-[0_1px_0_rgba(255,255,255,.02)_inset] transition hover:-translate-y-0.5 hover:border-bd-2 hover:shadow-[0_6px_24px_rgba(0,0,0,.5)]" onclick="openLb('\${item.key}', false, 'pub')">
+        <img class="block h-auto w-full aspect-square bg-bg-2 object-cover" src="\${location.origin}/\${item.key}" loading="lazy" onload="this.classList.add('loaded')">
+        <div class="pub-item-info px-3 py-2 font-mono text-[.74rem] font-medium text-tx-2">@\${item.owner || '—'}</div>
       </div>\`
     ).join('');
   }
@@ -1572,9 +1208,9 @@ export function renderPage() {
     if (hint) hint.textContent = '已选 ' + pendingFiles.length + ' 张，可继续添加';
     q.classList.add('show');
     q.innerHTML = pendingFiles.map((f, i) =>
-      '<div class="upload-q-item"><span class="uq-name" title="' + esc(f.name) + '">' + esc(f.name) +
-      '</span><span class="uq-size">' + fmtShortSize(f.size) +
-      '</span><button type="button" class="uq-rm" data-idx="' + i + '" title="移除">×</button></div>'
+      '<div class="flex items-center gap-2 rounded-sm border border-bd bg-bg-3 px-[10px] py-[7px] text-[.78rem] text-tx-2"><span class="uq-name min-w-0 flex-1 truncate" title="' + esc(f.name) + '">' + esc(f.name) +
+      '</span><span class="shrink-0 text-tx-3">' + fmtShortSize(f.size) +
+      '</span><button type="button" class="uq-rm border-none bg-transparent px-1 text-[.9rem] leading-none text-tx-3 cursor-pointer hover:text-red" data-idx="' + i + '" title="移除">×</button></div>'
     ).join('');
     q.querySelectorAll('.uq-rm').forEach(btn => {
       btn.addEventListener('click', e => {
@@ -1648,12 +1284,12 @@ export function renderPage() {
 
   function resultItemHtml(r) {
     if (r.ok) {
-      return \`<div class="result-item"><img src="\${r.url}" loading="lazy"><div class="info"><div class="name">\${esc(r.name)}</div><div class="url-row"><input class="url-input" value="\${r.url}" readonly onclick="this.select()"><button class="btn btn-ghost" onclick="cp('\${r.url}',this)" style="padding:3px 8px">复制</button><button class="btn btn-ghost" onclick="cp('![](\${r.url})',this)" style="padding:3px 8px">MD</button><button class="btn btn-ghost" onclick="cp('[img]\${r.url}[/img]',this)" style="padding:3px 8px">BB</button></div></div></div>\`;
+      return \`<div class="result-item flex items-center gap-3 rounded-lg border border-bd bg-bg-3 px-[14px] py-[10px]"><img class="h-11 w-11 rounded-xs border border-bd object-cover" src="\${r.url}" loading="lazy"><div class="min-w-0 flex-1"><div class="text-[.8rem] font-medium text-tx">\${esc(r.name)}</div><div class="mt-1 flex gap-[5px]"><input class="min-w-0 flex-1 rounded-xs border border-bd bg-bg-2 px-2 py-[3px] font-mono text-xs text-tx outline-none" value="\${r.url}" readonly onclick="this.select()"><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="cp('\${r.url}',this)">复制</button><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="cp('![](\${r.url})',this)">MD</button><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="cp('[img]\${r.url}[/img]',this)">BB</button></div></div></div>\`;
     }
     const fid = 'f' + (++uploadFidSeq);
     if (r.file) uploadFailMap.set(fid, r.file);
-    const retryBtn = r.file ? \`<button class="btn btn-ghost" onclick="retryUpload('\${fid}', this)" style="padding:3px 10px;flex-shrink:0">重试</button>\` : '';
-    return \`<div class="result-item" data-fid="\${fid}"><div class="info"><div class="name" style="color:#ef4444">❌ \${esc(r.name)}: \${esc(r.error)}</div></div>\${retryBtn}</div>\`;
+    const retryBtn = r.file ? \`<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-[10px] !py-[3px] shrink-0" onclick="retryUpload('\${fid}', this)">重试</button>\` : '';
+    return \`<div class="result-item flex items-center gap-3 rounded-lg border border-bd bg-bg-3 px-[14px] py-[10px]" data-fid="\${fid}"><div class="min-w-0 flex-1"><div class="flex items-center gap-1.5 text-[.8rem] font-medium text-red"><svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>\${esc(r.name)}: \${esc(r.error)}</div></div>\${retryBtn}</div>\`;
   }
   window.retryUpload = async function (fid, btn) {
     const file = uploadFailMap.get(fid); if (!file) return;
@@ -1754,9 +1390,10 @@ export function renderPage() {
     [...mineTagFilter].forEach(t => { if (!tags.includes(t)) mineTagFilter.delete(t); });
     if (!tags.length) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
     bar.style.display = 'flex';
-    bar.innerHTML = '<span class="tag-filter-label">标签</span>' +
-      tags.map(t => \`<button class="tag-filter\${mineTagFilter.has(t)?' active':''}" onclick="toggleTagFilter('\${esc(t)}')">\${esc(t)}</button>\`).join('') +
-      (mineTagFilter.size ? '<button class="tag-filter" onclick="clearTagFilter()" style="color:var(--red)">清除</button>' : '');
+    const TAG_FILTER_CLS = 'tag-filter rounded-xl border border-bd bg-bg-3 px-[11px] py-[3px] font-sans text-[.72rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:text-tx [&.active]:border-bd-focus [&.active]:bg-white/10 [&.active]:text-tx';
+    bar.innerHTML = '<span class="mr-0.5 text-[.68rem] font-bold uppercase tracking-[.1em] text-tx-3">标签</span>' +
+      tags.map(t => \`<button class="\${TAG_FILTER_CLS}\${mineTagFilter.has(t)?' active':''}" onclick="toggleTagFilter('\${esc(t)}')">\${esc(t)}</button>\`).join('') +
+      (mineTagFilter.size ? \`<button class="\${TAG_FILTER_CLS} !text-red" onclick="clearTagFilter()">清除</button>\` : '');
   }
   window.toggleTagFilter = function(tag) {
     if (mineTagFilter.has(tag)) mineTagFilter.delete(tag); else mineTagFilter.add(tag);
@@ -1796,21 +1433,21 @@ export function renderPage() {
       const sel = mineSelected.has(item.key);
       const clickAttr = mineSelectMode ? \`onclick="toggleSel('\${item.key}')"\` : \`onclick="openLb('\${item.key}', true, 'mine')"\`;
       const tags = item.tags || [];
-      const tagsHtml = tags.length ? \`<div class="gitem-tags">\${tags.map(t => \`<span class="tag-chip">\${esc(t)}</span>\`).join('')}</div>\` : '';
-      return \`<div class="gitem\${sel?' selected':''}" data-key="\${item.key}">
-        <input type="checkbox" class="gitem-sel" \${sel?'checked':''} onchange="toggleSel('\${item.key}')">
-        <img src="\${url}" loading="lazy" onload="this.classList.add('loaded')" \${clickAttr}>
-        <div class="gitem-info">
-          <div class="gitem-key">\${item.key}</div>
+      const tagsHtml = tags.length ? \`<div class="mt-1.5 flex flex-wrap gap-1">\${tags.map(t => \`<span class="whitespace-nowrap rounded-lg border border-bd bg-white/5 px-[7px] py-px text-[.64rem] font-semibold text-tx-2">\${esc(t)}</span>\`).join('')}</div>\` : '';
+      return \`<div class="gitem\${sel?' selected':''} relative overflow-hidden rounded-lg border border-transparent bg-bg-3 shadow-[0_0_0_1px_var(--color-bd)] transition hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_var(--color-bd-2),0_12px_32px_rgba(0,0,0,.35)] [&.selected]:border-tx-2 [&.selected]:shadow-[0_0_0_2px_var(--color-tx-2)_inset]" data-key="\${item.key}">
+        <input type="checkbox" class="gitem-sel absolute left-2 top-2 z-[3] hidden h-5 w-5 cursor-pointer accent-accent group-[.selecting]/grid:block" \${sel?'checked':''} onchange="toggleSel('\${item.key}')">
+        <img class="block h-auto w-full aspect-square cursor-pointer bg-bg-2 object-cover" src="\${url}" loading="lazy" onload="this.classList.add('loaded')" \${clickAttr}>
+        <div class="px-[11px] py-[9px]">
+          <div class="truncate font-mono text-[.72rem] font-medium text-tx-2">\${item.key}</div>
           \${tagsHtml}
-          <div class="gitem-row">
-            <button class="\${item.isPublic?'btn-public':'btn-private'}" id="vis-\${item.key}" onclick="toggleVis('\${item.key}', this)">\${item.isPublic?'公开':'私密'}</button>
-            <span style="font-size:.68rem;color:var(--tx-3)">\${fmtSize(item.size)}</span>
+          <div class="mt-[5px] flex items-center justify-between">
+            <button class="\${item.isPublic?BTN_PUBLIC:BTN_PRIVATE}" id="vis-\${item.key}" onclick="toggleVis('\${item.key}', this)">\${item.isPublic?'公开':'私密'}</button>
+            <span class="text-[.68rem] text-tx-3">\${fmtSize(item.size)}</span>
           </div>
-          <div class="gitem-actions">
-            <button class="btn btn-ghost" onclick="cp('\${url}',this)" style="padding:3px 8px">复制</button>
-            <button class="btn btn-ghost" onclick="openTagEditor('\${item.key}')" style="padding:3px 8px">标签</button>
-            \${perms?.canDelete?\`<button class="btn btn-danger" onclick="delMine('\${item.key}')" style="padding:3px 8px">删除</button>\`:''}
+          <div class="mt-1.5 flex gap-1">
+            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="cp('\${url}',this)">复制</button>
+            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="openTagEditor('\${item.key}')">标签</button>
+            \${perms?.canDelete?\`<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-[3px]" onclick="delMine('\${item.key}')">删除</button>\`:''}
           </div>
         </div>
       </div>\`;
@@ -1844,7 +1481,7 @@ export function renderPage() {
     if (!mineSelectMode) mineSelected.clear();
     document.getElementById('mineBatchBar').style.display = mineSelectMode ? 'flex' : 'none';
     document.getElementById('mineSelectToggle').textContent = mineSelectMode ? '退出选择' : '选择';
-    document.getElementById('mineSelectToggle').classList.toggle('btn-primary', mineSelectMode);
+    document.getElementById('mineSelectToggle').className = mineSelectMode ? BTN_PRIMARY_TOGGLE : BTN_GHOST_TOGGLE;
     renderMineGallery();
   });
   document.getElementById('mineSelectAll').addEventListener('change', e => {
@@ -1909,7 +1546,7 @@ export function renderPage() {
     const { isPublic } = await res.json();
     const idx = mineItems.findIndex(i => i.key === key);
     if (idx !== -1) mineItems[idx].isPublic = isPublic;
-    btn.className = isPublic ? 'btn-public' : 'btn-private';
+    btn.className = isPublic ? BTN_PUBLIC : BTN_PRIVATE;
     btn.textContent = isPublic ? '公开' : '私密';
     toast(isPublic ? '已设为公开' : '已设为私密');
     loadPublicGallery(); // refresh public gallery
@@ -1933,13 +1570,13 @@ export function renderPage() {
   }
   async function loadTrash() {
     const body = document.getElementById('trashBody');
-    body.innerHTML = '<div class="empty">加载中…</div>';
+    body.innerHTML = '<div class="p-12 text-center text-[.88rem] font-medium text-tx-3">加载中…</div>';
     try {
       const res = await fetch('/api/trash', { headers: { Authorization: 'Bearer ' + token } });
-      if (!res.ok) { body.innerHTML = '<div class="empty">加载失败</div>'; return; }
+      if (!res.ok) { body.innerHTML = '<div class="p-12 text-center text-[.88rem] font-medium text-tx-3">加载失败</div>'; return; }
       trashData = await res.json();
       renderTrash();
-    } catch { body.innerHTML = '<div class="empty">加载失败</div>'; }
+    } catch { body.innerHTML = '<div class="p-12 text-center text-[.88rem] font-medium text-tx-3">加载失败</div>'; }
   }
   function trashDaysLeft(deletedAt, days) {
     const left = Math.ceil((deletedAt + days * 86400000 - Date.now()) / 86400000);
@@ -1948,26 +1585,26 @@ export function renderPage() {
   function renderTrash() {
     const body = document.getElementById('trashBody');
     const { images = [], protos = [], retentionDays = 30 } = trashData || {};
-    if (!images.length && !protos.length) { body.innerHTML = '<div class="empty">回收站为空</div>'; return; }
+    if (!images.length && !protos.length) { body.innerHTML = '<div class="p-12 text-center text-[.88rem] font-medium text-tx-3">回收站为空</div>'; return; }
     let html = '';
     if (images.length) {
-      html += '<div style="font-size:.72rem;font-weight:700;color:var(--tx-2);text-transform:uppercase;letter-spacing:.1em;margin:4px 0 10px">图片 (' + images.length + ')</div>';
-      html += '<div class="gallery-grid" style="margin-bottom:18px">' + images.map(it => {
+      html += '<div class="text-[.72rem] font-bold text-tx-2 uppercase tracking-[.1em] mt-1 mb-[10px]">图片 (' + images.length + ')</div>';
+      html += '<div class="grid grid-cols-2 gap-3 md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] md:gap-[18px] mb-[18px]">' + images.map(it => {
         const url = location.origin + '/' + it.key;
-        return '<div class="gitem"><img src="' + url + '" loading="lazy" onload="this.classList.add(\\'loaded\\')">' +
-          '<div class="gitem-info"><div class="gitem-key">' + esc(it.key) + '</div>' +
-          '<div style="font-size:.66rem;color:var(--tx-3);margin-top:3px">' + trashDaysLeft(it.deletedAt, retentionDays) + '</div>' +
-          '<div class="gitem-actions"><button class="btn btn-ghost" onclick="restoreTrash(\\'image\\',\\'' + encodeURIComponent(it.key) + '\\')" style="padding:3px 8px">恢复</button>' +
-          '<button class="btn btn-danger" onclick="purgeTrash(\\'image\\',\\'' + encodeURIComponent(it.key) + '\\')" style="padding:3px 8px">彻底删除</button></div></div></div>';
+        return '<div class="gitem relative overflow-hidden rounded-lg border border-transparent bg-bg-3 shadow-[0_0_0_1px_var(--color-bd)] transition hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_var(--color-bd-2),0_12px_32px_rgba(0,0,0,.35)]"><img class="block h-auto w-full aspect-square cursor-pointer bg-bg-2 object-cover" src="' + url + '" loading="lazy" onload="this.classList.add(\\'loaded\\')">' +
+          '<div class="px-[11px] py-[9px]"><div class="truncate font-mono text-[.72rem] font-medium text-tx-2">' + esc(it.key) + '</div>' +
+          '<div class="text-[.66rem] text-tx-3 mt-[3px]">' + trashDaysLeft(it.deletedAt, retentionDays) + '</div>' +
+          '<div class="mt-1.5 flex gap-1"><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="restoreTrash(\\'image\\',\\'' + encodeURIComponent(it.key) + '\\')">恢复</button>' +
+          '<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-[3px]" onclick="purgeTrash(\\'image\\',\\'' + encodeURIComponent(it.key) + '\\')">彻底删除</button></div></div></div>';
       }).join('') + '</div>';
     }
     if (protos.length) {
-      html += '<div style="font-size:.72rem;font-weight:700;color:var(--tx-2);text-transform:uppercase;letter-spacing:.1em;margin:4px 0 10px">原型 (' + protos.length + ')</div>';
-      html += '<div class="pages-list">' + protos.map(p =>
-        '<div class="page-item"><div class="page-item-info"><div class="page-title">' + esc(p.title || p.protoId) + '</div>' +
-        '<div class="page-meta">' + (p.fileCount ?? '—') + ' 文件 · ' + fmtSize(p.totalSize || 0) + ' · ' + trashDaysLeft(p.deletedAt, retentionDays) + '</div></div>' +
-        '<button class="btn btn-ghost" onclick="restoreTrash(\\'proto\\',\\'' + esc(p.protoId) + '\\')">恢复</button>' +
-        '<button class="btn btn-danger" onclick="purgeTrash(\\'proto\\',\\'' + esc(p.protoId) + '\\')">彻底删除</button></div>'
+      html += '<div class="text-[.72rem] font-bold text-tx-2 uppercase tracking-[.1em] mt-1 mb-[10px]">原型 (' + protos.length + ')</div>';
+      html += '<div class="flex flex-col gap-2">' + protos.map(p =>
+        '<div class="flex items-center gap-[14px] rounded-lg border border-bd bg-bg-3 px-4 py-[14px] transition hover:border-bd-2 hover:bg-bg-4"><div class="min-w-0 flex-1"><div class="text-[.92rem] font-semibold text-tx">' + esc(p.title || p.protoId) + '</div>' +
+        '<div class="mt-[3px] text-[.72rem] font-medium text-tx-3">' + (p.fileCount ?? '—') + ' 文件 · ' + fmtSize(p.totalSize || 0) + ' · ' + trashDaysLeft(p.deletedAt, retentionDays) + '</div></div>' +
+        '<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="restoreTrash(\\'proto\\',\\'' + esc(p.protoId) + '\\')">恢复</button>' +
+        '<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r" onclick="purgeTrash(\\'proto\\',\\'' + esc(p.protoId) + '\\')">彻底删除</button></div>'
       ).join('') + '</div>';
     }
     body.innerHTML = html;
@@ -1997,8 +1634,8 @@ export function renderPage() {
   let tagDraft = [];
   function renderTagEditList() {
     document.getElementById('tagEditList').innerHTML = tagDraft.length
-      ? tagDraft.map((t, i) => \`<span class="tag-edit-item">\${esc(t)}<button onclick="removeTagDraft(\${i})" title="移除">×</button></span>\`).join('')
-      : '<span style="color:var(--tx-3);font-size:.76rem">暂无标签</span>';
+      ? tagDraft.map((t, i) => \`<span class="inline-flex items-center gap-[5px] rounded-xl border border-bd-2 bg-white/[.06] py-[3px] pr-1.5 pl-[10px] text-[.76rem] font-semibold text-tx">\${esc(t)}<button class="border-none bg-transparent p-0 text-[.9rem] leading-none text-tx-3 cursor-pointer hover:text-red" onclick="removeTagDraft(\${i})" title="移除">×</button></span>\`).join('')
+      : '<span class="text-tx-3 text-[.76rem]">暂无标签</span>';
   }
   window.removeTagDraft = function(i) { tagDraft.splice(i, 1); renderTagEditList(); };
   function addTagDraft(raw) {
@@ -2105,37 +1742,37 @@ export function renderPage() {
       const projGroups = groups.filter(g => g.projectId === proj.id);
       const projPages = pages.filter(p => p.projectId === proj.id && !p.groupId).sort((a,b) => (a.sort??0) - (b.sort??0));
       const total = pages.filter(p => p.projectId === proj.id).length;
-      html += \`<div class="page-project" data-drag-type="project" data-drag-id="\${esc(proj.id)}">
-        <div class="page-project-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.expand-icon').classList.toggle('open')">
-          <span class="expand-icon open">▶</span>
-          <span class="project-name">\${esc(proj.name)}</span>
-          <span class="count-badge">\${total}</span>
-          <span class="proj-actions">
-            <button class="proj-act-btn" onclick="event.stopPropagation();editProject('\${esc(proj.id)}')" title="编辑项目">编辑</button>
-            <button class="proj-act-btn" onclick="event.stopPropagation();createGroupInProject('\${esc(proj.id)}')" title="新建分组">+ 分组</button>
-            <button class="proj-act-btn" onclick="event.stopPropagation();deleteProject('\${esc(proj.id)}')" title="删除项目" style="color:var(--red)">删除</button>
+      html += \`<div class="page-project overflow-hidden rounded-lg border border-bd bg-bg-3 [&.drag-over-proj]:border-accent" data-drag-type="project" data-drag-id="\${esc(proj.id)}">
+        <div class="page-project-header flex cursor-pointer select-none items-center gap-[10px] px-4 py-[14px] hover:bg-bg-4" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.expand-icon').classList.toggle('open')">
+          <span class="expand-icon open w-[14px] shrink-0 text-center text-[.6rem] text-tx-3 transition-transform duration-150 [&.open]:rotate-90">▶</span>
+          <span class="project-name flex-1 text-[.88rem] font-semibold text-tx">\${esc(proj.name)}</span>
+          <span class="count-badge rounded-xs bg-bg-5 px-[7px] py-0.5 text-[.66rem] font-semibold text-tx-3">\${total}</span>
+          <span class="proj-actions ml-1.5 flex gap-[3px]">
+            <button class="proj-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();editProject('\${esc(proj.id)}')" title="编辑项目">编辑</button>
+            <button class="proj-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();createGroupInProject('\${esc(proj.id)}')" title="新建分组">+ 分组</button>
+            <button class="proj-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx !text-red" onclick="event.stopPropagation();deleteProject('\${esc(proj.id)}')" title="删除项目">删除</button>
           </span>
         </div>
-        <div class="page-project-body">\`;
+        <div class="page-project-body border-t border-bd">\`;
       // groups
       for (const grp of projGroups) {
         const grpPages = pages.filter(p => p.groupId === grp.id).sort((a,b) => (a.sort??0) - (b.sort??0));
-        html += \`<div class="page-group" data-drag-type="group" data-drag-id="\${esc(grp.id)}" data-project-id="\${esc(proj.id)}">
-          <div class="page-group-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.expand-icon').classList.toggle('open')">
-            <span class="expand-icon open" style="font-size:.55rem">▶</span>
-            <span class="group-name">\${esc(grp.name)}</span>
-            <span class="count-badge">\${grpPages.length}</span>
-            <span class="grp-actions">
-              <button class="grp-act-btn" onclick="event.stopPropagation();editGroup('\${esc(grp.id)}')" title="编辑分组">编辑</button>
-              <button class="grp-act-btn" onclick="event.stopPropagation();deleteGroup('\${esc(grp.id)}')" title="删除分组" style="color:var(--red)">删除</button>
+        html += \`<div class="page-group ml-[18px] border-l-2 border-bd" data-drag-type="group" data-drag-id="\${esc(grp.id)}" data-project-id="\${esc(proj.id)}">
+          <div class="page-group-header flex cursor-pointer select-none items-center gap-[7px] px-3 py-2 [&.drag-over-grp]:bg-bg-5 hover:bg-bg-4" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.expand-icon').classList.toggle('open')">
+            <span class="expand-icon open w-[14px] shrink-0 text-center !text-[.55rem] text-tx-3 transition-transform duration-150 [&.open]:rotate-90">▶</span>
+            <span class="group-name flex-1 text-[.88rem] font-semibold text-tx">\${esc(grp.name)}</span>
+            <span class="count-badge rounded-xs bg-bg-5 px-[7px] py-0.5 text-[.66rem] font-semibold text-tx-3">\${grpPages.length}</span>
+            <span class="grp-actions ml-1.5 flex gap-[3px]">
+              <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();editGroup('\${esc(grp.id)}')" title="编辑分组">编辑</button>
+              <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx !text-red" onclick="event.stopPropagation();deleteGroup('\${esc(grp.id)}')" title="删除分组">删除</button>
             </span>
           </div>
-          <div class="page-group-body page-tree-docs page-drop-zone" data-drop-scope="group" data-project-id="\${esc(proj.id)}" data-group-id="\${esc(grp.id)}">\`;
+          <div class="page-group-body page-tree-docs page-drop-zone ml-[18px] border-l-2 border-bd [&.drag-over-zone]:outline [&.drag-over-zone]:outline-1 [&.drag-over-zone]:outline-dashed [&.drag-over-zone]:outline-accent [&.drag-over-zone]:-outline-offset-2 [&.drag-over-zone]:bg-accent-muted [&.drag-over-zone]:min-h-[28px]" data-drop-scope="group" data-project-id="\${esc(proj.id)}" data-group-id="\${esc(grp.id)}">\`;
         for (const p of grpPages) html += renderDocItem(p);
         html += \`</div></div>\`;
       }
       // pages directly under project (no group)
-      html += \`<div class="page-project-pages page-drop-zone" data-drop-scope="project" data-project-id="\${esc(proj.id)}" data-group-id="">\`;
+      html += \`<div class="page-project-pages page-drop-zone [&.drag-over-zone]:outline [&.drag-over-zone]:outline-1 [&.drag-over-zone]:outline-dashed [&.drag-over-zone]:outline-accent [&.drag-over-zone]:-outline-offset-2 [&.drag-over-zone]:bg-accent-muted [&.drag-over-zone]:min-h-[28px]" data-drop-scope="project" data-project-id="\${esc(proj.id)}" data-group-id="">\`;
       for (const p of projPages) html += renderDocItem(p);
       html += \`</div></div></div>\`;
     }
@@ -2143,20 +1780,20 @@ export function renderPage() {
     // independent groups (no project)
     if (projFilter === 'all' || projFilter === '_none_') {
       if (independentGroups.length) {
-        html += \`<div class="pages-independent"><div class="indep-label">独立分组</div>\`;
+        html += \`<div class="pages-independent mt-2"><div class="indep-label mt-[10px] mb-1.5 ml-0.5 text-[.72rem] font-bold uppercase tracking-[.06em] text-tx-3">独立分组</div>\`;
         for (const grp of independentGroups) {
           const grpPages = pages.filter(p => p.groupId === grp.id).sort((a,b) => (a.sort??0) - (b.sort??0));
-          html += \`<div class="page-group" data-drag-type="group" data-drag-id="\${esc(grp.id)}" data-project-id="">
-            <div class="page-group-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.expand-icon').classList.toggle('open')">
-              <span class="expand-icon open" style="font-size:.55rem">▶</span>
-              <span class="group-name">\${esc(grp.name)}</span>
-              <span class="count-badge">\${grpPages.length}</span>
-              <span class="grp-actions">
-                <button class="grp-act-btn" onclick="event.stopPropagation();editGroup('\${esc(grp.id)}')" title="编辑分组">编辑</button>
-                <button class="grp-act-btn" onclick="event.stopPropagation();deleteGroup('\${esc(grp.id)}')" title="删除分组" style="color:var(--red)">删除</button>
+          html += \`<div class="page-group ml-[18px] border-l-2 border-bd" data-drag-type="group" data-drag-id="\${esc(grp.id)}" data-project-id="">
+            <div class="page-group-header flex cursor-pointer select-none items-center gap-[7px] px-3 py-2 [&.drag-over-grp]:bg-bg-5 hover:bg-bg-4" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.expand-icon').classList.toggle('open')">
+              <span class="expand-icon open w-[14px] shrink-0 text-center !text-[.55rem] text-tx-3 transition-transform duration-150 [&.open]:rotate-90">▶</span>
+              <span class="group-name flex-1 text-[.88rem] font-semibold text-tx">\${esc(grp.name)}</span>
+              <span class="count-badge rounded-xs bg-bg-5 px-[7px] py-0.5 text-[.66rem] font-semibold text-tx-3">\${grpPages.length}</span>
+              <span class="grp-actions ml-1.5 flex gap-[3px]">
+                <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();editGroup('\${esc(grp.id)}')" title="编辑分组">编辑</button>
+                <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx !text-red" onclick="event.stopPropagation();deleteGroup('\${esc(grp.id)}')" title="删除分组">删除</button>
               </span>
             </div>
-            <div class="page-group-body page-tree-docs page-drop-zone" data-drop-scope="group" data-project-id="" data-group-id="\${esc(grp.id)}">\`;
+            <div class="page-group-body page-tree-docs page-drop-zone ml-[18px] border-l-2 border-bd [&.drag-over-zone]:outline [&.drag-over-zone]:outline-1 [&.drag-over-zone]:outline-dashed [&.drag-over-zone]:outline-accent [&.drag-over-zone]:-outline-offset-2 [&.drag-over-zone]:bg-accent-muted [&.drag-over-zone]:min-h-[28px]" data-drop-scope="group" data-project-id="" data-group-id="\${esc(grp.id)}">\`;
           for (const p of grpPages) html += renderDocItem(p);
           html += \`</div></div>\`;
         }
@@ -2166,7 +1803,7 @@ export function renderPage() {
       // uncategorized pages (no project, no group)
       const uncat = pages.filter(p => !p.projectId && !p.groupId).sort((a,b) => (a.sort??0) - (b.sort??0));
       if (uncat.length || projFilter === '_none_') {
-        html += \`<div class="pages-uncategorized page-drop-zone" data-drop-scope="uncat" data-project-id="" data-group-id=""><div class="uncat-label">未分类</div>\`;
+        html += \`<div class="pages-uncategorized page-drop-zone border-t border-dashed border-bd-2 pt-[10px] mt-1.5 [&.drag-over-zone]:outline [&.drag-over-zone]:outline-1 [&.drag-over-zone]:outline-dashed [&.drag-over-zone]:outline-accent [&.drag-over-zone]:-outline-offset-2 [&.drag-over-zone]:bg-accent-muted [&.drag-over-zone]:min-h-[28px]" data-drop-scope="uncat" data-project-id="" data-group-id=""><div class="uncat-label mt-[10px] mb-1.5 ml-0.5 text-[.72rem] font-bold uppercase tracking-[.06em] text-tx-3">未分类</div>\`;
         for (const p of uncat) html += renderDocItem(p);
         html += \`</div>\`;
       }
@@ -2181,10 +1818,10 @@ export function renderPage() {
   function renderDocItem(p) {
     const sel = pageSelected.has(p.slug);
     const check = pageSelectMode
-      ? \`<input type="checkbox" class="page-check" data-slug="\${esc(p.slug)}" \${sel?'checked':''} onclick="event.stopPropagation();togglePageSel('\${esc(p.slug)}')">\`
+      ? \`<input type="checkbox" class="page-check h-[15px] w-[15px] shrink-0 cursor-pointer accent-accent" data-slug="\${esc(p.slug)}" \${sel?'checked':''} onclick="event.stopPropagation();togglePageSel('\${esc(p.slug)}')">\`
       : '';
     const drag = pageSelectMode ? 'false' : 'true';
-    const cls = 'page-tree-item' + (pageSelectMode ? ' selecting' : '') + (sel ? ' selected' : '');
+    const cls = 'page-tree-item relative flex items-center gap-[10px] my-0.5 rounded-md border border-transparent bg-bg-2 px-[14px] py-[10px] transition hover:border-bd hover:bg-bg-3 [&.dragging]:opacity-30 [&.dragging]:border-dashed [&.dragging]:border-bd-2 [&.drag-over-top]:border-t-2 [&.drag-over-top]:border-t-accent [&.drag-over-top]:-mt-0.5 [&.drag-over-bot]:border-b-2 [&.drag-over-bot]:border-b-accent [&.drag-over-bot]:-mb-0.5 [&.selecting]:cursor-pointer [&.selected]:border-accent [&.selected]:bg-accent-muted' + (pageSelectMode ? ' selecting' : '') + (sel ? ' selected' : '');
     const clickAttr = pageSelectMode ? \`onclick="togglePageSel('\${esc(p.slug)}')"\` : '';
     const status = p.isPublic
       ? '公开'
@@ -2192,15 +1829,15 @@ export function renderPage() {
     const previewHref = pagePreviewUrl(p);
     return \`<div class="\${cls}" draggable="\${drag}" data-drag-type="page" data-drag-id="\${esc(p.slug)}" data-project-id="\${esc(p.projectId||'')}" data-group-id="\${esc(p.groupId||'')}" \${clickAttr}>
       \${check}
-      <span class="drag-handle" title="拖拽排序">⠿</span>
-      <div class="page-item-info" style="flex:1;min-width:0">
-        <div class="page-title">\${esc(p.title)} <span class="type-badge type-\${p.type==='markdown'?'md':'html'}">\${p.type}</span></div>
-        <div class="page-meta">\${status} · /p/\${esc(p.slug)}</div>
+      <span class="drag-handle cursor-grab px-0.5 text-[.78rem] text-tx-3 active:cursor-grabbing" title="拖拽排序">⠿</span>
+      <div class="page-item-info flex-1 min-w-0">
+        <div class="page-title text-[.92rem] font-semibold text-tx">\${esc(p.title)} <span class="type-badge type-\${p.type==='markdown'?'md':'html'} inline-block rounded-xs px-[7px] py-0.5 text-[.66rem] font-bold [&.type-md]:border [&.type-md]:border-bd-2 [&.type-md]:bg-white/[.07] [&.type-md]:text-tx [&.type-html]:border [&.type-html]:border-amber-r [&.type-html]:bg-amber-g [&.type-html]:text-amber">\${p.type}</span></div>
+        <div class="page-meta text-[.72rem] font-medium text-tx-3">\${status} · /p/\${esc(p.slug)}</div>
       </div>
-      <a href="\${esc(previewHref)}" target="_blank" class="btn btn-ghost" style="font-size:.72rem" onclick="event.stopPropagation()">预览</a>
-      <button class="btn btn-ghost" onclick="event.stopPropagation();cpPageAddr('\${esc(p.slug)}',this)" style="font-size:.72rem">复制</button>
-      <button class="btn btn-ghost" onclick="event.stopPropagation();editPageBySlug('\${esc(p.slug)}')" style="font-size:.72rem">编辑</button>
-      <button class="btn btn-danger" onclick="event.stopPropagation();deletePage('\${esc(p.slug)}')" style="font-size:.72rem">删除</button>
+      <a class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.72rem]" href="\${esc(previewHref)}" target="_blank" onclick="event.stopPropagation()">预览</a>
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.72rem]" onclick="event.stopPropagation();cpPageAddr('\${esc(p.slug)}',this)">复制</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.72rem]" onclick="event.stopPropagation();editPageBySlug('\${esc(p.slug)}')">编辑</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !text-[.72rem]" onclick="event.stopPropagation();deletePage('\${esc(p.slug)}')">删除</button>
     </div>\`;
   }
 
@@ -2244,7 +1881,7 @@ export function renderPage() {
     const toggle = document.getElementById('pageSelectToggle');
     if (toggle) {
       toggle.textContent = pageSelectMode ? '退出选择' : '选择';
-      toggle.classList.toggle('btn-primary', pageSelectMode);
+      toggle.className = pageSelectMode ? BTN_PRIMARY_TOGGLE : BTN_GHOST_TOGGLE;
     }
     const vis = [...document.querySelectorAll('.page-tree-item')].map(el => el.dataset.dragId);
     const allSel = vis.length > 0 && vis.every(s => pageSelected.has(s));
@@ -3083,16 +2720,16 @@ export function renderPage() {
     let files;
     if (filesMap) {
       files = filesMap;
-      setStatus(\`📋 分析文件结构… \${Object.keys(files).length} 个文件\`, 8);
+      setStatus(\`分析文件结构… \${Object.keys(files).length} 个文件\`, 8);
     } else {
-      setStatus('🗜️ 正在解压 ZIP（后台线程）…', 3);
+      setStatus('正在解压 ZIP（后台线程）…', 3);
       const bytes = new Uint8Array(await zipFile.arrayBuffer());
       try {
         const raw = await _unzipBytes(bytes, zipFile);
         const fixed = {}; for (const [p,d] of Object.entries(raw)) fixed[_protoFixEnc(p)] = d;
         files = _protoStrip(fixed);
       } catch(e) { throw new Error('解压失败：' + e.message); }
-      setStatus(\`📋 分析文件结构… 发现 \${Object.keys(files).length} 个文件\`, 8);
+      setStatus(\`分析文件结构… 发现 \${Object.keys(files).length} 个文件\`, 8);
     }
 
     const safePaths = _protoFilter(files);
@@ -3106,7 +2743,7 @@ export function renderPage() {
     for (const p of safePaths) newManifest[p] = _fnv1a(files[p] ?? new Uint8Array(0));
 
     // Step 1: init（更新模式下后端回传上一版本 manifest）
-    setStatus('🔧 初始化上传会话…', 12);
+    setStatus('初始化上传会话…', 12);
     const initRes = await fetch(initUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
@@ -3124,7 +2761,7 @@ export function renderPage() {
 
     // Step 2: upload in batches —— 并发池 + 单批重试（免费版约束下提速）
     const totalBatches = Math.ceil(uploadPaths.length / BATCH) || 0;
-    if (skipped > 0) setStatus(\`⚡ 增量上传：\${uploadPaths.length} 个变更，跳过 \${skipped} 个未变文件\`, 15);
+    if (skipped > 0) setStatus(\`增量上传：\${uploadPaths.length} 个变更，跳过 \${skipped} 个未变文件\`, 15);
 
     // 单批上传：最多重试 3 次（指数退避）；4xx（除 429）不重试
     async function uploadBatch(b) {
@@ -3157,7 +2794,7 @@ export function renderPage() {
         done++;
         const pct = Math.round(15 + (done / totalBatches) * 75);
         const filesDone = Math.min(done * BATCH, uploadPaths.length);
-        setStatus('📤 已上传 ' + done + '/' + totalBatches + ' 批（' + filesDone + ' / ' + uploadPaths.length + ' 个变更文件 · 并发 ' + CONCURRENCY + '）', pct);
+        setStatus('已上传 ' + done + '/' + totalBatches + ' 批（' + filesDone + ' / ' + uploadPaths.length + ' 个变更文件 · 并发 ' + CONCURRENCY + '）', pct);
       }
     }
     if (totalBatches > 0) {
@@ -3166,7 +2803,7 @@ export function renderPage() {
     }
 
     // Step 3: finalize（filePaths 记录完整清单，manifest 写回供下次 diff）
-    setStatus('✅ 正在写入元数据…', 93);
+    setStatus('正在写入元数据…', 93);
     const fRes = await fetch(finalizeUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
@@ -3174,7 +2811,7 @@ export function renderPage() {
     });
     const fData = await fRes.json().catch(() => ({}));
     if (!fRes.ok) throw new Error(fData.error || '最终化失败');
-    setStatus(skipped > 0 ? \`🎉 完成！增量上传 \${uploadPaths.length} 个文件（节省 \${skipped} 个）\` : '🎉 上传完成！', 100);
+    setStatus(skipped > 0 ? \`完成！增量上传 \${uploadPaths.length} 个文件（节省 \${skipped} 个）\` : '上传完成！', 100);
     return { ...fData, protoId, safePaths, totalSize };
   }
 
@@ -3196,10 +2833,13 @@ export function renderPage() {
     const bar      = document.getElementById('protoProgressBar'); bar.style.width = '0%';
     const info     = document.getElementById('protoProgressInfo'); info.classList.add('show');
     const pctEl    = document.getElementById('protoProgressPct'); pctEl.textContent = '0%';
-    const statusEl = document.getElementById('protoStatusText');  statusEl.style.display = '';  statusEl.textContent = '';
+    const statusEl = document.getElementById('protoStatusText');  statusEl.classList.remove('hidden');  statusEl.textContent = '';
 
     function setStatus(msg, pct) {
-      statusEl.textContent = msg;
+      const icon = pct === 100
+        ? '<svg class="inline-block h-3.5 w-3.5 -mt-0.5 mr-1 text-green" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>'
+        : '<svg class="inline-block h-3.5 w-3.5 -mt-0.5 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="5.5" stroke-dasharray="26" stroke-dashoffset="8"/></svg>';
+      statusEl.innerHTML = icon + msg;
       if (pct !== undefined) { bar.style.width = pct + '%'; pctEl.textContent = pct + '%'; }
     }
     function resetProg() {
@@ -3256,14 +2896,14 @@ export function renderPage() {
 
   async function loadProtos(silent = false) {
     if (!token) return;
-    if (!silent) document.getElementById('protoTableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--tx-3);padding:32px">加载中…</td></tr>';
+    if (!silent) document.getElementById('protoTableBody').innerHTML = '<tr><td class="text-center text-tx-3 p-8" colspan="10">加载中…</td></tr>';
     try {
       const res = await fetch('/api/protos', { headers: { Authorization: 'Bearer ' + token } });
       if (!res.ok) return;
       const { protos } = await res.json();
       userProtos = protos || [];
       renderProtos();
-    } catch { if (!silent) document.getElementById('protoTableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--tx-3);padding:32px">加载失败</td></tr>'; }
+    } catch { if (!silent) document.getElementById('protoTableBody').innerHTML = '<tr><td class="text-center text-tx-3 p-8" colspan="10">加载失败</td></tr>'; }
   }
 
   function formatExpiry(ts) {
@@ -3284,7 +2924,7 @@ export function renderPage() {
     const tbody = document.getElementById('protoTableBody');
     const empty = document.getElementById('protoEmpty');
     if (!userProtos.length) {
-      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--tx-3);padding:32px">暂无原型</td></tr>';
+      tbody.innerHTML = '<tr><td class="text-center text-tx-3 p-8" colspan="10">暂无原型</td></tr>';
       empty.style.display = 'none';
       return;
     }
@@ -3292,34 +2932,34 @@ export function renderPage() {
     tbody.innerHTML = userProtos.map((p, idx) => {
       const url        = location.origin + '/proto/' + p.protoId + '/';
       const previewUrl = url + (p.accessPassword ? '?pwd=' + encodeURIComponent(p.accessPassword) : '');
-      const lock       = p.hasPassword ? \`<span class="proto-lock">🔒 密码</span>\` : '';
-      const priv       = p.isPrivate   ? \`<span class="proto-private">私有</span>\` : '';
-      const pwdInfo    = p.hasPassword ? \`<div style="font-size:.65rem;color:var(--tx-3);margin-top:2px">有效期：\${formatExpiry(p.passwordExpiry)}</div>\` : '<span class="proto-muted">无</span>';
+      const lock       = p.hasPassword ? \`<span class="inline-flex items-center gap-1 rounded-xs border border-amber-r bg-amber-g px-1.5 py-px text-[.68rem] font-semibold text-amber"><svg class="h-2.5 w-2.5 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V4.5a3 3 0 0 1 6 0V7"/></svg>密码</span>\` : '';
+      const priv       = p.isPrivate   ? \`<span class="rounded-xs border border-red-r bg-red-g px-1.5 py-px text-[.68rem] font-semibold text-red">私有</span>\` : '';
+      const pwdInfo    = p.hasPassword ? \`<div class="text-[.65rem] text-tx-3 mt-0.5">有效期：\${formatExpiry(p.passwordExpiry)}</div>\` : '<span class="text-[.79rem] text-tx-2">无</span>';
       const verCount   = (p.versions ?? []).length;
-      const verBadge   = \`<span class="proto-version" style="cursor:pointer;text-decoration:underline" onclick="upvmOpen(\${idx})">v\${p.version||1}\${verCount>1?' ('+verCount+')':''} ↗</span>\`;
+      const verBadge   = \`<span class="inline-flex items-center gap-0.5 rounded-xs border border-bd-2 bg-white/[.06] px-1.5 py-px font-mono text-[.66rem] font-bold text-tx cursor-pointer underline" onclick="upvmOpen(\${idx})">v\${p.version||1}\${verCount>1?' ('+verCount+')':''} <svg class="h-2.5 w-2.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="12" y2="4"/><polyline points="5,4 12,4 12,11"/></svg></span>\`;
       const visits = p.visitCount ?? 0;
       return \`<tr>
-        <td class="proto-muted" style="font-size:.75rem;text-align:center">\${idx+1}</td>
-        <td class="proto-td-name">
-          <div class="name">\${esc(p.title || p.protoId)}</div>
-          <div style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap">\${lock}\${priv}\${(p.tags||[]).map(t=>\`<span class="tag-chip">\${esc(t)}</span>\`).join('')}</div>
-          <div class="id">\${p.protoId}</div>
+        <td class="text-[.79rem] text-tx-2 !text-[.75rem] text-center">\${idx+1}</td>
+        <td class="max-w-[280px]">
+          <div class="truncate text-[.88rem] font-semibold text-tx">\${esc(p.title || p.protoId)}</div>
+          <div class="flex gap-1 mt-[3px] flex-wrap">\${lock}\${priv}\${(p.tags||[]).map(t=>\`<span class="whitespace-nowrap rounded-lg border border-bd bg-white/5 px-[7px] py-px text-[.64rem] font-semibold text-tx-2">\${esc(t)}</span>\`).join('')}</div>
+          <div class="mt-0.5 truncate font-mono text-[.66rem] text-tx-3">\${p.protoId}</div>
         </td>
-        <td class="proto-muted">\${p.fileCount ?? '—'}</td>
-        <td class="proto-muted">\${fmtSize(p.totalSize || 0)}</td>
+        <td class="text-[.79rem] text-tx-2">\${p.fileCount ?? '—'}</td>
+        <td class="text-[.79rem] text-tx-2">\${fmtSize(p.totalSize || 0)}</td>
         <td>\${pwdInfo}</td>
         <td>\${verBadge}</td>
-        <td class="proto-muted">\${visits > 0 ? visits.toLocaleString() : '—'}</td>
-        <td class="proto-muted" style="white-space:nowrap">\${fmtDate(p.createdAt)}</td>
-        <td class="proto-muted" style="white-space:nowrap">\${timeAgo(p.updatedAt || p.createdAt)}</td>
-        <td class="proto-td-actions">
-          <a href="\${previewUrl}" target="_blank" class="btn btn-ghost">预览</a>
-          <button class="btn btn-ghost" onclick="cpProto(userProtos[\${idx}]._copyText,this)">复制</button>
-          <button class="btn btn-ghost" onclick="upvmOpen(\${idx})">版本</button>
-          <button class="btn btn-ghost" onclick="openProtoTagEditor('\${esc(p.protoId)}')">标签</button>
-          <button class="btn btn-ghost" onclick="openProtoEdit('\${esc(p.protoId)}')">编辑</button>
-          <button class="btn btn-ghost" onclick="openProtoUpdate('\${esc(p.protoId)}')">更新</button>
-          <button class="btn btn-danger" onclick="deleteProto('\${esc(p.protoId)}')">删除</button>
+        <td class="text-[.79rem] text-tx-2">\${visits > 0 ? visits.toLocaleString() : '—'}</td>
+        <td class="text-[.79rem] text-tx-2 whitespace-nowrap">\${fmtDate(p.createdAt)}</td>
+        <td class="text-[.79rem] text-tx-2 whitespace-nowrap">\${timeAgo(p.updatedAt || p.createdAt)}</td>
+        <td class="whitespace-nowrap text-right">
+          <a href="\${previewUrl}" target="_blank" class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx">预览</a>
+          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="cpProto(userProtos[\${idx}]._copyText,this)">复制</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="upvmOpen(\${idx})">版本</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="openProtoTagEditor('\${esc(p.protoId)}')">标签</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="openProtoEdit('\${esc(p.protoId)}')">编辑</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="openProtoUpdate('\${esc(p.protoId)}')">更新</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r" onclick="deleteProto('\${esc(p.protoId)}')">删除</button>
         </td>
       </tr>\`;
     }).join('');
@@ -3361,9 +3001,9 @@ export function renderPage() {
     upvmFileCache = {}; upvmChecked = []; upvmActiveVer = null;
     document.getElementById('upvmTitle').textContent = upvmProto.title || upvmProto.protoId || '';
     document.getElementById('upvmSearch').value = '';
-    document.getElementById('upvmDiffBtn').style.display = 'none';
+    document.getElementById('upvmDiffBtn').classList.add('hidden');
     document.getElementById('upvmMode').textContent = '点击版本号查看文件列表，勾选两个版本进行对比';
-    document.getElementById('upvmContent').innerHTML = '<div style="color:var(--tx-3);text-align:center;padding:60px 0;font-size:.85rem">← 点击左侧版本号查看文件列表</div>';
+    document.getElementById('upvmContent').innerHTML = '<div class="text-tx-3 text-center py-[60px] text-[.85rem]"><svg class="inline-block h-4 w-4 -mt-0.5 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="13" y1="8" x2="3" y2="8"/><polyline points="7,4 3,8 7,12"/></svg>点击左侧版本号查看文件列表</div>';
     upvmRenderList();
     document.getElementById('userProtoVersionModal').classList.add('show');
   }
@@ -3375,16 +3015,17 @@ export function renderPage() {
       const isLatest = v.v === maxVer;
       const isActive = upvmActiveVer === v.v;
       const ci       = upvmChecked.indexOf(v.v);
-      const cls      = ci===0?'pvm-ver-card checked-a':ci===1?'pvm-ver-card checked-b':isActive?'pvm-ver-card active':'pvm-ver-card';
+      const cardBase = 'pvm-ver-card cursor-pointer rounded-md border border-bd bg-bg-2 px-[10px] py-[9px] transition hover:border-bd-2 [&.active]:border-brand [&.active]:bg-brand-muted [&.checked-a]:border-green [&.checked-a]:bg-green-g [&.checked-b]:border-amber [&.checked-b]:bg-amber-g';
+      const cls      = ci===0?cardBase+' checked-a':ci===1?cardBase+' checked-b':isActive?cardBase+' active':cardBase;
       return \`<div class="\${cls}" onclick="upvmSelectVer(\${v.v})">
-        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
-          <span class="pvm-ver-badge">v\${v.v}</span>
-          \${isLatest?'<span class="pvm-ver-latest">最新</span>':''}
-          \${!isLatest?'<button class="btn btn-danger" style="padding:1px 6px;font-size:.62rem;margin-left:auto" onclick="event.stopPropagation();upvmDeleteVer(\${v.v})">删除</button>':''}
+        <div class="flex items-center gap-1 flex-wrap">
+          <span class="mr-1 rounded-xs border border-bd-2 bg-white/[.08] px-[7px] py-px font-mono text-[.72rem] font-bold text-tx">v\${v.v}</span>
+          \${isLatest?'<span class="rounded-[3px] border border-green-r bg-green-g px-1.5 py-px text-[.65rem] font-bold text-green">最新</span>':''}
+          \${!isLatest?'<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-1.5 !py-px !text-[.62rem] ml-auto" onclick="event.stopPropagation();upvmDeleteVer(\${v.v})">删除</button>':''}
         </div>
-        <div class="pvm-ver-meta">\${v.at?new Date(v.at).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}</div>
-        <div class="pvm-ver-meta">\${v.files??'?'} 文件 · \${v.size?fmtSize(v.size):'—'}</div>
-        <label class="pvm-ver-check" onclick="event.stopPropagation()">
+        <div class="mt-1 font-mono text-[.7rem] text-tx-3">\${v.at?new Date(v.at).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}</div>
+        <div class="mt-1 font-mono text-[.7rem] text-tx-3">\${v.files??'?'} 文件 · \${v.size?fmtSize(v.size):'—'}</div>
+        <label class="flex items-center gap-[5px] mt-[5px] text-[.7rem] text-tx-3" onclick="event.stopPropagation()">
           <input type="checkbox" \${ci>=0?'checked':''} onchange="upvmToggleCheck(\${v.v},this.checked)">
           <span style="color:\${ci===0?'#10b981':ci===1?'#f59e0b':'#555'}">\${ci===0?'对比 A':ci===1?'对比 B':'加入对比'}</span>
         </label>
@@ -3404,14 +3045,14 @@ export function renderPage() {
     upvmRenderList();
     const btn = document.getElementById('upvmDiffBtn');
     const modeEl = document.getElementById('upvmMode');
-    if (upvmChecked.length === 2) { btn.style.display=''; modeEl.textContent=\`已选 v\${upvmChecked[0]}（A）与 v\${upvmChecked[1]}（B），点击"对比"查看差异\`; }
-    else { btn.style.display='none'; modeEl.textContent = upvmChecked.length===1?\`已选 v\${upvmChecked[0]} 为对比 A，再勾选一个版本\`:'点击版本号查看文件列表，勾选两个版本进行对比'; }
+    if (upvmChecked.length === 2) { btn.classList.remove('hidden'); modeEl.textContent=\`已选 v\${upvmChecked[0]}（A）与 v\${upvmChecked[1]}（B），点击"对比"查看差异\`; }
+    else { btn.classList.add('hidden'); modeEl.textContent = upvmChecked.length===1?\`已选 v\${upvmChecked[0]} 为对比 A，再勾选一个版本\`:'点击版本号查看文件列表，勾选两个版本进行对比'; }
   }
 
   async function upvmFetch(ver) {
     const key = \`v\${ver}\`;
     if (upvmFileCache[key] !== undefined) return upvmFileCache[key];
-    document.getElementById('upvmContent').innerHTML = '<div style="color:var(--tx-3);text-align:center;padding:40px 0">加载中…</div>';
+    document.getElementById('upvmContent').innerHTML = '<div class="text-tx-3 text-center py-10">加载中…</div>';
     try {
       const pid = upvmProto.protoId;
       const res = await fetch(\`/api/proto-vfiles/\${encodeURIComponent(pid)}/\${key}\`, { headers: { Authorization: 'Bearer ' + token } });
@@ -3422,17 +3063,17 @@ export function renderPage() {
 
   function upvmShowFileList(files, title) {
     const q = document.getElementById('upvmSearch').value.toLowerCase();
-    if (!files) { document.getElementById('upvmContent').innerHTML = '<div style="color:var(--tx-3);text-align:center;padding:40px 0;font-size:.82rem">该版本无文件记录（旧版本上传未记录文件列表）</div>'; return; }
+    if (!files) { document.getElementById('upvmContent').innerHTML = '<div class="text-tx-3 text-center py-10 text-[.82rem]">该版本无文件记录（旧版本上传未记录文件列表）</div>'; return; }
     const fl = q ? files.filter(f => f.toLowerCase().includes(q)) : files;
-    document.getElementById('upvmContent').innerHTML = \`<div style="font-size:.75rem;color:var(--tx-3);margin-bottom:10px;font-weight:500">\${title}\${q?' — 过滤 "'+q+'"':''}</div><div>\${fl.map(f=>\`<div class="file-row">\${esc(f)}</div>\`).join('')||'<div style="color:var(--tx-3);font-size:.82rem;padding:20px 0">无匹配文件</div>'}</div>\`;
+    document.getElementById('upvmContent').innerHTML = \`<div class="text-[.75rem] text-tx-3 mb-[10px] font-medium">\${title}\${q?' — 过滤 "'+q+'"':''}</div><div>\${fl.map(f=>\`<div class="flex items-center rounded-xs px-1.5 py-[3px] font-mono text-[.72rem] mb-px text-tx-2 transition hover:bg-bg-hover hover:text-tx">\${esc(f)}</div>\`).join('')||'<div class="text-tx-3 text-[.82rem] py-5">无匹配文件</div>'}</div>\`;
   }
 
   document.getElementById('upvmDiffBtn').addEventListener('click', async () => {
     if (upvmChecked.length < 2) return;
     const [a,b] = upvmChecked;
-    document.getElementById('upvmContent').innerHTML = '<div style="color:var(--tx-3);text-align:center;padding:40px 0">加载中…</div>';
+    document.getElementById('upvmContent').innerHTML = '<div class="text-tx-3 text-center py-10">加载中…</div>';
     const [fa,fb] = await Promise.all([upvmFetch(a), upvmFetch(b)]);
-    if (!fa || !fb) { document.getElementById('upvmContent').innerHTML = '<div style="color:var(--tx-3);text-align:center;padding:40px 0;font-size:.82rem">版本无文件记录，无法对比</div>'; return; }
+    if (!fa || !fb) { document.getElementById('upvmContent').innerHTML = '<div class="text-tx-3 text-center py-10 text-[.82rem]">版本无文件记录，无法对比</div>'; return; }
     upvmRenderDiff(fa, fb, a, b);
   });
 
@@ -3443,12 +3084,14 @@ export function renderPage() {
     let removed = fa.filter(f => !sb.has(f));
     let same    = fa.filter(f => sb.has(f));
     if (q) { added=added.filter(f=>f.toLowerCase().includes(q)); removed=removed.filter(f=>f.toLowerCase().includes(q)); same=same.filter(f=>f.toLowerCase().includes(q)); }
-    const mkRows = (files, cls, pfx) => files.map(f=>\`<div class="diff-file \${cls}"><span class="diff-prefix">\${pfx}</span>\${esc(f)}</div>\`).join('');
-    let html = \`<div style="display:flex;gap:12px;margin-bottom:16px;font-size:.78rem;flex-wrap:wrap"><span>v\${a} → v\${b}</span><span style="color:#10b981">+\${added.length} 新增</span><span style="color:#ef4444">-\${removed.length} 删除</span><span style="color:var(--tx-3)">\${same.length} 不变</span></div>\`;
-    if (added.length)   html += \`<div class="diff-section add"><h4>✦ 新增 \${added.length} 个文件（v\${b} 新增）</h4>\${mkRows(added,'diff-add','+')}</div>\`;
-    if (removed.length) html += \`<div class="diff-section rem"><h4>✦ 删除 \${removed.length} 个文件（v\${b} 移除）</h4>\${mkRows(removed,'diff-rem','−')}</div>\`;
-    if (same.length)    html += \`<div class="diff-section same"><h4>· 未变动 \${same.length} 个文件</h4>\${mkRows(same,'','·')}</div>\`;
-    document.getElementById('upvmContent').innerHTML = html || '<div style="color:var(--tx-3);text-align:center;padding:40px 0;font-size:.82rem">无匹配文件</div>';
+    const DIFF_FILE_BASE = 'flex items-center gap-1.5 rounded-xs px-1.5 py-[3px] font-mono text-[.72rem] mb-px';
+    const mkRows = (files, cls, pfx) => files.map(f=>\`<div class="\${DIFF_FILE_BASE} \${cls}"><span class="w-[14px] shrink-0 font-bold">\${pfx}</span>\${esc(f)}</div>\`).join('');
+    let html = \`<div class="flex gap-3 mb-4 text-[.78rem] flex-wrap"><span>v\${a} → v\${b}</span><span class="text-[#10b981]">+\${added.length} 新增</span><span class="text-[#ef4444]">-\${removed.length} 删除</span><span class="text-tx-3">\${same.length} 不变</span></div>\`;
+    const DIFF_H4_BASE = 'text-[.72rem] font-bold mb-1.5 px-2 py-[5px] rounded-xs uppercase tracking-[.08em]';
+    if (added.length)   html += \`<div class="diff-section mb-4"><h4 class="\${DIFF_H4_BASE} bg-green-g text-green flex items-center gap-1"><svg class="h-3 w-3 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg>新增 \${added.length} 个文件（v\${b} 新增）</h4>\${mkRows(added,'bg-green-g text-green','+')}</div>\`;
+    if (removed.length) html += \`<div class="diff-section mb-4"><h4 class="\${DIFF_H4_BASE} bg-red-g text-red flex items-center gap-1"><svg class="h-3 w-3 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="8" x2="13" y2="8"/></svg>删除 \${removed.length} 个文件（v\${b} 移除）</h4>\${mkRows(removed,'bg-red-g text-red','−')}</div>\`;
+    if (same.length)    html += \`<div class="diff-section mb-4"><h4 class="\${DIFF_H4_BASE} bg-[rgba(255,255,255,.04)] text-tx-3">· 未变动 \${same.length} 个文件</h4>\${mkRows(same,'','·')}</div>\`;
+    document.getElementById('upvmContent').innerHTML = html || '<div class="text-tx-3 text-center py-10 text-[.82rem]">无匹配文件</div>';
   }
 
   document.getElementById('upvmSearch').addEventListener('input', () => {
@@ -3467,7 +3110,7 @@ export function renderPage() {
     upvmProto.versions = (upvmProto.versions??[]).filter(v=>v.v!==ver);
     delete upvmFileCache[\`v\${ver}\`];
     upvmChecked = upvmChecked.filter(v=>v!==ver);
-    if (upvmActiveVer===ver) { upvmActiveVer=null; document.getElementById('upvmContent').innerHTML='<div style="color:var(--tx-3);text-align:center;padding:60px 0;font-size:.85rem">← 点击左侧版本号查看文件列表</div>'; }
+    if (upvmActiveVer===ver) { upvmActiveVer=null; document.getElementById('upvmContent').innerHTML='<div class="text-tx-3 text-center py-[60px] text-[.85rem]"><svg class="inline-block h-4 w-4 -mt-0.5 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="13" y1="8" x2="3" y2="8"/><polyline points="7,4 3,8 7,12"/></svg>点击左侧版本号查看文件列表</div>'; }
     const cp = userProtos.find(p=>p.protoId===upvmProto.protoId);
     if (cp) cp.versions = upvmProto.versions;
     upvmRenderList(); toast(\`v\${ver} 已删除\`);
@@ -3647,10 +3290,13 @@ export function renderPage() {
     const bar      = document.getElementById('puProgressBar');  bar.style.width = '0%';
     const info     = document.getElementById('puProgressInfo'); info.classList.add('show');
     const pctEl    = document.getElementById('puProgressPct');  pctEl.textContent = '0%';
-    const statusEl = document.getElementById('puStatusText');   statusEl.style.display = ''; statusEl.textContent = '';
+    const statusEl = document.getElementById('puStatusText');   statusEl.classList.remove('hidden'); statusEl.textContent = '';
 
     function setStatus(msg, pct) {
-      statusEl.textContent = msg;
+      const icon = pct === 100
+        ? '<svg class="inline-block h-3.5 w-3.5 -mt-0.5 mr-1 text-green" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>'
+        : '<svg class="inline-block h-3.5 w-3.5 -mt-0.5 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="5.5" stroke-dasharray="26" stroke-dashoffset="8"/></svg>';
+      statusEl.innerHTML = icon + msg;
       if (pct !== undefined) { bar.style.width = pct + '%'; pctEl.textContent = pct + '%'; }
     }
     function resetProg() {
@@ -3733,23 +3379,24 @@ export function renderPage() {
   });
 
   // ── Utils ──
-  function cp(text, btn) { navigator.clipboard.writeText(text).then(() => { if(btn){const o=btn.textContent;btn.textContent='✓';setTimeout(()=>btn.textContent=o,1400);} }); }
+  function cp(text, btn) { navigator.clipboard.writeText(text).then(() => { if(btn){const o=btn.innerHTML;btn.innerHTML='<svg class="inline-block h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>';setTimeout(()=>btn.innerHTML=o,1400);} }); }
   function toast(msg, type) {
     const t = document.getElementById('toast');
-    t.className = 'toast show' + (type ? ' t-' + type : '');
+    t.className = TOAST_BASE + ' toast show' + (type ? ' t-' + type : '');
     t.textContent = msg;
     clearTimeout(t._tid);
     t._tid = setTimeout(() => t.classList.remove('show'), 2600);
   }
+  const SKEL = 'rounded-sm bg-[linear-gradient(90deg,var(--color-bg-3)_25%,var(--color-bg-4)_50%,var(--color-bg-3)_75%)] bg-[length:400%_100%] animate-[shimmer_1.4s_ease_infinite]';
   function skelCards(el, n) {
     if (!el) return;
     el.innerHTML = Array.from({ length: n }, () =>
-      '<div class="skel-card"><div class="skel skel-thumb"></div><div class="skel-meta"><div class="skel skel-line" style="width:80%"></div><div class="skel skel-line" style="width:50%"></div></div></div>'
+      \`<div class="overflow-hidden rounded-lg border border-bd bg-bg-3"><div class="\${SKEL} w-full aspect-square"></div><div class="flex flex-col gap-[7px] px-[11px] py-[10px]"><div class="\${SKEL} h-[9px] w-4/5"></div><div class="\${SKEL} h-[9px] w-1/2"></div></div></div>\`
     ).join('');
   }
   function skelRows(el, n) {
     if (!el) return;
-    el.innerHTML = Array.from({ length: n }, () => '<div class="skel skel-row"></div>').join('');
+    el.innerHTML = Array.from({ length: n }, () => \`<div class="\${SKEL} h-[58px] rounded-[9px] border border-bd mb-[10px]"></div>\`).join('');
   }
   function fmtSize(b) { if(b<1024) return b+' B'; if(b<1048576) return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
   function fmtDate(ms) { if(!ms) return '—'; return new Date(ms).toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit',year:'2-digit'}); }

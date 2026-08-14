@@ -1,5 +1,6 @@
 const ADMIN_TOKEN_TTL = 24 * 60 * 60 * 1000;
 const USER_TOKEN_TTL  = 7 * 24 * 60 * 60 * 1000; // 7 days
+export const REMEMBER_TOKEN_TTL = 30 * 24 * 60 * 60 * 1000; // "记住我" 30 天
 
 // ── Admin login ──────────────────────────────────────────────────────────────
 
@@ -14,7 +15,8 @@ export async function handleAdminLogin(request, env) {
            & timingSafeEqual(body.password  ?? '', env.ADMIN_PASSWORD);
   if (!ok) return Response.json({ error: 'Invalid credentials' }, { status: 401 });
 
-  const token = await createToken({ type: 'admin' }, ADMIN_TOKEN_TTL, env.TOKEN_SECRET);
+  const ttl = body.remember ? REMEMBER_TOKEN_TTL : ADMIN_TOKEN_TTL;
+  const token = await createToken({ type: 'admin' }, ttl, env.TOKEN_SECRET);
   return Response.json({ token, username: env.ADMIN_USERNAME });
 }
 
