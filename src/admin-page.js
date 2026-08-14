@@ -5,6 +5,7 @@ export function renderAdminPage() {
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
+  <script>(function(){try{var t=localStorage.getItem('onimg_theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Onimg Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -88,14 +89,29 @@ export function renderAdminPage() {
 </head>
 <body>
 
-<div class="hidden items-center gap-2 border-b border-[rgba(251,191,36,.22)] bg-[#1a1200] px-[22px] py-2 text-[.79rem] text-[#fcd34d] [&.show]:flex" id="expiryBanner">
+<div class="fixed top-[18px] left-0 right-0 md:left-60 z-30 hidden md:block pointer-events-none">
+  <div class="max-w-[1600px] mx-auto px-8 flex justify-end">
+    <div class="theme-switch pointer-events-auto flex items-center gap-0.5 rounded-md border border-bd-2 bg-bg-2 p-0.5">
+      <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="system" title="跟随系统"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="13" height="9" rx="1"/><line x1="5.5" y1="13.5" x2="10.5" y2="13.5"/><line x1="8" y1="11.5" x2="8" y2="13.5"/></svg></button>
+      <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="light" title="浅色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><line x1="8" y1="1" x2="8" y2="2.3"/><line x1="8" y1="13.7" x2="8" y2="15"/><line x1="1" y1="8" x2="2.3" y2="8"/><line x1="13.7" y1="8" x2="15" y2="8"/><line x1="3.05" y1="3.05" x2="3.96" y2="3.96"/><line x1="12.04" y1="12.04" x2="12.95" y2="12.95"/><line x1="3.05" y1="12.95" x2="3.96" y2="12.04"/><line x1="12.04" y1="3.96" x2="12.95" y2="3.05"/></svg></button>
+      <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="dark" title="暗色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7z"/></svg></button>
+    </div>
+  </div>
+</div>
+<div class="hidden items-center gap-2 border-b border-amber-r bg-amber-g px-[22px] py-2 text-[.79rem] text-amber [&.show]:flex" id="expiryBanner">
   <svg class="h-4 w-4 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.5 15 14H1L8 1.5z"/><line x1="8" y1="6" x2="8" y2="9.5"/><circle cx="8" cy="11.5" r=".2" fill="currentColor"/></svg>
   登录状态将在 <strong id="expiryCountdown"></strong> 后过期，建议重新登录以避免中断。
-  <button class="ml-auto px-[10px] py-[3px] bg-none border border-[rgba(251,191,36,.35)] text-[#fcd34d] rounded-[5px] cursor-pointer text-[.75rem] font-sans" onclick="triggerReLogin()">重新登录</button>
+  <button class="ml-auto px-[10px] py-[3px] bg-none border border-amber-r text-amber rounded-[5px] cursor-pointer text-[.75rem] font-sans" onclick="triggerReLogin()">重新登录</button>
 </div>
 <div class="mob-header fixed inset-x-0 top-0 z-20 flex h-[50px] items-center gap-[14px] border-b border-bd bg-bg-2 px-4 md:hidden">
   <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-transparent text-tx-3 cursor-pointer transition hover:border-bd-2 hover:text-tx" id="sidebarToggle"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/></svg></button>
   <span class="text-[.88rem] font-bold tracking-[-.01em]">Onimg Admin</span>
+  <div class="flex-1"></div>
+  <div class="theme-switch flex items-center gap-0.5 rounded-md border border-bd-2 bg-bg-2 p-0.5">
+    <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="system" title="跟随系统"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="13" height="9" rx="1"/><line x1="5.5" y1="13.5" x2="10.5" y2="13.5"/><line x1="8" y1="11.5" x2="8" y2="13.5"/></svg></button>
+    <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="light" title="浅色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><line x1="8" y1="1" x2="8" y2="2.3"/><line x1="8" y1="13.7" x2="8" y2="15"/><line x1="1" y1="8" x2="2.3" y2="8"/><line x1="13.7" y1="8" x2="15" y2="8"/><line x1="3.05" y1="3.05" x2="3.96" y2="3.96"/><line x1="12.04" y1="12.04" x2="12.95" y2="12.95"/><line x1="3.05" y1="12.95" x2="3.96" y2="12.04"/><line x1="12.04" y1="3.96" x2="12.95" y2="3.05"/></svg></button>
+    <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="dark" title="暗色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7z"/></svg></button>
+  </div>
 </div>
 <div class="sidebar-mask fixed inset-0 z-[9] hidden bg-black/60 [&.show]:block" id="sidebarMask"></div>
 
@@ -125,7 +141,7 @@ export function renderAdminPage() {
     <!-- Sidebar -->
     <aside class="fixed inset-y-0 left-0 z-10 flex w-60 shrink-0 -translate-x-60 flex-col border-r border-bd bg-bg-2 transition-transform duration-[.22s] ease-in-out md:translate-x-0 [&.open]:translate-x-0 [&.open]:z-[15]">
       <div class="flex items-center gap-2.5 border-b border-bd px-4 pt-[18px] pb-3.5">
-        <div class="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-sm border border-bd-2 bg-gradient-to-br from-[#242836] to-[#14161d] text-[.78rem] font-extrabold tracking-[-.01em] text-tx shadow-[0_3px_10px_rgba(0,0,0,.5)]">OI</div>
+        <div class="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-sm border border-bd-2 bg-gradient-to-br from-[#242836] to-[#14161d] text-[.78rem] font-extrabold tracking-[-.01em] text-white shadow-[0_3px_10px_rgba(0,0,0,.5)]">OI</div>
         <div class="flex flex-col gap-px">
           <div class="text-[.92rem] font-bold text-tx tracking-[-.015em]">Onimg</div>
           <div class="text-[.58rem] font-semibold uppercase tracking-[.12em] text-tx-3">Admin Console</div>
@@ -170,7 +186,7 @@ export function renderAdminPage() {
       </div>
       <div class="border-t border-bd px-2 py-[10px]">
         <div class="flex items-center gap-[9px] rounded-md border border-bd bg-bg-3 px-[10px] py-2">
-          <div class="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-sm border border-bd-2 bg-gradient-to-br from-[#2e2e2e] to-[#1e1e1e] text-[.78rem] font-bold text-tx" id="avatarLetter">A</div>
+          <div class="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-sm border border-bd-2 bg-gradient-to-br from-[#2e2e2e] to-[#1e1e1e] text-[.78rem] font-bold text-white" id="avatarLetter">A</div>
           <div class="min-w-0 flex-1">
             <div class="truncate text-[.78rem] font-semibold text-tx-2" id="sidebarUsername">admin</div>
             <div class="mt-px text-[.65rem] text-tx-3">Administrator</div>
@@ -350,8 +366,8 @@ export function renderAdminPage() {
         </div>
 
         <!-- ── 访问统计 Tabs ── -->
-        <div class="dash-tabs-panel mt-6 overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-[0_1px_0_rgba(255,255,255,.02)_inset,0_2px_8px_rgba(0,0,0,.25)]">
-          <div class="dash-tabs-hd flex items-stretch border-b border-bd-2 bg-black/30 px-3">
+        <div class="dash-tabs-panel mt-6 overflow-hidden rounded-lg border border-bd bg-bg-3">
+          <div class="dash-tabs-hd flex items-stretch border-b border-bd-2 bg-bg-2 px-3">
             <div class="dash-tabs-nav flex items-stretch">
               <button class="dash-tab active relative flex items-center gap-[7px] whitespace-nowrap border-b-2 border-transparent bg-transparent px-[15px] py-[11px] -mb-px font-sans text-[.82rem] font-semibold text-tx-2 cursor-pointer transition hover:bg-white/[.035] hover:text-tx [&.active]:border-b-tx [&.active]:text-tx [&.active]:font-bold [&.active_.dash-tab-count]:bg-white/[.12] [&.active_.dash-tab-count]:text-tx [&.active_.dash-tab-count]:border-bd-2" data-dash-tab="images">
                 <svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="10" r="2"/><path d="M2 17l6-6 4 4 3-3 7 7"/></svg>图片 <span class="dash-tab-count rounded-md border border-bd bg-bg-5 px-[7px] py-px font-mono text-[.65rem] font-bold leading-[1.5] text-tx-2 transition" id="dashImgCount">—</span>
@@ -367,8 +383,8 @@ export function renderAdminPage() {
           </div>
 
           <div class="dash-tab-pane active hidden [&.active]:block" id="dashTabImages">
-            <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-[0_1px_0_rgba(255,255,255,.02)_inset,0_2px_8px_rgba(0,0,0,.25)] !rounded-none !border-none">
-              <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-black/35 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-white/[.025]">
+            <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3 !rounded-none !border-none">
+              <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
                 <thead><tr><th>图片</th><th>文件名</th><th>类型</th><th>总访问</th><th>最后访问</th><th></th></tr></thead>
                 <tbody id="topImagesBody"><tr><td colspan="6" class="text-center text-tx-3 p-8">加载中…</td></tr></tbody>
               </table>
@@ -376,8 +392,8 @@ export function renderAdminPage() {
           </div>
 
           <div class="dash-tab-pane hidden [&.active]:block" id="dashTabPages">
-            <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-[0_1px_0_rgba(255,255,255,.02)_inset,0_2px_8px_rgba(0,0,0,.25)] !rounded-none !border-none">
-              <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-black/35 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-white/[.025]">
+            <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3 !rounded-none !border-none">
+              <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
                 <thead><tr><th>标题 / Slug</th><th>类型</th><th>总访问</th><th>最后访问</th><th></th></tr></thead>
                 <tbody id="topPagesBody"><tr><td colspan="5" class="text-center text-tx-3 p-8">加载中…</td></tr></tbody>
               </table>
@@ -385,8 +401,8 @@ export function renderAdminPage() {
           </div>
 
           <div class="dash-tab-pane hidden [&.active]:block" id="dashTabProtos">
-            <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-[0_1px_0_rgba(255,255,255,.02)_inset,0_2px_8px_rgba(0,0,0,.25)] !rounded-none !border-none">
-              <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-black/35 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-white/[.025]">
+            <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3 !rounded-none !border-none">
+              <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
                 <thead><tr><th>名称</th><th>类型</th><th>作者</th><th>总访问</th><th>最后访问</th><th></th></tr></thead>
                 <tbody id="topProtosBody"><tr><td colspan="6" class="text-center text-tx-3 p-8">加载中…</td></tr></tbody>
               </table>
@@ -433,7 +449,7 @@ export function renderAdminPage() {
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="createUserBtn">+ 新建用户</button>
         </div>
         <div class="overflow-auto rounded-lg border border-bd bg-bg-3">
-          <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-black/35 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-white/[.025]">
+          <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
             <thead><tr><th>用户名</th><th>权限</th><th>上传统计</th><th>限制</th><th>登录状态</th><th>操作</th></tr></thead>
             <tbody id="usersBody"><tr><td colspan="6" class="text-center text-tx-3 p-6">加载中…</td></tr></tbody>
           </table>
@@ -474,8 +490,8 @@ export function renderAdminPage() {
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-[10px] !py-1 !text-[.76rem]" id="adminPageCancelSel">取消</button>
         </div>
         <div class="pg-reorder-hint hidden mb-2 text-[.72rem] text-tx-3" id="adminPageReorderHint">已定位到单个项目/分组，可拖动 <span class="text-tx-2">⠿</span> 手柄调整顺序</div>
-        <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-[0_1px_0_rgba(255,255,255,.02)_inset,0_2px_8px_rgba(0,0,0,.25)]">
-          <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-black/35 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-white/[.025]">
+        <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3">
+          <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
             <thead><tr>
               <th class="pg-drag-col hidden w-[24px] text-center [&.scoped]:table-cell" id="pgDragHead"></th>
               <th class="pg-check-col hidden w-[30px] text-center [&.selecting]:table-cell" id="pgCheckHead"><input type="checkbox" class="h-[15px] w-[15px] cursor-pointer accent-tx-2" id="adminPageSelectAll"></th>
@@ -570,8 +586,8 @@ export function renderAdminPage() {
           <div class="min-w-[20px] flex-1"></div>
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="refreshAdminProtos"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.65 4.35A6 6 0 1 0 14 8"/><polyline points="13.5,1.5 13.5,4.5 10.5,4.5"/></svg>刷新</button>
         </div>
-        <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-[0_1px_0_rgba(255,255,255,.02)_inset,0_2px_8px_rgba(0,0,0,.25)]">
-          <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-black/35 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-white/[.025]">
+        <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3">
+          <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
             <thead><tr><th>名称</th><th>作者</th><th>文件数</th><th>大小</th><th>密码</th><th>版本</th><th>访问</th><th>创建时间</th><th>更新时间</th><th></th></tr></thead>
             <tbody id="adminProtosBody"><tr><td colspan="10" class="text-center text-tx-3 p-6">加载中…</td></tr></tbody>
           </table>
@@ -596,8 +612,8 @@ export function renderAdminPage() {
           <div class="min-w-[20px] flex-1"></div>
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="loadMemberStats()"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.65 4.35A6 6 0 1 0 14 8"/><polyline points="13.5,1.5 13.5,4.5 10.5,4.5"/></svg>刷新</button>
         </div>
-        <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-[0_1px_0_rgba(255,255,255,.02)_inset,0_2px_8px_rgba(0,0,0,.25)]">
-          <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-black/35 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-white/[.025]">
+        <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3">
+          <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
             <thead><tr>
               <th class="cursor-pointer select-none hover:text-tx-2" onclick="memberSort('name')">用户名</th>
               <th>状态</th>
@@ -1156,6 +1172,24 @@ export function renderAdminPage() {
     sidebarMask.classList.remove('show');
   });
 
+  // ── Theme switch（跟随系统 / 浅色 / 暗色，三端共用 localStorage key）──
+  (function initThemeSwitch() {
+    const KEY = 'onimg_theme';
+    // Two copies live in the DOM (fixed top-right on desktop, mob-header on mobile) — keep both in sync.
+    const opts = document.querySelectorAll('.theme-switch .theme-opt');
+    function syncActive() {
+      const cur = localStorage.getItem(KEY) || 'system';
+      opts.forEach(b => b.classList.toggle('active', b.dataset.themeVal === cur));
+    }
+    opts.forEach(btn => btn.addEventListener('click', () => {
+      const val = btn.dataset.themeVal;
+      if (val === 'system') { localStorage.removeItem(KEY); document.documentElement.removeAttribute('data-theme'); }
+      else { localStorage.setItem(KEY, val); document.documentElement.setAttribute('data-theme', val); }
+      syncActive();
+    }));
+    syncActive();
+  })();
+
   document.querySelectorAll('.nav-item[data-section]').forEach(btn => {
     btn.addEventListener('click', () => {
       switchSection(btn.dataset.section);
@@ -1299,7 +1333,7 @@ export function renderAdminPage() {
       : '<tr><td colspan="6" class="text-center text-tx-3 p-8">暂无访问记录</td></tr>';
 
     // ── 页面 Tab ──
-    const TYPE_PG = \`<span class="text-[.62rem] font-semibold px-1.5 py-px rounded bg-[rgba(251,191,36,.08)] text-[#fbbf24] border border-[rgba(251,191,36,.2)]">页面</span>\`;
+    const TYPE_PG = \`<span class="text-[.62rem] font-semibold px-1.5 py-px rounded bg-amber-g text-amber border border-amber-r">页面</span>\`;
     const pageMap = {};
     pages.forEach(p => pageMap[p.slug] = { title: p.title || p.slug, type: p.type || 'markdown' });
     const sortedPg = Object.entries(pgStats).sort((a,b) => (b[1].count??0)-(a[1].count??0)).slice(0,10);

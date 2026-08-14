@@ -5,6 +5,7 @@ export function renderPage() {
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
+  <script>(function(){try{var t=localStorage.getItem('onimg_theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Onimg</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -112,16 +113,30 @@ export function renderPage() {
   </style>
 </head>
 <body class="min-h-screen max-w-full overflow-x-hidden bg-bg font-sans font-[450] text-tx antialiased">
+<div class="fixed top-[18px] left-0 right-0 md:left-60 z-30 hidden md:block pointer-events-none">
+  <div class="max-w-[1600px] mx-auto px-8 flex justify-end">
+    <div class="theme-switch pointer-events-auto flex items-center gap-0.5 rounded-md border border-bd-2 bg-bg-2 p-0.5">
+      <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="system" title="跟随系统"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="13" height="9" rx="1"/><line x1="5.5" y1="13.5" x2="10.5" y2="13.5"/><line x1="8" y1="11.5" x2="8" y2="13.5"/></svg></button>
+      <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="light" title="浅色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><line x1="8" y1="1" x2="8" y2="2.3"/><line x1="8" y1="13.7" x2="8" y2="15"/><line x1="1" y1="8" x2="2.3" y2="8"/><line x1="13.7" y1="8" x2="15" y2="8"/><line x1="3.05" y1="3.05" x2="3.96" y2="3.96"/><line x1="12.04" y1="12.04" x2="12.95" y2="12.95"/><line x1="3.05" y1="12.95" x2="3.96" y2="12.04"/><line x1="12.04" y1="3.96" x2="12.95" y2="3.05"/></svg></button>
+      <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="dark" title="暗色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7z"/></svg></button>
+    </div>
+  </div>
+</div>
 <div class="mob-header fixed inset-x-0 top-0 z-20 flex h-[50px] items-center gap-[14px] border-b border-bd bg-bg-2 px-4 md:hidden">
   <div class="text-[.92rem] font-bold text-tx">Onimg</div>
   <div class="flex-1"></div>
+  <div class="theme-switch flex items-center gap-0.5 rounded-md border border-bd-2 bg-bg-2 p-0.5">
+    <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="system" title="跟随系统"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="13" height="9" rx="1"/><line x1="5.5" y1="13.5" x2="10.5" y2="13.5"/><line x1="8" y1="11.5" x2="8" y2="13.5"/></svg></button>
+    <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="light" title="浅色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><line x1="8" y1="1" x2="8" y2="2.3"/><line x1="8" y1="13.7" x2="8" y2="15"/><line x1="1" y1="8" x2="2.3" y2="8"/><line x1="13.7" y1="8" x2="15" y2="8"/><line x1="3.05" y1="3.05" x2="3.96" y2="3.96"/><line x1="12.04" y1="12.04" x2="12.95" y2="12.95"/><line x1="3.05" y1="12.95" x2="3.96" y2="12.04"/><line x1="12.04" y1="3.96" x2="12.95" y2="3.05"/></svg></button>
+    <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="dark" title="暗色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7z"/></svg></button>
+  </div>
   <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-transparent text-tx-2 cursor-pointer transition hover:border-bd-2 hover:text-tx" id="mobHamburger" aria-label="账号"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5.3" r="3"/><path d="M2 14.2c0-3.2 2.7-5.4 6-5.4s6 2.2 6 5.4"/></svg></button>
 </div>
 <div class="sidebar-mask fixed inset-0 z-[9] hidden bg-black/60 [&.show]:block" id="sidebarMask"></div>
 <div class="flex min-h-screen">
   <aside class="fixed left-0 top-[50px] bottom-auto md:top-0 md:bottom-0 z-10 flex w-60 max-h-[calc(100vh-50px)] md:max-h-none shrink-0 -translate-x-60 flex-col overflow-y-auto rounded-br-xl md:rounded-none border-r border-b md:border-b-0 border-bd bg-bg-2 shadow-lg md:shadow-none transition-transform duration-[.22s] ease-in-out md:translate-x-0 [&.open]:translate-x-0 [&.open]:z-[25]" id="sidebar">
     <div class="flex items-center gap-2.5 border-b border-bd px-4 pt-[18px] pb-3.5">
-      <div class="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-sm border border-brand/30 bg-gradient-to-br from-[#242836] to-[#14161d] text-[.78rem] font-extrabold tracking-[-.01em] text-accent shadow-[0_3px_10px_rgba(0,0,0,.45)]">O</div>
+      <div class="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-sm border border-brand/30 bg-gradient-to-br from-[#242836] to-[#14161d] text-[.78rem] font-extrabold tracking-[-.01em] text-white shadow-[0_3px_10px_rgba(0,0,0,.45)]">O</div>
       <div class="flex flex-col gap-px">
         <span class="text-[.92rem] font-bold text-tx tracking-[-.015em]">Onimg</span>
         <span class="text-[.58rem] font-semibold uppercase tracking-[.12em] text-tx-3">IMAGE HOST</span>
@@ -330,7 +345,7 @@ export function renderPage() {
         <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx max-md:flex-1 !text-[.8rem]" id="refreshProtos">刷新</button>
       </div>
       <!-- Upload section (collapsible) -->
-      <div class="mb-5 overflow-hidden rounded-xl border border-bd bg-bg-3 shadow-[0_1px_0_rgba(255,255,255,.02)_inset]">
+      <div class="mb-5 overflow-hidden rounded-xl border border-bd bg-bg-3">
         <div class="flex cursor-pointer select-none items-center gap-2 px-4 py-[13px]" id="protoUploadToggle">
           <h3 class="flex-1 text-[.9rem] font-bold text-tx tracking-[-.01em]">上传原型</h3>
           <span class="toggle-icon open text-[.65rem] text-tx-3 transition-transform duration-200 [&.open]:rotate-180" id="protoUploadIcon">▾</span>
@@ -358,10 +373,10 @@ export function renderPage() {
         </div>
       </div>
 
-      <div class="bg-bg-3 border border-bd rounded-[10px] overflow-hidden shadow-[0_1px_0_rgba(255,255,255,.02)_inset]">
-        <table class="w-full border-collapse text-[.83rem] [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tr:hover_td]:bg-white/[.025]">
+      <div class="bg-bg-3 border border-bd rounded-[10px] overflow-hidden">
+        <table class="w-full border-collapse text-[.83rem] [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tr:hover_td]:bg-bg-hover">
           <thead><tr>
-            <th class="whitespace-nowrap border-b border-bd-2 bg-black/30 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2 w-9 !text-tx-3">#</th><th class="whitespace-nowrap border-b border-bd-2 bg-black/30 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">名称</th><th class="whitespace-nowrap border-b border-bd-2 bg-black/30 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">文件数</th><th class="whitespace-nowrap border-b border-bd-2 bg-black/30 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">大小</th><th class="whitespace-nowrap border-b border-bd-2 bg-black/30 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">密码</th><th class="whitespace-nowrap border-b border-bd-2 bg-black/30 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">版本</th><th class="whitespace-nowrap border-b border-bd-2 bg-black/30 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">访问</th><th class="whitespace-nowrap border-b border-bd-2 bg-black/30 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">上传时间</th><th class="whitespace-nowrap border-b border-bd-2 bg-black/30 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">更新时间</th><th class="whitespace-nowrap border-b border-bd-2 bg-black/30 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2"></th>
+            <th class="whitespace-nowrap border-b border-bd-2 bg-bg-2 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2 w-9 !text-tx-3">#</th><th class="whitespace-nowrap border-b border-bd-2 bg-bg-2 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">名称</th><th class="whitespace-nowrap border-b border-bd-2 bg-bg-2 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">文件数</th><th class="whitespace-nowrap border-b border-bd-2 bg-bg-2 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">大小</th><th class="whitespace-nowrap border-b border-bd-2 bg-bg-2 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">密码</th><th class="whitespace-nowrap border-b border-bd-2 bg-bg-2 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">版本</th><th class="whitespace-nowrap border-b border-bd-2 bg-bg-2 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">访问</th><th class="whitespace-nowrap border-b border-bd-2 bg-bg-2 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">上传时间</th><th class="whitespace-nowrap border-b border-bd-2 bg-bg-2 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">更新时间</th><th class="whitespace-nowrap border-b border-bd-2 bg-bg-2 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2"></th>
           </tr></thead>
           <tbody id="protoTableBody"><tr><td class="text-center text-tx-3 p-8" colspan="10">加载中…</td></tr></tbody>
         </table>
@@ -1254,6 +1269,24 @@ export function renderPage() {
     document.getElementById('sidebarMask').classList.remove('show');
   });
 
+  // ── Theme switch（跟随系统 / 浅色 / 暗色，三端共用 localStorage key）──
+  (function initThemeSwitch() {
+    const KEY = 'onimg_theme';
+    // Two copies live in the DOM (fixed top-right on desktop, mob-header on mobile) — keep both in sync.
+    const opts = document.querySelectorAll('.theme-switch .theme-opt');
+    function syncActive() {
+      const cur = localStorage.getItem(KEY) || 'system';
+      opts.forEach(b => b.classList.toggle('active', b.dataset.themeVal === cur));
+    }
+    opts.forEach(btn => btn.addEventListener('click', () => {
+      const val = btn.dataset.themeVal;
+      if (val === 'system') { localStorage.removeItem(KEY); document.documentElement.removeAttribute('data-theme'); }
+      else { localStorage.setItem(KEY, val); document.documentElement.setAttribute('data-theme', val); }
+      syncActive();
+    }));
+    syncActive();
+  })();
+
   // ── Public gallery ──
   async function loadPublicGallery() {
     const grid = document.getElementById('pubGrid');
@@ -1263,7 +1296,7 @@ export function renderPage() {
     const { items } = await res.json();
     document.getElementById('pubEmpty').style.display = items.length ? 'none' : 'block';
     document.getElementById('pubGrid').innerHTML = items.map(item =>
-      \`<div class="pub-item cursor-pointer overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-[0_1px_0_rgba(255,255,255,.02)_inset] transition hover:-translate-y-0.5 hover:border-bd-2 hover:shadow-[0_6px_24px_rgba(0,0,0,.5)]" onclick="openLb('\${item.key}', false, 'pub')">
+      \`<div class="pub-item cursor-pointer overflow-hidden rounded-lg border border-bd bg-bg-3 transition hover:-translate-y-0.5 hover:border-bd-2 hover:shadow-[0_6px_24px_rgba(0,0,0,.5)]" onclick="openLb('\${item.key}', false, 'pub')">
         <img class="block h-auto w-full aspect-square bg-bg-2 object-cover" src="\${location.origin}/\${item.key}" loading="lazy" onload="this.classList.add('loaded')">
         <div class="pub-item-info px-3 py-2 font-mono text-[.74rem] font-medium text-tx-2">@\${item.owner || '—'}</div>
       </div>\`
