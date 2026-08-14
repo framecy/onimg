@@ -15,7 +15,6 @@ export function renderAdminPage() {
   <style>
     /* Aperture token（@theme）+ 别名桥 + Tailwind 工具类，由 build:css 生成 */
     ${apertureCss}
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { overflow-x: hidden; max-width: 100%; }
     body { font-family: var(--font); background: var(--bg); color: var(--tx); min-height: 100vh; font-weight: 450; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
@@ -184,18 +183,18 @@ export function renderAdminPage() {
     <div class="flex-1 min-w-0 bg-bg ml-0 md:ml-60">
 
       <!-- ── Dashboard ── -->
-      <div class="section active hidden max-w-[1120px] px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-dashboard">
+      <div class="section active hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-dashboard">
         <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
           <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">概览</div>
           <div class="text-sm font-medium text-tx-3">存储用量与访问统计</div>
         </div>
-        <div class="stats-row grid grid-cols-2 gap-3 mb-6 md:grid-cols-3">
-          <div class="stat-card relative overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-none transition py-5 px-[18px] md:pt-6 md:px-[22px] md:pb-5 hover:border-bd-2 hover:bg-bg-4 hover:shadow-[0_1px_0_rgba(255,255,255,.04)_inset,0_4px_16px_rgba(0,0,0,.4)]"><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="10" r="2"/><path d="M2 17l6-6 4 4 3-3 7 7"/></svg><div class="mb-[11px] text-[.64rem] font-bold uppercase tracking-[.12em] text-tx-2">图片总数</div><div class="font-mono text-[2.05rem] font-bold leading-none tracking-[-.04em] text-tx" id="statImages">—</div><div class="mt-[7px] text-[.75rem] font-medium text-tx-2">张</div></div>
-          <div class="stat-card relative overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-none transition py-5 px-[18px] md:pt-6 md:px-[22px] md:pb-5 hover:border-bd-2 hover:bg-bg-4 hover:shadow-[0_1px_0_rgba(255,255,255,.04)_inset,0_4px_16px_rgba(0,0,0,.4)]"><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/></svg><div class="mb-[11px] text-[.64rem] font-bold uppercase tracking-[.12em] text-tx-2">存储用量</div><div class="font-mono text-[2.05rem] font-bold leading-none tracking-[-.04em] text-tx" id="statSize">—</div><div class="mt-[7px] text-[.75rem] font-medium text-tx-2" id="statSizeUnit"></div></div>
-          <div class="stat-card relative overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-none transition py-5 px-[18px] md:pt-6 md:px-[22px] md:pb-5 hover:border-bd-2 hover:bg-bg-4 hover:shadow-[0_1px_0_rgba(255,255,255,.04)_inset,0_4px_16px_rgba(0,0,0,.4)]"><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 0 1-1-9.9 6 6 0 0 1 11.3-2A5 5 0 0 1 18 18H7z"/></svg><div class="mb-[11px] text-[.64rem] font-bold uppercase tracking-[.12em] text-tx-2">免费额度剩余</div><div class="font-mono text-[2.05rem] font-bold leading-none tracking-[-.04em] text-tx" id="statFree">—</div><div class="mt-[7px] text-[.75rem] font-medium text-tx-2">GB / 10 GB</div></div>
-          <div class="stat-card relative overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-none transition py-5 px-[18px] md:pt-6 md:px-[22px] md:pb-5 hover:border-bd-2 hover:bg-bg-4 hover:shadow-[0_1px_0_rgba(255,255,255,.04)_inset,0_4px_16px_rgba(0,0,0,.4)]"><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg><div class="mb-[11px] text-[.64rem] font-bold uppercase tracking-[.12em] text-tx-2">图片访问次数</div><div class="font-mono text-[2.05rem] font-bold leading-none tracking-[-.04em] text-tx" id="statViews">—</div><div class="mt-[7px] text-[.75rem] font-medium text-tx-2">次</div></div>
-          <div class="stat-card relative overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-none transition py-5 px-[18px] md:pt-6 md:px-[22px] md:pb-5 hover:border-bd-2 hover:bg-bg-4 hover:shadow-[0_1px_0_rgba(255,255,255,.04)_inset,0_4px_16px_rgba(0,0,0,.4)]"><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6V2z"/><path d="M15 2v5h5"/><line x1="9" y1="13" x2="16" y2="13"/><line x1="9" y1="17" x2="16" y2="17"/></svg><div class="mb-[11px] text-[.64rem] font-bold uppercase tracking-[.12em] text-tx-2">托管页面数</div><div class="font-mono text-[2.05rem] font-bold leading-none tracking-[-.04em] text-tx" id="statPages">—</div><div class="mt-[7px] text-[.75rem] font-medium text-tx-2">个</div></div>
-          <div class="stat-card relative overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-none transition py-5 px-[18px] md:pt-6 md:px-[22px] md:pb-5 hover:border-bd-2 hover:bg-bg-4 hover:shadow-[0_1px_0_rgba(255,255,255,.04)_inset,0_4px_16px_rgba(0,0,0,.4)]"><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,18 9,10 13,14 22,4"/><polyline points="16,4 22,4 22,10"/></svg><div class="mb-[11px] text-[.64rem] font-bold uppercase tracking-[.12em] text-tx-2">页面访问次数</div><div class="font-mono text-[2.05rem] font-bold leading-none tracking-[-.04em] text-tx" id="statPageViews">—</div><div class="mt-[7px] text-[.75rem] font-medium text-tx-2">次</div></div>
+        <div class="stats-row grid grid-cols-2 gap-3 mb-6 sm:grid-cols-[repeat(auto-fit,minmax(190px,1fr))]">
+          <div class="stat-card relative overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-none transition py-5 px-[18px] md:pt-6 md:px-[22px] md:pb-5 hover:border-bd-2 hover:bg-bg-4 hover:shadow-[0_1px_0_rgba(255,255,255,.04)_inset,0_4px_16px_rgba(0,0,0,.4)]"><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="10" r="2"/><path d="M2 17l6-6 4 4 3-3 7 7"/></svg><div class="mb-[11px] text-[.64rem] font-bold uppercase tracking-[.12em] text-tx-2">图片总数</div><div class="font-mono text-[2.05rem] font-bold leading-none tracking-[-.04em] text-tx" id="statImages">—</div><div class="mt-[7px] text-[.75rem] font-medium text-tx-2">张</div><div class="stat-spark mt-2.5 flex items-center gap-1.5 h-[18px]" id="statImagesSpark"></div></div>
+          <div class="stat-card relative overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-none transition py-5 px-[18px] md:pt-6 md:px-[22px] md:pb-5 hover:border-bd-2 hover:bg-bg-4 hover:shadow-[0_1px_0_rgba(255,255,255,.04)_inset,0_4px_16px_rgba(0,0,0,.4)]"><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/></svg><div class="mb-[11px] text-[.64rem] font-bold uppercase tracking-[.12em] text-tx-2">存储用量</div><div class="font-mono text-[2.05rem] font-bold leading-none tracking-[-.04em] text-tx" id="statSize">—</div><div class="mt-[7px] text-[.75rem] font-medium text-tx-2" id="statSizeUnit"></div><div class="stat-spark mt-2.5 flex items-center gap-1.5 h-[18px]" id="statSizeSpark"></div></div>
+          <div class="stat-card relative overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-none transition py-5 px-[18px] md:pt-6 md:px-[22px] md:pb-5 hover:border-bd-2 hover:bg-bg-4 hover:shadow-[0_1px_0_rgba(255,255,255,.04)_inset,0_4px_16px_rgba(0,0,0,.4)]"><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 0 1-1-9.9 6 6 0 0 1 11.3-2A5 5 0 0 1 18 18H7z"/></svg><div class="mb-[11px] text-[.64rem] font-bold uppercase tracking-[.12em] text-tx-2">免费额度剩余</div><div class="font-mono text-[2.05rem] font-bold leading-none tracking-[-.04em] text-tx" id="statFree">—</div><div class="mt-[7px] text-[.75rem] font-medium text-tx-2">GB / 10 GB</div><div class="stat-spark mt-2.5 flex items-center gap-1.5 h-[18px]" id="statFreeSpark"></div></div>
+          <div class="stat-card relative overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-none transition py-5 px-[18px] md:pt-6 md:px-[22px] md:pb-5 hover:border-bd-2 hover:bg-bg-4 hover:shadow-[0_1px_0_rgba(255,255,255,.04)_inset,0_4px_16px_rgba(0,0,0,.4)]"><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg><div class="mb-[11px] text-[.64rem] font-bold uppercase tracking-[.12em] text-tx-2">图片访问次数</div><div class="font-mono text-[2.05rem] font-bold leading-none tracking-[-.04em] text-tx" id="statViews">—</div><div class="mt-[7px] text-[.75rem] font-medium text-tx-2">次</div><div class="stat-spark mt-2.5 flex items-center gap-1.5 h-[18px]" id="statViewsSpark"></div></div>
+          <div class="stat-card relative overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-none transition py-5 px-[18px] md:pt-6 md:px-[22px] md:pb-5 hover:border-bd-2 hover:bg-bg-4 hover:shadow-[0_1px_0_rgba(255,255,255,.04)_inset,0_4px_16px_rgba(0,0,0,.4)]"><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6V2z"/><path d="M15 2v5h5"/><line x1="9" y1="13" x2="16" y2="13"/><line x1="9" y1="17" x2="16" y2="17"/></svg><div class="mb-[11px] text-[.64rem] font-bold uppercase tracking-[.12em] text-tx-2">托管页面数</div><div class="font-mono text-[2.05rem] font-bold leading-none tracking-[-.04em] text-tx" id="statPages">—</div><div class="mt-[7px] text-[.75rem] font-medium text-tx-2">个</div><div class="stat-spark mt-2.5 flex items-center gap-1.5 h-[18px]" id="statPagesSpark"></div></div>
+          <div class="stat-card relative overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-none transition py-5 px-[18px] md:pt-6 md:px-[22px] md:pb-5 hover:border-bd-2 hover:bg-bg-4 hover:shadow-[0_1px_0_rgba(255,255,255,.04)_inset,0_4px_16px_rgba(0,0,0,.4)]"><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,18 9,10 13,14 22,4"/><polyline points="16,4 22,4 22,10"/></svg><div class="mb-[11px] text-[.64rem] font-bold uppercase tracking-[.12em] text-tx-2">页面访问次数</div><div class="font-mono text-[2.05rem] font-bold leading-none tracking-[-.04em] text-tx" id="statPageViews">—</div><div class="mt-[7px] text-[.75rem] font-medium text-tx-2">次</div><div class="stat-spark mt-2.5 flex items-center gap-1.5 h-[18px]" id="statPageViewsSpark"></div></div>
         </div>
 
         <!-- CF 免费额度 -->
@@ -210,7 +209,7 @@ export function renderAdminPage() {
           <!-- Workers -->
           <div class="border-b border-bd px-4 py-3 last:border-b-0">
             <div class="mb-[10px] flex items-center gap-1 text-[.59rem] font-bold uppercase tracking-[.12em] text-tx-3"><svg class="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 4,14 11,14 10,22 20,9 13,9 13,2"/></svg>Workers 计算</div>
-            <div class="grid grid-cols-[repeat(auto-fill,minmax(170px,1fr))] gap-[9px]">
+            <div class="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-[9px]">
               <div class="rounded-sm border border-bd bg-bg-2 px-[13px] py-[11px]">
                 <div class="mb-[5px] flex items-start justify-between gap-1.5">
                   <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">请求次数（今日）</span>
@@ -230,7 +229,7 @@ export function renderAdminPage() {
           <!-- R2 Storage -->
           <div class="border-b border-bd px-4 py-3 last:border-b-0">
             <div class="mb-[10px] flex items-center gap-1 text-[.59rem] font-bold uppercase tracking-[.12em] text-tx-3"><svg class="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/></svg>R2 对象存储</div>
-            <div class="grid grid-cols-[repeat(auto-fill,minmax(170px,1fr))] gap-[9px]">
+            <div class="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-[9px]">
               <div class="rounded-sm border border-bd bg-bg-2 px-[13px] py-[11px]">
                 <div class="mb-[5px] flex items-start justify-between gap-1.5">
                   <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">存储用量</span>
@@ -276,7 +275,7 @@ export function renderAdminPage() {
           <!-- KV -->
           <div class="border-b border-bd px-4 py-3 last:border-b-0">
             <div class="mb-[10px] flex items-center gap-1 text-[.59rem] font-bold uppercase tracking-[.12em] text-tx-3"><svg class="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="6" rx="1"/><rect x="3" y="10" width="18" height="6" rx="1"/><rect x="3" y="17" width="18" height="4" rx="1"/><line x1="6" y1="6" x2="6" y2="6"/></svg>Workers KV（STATS 命名空间，日限额独立计算）</div>
-            <div class="grid grid-cols-[repeat(auto-fill,minmax(170px,1fr))] gap-[9px]">
+            <div class="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-[9px]">
               <div class="rounded-sm border border-bd bg-bg-2 px-[13px] py-[11px]">
                 <div class="mb-[5px] flex items-start justify-between gap-1.5">
                   <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">KV 读取</span>
@@ -397,7 +396,7 @@ export function renderAdminPage() {
       </div>
 
       <!-- ── Images ── -->
-      <div class="section hidden max-w-[1120px] px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-images">
+      <div class="section hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-images">
         <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
           <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">图库管理</div>
           <div class="text-sm font-medium text-tx-3">查看、删除图片及访问统计</div>
@@ -423,7 +422,7 @@ export function renderAdminPage() {
       </div>
 
       <!-- ── Users ── -->
-      <div class="section hidden max-w-[1120px] px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-users">
+      <div class="section hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-users">
         <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
           <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">用户管理</div>
           <div class="text-sm font-medium text-tx-3">创建账号并设置上传权限</div>
@@ -442,7 +441,7 @@ export function renderAdminPage() {
       </div>
 
       <!-- ── Pages ── -->
-      <div class="section hidden max-w-[1120px] px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-pages">
+      <div class="section hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-pages">
         <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
           <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">页面管理</div>
           <div class="text-sm font-medium text-tx-3">托管的 MD / HTML 文档</div>
@@ -481,7 +480,7 @@ export function renderAdminPage() {
       </div>
 
       <!-- ── Settings ── -->
-      <div class="section hidden max-w-[1120px] px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-settings">
+      <div class="section hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-settings">
         <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
           <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">系统设置</div>
           <div class="text-sm font-medium text-tx-3">上传限制与文件类型配置</div>
@@ -521,7 +520,7 @@ export function renderAdminPage() {
       </div>
 
       <!-- ── Protos ── -->
-      <div class="section hidden max-w-[1120px] px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-protos">
+      <div class="section hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-protos">
         <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
           <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">原型管理</div>
           <div class="text-sm font-medium text-tx-3">AxureRP / HTML 原型文件托管</div>
@@ -568,12 +567,12 @@ export function renderAdminPage() {
       </div>
 
       <!-- ── Members ── -->
-      <div class="section hidden max-w-[1120px] px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-members">
+      <div class="section hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-members">
         <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
           <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">成员统计</div>
           <div class="text-sm font-medium text-tx-3">成员账号的详细上传与配额数据</div>
         </div>
-        <div class="mb-summary grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-[10px] mb-[18px]">
+        <div class="mb-summary grid grid-cols-[repeat(auto-fit,minmax(130px,1fr))] gap-[10px] mb-[18px]">
           <div class="rounded-md border border-bd bg-bg-3 p-[14px]"><div class="mb-1.5 text-[.62rem] font-bold uppercase tracking-[.1em] text-tx-3">注册成员</div><div class="font-mono text-[1.65rem] font-bold leading-none text-tx" id="mbTotal">—</div></div>
           <div class="rounded-md border border-bd bg-bg-3 p-[14px]"><div class="mb-1.5 text-[.62rem] font-bold uppercase tracking-[.1em] text-tx-3">今日活跃</div><div class="font-mono text-[1.65rem] font-bold leading-none text-tx" id="mbActive">—</div></div>
           <div class="rounded-md border border-bd bg-bg-3 p-[14px]"><div class="mb-1.5 text-[.62rem] font-bold uppercase tracking-[.1em] text-tx-3">今日上传合计</div><div class="font-mono text-[1.65rem] font-bold leading-none text-tx" id="mbSumToday">—</div></div>
@@ -1077,6 +1076,42 @@ export function renderAdminPage() {
   // ── Dashboard ──────────────────────────────────────────────────────────────
   let allPageStats = {};
 
+  // 客户端趋势追踪：无历史后端时，用本地记录的每次刷新值模拟迷你趋势线 + 环比涨跌幅
+  function sparkTrack(id, value) {
+    const key = 'onimg_spark_' + id;
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) {}
+    if (typeof value === 'number' && isFinite(value)) {
+      hist.push(value);
+      if (hist.length > 10) hist = hist.slice(-10);
+      try { localStorage.setItem(key, JSON.stringify(hist)); } catch(e) {}
+    }
+    return hist;
+  }
+  function renderSpark(elId, id, value) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const hist = sparkTrack(id, value);
+    if (hist.length < 2) { el.innerHTML = ''; return; }
+    const n = hist.length, w = 52, h = 16;
+    const min = Math.min(...hist), max = Math.max(...hist);
+    const pts = hist.map((v, i) => {
+      const x = (i / (n - 1)) * w;
+      const y = max === min ? h / 2 : h - ((v - min) / (max - min)) * h;
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+    const prev = hist[n - 2], curr = hist[n - 1];
+    const flat = curr === prev;
+    const up = curr > prev;
+    const delta = prev !== 0 ? Math.abs((curr - prev) / prev) * 100 : (curr > 0 ? 100 : 0);
+    const color = flat ? 'var(--color-tx-3)' : (up ? 'var(--color-green)' : 'var(--color-red)');
+    const arrow = flat ? '' : (up ? '↑' : '↓');
+    const deltaTxt = flat ? '持平' : (arrow + ' ' + (delta >= 1000 ? Math.round(delta) : delta.toFixed(1)) + '%');
+    el.innerHTML = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" fill="none">' +
+      '<polyline points="' + pts + '" stroke="' + color + '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+      '<span class="font-mono text-[.68rem] font-bold" style="color:' + color + '">' + deltaTxt + '</span>';
+  }
+
   async function loadDashboard() {
     const [sRes, iRes, pRes, psRes, prRes, prsRes] = await Promise.all([
       adminFetch('/admin/stats',           { headers: authH() }),
@@ -1099,13 +1134,22 @@ export function renderAdminPage() {
     allPageStats = pgStats;
 
     document.getElementById('statImages').textContent = totalImages.toLocaleString();
+    renderSpark('statImagesSpark', 'images', totalImages);
     const { val, unit } = fmtSizeParts(totalSize);
     document.getElementById('statSize').textContent = val;
     document.getElementById('statSizeUnit').textContent = unit;
-    document.getElementById('statFree').textContent = Math.max(0, 10 - totalSize/1073741824).toFixed(2);
-    document.getElementById('statViews').textContent = Object.values(stats).reduce((s,v) => s+(v.count??0), 0).toLocaleString();
+    renderSpark('statSizeSpark', 'size', totalSize);
+    const freeGb = Math.max(0, 10 - totalSize/1073741824);
+    document.getElementById('statFree').textContent = freeGb.toFixed(2);
+    renderSpark('statFreeSpark', 'free', freeGb);
+    const totalViews = Object.values(stats).reduce((s,v) => s+(v.count??0), 0);
+    document.getElementById('statViews').textContent = totalViews.toLocaleString();
+    renderSpark('statViewsSpark', 'views', totalViews);
     document.getElementById('statPages').textContent = pages.length.toLocaleString();
-    document.getElementById('statPageViews').textContent = Object.values(pgStats).reduce((s,v) => s+(v.count??0), 0).toLocaleString();
+    renderSpark('statPagesSpark', 'pages', pages.length);
+    const totalPageViews = Object.values(pgStats).reduce((s,v) => s+(v.count??0), 0);
+    document.getElementById('statPageViews').textContent = totalPageViews.toLocaleString();
+    renderSpark('statPageViewsSpark', 'pageviews', totalPageViews);
 
     // Tab count badges
     const imgWithViews = Object.values(stats).filter(s => (s.count??0) > 0).length;

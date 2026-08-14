@@ -26,7 +26,7 @@ export function renderPage() {
     @keyframes loginSpin { to { transform: rotate(360deg); } }
     @keyframes loginShake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
 
-    main { flex: 1; padding: var(--sp-6) var(--sp-6) var(--sp-7); max-width: 1080px; margin: 0 auto; width: 100%; }
+    main { flex: 1; padding: var(--sp-6) var(--sp-6) var(--sp-7); max-width: 1600px; margin: 0 auto; width: 100%; }
     /* Tag editor modal */
 
 
@@ -113,12 +113,13 @@ export function renderPage() {
 </head>
 <body class="min-h-screen max-w-full overflow-x-hidden bg-bg font-sans font-[450] text-tx antialiased">
 <div class="mob-header fixed inset-x-0 top-0 z-20 flex h-[50px] items-center gap-[14px] border-b border-bd bg-bg-2 px-4 md:hidden">
-  <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-transparent text-tx-2 cursor-pointer transition hover:border-bd-2 hover:text-tx" id="mobHamburger" aria-label="菜单"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/></svg></button>
   <div class="text-[.92rem] font-bold text-tx">Onimg</div>
+  <div class="flex-1"></div>
+  <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-transparent text-tx-2 cursor-pointer transition hover:border-bd-2 hover:text-tx" id="mobHamburger" aria-label="账号"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5.3" r="3"/><path d="M2 14.2c0-3.2 2.7-5.4 6-5.4s6 2.2 6 5.4"/></svg></button>
 </div>
 <div class="sidebar-mask fixed inset-0 z-[9] hidden bg-black/60 [&.show]:block" id="sidebarMask"></div>
 <div class="flex min-h-screen">
-  <aside class="fixed inset-y-0 left-0 z-10 flex w-60 shrink-0 -translate-x-60 flex-col border-r border-bd bg-bg-2 transition-transform duration-[.22s] ease-in-out md:translate-x-0 [&.open]:translate-x-0 [&.open]:z-[15]" id="sidebar">
+  <aside class="fixed left-0 top-[50px] bottom-auto md:top-0 md:bottom-0 z-10 flex w-60 max-h-[calc(100vh-50px)] md:max-h-none shrink-0 -translate-x-60 flex-col overflow-y-auto rounded-br-xl md:rounded-none border-r border-b md:border-b-0 border-bd bg-bg-2 shadow-lg md:shadow-none transition-transform duration-[.22s] ease-in-out md:translate-x-0 [&.open]:translate-x-0 [&.open]:z-[25]" id="sidebar">
     <div class="flex items-center gap-2.5 border-b border-bd px-4 pt-[18px] pb-3.5">
       <div class="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-sm border border-brand/30 bg-gradient-to-br from-[#242836] to-[#14161d] text-[.78rem] font-extrabold tracking-[-.01em] text-accent shadow-[0_3px_10px_rgba(0,0,0,.45)]">O</div>
       <div class="flex flex-col gap-px">
@@ -126,8 +127,8 @@ export function renderPage() {
         <span class="text-[.58rem] font-semibold uppercase tracking-[.12em] text-tx-3">IMAGE HOST</span>
       </div>
     </div>
-    <div class="px-4 pt-[14px] pb-[5px] text-2xs font-bold uppercase tracking-[.12em] text-tx-3">导航</div>
-    <nav class="flex flex-1 flex-col gap-px overflow-y-auto px-2 pt-1 pb-2">
+    <div class="max-md:hidden px-4 pt-[14px] pb-[5px] text-2xs font-bold uppercase tracking-[.12em] text-tx-3">导航</div>
+    <nav class="max-md:hidden flex flex-1 flex-col gap-px overflow-y-auto px-2 pt-1 pb-2">
       <button class="tab active relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] max-md:min-h-[44px]" data-tab="gallery-pub"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><ellipse cx="8" cy="8" rx="2.8" ry="6.5"/><line x1="1.5" y1="8" x2="14.5" y2="8"/></svg></span><span>公开图库</span></button>
       <button class="tab relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] max-md:min-h-[44px]" data-tab="upload"        id="tabUpload"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="14" x2="8" y2="3"/><polyline points="3.5,7.5 8,3 12.5,7.5"/></svg></span><span>上传</span></button>
       <button class="tab relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] max-md:min-h-[44px]" data-tab="gallery-mine"  id="tabMine"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2.5" width="14" height="11" rx="1.5"/><circle cx="5.2" cy="6.3" r="1.3"/><path d="M1.5 11l4-4 2.5 2.5 2-2 4.5 4.5"/></svg></span><span>我的图库</span></button>
@@ -144,7 +145,30 @@ export function renderPage() {
     </div>
   </aside>
 
-  <div class="flex min-w-0 flex-1 flex-col min-h-screen bg-bg pt-[52px] md:ml-60 md:pt-0">
+  <nav class="mob-tabbar fixed inset-x-0 bottom-0 z-20 flex items-stretch border-t border-bd bg-bg-2/95 backdrop-blur-md md:hidden" id="mobTabbar">
+    <button class="tab active relative flex flex-1 flex-col items-center justify-center gap-1 overflow-hidden border-none bg-transparent pt-2 text-tx-3 transition active:scale-95 [&.active]:text-brand" style="padding-bottom:calc(.5rem + env(safe-area-inset-bottom))" data-tab="gallery-pub">
+      <span class="flex h-5 w-5 items-center justify-center [&_svg]:h-[19px] [&_svg]:w-[19px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><ellipse cx="8" cy="8" rx="2.8" ry="6.5"/><line x1="1.5" y1="8" x2="14.5" y2="8"/></svg></span>
+      <span class="text-[10px] font-semibold leading-none">公开</span>
+    </button>
+    <button class="tab relative flex flex-1 flex-col items-center justify-center gap-1 overflow-hidden border-none bg-transparent pt-2 text-tx-3 transition active:scale-95 [&.active]:text-brand" style="padding-bottom:calc(.5rem + env(safe-area-inset-bottom))" data-tab="upload">
+      <span class="flex h-5 w-5 items-center justify-center [&_svg]:h-[19px] [&_svg]:w-[19px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="14" x2="8" y2="3"/><polyline points="3.5,7.5 8,3 12.5,7.5"/></svg></span>
+      <span class="text-[10px] font-semibold leading-none">上传</span>
+    </button>
+    <button class="tab relative flex flex-1 flex-col items-center justify-center gap-1 overflow-hidden border-none bg-transparent pt-2 text-tx-3 transition active:scale-95 [&.active]:text-brand" style="padding-bottom:calc(.5rem + env(safe-area-inset-bottom))" data-tab="gallery-mine">
+      <span class="flex h-5 w-5 items-center justify-center [&_svg]:h-[19px] [&_svg]:w-[19px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2.5" width="14" height="11" rx="1.5"/><circle cx="5.2" cy="6.3" r="1.3"/><path d="M1.5 11l4-4 2.5 2.5 2-2 4.5 4.5"/></svg></span>
+      <span class="text-[10px] font-semibold leading-none">我的</span>
+    </button>
+    <button class="tab relative flex flex-1 flex-col items-center justify-center gap-1 overflow-hidden border-none bg-transparent pt-2 text-tx-3 transition active:scale-95 [&.active]:text-brand" style="padding-bottom:calc(.5rem + env(safe-area-inset-bottom))" data-tab="pages">
+      <span class="flex h-5 w-5 items-center justify-center [&_svg]:h-[19px] [&_svg]:w-[19px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 1h7l4 4v10H3V1z"/><polyline points="10,1 10,5 14,5"/><line x1="4" y1="8" x2="12" y2="8"/><line x1="4" y1="11" x2="9" y2="11"/></svg></span>
+      <span class="text-[10px] font-semibold leading-none">页面</span>
+    </button>
+    <button class="tab relative flex flex-1 flex-col items-center justify-center gap-1 overflow-hidden border-none bg-transparent pt-2 text-tx-3 transition active:scale-95 [&.active]:text-brand" style="padding-bottom:calc(.5rem + env(safe-area-inset-bottom))" data-tab="protos">
+      <span class="flex h-5 w-5 items-center justify-center [&_svg]:h-[19px] [&_svg]:w-[19px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v5l-8 8H2V2z"/><line x1="5" y1="2" x2="5" y2="5"/><line x1="8" y1="2" x2="8" y2="4"/><line x1="11" y1="2" x2="11" y2="5"/></svg></span>
+      <span class="text-[10px] font-semibold leading-none">原型</span>
+    </button>
+  </nav>
+
+  <div class="flex min-w-0 flex-1 flex-col min-h-screen bg-bg pt-[52px] pb-[64px] md:ml-60 md:pt-0 md:pb-0">
 
   <!-- Login overlay -->
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-6 backdrop-blur-[6px]" id="loginOverlay" style="display:none">
@@ -464,12 +488,12 @@ export function renderPage() {
 </div>
 
 <!-- Lightbox -->
-<div class="lightbox fixed inset-0 z-[100] hidden items-center justify-center bg-overlay p-6 [&.show]:flex" id="lightbox">
-  <button class="absolute right-[14px] top-[14px] flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="lbClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
-  <button class="absolute left-[14px] top-1/2 z-[101] flex h-[60px] w-10 -translate-y-1/2 items-center justify-center rounded-md border border-bd-2 bg-black/60 text-[1.6rem] text-tx transition hover:border-bd-focus hover:bg-bg-hover" id="lbPrev">‹</button>
-  <button class="absolute right-[14px] top-1/2 z-[101] flex h-[60px] w-10 -translate-y-1/2 items-center justify-center rounded-md border border-bd-2 bg-black/60 text-[1.6rem] text-tx transition hover:border-bd-focus hover:bg-bg-hover" id="lbNext">›</button>
-  <div class="w-full max-w-[760px] overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow">
-    <div class="flex min-h-[280px] max-h-[55vh] items-center justify-center bg-bg-2"><img class="max-h-[55vh] max-w-full object-contain" id="lbImg" src="" alt=""></div>
+<div class="lightbox fixed inset-0 z-[100] hidden items-center justify-center bg-overlay md:p-6 [&.show]:flex" id="lightbox">
+  <button class="absolute right-[14px] top-[14px] z-[102] flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="lbClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+  <button class="absolute left-[14px] top-1/2 z-[101] flex h-[60px] w-10 -translate-y-1/2 items-center justify-center rounded-md border border-bd-2 bg-black/60 text-[1.6rem] text-tx transition hover:border-bd-focus hover:bg-bg-hover max-md:hidden" id="lbPrev">‹</button>
+  <button class="absolute right-[14px] top-1/2 z-[101] flex h-[60px] w-10 -translate-y-1/2 items-center justify-center rounded-md border border-bd-2 bg-black/60 text-[1.6rem] text-tx transition hover:border-bd-focus hover:bg-bg-hover max-md:hidden" id="lbNext">›</button>
+  <div class="w-full max-w-[760px] overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow max-md:h-full max-md:max-w-none max-md:flex max-md:flex-col max-md:rounded-none max-md:border-none" id="lbCard">
+    <div class="flex min-h-[280px] max-h-[55vh] items-center justify-center bg-bg-2 max-md:h-0 max-md:max-h-none max-md:min-h-0 max-md:flex-1 max-md:touch-none" id="lbImgWrap"><img class="max-h-[55vh] max-w-full object-contain max-md:h-full max-md:max-h-full" id="lbImg" src="" alt=""></div>
     <div class="px-[18px] py-[14px]">
       <div class="break-all font-mono text-[.85rem] text-tx" id="lbKey"></div>
       <div class="mt-3 flex gap-[7px]">
@@ -1113,16 +1137,16 @@ export function renderPage() {
     document.getElementById('doLogin').disabled = false;
   });
 
-  // Tabs (sidebar nav)
+  // Tabs (sidebar nav + mobile bottom tabbar)
   function activateTab(name) {
-    const t = document.querySelector('.tab[data-tab="' + name + '"]');
-    if (!t) return;
+    const targets = document.querySelectorAll('.tab[data-tab="' + name + '"]');
+    if (!targets.length) return;
     if (!token && ['upload','gallery-mine','pages','protos'].includes(name)) {
       openLoginOverlay(); return;
     }
     document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
     document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
-    t.classList.add('active');
+    targets.forEach(t => t.classList.add('active'));
     document.getElementById('panel-' + name).classList.add('active');
     if (name === 'gallery-mine') loadMineGallery();
     if (name === 'pages') loadPages();
@@ -2553,6 +2577,39 @@ export function renderPage() {
   document.getElementById('lbNext').addEventListener('click', () => lbNavigate(1));
   document.getElementById('lbBbcode').addEventListener('click', () => { cp('[img]' + location.origin + '/' + lbKey + '[/img]'); toast('已复制 BBCode'); });
   document.getElementById('lbDelete').addEventListener('click', () => delMine(lbKey));
+
+  // Mobile: full-screen swipe — left/right switches image, down dismisses
+  (function() {
+    const card = document.getElementById('lbCard');
+    const wrap = document.getElementById('lbImgWrap');
+    let sx = 0, sy = 0, dx = 0, dy = 0, dragging = false;
+    wrap.addEventListener('touchstart', e => {
+      if (e.touches.length !== 1) return;
+      sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+      dx = 0; dy = 0; dragging = true;
+      card.style.transition = 'none';
+    }, { passive: true });
+    wrap.addEventListener('touchmove', e => {
+      if (!dragging || e.touches.length !== 1) return;
+      dx = e.touches[0].clientX - sx; dy = e.touches[0].clientY - sy;
+      if (Math.abs(dy) > Math.abs(dx) && dy > 0) {
+        card.style.transform = 'translateY(' + dy + 'px)';
+        card.style.opacity = String(Math.max(1 - dy / 400, .3));
+      }
+    }, { passive: true });
+    wrap.addEventListener('touchend', () => {
+      if (!dragging) return;
+      dragging = false;
+      card.style.transition = 'transform .2s var(--ease-aperture), opacity .2s var(--ease-aperture)';
+      const absX = Math.abs(dx), absY = Math.abs(dy);
+      if (absY > absX && dy > 90) {
+        document.getElementById('lightbox').classList.remove('show');
+      } else if (absX > absY && absX > 50) {
+        lbNavigate(dx < 0 ? 1 : -1);
+      }
+      card.style.transform = ''; card.style.opacity = '';
+    });
+  })();
 
   // ── Protos ──
   const protoDropZone = document.getElementById('protoDropZone');
