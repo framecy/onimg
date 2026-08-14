@@ -451,6 +451,7 @@ export function renderAdminPage() {
           <input class="w-[210px] rounded-sm border border-bd bg-bg-3 px-[11px] py-[7px] font-sans text-[.83rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)] !max-w-[200px]" id="adminPageSearch" type="text" placeholder="搜索标题/slug/作者…">
           <select class="max-w-[140px] cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-1.5 font-sans text-[.76rem] text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx ml-2" id="adminPageProjFilter"><option value="all">全部项目</option></select>
           <select class="max-w-[140px] cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-1.5 font-sans text-[.76rem] text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx ml-1" id="adminPageGrpFilter"><option value="all">全部分组</option></select>
+          <select class="max-w-[140px] cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-1.5 font-sans text-[.76rem] text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx ml-1" id="adminPageTypeFilter"><option value="all">全部类型</option><option value="markdown">Markdown</option><option value="html">HTML</option></select>
           <div class="min-w-[20px] flex-1"></div>
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.78rem]" id="pageSelectToggle">选择</button>
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.78rem]" id="adminNewGroupBtn">+ 新建分组</button>
@@ -857,6 +858,77 @@ export function renderAdminPage() {
   const CF_FILL_BASE = 'h-[3px] rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red';
   const ICON_EYE = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg>';
   const ICON_EYE_OFF = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l12 12"/><path d="M6.6 3.4C7 3.3 7.5 3 8 3c4.5 0 7 5 7 5a13 13 0 0 1-2.3 3M4.2 4.2A13 13 0 0 0 1 8s2.5 5 7 5c1 0 1.9-.2 2.7-.6M6.2 6.2a2 2 0 0 0 2.6 2.6"/></svg>';
+
+  // Custom-styled dropdown: keeps the underlying <select> as the source of truth
+  // (value/change events unchanged) but replaces the browser's native popup — which
+  // can't be restyled for row height/hover/width — with a Tailwind-styled listbox.
+  // Trigger padding/font matches adminPageSearch so it lines up with the search box.
+  function initCustomSelect(select) {
+    if (!select || select.dataset.csReady) return;
+    select.dataset.csReady = '1';
+    // Only carry over layout/sizing classes (width, margins, breakpoints) to the
+    // wrapper — the visual chrome (border/bg/padding) lives solely on the trigger
+    // button below, so we don't end up with a box nested inside another box.
+    const layoutClasses = select.className.split(/\s+/)
+      .filter(c => /^(w-|max-w-|min-w-|!w-|ml-|mr-|mt-|mb-|mob:|xs:|md:|lg:|xl:)/.test(c))
+      .join(' ');
+    const wrap = document.createElement('div');
+    wrap.className = 'cs-wrap relative inline-block ' + layoutClasses;
+    select.parentNode.insertBefore(wrap, select);
+    wrap.appendChild(select);
+    select.className = 'hidden';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'flex w-full min-w-0 items-center justify-between gap-2 rounded-sm border border-bd bg-bg-3 px-[11px] py-[7px] font-sans text-[.83rem] text-tx outline-none transition cursor-pointer hover:border-bd-2 hover:bg-bg-hover focus:border-bd-focus [&.open]:border-bd-focus';
+    const label = document.createElement('span');
+    label.className = 'truncate min-w-0';
+    const chevron = document.createElement('span');
+    chevron.className = 'shrink-0 text-tx-3 transition-transform duration-150 [&.open]:rotate-180';
+    chevron.innerHTML = '<svg class="h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,6 8,10 12,6"/></svg>';
+    btn.append(label, chevron);
+    wrap.appendChild(btn);
+
+    const list = document.createElement('div');
+    list.className = 'cs-list absolute left-0 top-[calc(100%+4px)] z-30 hidden min-w-full w-max max-w-[280px] overflow-y-auto rounded-md border border-bd-2 bg-bg-4 py-1.5 shadow-lg max-h-[280px]';
+    wrap.appendChild(list);
+
+    function buildOptions() {
+      list.innerHTML = '';
+      Array.from(select.options).forEach(opt => {
+        const row = document.createElement('button');
+        row.type = 'button';
+        const active = opt.value === select.value;
+        row.className = 'flex w-full items-center px-3.5 py-2.5 text-left text-[.84rem] transition cursor-pointer hover:bg-bg-hover' +
+          (active ? ' bg-brand-muted text-tx font-semibold' : ' text-tx-2 hover:text-tx');
+        row.textContent = opt.textContent;
+        row.addEventListener('click', () => {
+          if (select.value !== opt.value) {
+            select.value = opt.value;
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+          syncLabel();
+          closeList();
+        });
+        list.appendChild(row);
+      });
+    }
+    function syncLabel() {
+      const opt = select.options[select.selectedIndex];
+      label.textContent = opt ? opt.textContent : '';
+    }
+    function openList() { buildOptions(); list.classList.remove('hidden'); btn.classList.add('open'); chevron.classList.add('open'); }
+    function closeList() { list.classList.add('hidden'); btn.classList.remove('open'); chevron.classList.remove('open'); }
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      list.classList.contains('hidden') ? openList() : closeList();
+    });
+    document.addEventListener('click', (e) => { if (!wrap.contains(e.target)) closeList(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeList(); });
+    // options are rebuilt dynamically (e.g. project/group filters) — keep the label in sync
+    new MutationObserver(syncLabel).observe(select, { childList: true });
+    syncLabel();
+  }
 
   function _fflate() {
     // Lazy-execute the inlined fflate bundle on first use (zip/unzip).
@@ -2004,12 +2076,14 @@ export function renderAdminPage() {
     const q = (document.getElementById('adminPageSearch')?.value || '').toLowerCase();
     const projFilter = document.getElementById('adminPageProjFilter')?.value || 'all';
     const grpFilter = document.getElementById('adminPageGrpFilter')?.value || 'all';
+    const typeFilter = document.getElementById('adminPageTypeFilter')?.value || 'all';
     const projMap = Object.fromEntries(adminAllProjects.map(p => [p.id, p.name]));
     const grpMap = Object.fromEntries(adminAllGroups.map(g => [g.id, g.name]));
     let filtered = adminAllPages;
     if (q) filtered = filtered.filter(p =>
       (p.title||'').toLowerCase().includes(q) || p.slug.toLowerCase().includes(q) || (p.owner||'').toLowerCase().includes(q)
     );
+    if (typeFilter !== 'all') filtered = filtered.filter(p => p.type === typeFilter);
     if (projFilter === '_none_') filtered = filtered.filter(p => !p.projectId);
     else if (projFilter !== 'all') filtered = filtered.filter(p => p.projectId === projFilter);
     if (grpFilter === '_none_') filtered = filtered.filter(p => !p.groupId);
@@ -2191,6 +2265,10 @@ export function renderAdminPage() {
   document.getElementById('adminPageSearch')?.addEventListener('input', renderAdminPages);
   document.getElementById('adminPageProjFilter')?.addEventListener('change', () => { updateAdminPageGrpFilter(); renderAdminPages(); });
   document.getElementById('adminPageGrpFilter')?.addEventListener('change', renderAdminPages);
+  document.getElementById('adminPageTypeFilter')?.addEventListener('change', renderAdminPages);
+  initCustomSelect(document.getElementById('adminPageProjFilter'));
+  initCustomSelect(document.getElementById('adminPageGrpFilter'));
+  initCustomSelect(document.getElementById('adminPageTypeFilter'));
 
   function genApmPwd() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';

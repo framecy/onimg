@@ -298,6 +298,11 @@ export function renderPage() {
         <select class="search-input w-full max-w-[260px] rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-[.84rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)] mob:max-w-none md:w-[220px] !w-auto cursor-pointer" id="pageProjectFilter">
           <option value="all">全部项目</option>
         </select>
+        <select class="search-input w-full max-w-[260px] rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-[.84rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)] mob:max-w-none md:w-[220px] !w-auto cursor-pointer" id="pageTypeFilter">
+          <option value="all">全部类型</option>
+          <option value="markdown">Markdown</option>
+          <option value="html">HTML</option>
+        </select>
         <div class="flex-1"></div>
         <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.78rem]" id="pageSelectToggle">选择</button>
         <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.78rem]" id="refreshPages">刷新</button>
@@ -726,6 +731,76 @@ export function renderPage() {
   const BTN_PRIMARY_TOGGLE = 'inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none';
   const ICON_EYE = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg>';
   const ICON_EYE_OFF = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l12 12"/><path d="M6.6 3.4C7 3.3 7.5 3 8 3c4.5 0 7 5 7 5a13 13 0 0 1-2.3 3M4.2 4.2A13 13 0 0 0 1 8s2.5 5 7 5c1 0 1.9-.2 2.7-.6M6.2 6.2a2 2 0 0 0 2.6 2.6"/></svg>';
+
+  // Custom-styled dropdown: keeps the underlying <select> as the source of truth
+  // (value/change events unchanged) but replaces the browser's native popup — which
+  // can't be restyled for row height/hover/width — with a Tailwind-styled listbox.
+  function initCustomSelect(select) {
+    if (!select || select.dataset.csReady) return;
+    select.dataset.csReady = '1';
+    // Only carry over layout/sizing classes (width, margins, breakpoints) to the
+    // wrapper — the visual chrome (border/bg/padding) lives solely on the trigger
+    // button below, so we don't end up with a box nested inside another box.
+    const layoutClasses = select.className.split(/\s+/)
+      .filter(c => /^(w-|max-w-|min-w-|!w-|ml-|mr-|mt-|mb-|mob:|xs:|md:|lg:|xl:)/.test(c))
+      .join(' ');
+    const wrap = document.createElement('div');
+    wrap.className = 'cs-wrap relative inline-block ' + layoutClasses;
+    select.parentNode.insertBefore(wrap, select);
+    wrap.appendChild(select);
+    select.className = 'hidden';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'flex w-full min-w-0 items-center justify-between gap-2 rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-[.84rem] text-tx outline-none transition cursor-pointer hover:border-bd-2 hover:bg-bg-hover focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)] [&.open]:border-bd-focus';
+    const label = document.createElement('span');
+    label.className = 'truncate min-w-0';
+    const chevron = document.createElement('span');
+    chevron.className = 'shrink-0 text-tx-3 transition-transform duration-150 [&.open]:rotate-180';
+    chevron.innerHTML = '<svg class="h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,6 8,10 12,6"/></svg>';
+    btn.append(label, chevron);
+    wrap.appendChild(btn);
+
+    const list = document.createElement('div');
+    list.className = 'cs-list absolute left-0 top-[calc(100%+4px)] z-30 hidden min-w-full w-max max-w-[280px] overflow-y-auto rounded-md border border-bd-2 bg-bg-4 py-1.5 shadow-lg max-h-[280px]';
+    wrap.appendChild(list);
+
+    function buildOptions() {
+      list.innerHTML = '';
+      Array.from(select.options).forEach(opt => {
+        const row = document.createElement('button');
+        row.type = 'button';
+        const active = opt.value === select.value;
+        row.className = 'flex w-full items-center px-3.5 py-2.5 text-left text-[.84rem] transition cursor-pointer hover:bg-bg-hover' +
+          (active ? ' bg-brand-muted text-tx font-semibold' : ' text-tx-2 hover:text-tx');
+        row.textContent = opt.textContent;
+        row.addEventListener('click', () => {
+          if (select.value !== opt.value) {
+            select.value = opt.value;
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+          syncLabel();
+          closeList();
+        });
+        list.appendChild(row);
+      });
+    }
+    function syncLabel() {
+      const opt = select.options[select.selectedIndex];
+      label.textContent = opt ? opt.textContent : '';
+    }
+    function openList() { buildOptions(); list.classList.remove('hidden'); btn.classList.add('open'); chevron.classList.add('open'); }
+    function closeList() { list.classList.add('hidden'); btn.classList.remove('open'); chevron.classList.remove('open'); }
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      list.classList.contains('hidden') ? openList() : closeList();
+    });
+    document.addEventListener('click', (e) => { if (!wrap.contains(e.target)) closeList(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeList(); });
+    // options are rebuilt dynamically (e.g. project filter) — keep the label in sync
+    new MutationObserver(syncLabel).observe(select, { childList: true });
+    syncLabel();
+  }
 
   function _fflate() {
     // Lazy-execute the inlined fflate bundle on first use (zip/unzip).
@@ -1741,8 +1816,10 @@ export function renderPage() {
   function renderPageTree() {
     const q = (document.getElementById('pageSearch')?.value || '').toLowerCase();
     const projFilter = document.getElementById('pageProjectFilter')?.value || 'all';
+    const typeFilter = document.getElementById('pageTypeFilter')?.value || 'all';
     const pages = userPages.filter(p => {
       if (q && !p.title.toLowerCase().includes(q) && !p.slug.toLowerCase().includes(q)) return false;
+      if (typeFilter !== 'all' && p.type !== typeFilter) return false;
       if (projFilter === '_none_') return !p.projectId && !p.groupId;
       if (projFilter !== 'all') return p.projectId === projFilter;
       return true;
@@ -2318,6 +2395,9 @@ export function renderPage() {
   // ── Pages search/filter ──
   document.getElementById('pageSearch')?.addEventListener('input', renderPageTree);
   document.getElementById('pageProjectFilter')?.addEventListener('change', renderPageTree);
+  document.getElementById('pageTypeFilter')?.addEventListener('change', renderPageTree);
+  initCustomSelect(document.getElementById('pageProjectFilter'));
+  initCustomSelect(document.getElementById('pageTypeFilter'));
   document.getElementById('refreshPages')?.addEventListener('click', loadPages);
 
   // ── Page multi-select ──
