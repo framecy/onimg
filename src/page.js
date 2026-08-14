@@ -113,23 +113,9 @@ export function renderPage() {
   </style>
 </head>
 <body class="min-h-screen max-w-full overflow-x-hidden bg-bg font-sans font-[450] text-tx antialiased">
-<div class="absolute top-[33px] left-0 right-0 md:left-60 z-30 hidden md:block pointer-events-none">
-  <div class="max-w-[1600px] mx-auto px-8 flex justify-end">
-    <div class="theme-switch pointer-events-auto flex items-center gap-0.5 rounded-md border border-bd-2 bg-bg-2 p-0.5">
-      <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="system" title="跟随系统"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="13" height="9" rx="1"/><line x1="5.5" y1="13.5" x2="10.5" y2="13.5"/><line x1="8" y1="11.5" x2="8" y2="13.5"/></svg></button>
-      <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="light" title="浅色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><line x1="8" y1="1" x2="8" y2="2.3"/><line x1="8" y1="13.7" x2="8" y2="15"/><line x1="1" y1="8" x2="2.3" y2="8"/><line x1="13.7" y1="8" x2="15" y2="8"/><line x1="3.05" y1="3.05" x2="3.96" y2="3.96"/><line x1="12.04" y1="12.04" x2="12.95" y2="12.95"/><line x1="3.05" y1="12.95" x2="3.96" y2="12.04"/><line x1="12.04" y1="3.96" x2="12.95" y2="3.05"/></svg></button>
-      <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="dark" title="暗色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7z"/></svg></button>
-    </div>
-  </div>
-</div>
 <div class="mob-header fixed inset-x-0 top-0 z-20 flex h-[50px] items-center gap-[14px] border-b border-bd bg-bg-2 px-4 md:hidden">
   <div class="text-[.92rem] font-bold text-tx">Onimg</div>
   <div class="flex-1"></div>
-  <div class="theme-switch flex items-center gap-0.5 rounded-md border border-bd-2 bg-bg-2 p-0.5">
-    <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="system" title="跟随系统"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="13" height="9" rx="1"/><line x1="5.5" y1="13.5" x2="10.5" y2="13.5"/><line x1="8" y1="11.5" x2="8" y2="13.5"/></svg></button>
-    <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="light" title="浅色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><line x1="8" y1="1" x2="8" y2="2.3"/><line x1="8" y1="13.7" x2="8" y2="15"/><line x1="1" y1="8" x2="2.3" y2="8"/><line x1="13.7" y1="8" x2="15" y2="8"/><line x1="3.05" y1="3.05" x2="3.96" y2="3.96"/><line x1="12.04" y1="12.04" x2="12.95" y2="12.95"/><line x1="3.05" y1="12.95" x2="3.96" y2="12.04"/><line x1="12.04" y1="3.96" x2="12.95" y2="3.05"/></svg></button>
-    <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="dark" title="暗色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7z"/></svg></button>
-  </div>
   <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-transparent text-tx-2 cursor-pointer transition hover:border-bd-2 hover:text-tx" id="mobHamburger" aria-label="账号"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5.3" r="3"/><path d="M2 14.2c0-3.2 2.7-5.4 6-5.4s6 2.2 6 5.4"/></svg></button>
 </div>
 <div class="sidebar-mask fixed inset-0 z-[9] hidden bg-black/60 [&.show]:block" id="sidebarMask"></div>
@@ -156,6 +142,13 @@ export function renderPage() {
     <div class="relative border-t border-bd px-2 pt-[10px] pb-3">
       <div id="userArea">
         <button class="w-full rounded-md border border-bd-2 bg-bg-3 px-3 py-[9px] text-center text-[.85rem] font-semibold text-tx transition hover:border-bd-focus hover:bg-bg-4" id="loginTrigger">登录</button>
+      </div>
+    </div>
+    <div class="border-t border-bd px-2 pt-[10px] pb-3">
+      <div class="theme-switch flex w-full items-stretch gap-0.5 rounded-md border border-bd-2 bg-bg-2 p-0.5">
+        <button class="theme-opt flex flex-1 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent py-[7px] text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="system" title="跟随系统"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="13" height="9" rx="1"/><line x1="5.5" y1="13.5" x2="10.5" y2="13.5"/><line x1="8" y1="11.5" x2="8" y2="13.5"/></svg></button>
+        <button class="theme-opt flex flex-1 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent py-[7px] text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="light" title="浅色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><line x1="8" y1="1" x2="8" y2="2.3"/><line x1="8" y1="13.7" x2="8" y2="15"/><line x1="1" y1="8" x2="2.3" y2="8"/><line x1="13.7" y1="8" x2="15" y2="8"/><line x1="3.05" y1="3.05" x2="3.96" y2="3.96"/><line x1="12.04" y1="12.04" x2="12.95" y2="12.95"/><line x1="3.05" y1="12.95" x2="3.96" y2="12.04"/><line x1="12.04" y1="3.96" x2="12.95" y2="3.05"/></svg></button>
+        <button class="theme-opt flex flex-1 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent py-[7px] text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="dark" title="暗色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7z"/></svg></button>
       </div>
     </div>
   </aside>

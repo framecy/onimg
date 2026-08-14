@@ -89,15 +89,6 @@ export function renderAdminPage() {
 </head>
 <body>
 
-<div class="absolute top-[33px] left-0 right-0 md:left-60 z-30 hidden md:block pointer-events-none">
-  <div class="max-w-[1600px] mx-auto px-8 flex justify-end">
-    <div class="theme-switch pointer-events-auto flex items-center gap-0.5 rounded-md border border-bd-2 bg-bg-2 p-0.5">
-      <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="system" title="跟随系统"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="13" height="9" rx="1"/><line x1="5.5" y1="13.5" x2="10.5" y2="13.5"/><line x1="8" y1="11.5" x2="8" y2="13.5"/></svg></button>
-      <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="light" title="浅色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><line x1="8" y1="1" x2="8" y2="2.3"/><line x1="8" y1="13.7" x2="8" y2="15"/><line x1="1" y1="8" x2="2.3" y2="8"/><line x1="13.7" y1="8" x2="15" y2="8"/><line x1="3.05" y1="3.05" x2="3.96" y2="3.96"/><line x1="12.04" y1="12.04" x2="12.95" y2="12.95"/><line x1="3.05" y1="12.95" x2="3.96" y2="12.04"/><line x1="12.04" y1="3.96" x2="12.95" y2="3.05"/></svg></button>
-      <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="dark" title="暗色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7z"/></svg></button>
-    </div>
-  </div>
-</div>
 <div class="hidden items-center gap-2 border-b border-amber-r bg-amber-g px-[22px] py-2 text-[.79rem] text-amber [&.show]:flex" id="expiryBanner">
   <svg class="h-4 w-4 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.5 15 14H1L8 1.5z"/><line x1="8" y1="6" x2="8" y2="9.5"/><circle cx="8" cy="11.5" r=".2" fill="currentColor"/></svg>
   登录状态将在 <strong id="expiryCountdown"></strong> 后过期，建议重新登录以避免中断。
@@ -106,12 +97,6 @@ export function renderAdminPage() {
 <div class="mob-header fixed inset-x-0 top-0 z-20 flex h-[50px] items-center gap-[14px] border-b border-bd bg-bg-2 px-4 md:hidden">
   <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-transparent text-tx-3 cursor-pointer transition hover:border-bd-2 hover:text-tx" id="sidebarToggle"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/></svg></button>
   <span class="text-[.88rem] font-bold tracking-[-.01em]">Onimg Admin</span>
-  <div class="flex-1"></div>
-  <div class="theme-switch flex items-center gap-0.5 rounded-md border border-bd-2 bg-bg-2 p-0.5">
-    <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="system" title="跟随系统"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="13" height="9" rx="1"/><line x1="5.5" y1="13.5" x2="10.5" y2="13.5"/><line x1="8" y1="11.5" x2="8" y2="13.5"/></svg></button>
-    <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="light" title="浅色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><line x1="8" y1="1" x2="8" y2="2.3"/><line x1="8" y1="13.7" x2="8" y2="15"/><line x1="1" y1="8" x2="2.3" y2="8"/><line x1="13.7" y1="8" x2="15" y2="8"/><line x1="3.05" y1="3.05" x2="3.96" y2="3.96"/><line x1="12.04" y1="12.04" x2="12.95" y2="12.95"/><line x1="3.05" y1="12.95" x2="3.96" y2="12.04"/><line x1="12.04" y1="3.96" x2="12.95" y2="3.05"/></svg></button>
-    <button class="theme-opt flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="dark" title="暗色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7z"/></svg></button>
-  </div>
 </div>
 <div class="sidebar-mask fixed inset-0 z-[9] hidden bg-black/60 [&.show]:block" id="sidebarMask"></div>
 
@@ -192,6 +177,13 @@ export function renderAdminPage() {
             <div class="mt-px text-[.65rem] text-tx-3">Administrator</div>
           </div>
           <button class="shrink-0 cursor-pointer rounded-xs border border-bd bg-transparent px-2 py-1 font-sans text-[.7rem] text-tx-3 transition hover:border-[rgba(248,113,113,.35)] hover:bg-red-g hover:text-red" id="logoutBtn">退出</button>
+        </div>
+      </div>
+      <div class="border-t border-bd px-2 pt-[10px] pb-3">
+        <div class="theme-switch flex w-full items-stretch gap-0.5 rounded-md border border-bd-2 bg-bg-2 p-0.5">
+          <button class="theme-opt flex flex-1 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent py-[7px] text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="system" title="跟随系统"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="13" height="9" rx="1"/><line x1="5.5" y1="13.5" x2="10.5" y2="13.5"/><line x1="8" y1="11.5" x2="8" y2="13.5"/></svg></button>
+          <button class="theme-opt flex flex-1 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent py-[7px] text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="light" title="浅色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><line x1="8" y1="1" x2="8" y2="2.3"/><line x1="8" y1="13.7" x2="8" y2="15"/><line x1="1" y1="8" x2="2.3" y2="8"/><line x1="13.7" y1="8" x2="15" y2="8"/><line x1="3.05" y1="3.05" x2="3.96" y2="3.96"/><line x1="12.04" y1="12.04" x2="12.95" y2="12.95"/><line x1="3.05" y1="12.95" x2="3.96" y2="12.04"/><line x1="12.04" y1="3.96" x2="12.95" y2="3.05"/></svg></button>
+          <button class="theme-opt flex flex-1 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent py-[7px] text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="dark" title="暗色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7z"/></svg></button>
         </div>
       </div>
     </aside>
