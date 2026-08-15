@@ -1,7 +1,9 @@
-# Onimg Design System — Aperture v2（纯 Tailwind 工具类）
+# Onimg Design System — Monochrome v3（纯 Tailwind 工具类）
 
-> 分支：`redesign-vision` · 方案：**纯 Tailwind v4 工具类路线**
+> 分支：`fix-report` · 方案：**纯 Tailwind v4 工具类路线 · 中性石墨 + 黑白强调 + 手绘插画**
 > 一句话规范：**HTML 里用 Tailwind 工具类写样式，aperture.css 只留 `@theme`，不再有 `.btn`/`.gitem` 这类手写组件类。**
+>
+> **v3 变更（2026-08）**：从「暖石墨 + 电靛紫」（Aperture v2）重构为 **Monochrome** —— 全站无彩色品牌强调，层次靠中性灰阶 + 边框，主按钮高对比黑/白（`bg-accent text-tx-inv`），语义色（绿/黄/红/蓝）仅表达状态；新增 Notion 风格手绘插画（空状态 / 404 / 上传 / 搜索 / 成功）。完整可视化预览见 [`design-system-preview.html`](./design-system-preview.html)，token 落地见 `src/ui/aperture.css` 的 `@theme`。
 
 ---
 
@@ -31,7 +33,7 @@ v1 文档把"把 token 从 `:root` 搬到 `@theme`"当成"做了 Tailwind 设计
 
 1. **Image First**：画布比侧栏更深，卡片略抬起，图片边缘干净。
 2. **Quiet Chrome**：少装饰、少渐变；精致来自对齐、对比、节奏。
-3. **One Accent**：唯一品牌色 `brand #8b9cff` 贯穿主按钮、焦点、激活；语义色只表达状态。
+3. **Neutral Emphasis**：无彩色品牌色，强调统一用中性黑/白（`brand`/`accent` 同源）；语义色只表达状态。
 4. **Readable Micro**：持久可见文字 ≥ 11px。
 5. **Restrained Motion**：150ms，`cubic-bezier(.2,.8,.2,1)`；不弹跳（toast 例外用轻微回弹）。
 6. **纯工具类**：组件用工具类，不抽 `@apply` 组件类。
@@ -60,7 +62,7 @@ v1 文档把"把 token 从 `:root` 搬到 `@theme`"当成"做了 Tailwind 设计
 | 类型 | 工具类 |
 |---|---|
 | 圆角 | `rounded-xs` 4 · `rounded-sm` 6 · `rounded-md` 8 · `rounded-lg` 12 · `rounded-xl` 16 · `rounded-full` |
-| 字体 | `font-sans`（Outfit） · `font-mono`（JetBrains Mono） |
+| 字体 | `font-sans`（Inter） · `font-mono`（JetBrains Mono） |
 | 字号 | `text-2xs` 11px · `text-xs` 12 · `text-sm` 13 · `text-base-sm` 15 · `text-lg-sm` 17 · `text-xl-sm` 22 |
 | 字重 | `font-medium` 500 · `font-semibold` 600 · `font-bold` 700 |
 | 行高 | `leading-tight` 1.25 · `leading-normal` 1.5 · `leading-loose` 1.65 |
@@ -161,8 +163,8 @@ v1 文档把"把 token 从 `:root` 搬到 `@theme`"当成"做了 Tailwind 设计
                text-sm font-semibold text-tx-2 cursor-pointer relative
                transition-colors duration-150
                hover:bg-bg-hover hover:text-tx
-               [box-shadow:inset_3px_0_0_var(--color-brand)] bg-brand-muted text-tx">
-  <!-- ↑ active 态叠加左侧 3px brand 条 + 浅 brand 底 -->
+               bg-bg-active text-tx">
+  <!-- ↑ active 态仅背景变亮 + 文字变白，无竖条/圆点点缀 -->
 </button>
 ```
 

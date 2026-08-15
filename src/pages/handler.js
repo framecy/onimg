@@ -124,13 +124,13 @@ ${tocItems}
 <title>${esc(page.title || page.slug)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 ${mathHead}${codeHead}
 <style>
   *, *::before, *::after { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body {
-    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     margin: 0;
     color: #1c1c1c;
     background:
@@ -408,7 +408,7 @@ function servePasswordPrompt(slug, page, wrong) {
 <title>${title}</title>
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Outfit',system-ui,-apple-system,sans-serif;background:#121212;color:#f7f7f7;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;-webkit-font-smoothing:antialiased}
+  body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#121212;color:#f7f7f7;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;-webkit-font-smoothing:antialiased}
   .card{background:#222;border:1px solid #333;border-radius:16px;padding:40px 36px;width:100%;max-width:380px;box-shadow:0 24px 60px rgba(0,0,0,.85)}
   .icon{font-size:2.2rem;margin-bottom:16px;line-height:1}
   h1{font-size:1.1rem;font-weight:700;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.02em}

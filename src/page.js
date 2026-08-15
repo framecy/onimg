@@ -1,5 +1,24 @@
 import { FFLATE_UMD } from './fflate-inline.js';
 import apertureCss from './ui/aperture.generated.js';
+
+/* 手绘风空状态插画（Notion 风格简笔小人 + 空相框），单色中性，随主题切换 */
+const EMPTY_ILLUS = `<svg class="mx-auto mb-4 block h-[92px] w-auto" viewBox="0 0 220 140" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M120 40 C 140 36, 158 38, 172 42 C 184 45, 189 53, 188 66 C 186 88, 187 108, 186 120 C 185 130, 178 135, 168 133 C 152 131, 136 132, 122 131 C 112 130, 108 124, 109 114 C 111 92, 110 66, 113 52 C 114 45, 114 41, 120 40 Z" stroke="var(--tx-3)" stroke-width="2"/>
+  <path d="M150 84 C 156 84, 161 89, 161 95 C 161 101, 156 106, 150 106 C 144 106, 139 101, 139 95 C 139 89, 144 84, 150 84" stroke="var(--tx-3)" stroke-width="1.8"/>
+  <path d="M150 76 C 149 71, 151 66, 150 62" stroke="var(--tx-3)" stroke-width="1.6"/>
+  <path d="M160 80 C 165 79, 169 80, 172 78" stroke="var(--tx-3)" stroke-width="1.6"/>
+  <path d="M138 112 C 146 104, 152 106, 158 112 C 163 106, 168 104, 172 110" stroke="var(--tx-3)" stroke-width="1.8"/>
+  <path d="M60 51 C 63 51, 66 54, 66 58 C 66 62, 63 65, 60 65 C 57 65, 54 62, 54 58 C 54 54, 57 51, 60 51" stroke="var(--tx-2)" stroke-width="2"/>
+  <path d="M60 65 C 60 72, 59 78, 57 84" stroke="var(--tx-2)" stroke-width="2"/>
+  <path d="M60 71 C 53 70, 48 71, 45 74" stroke="var(--tx-2)" stroke-width="2"/>
+  <path d="M60 71 C 66 70, 71 71, 74 74" stroke="var(--tx-2)" stroke-width="2"/>
+  <path d="M57 84 C 55 90, 53 96, 50 100" stroke="var(--tx-2)" stroke-width="2"/>
+  <path d="M57 84 C 59 90, 61 96, 64 100" stroke="var(--tx-2)" stroke-width="2"/>
+  <path d="M40 102 C 52 99, 70 99, 82 102" stroke="var(--bd-2)" stroke-width="1.6"/>
+  <path d="M40 40 C 41 36, 42 35, 46 34 C 42 33, 41 32, 40 28 C 39 32, 38 33, 34 34 C 38 35, 39 36, 40 40 Z" fill="var(--tx-3)"/>
+  <path d="M198 34 C 199 30, 200 29, 204 28 C 200 27, 199 26, 198 22 C 197 26, 196 27, 192 28 C 196 29, 197 30, 198 34 Z" fill="var(--bd-2)"/>
+</svg>`;
+
 export function renderPage() {
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -10,8 +29,8 @@ export function renderPage() {
   <title>Onimg</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-  <noscript><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"></noscript>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"></noscript>
   <!-- Vditor CSS/JS 改为编辑器打开时按需注入（见 ensureVditor），避免每次访问加载 ~0.5MB 编辑器 -->
   <style>
     /* Aperture token（@theme）+ 别名桥 + Tailwind 工具类，由 build:css 生成 */
@@ -130,11 +149,11 @@ export function renderPage() {
     </div>
     <div class="max-md:hidden px-4 pt-[14px] pb-[5px] text-2xs font-bold uppercase tracking-[.12em] text-tx-3">导航</div>
     <nav class="max-md:hidden flex flex-1 flex-col gap-px overflow-y-auto px-2 pt-1 pb-2">
-      <button class="tab active relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] max-md:min-h-[44px]" data-tab="gallery-pub"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><ellipse cx="8" cy="8" rx="2.8" ry="6.5"/><line x1="1.5" y1="8" x2="14.5" y2="8"/></svg></span><span>公开图库</span></button>
-      <button class="tab relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] max-md:min-h-[44px]" data-tab="upload"        id="tabUpload"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="14" x2="8" y2="3"/><polyline points="3.5,7.5 8,3 12.5,7.5"/></svg></span><span>上传</span></button>
-      <button class="tab relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] max-md:min-h-[44px]" data-tab="gallery-mine"  id="tabMine"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2.5" width="14" height="11" rx="1.5"/><circle cx="5.2" cy="6.3" r="1.3"/><path d="M1.5 11l4-4 2.5 2.5 2-2 4.5 4.5"/></svg></span><span>我的图库</span></button>
-      <button class="tab relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] max-md:min-h-[44px]" data-tab="pages"         id="tabPages"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 1h7l4 4v10H3V1z"/><polyline points="10,1 10,5 14,5"/><line x1="4" y1="8" x2="12" y2="8"/><line x1="4" y1="11" x2="9" y2="11"/></svg></span><span>我的页面</span></button>
-      <button class="tab relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] max-md:min-h-[44px]" data-tab="protos"        id="tabProtos"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v5l-8 8H2V2z"/><line x1="5" y1="2" x2="5" y2="5"/><line x1="8" y1="2" x2="8" y2="4"/><line x1="11" y1="2" x2="11" y2="5"/></svg></span><span>我的原型</span></button>
+      <button class="tab active relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold max-md:min-h-[44px]" data-tab="gallery-pub"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><ellipse cx="8" cy="8" rx="2.8" ry="6.5"/><line x1="1.5" y1="8" x2="14.5" y2="8"/></svg></span><span>公开图库</span></button>
+      <button class="tab relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold max-md:min-h-[44px]" data-tab="upload"        id="tabUpload"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="14" x2="8" y2="3"/><polyline points="3.5,7.5 8,3 12.5,7.5"/></svg></span><span>上传图片</span></button>
+      <button class="tab relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold max-md:min-h-[44px]" data-tab="gallery-mine"  id="tabMine"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2.5" width="14" height="11" rx="1.5"/><circle cx="5.2" cy="6.3" r="1.3"/><path d="M1.5 11l4-4 2.5 2.5 2-2 4.5 4.5"/></svg></span><span>我的图库</span></button>
+      <button class="tab relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold max-md:min-h-[44px]" data-tab="pages"         id="tabPages"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 1h7l4 4v10H3V1z"/><polyline points="10,1 10,5 14,5"/><line x1="4" y1="8" x2="12" y2="8"/><line x1="4" y1="11" x2="9" y2="11"/></svg></span><span>我的页面</span></button>
+      <button class="tab relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold max-md:min-h-[44px]" data-tab="protos"        id="tabProtos"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v5l-8 8H2V2z"/><line x1="5" y1="2" x2="5" y2="5"/><line x1="8" y1="2" x2="8" y2="4"/><line x1="11" y1="2" x2="11" y2="5"/></svg></span><span>我的原型</span></button>
     </nav>
     <div class="border-t border-bd px-2 pt-1 pb-1.5">
       <span id="footerAdmin"></span>
@@ -183,7 +202,7 @@ export function renderPage() {
     <div class="login-card relative w-full max-w-[380px] overflow-hidden rounded-xl border border-bd bg-bg-3 py-9 px-7 shadow md:py-11 md:px-10 [&.shake]:animate-[loginShake_.35s_ease]">
       <div class="mb-8 flex items-start justify-between">
         <div class="flex items-center gap-2.5">
-          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[linear-gradient(135deg,var(--color-brand)_0%,var(--color-brand-d)_100%)] text-[.75rem] font-extrabold text-white shadow-[0_6px_16px_rgba(124,92,255,.3)]">OI</span>
+          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-[.75rem] font-extrabold text-tx-inv">OI</span>
           <div>
             <div class="text-[1.05rem] font-extrabold leading-[1.15] tracking-[-.01em] text-tx">登录 Onimg</div>
             <div class="mt-px text-xs text-tx-3">登录后即可上传与管理图片</div>
@@ -193,8 +212,8 @@ export function renderPage() {
       </div>
       <div class="flex flex-col gap-2 mb-5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">用户名</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3.5 py-[11px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="lu" autocomplete="username" placeholder="username"></div>
       <div class="flex flex-col gap-2 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">密码</label><div class="relative"><input class="w-full rounded-md border border-bd bg-bg-2 px-3.5 py-[11px] pr-10 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="password" id="lp" autocomplete="current-password" placeholder="••••••••"><button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center border-none bg-transparent p-0 text-tx-3 cursor-pointer transition hover:text-tx" id="lpToggle" title="显示/隐藏密码"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg></button></div></div>
-      <label class="mb-6 flex items-center gap-2 cursor-pointer select-none text-[.8rem] text-tx-2"><input class="h-3.5 w-3.5 cursor-pointer accent-brand" type="checkbox" id="loginRemember">记住我 30 天</label>
-      <button class="btn-full w-full rounded-md border-none bg-brand px-3 py-3 font-sans text-base-sm font-bold text-white shadow-[0_4px_14px_rgba(124,92,255,.3)] transition hover:-translate-y-px hover:bg-brand-hover hover:shadow-[0_8px_22px_rgba(124,92,255,.4)] disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none [&.loading]:pointer-events-none [&.loading]:before:content-[''] [&.loading]:before:inline-block [&.loading]:before:mr-2 [&.loading]:before:h-[14px] [&.loading]:before:w-[14px] [&.loading]:before:align-middle [&.loading]:before:rounded-full [&.loading]:before:border-2 [&.loading]:before:border-white/30 [&.loading]:before:border-t-white [&.loading]:before:animate-[loginSpin_.6s_linear_infinite]" id="doLogin">登录</button>
+      <label class="mb-6 flex items-center gap-2 cursor-pointer select-none text-[.8rem] text-tx-2"><input class="h-3.5 w-3.5 cursor-pointer accent-tx" type="checkbox" id="loginRemember">记住我 30 天</label>
+      <button class="btn-full w-full rounded-md border-none bg-accent px-3 py-3 font-sans text-base-sm font-bold text-tx-inv transition hover:-translate-y-px hover:bg-accent-hover disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none [&.loading]:pointer-events-none [&.loading]:before:content-[''] [&.loading]:before:inline-block [&.loading]:before:mr-2 [&.loading]:before:h-[14px] [&.loading]:before:w-[14px] [&.loading]:before:align-middle [&.loading]:before:rounded-full [&.loading]:before:border-2 [&.loading]:before:border-[var(--tx-inv)] [&.loading]:before:border-t-transparent [&.loading]:before:animate-[loginSpin_.6s_linear_infinite]" id="doLogin">登录</button>
       <div class="login-err mt-3 min-h-[18px] text-center text-xs text-red" id="loginErr"></div>
     </div>
   </div>
@@ -210,7 +229,7 @@ export function renderPage() {
         <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx max-md:flex-1" id="refreshPub">刷新</button>
       </div>
       <div class="pub-grid grid grid-cols-3 gap-[7px] xs:grid-cols-[repeat(auto-fill,minmax(150px,1fr))] xs:gap-3 mob:grid-cols-[repeat(auto-fill,minmax(210px,1fr))] mob:gap-[14px]" id="pubGrid"></div>
-      <div class="p-12 text-center text-[.88rem] font-medium text-tx-3" id="pubEmpty" style="display:none">暂无公开图片</div>
+      <div class="p-12 text-center text-[.88rem] font-medium text-tx-3" id="pubEmpty" style="display:none">${EMPTY_ILLUS}暂无公开图片</div>
     </div>
 
     <!-- Upload -->
@@ -286,7 +305,7 @@ export function renderPage() {
       </div>
       <div class="flex flex-wrap items-center gap-1.5 mb-3.5" id="mineTagFilter" style="display:none"></div>
       <div class="gallery-grid group/grid grid grid-cols-2 gap-3 md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] md:gap-[18px]" id="mineGrid"></div>
-      <div class="p-12 text-center text-[.88rem] font-medium text-tx-3" id="mineEmpty" style="display:none">暂无图片，去上传吧</div>
+      <div class="p-12 text-center text-[.88rem] font-medium text-tx-3" id="mineEmpty" style="display:none">${EMPTY_ILLUS}暂无图片，去上传吧</div>
     </div>
 
     <!-- Pages -->
@@ -325,7 +344,7 @@ export function renderPage() {
         <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !text-[.78rem]" id="pageBatchDelete">删除</button>
       </div>
       <div class="pages-tree flex flex-col gap-[14px]" id="pagesTree"></div>
-      <div class="p-12 text-center text-[.88rem] font-medium text-tx-3" id="pagesEmpty" style="display:none">暂无页面</div>
+      <div class="p-12 text-center text-[.88rem] font-medium text-tx-3" id="pagesEmpty" style="display:none">${EMPTY_ILLUS}暂无页面</div>
     </div>
 
     <!-- Protos -->
@@ -374,7 +393,7 @@ export function renderPage() {
           <tbody id="protoTableBody"><tr><td class="text-center text-tx-3 p-8" colspan="10">加载中…</td></tr></tbody>
         </table>
       </div>
-      <div class="p-12 text-center text-[.88rem] font-medium text-tx-3 mt-3" id="protoEmpty" style="display:none">暂无原型，请上传 ZIP 文件</div>
+      <div class="p-12 text-center text-[.88rem] font-medium text-tx-3 mt-3" id="protoEmpty" style="display:none">${EMPTY_ILLUS}暂无原型，请上传 ZIP 文件</div>
     </div>
   </main>
   <footer class="border-t border-bd px-[30px] py-[14px] flex items-center gap-[10px] text-[.75rem] text-tx-3 flex-wrap font-medium">
@@ -405,7 +424,7 @@ export function renderPage() {
       </div>
       <div class="flex flex-col gap-[5px] mb-3.5" id="peExpiryField">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">密码有效期</label>
-        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="peExpiry">
+        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="peExpiry">
           <option value="14">14 天</option>
           <option value="30">30 天</option>
           <option value="90">90 天</option>
@@ -536,20 +555,20 @@ export function renderPage() {
       </div>
       <div class="flex flex-col gap-[5px] mb-3.5">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">类型</label>
-        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="pmType">
+        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="pmType">
           <option value="markdown">Markdown</option>
           <option value="html">HTML</option>
         </select>
       </div>
       <div class="flex flex-col gap-[5px] mb-3.5">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属项目</label>
-        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="pmProject">
+        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="pmProject">
           <option value="">-- 无 --</option>
         </select>
       </div>
       <div class="flex flex-col gap-[5px] mb-3.5">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属分组</label>
-        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="pmGroup">
+        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="pmGroup">
           <option value="">-- 无 --</option>
         </select>
       </div>
@@ -608,7 +627,7 @@ export function renderPage() {
       <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">分组名称</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="grpName" placeholder="入门指南" maxlength="64"></div>
       <div class="flex flex-col gap-[5px] mb-3.5">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属项目 <span class="text-tx-3 font-normal normal-case">（可选，不选则为独立分组）</span></label>
-        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="grpProjectId"><option value="">-- 独立分组 --</option></select>
+        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="grpProjectId"><option value="">-- 独立分组 --</option></select>
       </div>
     </div>
     <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
@@ -628,11 +647,11 @@ export function renderPage() {
     <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-[18px] max-h-[calc(100dvh-140px)] md:max-h-none md:py-[18px] md:px-5">
       <div class="flex flex-col gap-[5px] mb-3.5">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">目标项目</label>
-        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="pageMoveProject"><option value="">-- 无 / 未分类 --</option></select>
+        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="pageMoveProject"><option value="">-- 无 / 未分类 --</option></select>
       </div>
       <div class="flex flex-col gap-[5px] mb-3.5">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">目标分组</label>
-        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="pageMoveGroup"><option value="">-- 无 --</option></select>
+        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="pageMoveGroup"><option value="">-- 无 --</option></select>
       </div>
     </div>
     <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
@@ -661,15 +680,15 @@ export function renderPage() {
         <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">Slug</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="importSlug"></div>
         <div class="flex flex-col gap-[5px] mb-3.5">
           <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">类型</label>
-          <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="importType"><option value="markdown">Markdown</option><option value="html">HTML</option></select>
+          <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="importType"><option value="markdown">Markdown</option><option value="html">HTML</option></select>
         </div>
         <div class="flex flex-col gap-[5px] mb-3.5">
           <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属项目</label>
-          <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="importProject"><option value="">-- 无 --</option></select>
+          <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="importProject"><option value="">-- 无 --</option></select>
         </div>
         <div class="flex flex-col gap-[5px] mb-3.5">
           <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属分组</label>
-          <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="importGroup"><option value="">-- 无 --</option></select>
+          <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="importGroup"><option value="">-- 无 --</option></select>
         </div>
         <div class="flex flex-col gap-[5px] mb-3.5">
           <label class="flex items-center gap-2 cursor-pointer">
