@@ -471,7 +471,7 @@ export function renderAdminPage() {
       </div>
 
       <!-- ── Pages ── -->
-      <div class="section hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-pages">
+      <div class="section hidden max-w-[1200px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-pages">
         <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
           <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">页面管理</div>
           <div class="text-sm font-medium text-tx-3">托管的 MD / HTML 文档</div>
@@ -504,18 +504,18 @@ export function renderAdminPage() {
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-[10px] !py-1 !text-[.76rem]" id="adminPageCancelSel">取消</button>
         </div>
         <div class="pg-reorder-hint mb-2 text-[.72rem] text-tx-3" id="adminPageReorderHint">拖动 <span class="text-tx-2">⠿</span> 手柄排序，拖到不同项目/分组行可移动页面</div>
-        <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3">
-          <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
+        <div class="table-wrap overflow-x-auto rounded-lg border border-bd bg-bg-3">
+          <table class="data-table w-full border-collapse text-[.82rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[10px] [&_th]:py-[8px] [&_th]:text-left [&_th]:text-[.64rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.1em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[10px] [&_td]:py-[7px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
             <thead><tr>
-              <th class="pg-drag-col hidden w-[24px] text-center [&.scoped]:table-cell" id="pgDragHead"></th>
-              <th class="pg-check-col hidden w-[30px] text-center [&.selecting]:table-cell" id="pgCheckHead"><input type="checkbox" class="h-[15px] w-[15px] cursor-pointer accent-tx-2" id="adminPageSelectAll"></th>
-              <th class="cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('title')">标题 / Slug</th>
-              <th class="cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('type')">类型</th>
-              <th class="cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('owner')">作者</th>
-              <th>项目</th><th>分组</th>
-              <th class="cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('status')">状态</th>
-              <th class="cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('updated')">更新</th>
-              <th></th>
+              <th class="pg-drag-col hidden w-[28px] text-center [&.scoped]:table-cell" id="pgDragHead"></th>
+              <th class="pg-check-col hidden w-[34px] text-center [&.selecting]:table-cell" id="pgCheckHead"><input type="checkbox" class="h-[15px] w-[15px] cursor-pointer accent-tx-2" id="adminPageSelectAll"></th>
+              <th class="w-[26%] cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('title')">标题 / Slug</th>
+              <th class="w-[48px] cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('type')">类型</th>
+              <th class="w-[64px] cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('owner')">作者</th>
+              <th class="w-[80px]">项目</th><th class="w-[80px]">分组</th>
+              <th class="w-[44px] cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('status')">状态</th>
+              <th class="w-[64px] cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('updated')">更新</th>
+              <th class="w-[1%] whitespace-nowrap"></th>
             </tr></thead>
             <tbody id="adminPagesBody"><tr><td colspan="10" class="text-center text-tx-3 p-6">加载中…</td></tr></tbody>
           </table>
@@ -2246,32 +2246,32 @@ export function renderAdminPage() {
         case 'updated': default: va = a.updatedAt||0; vb = b.updatedAt||0; return adminPageSortAsc ? va - vb : vb - va;
       }
     });
-    const TYPE_LABEL = { markdown: '<span class="bg-[rgba(59,130,246,.1)] text-accent px-1.5 py-0.5 rounded text-[.72rem]">MD</span>', html: '<span class="bg-[rgba(245,158,11,.1)] text-[#f59e0b] px-1.5 py-0.5 rounded text-[.72rem]">HTML</span>' };
+    const TYPE_LABEL = { markdown: '<span class="bg-[rgba(59,130,246,.1)] text-accent px-1.5 py-0.5 rounded text-[.7rem]">MD</span>', html: '<span class="bg-[rgba(245,158,11,.1)] text-[#f59e0b] px-1.5 py-0.5 rounded text-[.7rem]">HTML</span>' };
     const selMode = adminPageSelectMode;
-    const checkCol = (selMode ? 'pg-check-col selecting' : 'pg-check-col') + ' hidden w-[30px] text-center [&.selecting]:table-cell';
+    const checkCol = (selMode ? 'pg-check-col selecting' : 'pg-check-col') + ' hidden w-[34px] text-center [&.selecting]:table-cell';
     const scope = pageScope;
     document.getElementById('pgDragHead')?.classList.toggle('scoped', true);
     document.getElementById('adminPageReorderHint')?.classList.toggle('hidden', false);
-    const dragCol = 'pg-drag-col scoped hidden w-[24px] text-center [&.scoped]:table-cell';
+    const dragCol = 'pg-drag-col scoped hidden w-[28px] text-center [&.scoped]:table-cell';
     document.getElementById('adminPagesBody').innerHTML = sorted.length
       ? sorted.map(p => \`<tr data-slug="\${esc(p.slug)}" draggable="true" class="pg-drag-row" data-project-id="\${esc(p.projectId||'')}" data-group-id="\${esc(p.groupId||'')}">
-          <td class="\${dragCol} cursor-grab select-none text-tx-3 active:cursor-grabbing">⠿</td>
+          <td class="\${dragCol} cursor-grab select-none text-tx-3 active:cursor-grabbing pointer-events-none">⠿</td>
           <td class="\${checkCol}"><input type="checkbox" class="h-[15px] w-[15px] cursor-pointer accent-tx-2" data-slug="\${esc(p.slug)}" \${adminPageSelected.has(p.slug)?'checked':''} onchange="adminPageToggleSel('\${esc(p.slug)}',this.checked)"></td>
           <td>
-            <div class="font-medium text-[.88rem]">\${esc(p.title)}</div>
-            <div class="font-mono text-[.72rem] text-tx-3">/p/\${p.slug}</div>
+            <div class="font-medium text-[.84rem]">\${esc(p.title)}</div>
+            <div class="font-mono text-[.7rem] text-tx-3">/p/\${p.slug}</div>
           </td>
           <td>\${TYPE_LABEL[p.type] || p.type}</td>
-          <td class="text-[.79rem] text-tx-2">@\${p.owner}</td>
-          <td class="text-[.79rem] text-tx-2 !text-[.78rem]">\${p.projectId ? esc(projMap[p.projectId] || '--') : '--'}</td>
-          <td class="text-[.79rem] text-tx-2 !text-[.78rem]">\${p.groupId ? esc(grpMap[p.groupId] || '--') : '--'}</td>
-          <td>\${p.isPublic ? '<span class="text-green text-[.78rem]">公开</span>' : '<span class="text-tx-3 text-[.78rem]">私密</span>'}</td>
-          <td class="text-[.79rem] text-tx-2">\${timeAgo(p.updatedAt)}</td>
+          <td class="text-[.76rem] text-tx-2">@\${p.owner}</td>
+          <td class="text-[.76rem] text-tx-2">\${p.projectId ? esc(projMap[p.projectId] || '--') : '--'}</td>
+          <td class="text-[.76rem] text-tx-2">\${p.groupId ? esc(grpMap[p.groupId] || '--') : '--'}</td>
+          <td>\${p.isPublic ? '<span class="text-green text-[.76rem]">公开</span>' : '<span class="text-tx-3 text-[.76rem]">私密</span>'}</td>
+          <td class="text-[.76rem] text-tx-2">\${timeAgo(p.updatedAt)}</td>
           <td class="whitespace-nowrap">
-            <a href="/p/\${p.slug}" target="_blank" class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.75rem] no-underline">预览</a>
-            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.75rem]" onclick="adminEditPage('\${p.slug}')">编辑</button>
-            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.75rem]" data-title="\${esc(p.title)}" onclick="openPageStatsModal('\${p.slug}',this.dataset.title)">统计</button>
-            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-1 !text-[.75rem]" onclick="adminDeletePage('\${p.slug}')">删除</button>
+            <a href="/p/\${p.slug}" target="_blank" draggable="false" class="inline-flex items-center rounded-sm border border-bd bg-bg-4 px-2 py-1 text-[.72rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx no-underline" onclick="event.stopPropagation()">预览</a>
+            <button class="inline-flex items-center rounded-sm border border-bd bg-bg-4 px-2 py-1 text-[.72rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="event.stopPropagation();adminEditPage('\${p.slug}')">编辑</button>
+            <button class="inline-flex items-center rounded-sm border border-bd bg-bg-4 px-2 py-1 text-[.72rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-title="\${esc(p.title)}" onclick="event.stopPropagation();openPageStatsModal('\${p.slug}',this.dataset.title)">统计</button>
+            <button class="inline-flex items-center rounded-sm border border-red-r bg-red-g px-2 py-1 text-[.72rem] font-semibold text-red transition hover:bg-red-r" onclick="event.stopPropagation();adminDeletePage('\${p.slug}')">删除</button>
           </td>
         </tr>\`).join('')
       : '<tr><td colspan="10" class="text-center text-tx-3 p-6">暂无页面</td></tr>';
@@ -2318,39 +2318,35 @@ export function renderAdminPage() {
         if (!adminDragSlug || row.dataset.slug === adminDragSlug) return;
         const tgtProjectId = row.dataset.projectId || '';
         const tgtGroupId = row.dataset.groupId || '';
+        const tbody = row.parentElement;
         const sameScope = adminDragProjectId === tgtProjectId && adminDragGroupId === tgtGroupId;
         if (sameScope) {
-          // same scope: reorder
-          const rows = [...document.querySelectorAll('#adminPagesBody tr.pg-drag-row')];
-          const order = rows.map(r => r.dataset.slug);
-          const from = order.indexOf(adminDragSlug);
-          let to = order.indexOf(row.dataset.slug);
-          if (from === -1 || to === -1) return;
-          order.splice(from, 1);
-          to = order.indexOf(row.dataset.slug);
-          order.splice(to, 0, adminDragSlug);
-          await adminFetch('/admin/pages/reorder', {
+          // optimistic local reorder
+          const fromRow = tbody.querySelector('tr[data-slug="' + CSS.escape(adminDragSlug) + '"]');
+          if (fromRow) tbody.insertBefore(fromRow, row.nextSibling);
+          const order = [...tbody.querySelectorAll('tr.pg-drag-row')].map(r => r.dataset.slug);
+          adminFetch('/admin/pages/reorder', {
             method: 'PATCH', headers: authH(),
             body: JSON.stringify({ projectId: tgtProjectId || null, groupId: tgtGroupId || null, order }),
-          });
+          }).catch(() => {});
         } else {
-          // cross scope: move + reorder in target scope
-          await adminFetch('/admin/pages/' + encodeURIComponent(adminDragSlug), {
+          // optimistic move: update row dataset + move visually
+          row.dataset.projectId = tgtProjectId;
+          row.dataset.groupId = tgtGroupId;
+          // move/page persist, then reorder
+          try { await adminFetch('/admin/pages/' + encodeURIComponent(adminDragSlug), {
             method: 'PATCH', headers: authH(),
             body: JSON.stringify({ projectId: tgtProjectId || null, groupId: tgtGroupId || null }),
-          });
-          // reorder in target scope (place near the target row)
-          const rows = [...document.querySelectorAll('#adminPagesBody tr.pg-drag-row')];
-          const order = rows.map(r => r.dataset.slug).filter(id => id !== adminDragSlug);
+          }); } catch {}
+          const order = [...tbody.querySelectorAll('tr.pg-drag-row')].map(r => r.dataset.slug).filter(id => id !== adminDragSlug);
           const to = order.indexOf(row.dataset.slug);
           if (to !== -1) order.splice(to, 0, adminDragSlug);
           else order.push(adminDragSlug);
-          await adminFetch('/admin/pages/reorder', {
+          adminFetch('/admin/pages/reorder', {
             method: 'PATCH', headers: authH(),
             body: JSON.stringify({ projectId: tgtProjectId || null, groupId: tgtGroupId || null, order }),
-          });
+          }).catch(() => {});
         }
-        loadAdminPages();
       });
     });
     initAdminTouchDnD();
@@ -2401,35 +2397,34 @@ export function renderAdminPage() {
           const tgtGroupId = target.dataset.groupId || '';
           const sameScope = tState.projectId === tgtProjectId && tState.groupId === tgtGroupId;
           if (sameScope) {
-            const rows = [...document.querySelectorAll('#adminPagesBody tr.pg-drag-row')];
-            const order = rows.map(r => r.dataset.slug);
-            const from = order.indexOf(tState.slug);
-            let to = order.indexOf(target.dataset.slug);
-            if (from !== -1 && to !== -1 && from !== to) {
-              order.splice(from, 1);
-              to = order.indexOf(target.dataset.slug);
-              order.splice(to, 0, tState.slug);
-              await adminFetch('/admin/pages/reorder', {
-                method: 'PATCH', headers: authH(),
-                body: JSON.stringify({ projectId: tgtProjectId || null, groupId: tgtGroupId || null, order }),
-              });
+            const fromRow = row.parentElement.querySelector('tr[data-slug="' + CSS.escape(tState.slug) + '"]');
+            if (fromRow) {
+              if (target.nextSibling) target.parentElement.insertBefore(fromRow, target.nextSibling);
+              else target.parentElement.appendChild(fromRow);
             }
+            const order = [...row.parentElement.querySelectorAll('tr.pg-drag-row')].map(r => r.dataset.slug);
+            adminFetch('/admin/pages/reorder', {
+              method: 'PATCH', headers: authH(),
+              body: JSON.stringify({ projectId: tgtProjectId || null, groupId: tgtGroupId || null, order }),
+            }).catch(() => {});
           } else {
-            await adminFetch('/admin/pages/' + encodeURIComponent(tState.slug), {
+            target.dataset.projectId = tgtProjectId;
+            target.dataset.groupId = tgtGroupId;
+            const fromRow = row.parentElement.querySelector('tr[data-slug="' + CSS.escape(tState.slug) + '"]');
+            if (fromRow) target.parentElement.insertBefore(fromRow, target);
+            try { await adminFetch('/admin/pages/' + encodeURIComponent(tState.slug), {
               method: 'PATCH', headers: authH(),
               body: JSON.stringify({ projectId: tgtProjectId || null, groupId: tgtGroupId || null }),
-            });
-            const rows = [...document.querySelectorAll('#adminPagesBody tr.pg-drag-row')];
-            const order = rows.map(r => r.dataset.slug).filter(id => id !== tState.slug);
+            }); } catch {}
+            const order = [...row.parentElement.querySelectorAll('tr.pg-drag-row')].map(r => r.dataset.slug).filter(id => id !== tState.slug);
             const to = order.indexOf(target.dataset.slug);
             if (to !== -1) order.splice(to, 0, tState.slug);
             else order.push(tState.slug);
-            await adminFetch('/admin/pages/reorder', {
+            adminFetch('/admin/pages/reorder', {
               method: 'PATCH', headers: authH(),
               body: JSON.stringify({ projectId: tgtProjectId || null, groupId: tgtGroupId || null, order }),
-            });
+            }).catch(() => {});
           }
-          loadAdminPages();
         }
         row.classList.remove('opacity-30');
         document.querySelectorAll('#adminPagesBody tr').forEach(r => r.classList.remove('border-t-2', 'border-t-accent', 'shadow-[inset_0_3px_0_0_var(--color-accent)]'));

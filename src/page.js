@@ -1889,8 +1889,8 @@ export function renderPage() {
       const projPages = pages.filter(p => p.projectId === proj.id && !p.groupId).sort((a,b) => (a.sort??0) - (b.sort??0));
       const total = pages.filter(p => p.projectId === proj.id).length;
       html += \`<div class="page-project overflow-hidden rounded-lg border border-bd bg-bg-3 [&.drag-over-proj]:border-accent [&.collapsed_.page-project-body]:max-h-0 [&.collapsed_.page-project-body]:opacity-0 [&.collapsed_.expand-icon]:rotate-0" data-drag-type="project" data-drag-id="\${esc(proj.id)}">
-        <div class="page-project-header group/proj flex cursor-pointer select-none items-center gap-[10px] px-4 py-[14px] hover:bg-bg-4" draggable="true" onclick="this.parentElement.classList.toggle('collapsed')">
-          <span class="expand-icon w-[14px] shrink-0 text-center text-[.6rem] text-tx-3 transition-transform duration-150 rotate-90">▶</span>
+        <div class="page-project-header group/proj flex cursor-pointer select-none items-center gap-[8px] px-3 py-[9px] hover:bg-bg-4" draggable="true" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="expand-icon w-[12px] shrink-0 text-center text-[.55rem] text-tx-3 transition-transform duration-150 rotate-90">▶</span>
           <span class="project-name flex-1 text-[.88rem] font-semibold text-tx">\${esc(proj.name)}</span>
           <span class="count-badge rounded-xs bg-bg-5 px-[7px] py-0.5 text-[.66rem] font-semibold text-tx-3">\${total}</span>
           <span class="proj-actions ml-1.5 flex gap-[3px] opacity-0 transition group-hover/proj:opacity-100">
@@ -1904,11 +1904,11 @@ export function renderPage() {
       for (const grp of projGroups) {
         const grpPages = pages.filter(p => p.groupId === grp.id).sort((a,b) => (a.sort??0) - (b.sort??0));
         html += \`<div class="page-group ml-[18px] border-l border-bd-2 [&.collapsed_.page-group-body]:max-h-0 [&.collapsed_.page-group-body]:opacity-0 [&.collapsed_.expand-icon]:rotate-0" data-drag-type="group" data-drag-id="\${esc(grp.id)}" data-project-id="\${esc(proj.id)}">
-          <div class="page-group-header group/grp flex cursor-pointer select-none items-center gap-[7px] px-3 py-2 [&.drag-over-grp]:bg-bg-5 hover:bg-bg-4" draggable="true" onclick="this.parentElement.classList.toggle('collapsed')">
-            <span class="expand-icon w-[14px] shrink-0 text-center !text-[.55rem] text-tx-3 transition-transform duration-150 rotate-90">▶</span>
-            <span class="group-name flex-1 text-[.88rem] font-semibold text-tx">\${esc(grp.name)}</span>
-            <span class="count-badge rounded-xs bg-bg-5 px-[7px] py-0.5 text-[.66rem] font-semibold text-tx-3">\${grpPages.length}</span>
-            <span class="grp-actions ml-1.5 flex gap-[3px] opacity-0 transition group-hover/grp:opacity-100">
+          <div class="page-group-header group/grp flex cursor-pointer select-none items-center gap-[6px] px-2 py-[5px] [&.drag-over-grp]:bg-bg-5 hover:bg-bg-4" draggable="true" onclick="this.parentElement.classList.toggle('collapsed')">
+            <span class="expand-icon w-[12px] shrink-0 text-center !text-[.5rem] text-tx-3 transition-transform duration-150 rotate-90">▶</span>
+            <span class="group-name flex-1 text-[.84rem] font-medium text-tx">\${esc(grp.name)}</span>
+            <span class="count-badge rounded-xs bg-bg-5 px-[6px] py-0.5 text-[.63rem] font-semibold text-tx-3">\${grpPages.length}</span>
+            <span class="grp-actions ml-1 flex gap-[2px] opacity-0 transition group-hover/grp:opacity-100">
               <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();editGroup('\${esc(grp.id)}')" title="编辑分组">编辑</button>
               <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx !text-red" onclick="event.stopPropagation();deleteGroup('\${esc(grp.id)}')" title="删除分组">删除</button>
             </span>
@@ -1967,7 +1967,7 @@ export function renderPage() {
       ? \`<input type="checkbox" class="page-check h-[15px] w-[15px] shrink-0 cursor-pointer accent-accent" data-slug="\${esc(p.slug)}" \${sel?'checked':''} onclick="event.stopPropagation();togglePageSel('\${esc(p.slug)}')">\`
       : '';
     const drag = pageSelectMode ? 'false' : 'true';
-    const cls = 'page-tree-item relative flex items-center gap-[10px] my-0.5 rounded-md border border-transparent bg-bg-2 px-[14px] py-[10px] transition hover:border-bd hover:bg-bg-3 [&.dragging]:opacity-30 [&.dragging]:border-dashed [&.dragging]:border-bd-2 [&.drag-over-top]:border-t-2 [&.drag-over-top]:border-t-accent [&.drag-over-top]:-mt-0.5 [&.drag-over-top]:shadow-[inset_0_3px_0_0_var(--color-accent)] [&.drag-over-bot]:border-b-2 [&.drag-over-bot]:border-b-accent [&.drag-over-bot]:-mb-0.5 [&.drag-over-bot]:shadow-[inset_0_-3px_0_0_var(--color-accent)] [&.selecting]:cursor-pointer [&.selected]:border-accent [&.selected]:bg-accent-muted' + (pageSelectMode ? ' selecting' : '') + (sel ? ' selected' : '');
+    const cls = 'page-tree-item group/item relative flex items-center gap-[8px] my-px rounded-md border border-transparent bg-bg-2/60 px-[10px] py-[6px] transition hover:border-bd hover:bg-bg-3 cursor-grab active:cursor-grabbing [&.dragging]:opacity-30 [&.dragging]:border-dashed [&.dragging]:border-bd-2 [&.dragging]:cursor-grabbing [&.drag-over-top]:border-t-2 [&.drag-over-top]:border-t-accent [&.drag-over-top]:-mt-0.5 [&.drag-over-top]:shadow-[inset_0_3px_0_0_var(--color-accent)] [&.drag-over-bot]:border-b-2 [&.drag-over-bot]:border-b-accent [&.drag-over-bot]:-mb-0.5 [&.drag-over-bot]:shadow-[inset_0_-3px_0_0_var(--color-accent)] [&.selecting]:cursor-pointer [&.selected]:border-accent [&.selected]:bg-accent-muted' + (pageSelectMode ? ' selecting' : '') + (sel ? ' selected' : '');
     const clickAttr = pageSelectMode ? \`onclick="togglePageSel('\${esc(p.slug)}')"\` : '';
     const status = p.isPublic
       ? '公开'
@@ -1975,15 +1975,17 @@ export function renderPage() {
     const previewHref = pagePreviewUrl(p);
     return \`<div class="\${cls}" draggable="\${drag}" data-drag-type="page" data-drag-id="\${esc(p.slug)}" data-project-id="\${esc(p.projectId||'')}" data-group-id="\${esc(p.groupId||'')}" \${clickAttr}>
       \${check}
-      <span class="drag-handle cursor-grab px-0.5 text-[.78rem] text-tx-3 active:cursor-grabbing" title="拖拽排序">⠿</span>
+      <span class="drag-handle pointer-events-none shrink-0 select-none text-[.72rem] text-tx-3/70 group-hover/item:text-tx-3" title="拖拽整行排序">⠿</span>
       <div class="page-item-info flex-1 min-w-0">
-        <div class="page-title text-[.92rem] font-semibold text-tx">\${esc(p.title)} <span class="type-badge type-\${p.type==='markdown'?'md':'html'} inline-block rounded-xs px-[7px] py-0.5 text-[.66rem] font-bold [&.type-md]:border [&.type-md]:border-bd-2 [&.type-md]:bg-white/[.07] [&.type-md]:text-tx [&.type-html]:border [&.type-html]:border-amber-r [&.type-html]:bg-amber-g [&.type-html]:text-amber">\${p.type}</span></div>
-        <div class="page-meta text-[.72rem] font-medium text-tx-3">\${status} · /p/\${esc(p.slug)}</div>
+        <div class="page-title truncate text-[.86rem] font-medium text-tx">\${esc(p.title)} <span class="type-badge type-\${p.type==='markdown'?'md':'html'} inline-block rounded-xs px-[6px] py-0.5 text-[.64rem] font-bold [&.type-md]:border [&.type-md]:border-bd-2 [&.type-md]:bg-white/[.07] [&.type-md]:text-tx [&.type-html]:border [&.type-html]:border-amber-r [&.type-html]:bg-amber-g [&.type-html]:text-amber">\${p.type}</span></div>
+        <div class="page-meta truncate text-[.7rem] font-medium text-tx-3">\${status} · /p/\${esc(p.slug)}</div>
       </div>
-      <a class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.72rem]" href="\${esc(previewHref)}" target="_blank" onclick="event.stopPropagation()">预览</a>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.72rem]" onclick="event.stopPropagation();cpPageAddr('\${esc(p.slug)}',this)">复制</button>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.72rem]" onclick="event.stopPropagation();editPageBySlug('\${esc(p.slug)}')">编辑</button>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !text-[.72rem]" onclick="event.stopPropagation();deletePage('\${esc(p.slug)}')">删除</button>
+      <span class="page-actions-row flex shrink-0 items-center gap-1">
+        <a class="inline-flex items-center rounded-sm border border-bd bg-bg-4 px-2 py-1 text-[.7rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" href="\${esc(previewHref)}" target="_blank" draggable="false" onclick="event.stopPropagation()">预览</a>
+        <button class="inline-flex items-center rounded-sm border border-bd bg-bg-4 px-2 py-1 text-[.7rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="event.stopPropagation();cpPageAddr('\${esc(p.slug)}',this)">复制</button>
+        <button class="inline-flex items-center rounded-sm border border-bd bg-bg-4 px-2 py-1 text-[.7rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="event.stopPropagation();editPageBySlug('\${esc(p.slug)}')">编辑</button>
+        <button class="inline-flex items-center rounded-sm border border-red-r bg-red-g px-2 py-1 text-[.7rem] font-semibold text-red transition hover:bg-red-r" onclick="event.stopPropagation();deletePage('\${esc(p.slug)}')">删除</button>
+      </span>
     </div>\`;
   }
 
@@ -2570,13 +2572,12 @@ export function renderPage() {
         if (!dragState || dragState.type !== 'group') return;
         const targetProj = el.closest('[data-drag-id]')?.dataset.dragId;
         if (!targetProj) return;
-        await fetch('/api/groups/' + encodeURIComponent(dragState.id), {
+        fetch('/api/groups/' + encodeURIComponent(dragState.id), {
           method: 'PATCH', headers: authH(),
           body: JSON.stringify({ projectId: targetProj }),
-        });
+        }).then(() => loadPages());
         clearDragOver();
         dragState = null;
-        loadPages();
       });
     });
     initTouchDnD();
@@ -2646,44 +2647,46 @@ export function renderPage() {
             const targetProjectId = item.dataset.projectId || '';
             const rect = item.getBoundingClientRect();
             const after = t.clientY >= rect.top + rect.height / 2;
+            const tgtZone = document.querySelector('.page-drop-zone[data-project-id="'+CSS.escape(targetProjectId)+'"][data-group-id="'+CSS.escape(targetGroupId)+'"]');
             if (targetGroupId === tState.groupId && targetProjectId === tState.projectId) {
+              optimisticReorder(tgtZone, tState.el, item, after);
               const items = scopeItems(targetProjectId, targetGroupId);
-              const ids = items.map(el => el.dataset.dragId);
-              const from = ids.indexOf(tState.id);
-              let to = ids.indexOf(item.dataset.dragId);
-              if (from !== -1 && to !== -1 && from !== to) {
-                const order = ids.slice();
-                order.splice(from, 1);
-                let insertAt = order.indexOf(item.dataset.dragId);
-                if (after) insertAt += 1;
-                order.splice(insertAt, 0, tState.id);
-                await reorderInScope(targetProjectId, targetGroupId, order);
-              }
+              const order = items.map(el => el.dataset.dragId);
+              reorderInScope(targetProjectId, targetGroupId, order);
             } else {
-              await movePageTo(tState.id, targetProjectId || null, targetGroupId || null);
+              optimisticMove(null, tgtZone, tState.el, item, after);
+              try { await movePageTo(tState.id, targetProjectId || null, targetGroupId || null); } catch {}
               const items = scopeItems(targetProjectId, targetGroupId);
               if (items.length) {
                 const order = items.map(el => el.dataset.dragId).filter(id => id !== tState.id);
                 const to = order.indexOf(item.dataset.dragId);
-                if (to !== -1) { order.splice(to + (after ? 1 : 0), 0, tState.id); await reorderInScope(targetProjectId, targetGroupId, order); }
+                if (to !== -1) { order.splice(to + (after ? 1 : 0), 0, tState.id); reorderInScope(targetProjectId, targetGroupId, order); }
               }
             }
-            loadPages();
           } else {
             const zone = under.closest('.page-drop-zone');
             if (zone) {
               const projectId = zone.dataset.projectId || '';
               const groupId = zone.dataset.groupId || '';
               const same = tState.projectId === projectId && tState.groupId === groupId;
+              let dstZone = zone;
+              if (zone.dataset.dropScope === 'project') dstZone = zone.querySelector('.page-project-pages') || zone;
               if (same) {
+                dstZone.appendChild(tState.el);
                 const items = scopeItems(projectId, groupId);
                 const order = items.map(el => el.dataset.dragId).filter(id => id !== tState.id);
                 order.push(tState.id);
-                await reorderInScope(projectId, groupId, order);
+                reorderInScope(projectId, groupId, order);
               } else {
-                await movePageTo(tState.id, projectId || null, groupId || null);
+                dstZone.appendChild(tState.el);
+                try { await movePageTo(tState.id, projectId || null, groupId || null); } catch {}
+                const items = scopeItems(projectId, groupId);
+                if (items.length) {
+                  const order = items.map(el => el.dataset.dragId).filter(id => id !== tState.id);
+                  order.push(tState.id);
+                  reorderInScope(projectId, groupId, order);
+                }
               }
-              loadPages();
             }
           }
         } else if (under && tState.type === 'group') {
@@ -2691,11 +2694,10 @@ export function renderPage() {
           if (proj) {
             const targetProj = proj.closest('[data-drag-id]')?.dataset.dragId;
             if (targetProj) {
-              await fetch('/api/groups/' + encodeURIComponent(tState.id), {
+              fetch('/api/groups/' + encodeURIComponent(tState.id), {
                 method: 'PATCH', headers: authH(),
                 body: JSON.stringify({ projectId: targetProj }),
-              });
-              loadPages();
+              }).then(() => loadPages());
             }
           }
         }
@@ -2769,6 +2771,30 @@ export function renderPage() {
     });
   }
 
+  function optimisticReorder(scopeEl, draggedEl, targetEl, after) {
+    if (!scopeEl || !draggedEl || !targetEl) return;
+    const children = [...scopeEl.querySelectorAll(':scope > .page-tree-item')];
+    const fromIdx = children.indexOf(draggedEl);
+    const toIdx = children.indexOf(targetEl);
+    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
+    const insertBefore = after ? children[toIdx].nextSibling : children[toIdx];
+    scopeEl.insertBefore(draggedEl, insertBefore);
+  }
+  function optimisticMove(srcZone, dstZone, draggedEl, targetEl, after) {
+    if (!draggedEl) return;
+    if (dstZone === srcZone) { if (targetEl) optimisticReorder(dstZone, draggedEl, targetEl, after); else dstZone.appendChild(draggedEl); return; }
+    if (targetEl) {
+      const insertBefore = after ? targetEl.nextSibling : targetEl;
+      dstZone.insertBefore(draggedEl, insertBefore);
+    } else if (dstZone.dataset.dropScope !== 'project' && dstZone.dataset.dropScope !== 'group') {
+      dstZone.appendChild(draggedEl);
+    } else if (dstZone.dataset.dropScope === 'project' && dstZone.querySelector('.page-group-body, .page-project-pages')) {
+      dstZone.querySelector('.page-project-pages, .page-group-body')?.appendChild(draggedEl);
+    } else {
+      dstZone.appendChild(draggedEl);
+    }
+  }
+
   async function onDropItem(e) {
     e.preventDefault();
     e.stopPropagation();
@@ -2780,40 +2806,25 @@ export function renderPage() {
     const targetProjectId = target.dataset.projectId || '';
     const srcGroupId = dragState.groupId || '';
     const srcProjectId = dragState.projectId || '';
-    const placeAfter = !target.classList.contains('drag-over-top');
-    // re-evaluate midY for placeAfter
     const rect = target.getBoundingClientRect();
     const after = e.clientY >= rect.top + rect.height / 2;
+    const tgtZone = document.querySelector('.page-drop-zone[data-project-id="'+CSS.escape(targetProjectId)+'"][data-group-id="'+CSS.escape(targetGroupId)+'"]');
 
     if (targetGroupId === srcGroupId && targetProjectId === srcProjectId) {
-      // same scope: reorder — compute order first, then persist
+      optimisticReorder(tgtZone, dragState.el, target, after);
       const items = scopeItems(targetProjectId, targetGroupId);
-      const ids = items.map(el => el.dataset.dragId);
-      const from = ids.indexOf(dragState.id);
-      let to = ids.indexOf(target.dataset.dragId);
-      if (from === -1 || to === -1 || from === to) { loadPages(); return; }
-      const order = ids.slice();
-      order.splice(from, 1);
-      // after removal, adjust to if from was before to
-      let insertAt = order.indexOf(target.dataset.dragId);
-      if (after) insertAt += 1;
-      order.splice(insertAt, 0, dragState.id);
-      await reorderInScope(targetProjectId, targetGroupId, order);
+      const order = items.map(el => el.dataset.dragId);
+      reorderInScope(targetProjectId, targetGroupId, order);
     } else {
-      // cross scope: move + place near target
-      await movePageTo(dragState.id, targetProjectId || null, targetGroupId || null);
-      // try to reorder in target scope (works when target scope is visible in DOM)
+      optimisticMove(null, tgtZone, dragState.el, target, after);
+      try { await movePageTo(dragState.id, targetProjectId || null, targetGroupId || null); } catch {}
       const items = scopeItems(targetProjectId, targetGroupId);
       if (items.length) {
         const order = items.map(el => el.dataset.dragId).filter(id => id !== dragState.id);
         const to = order.indexOf(target.dataset.dragId);
-        if (to !== -1) {
-          order.splice(to + (placeAfter ? 1 : 0), 0, dragState.id);
-          await reorderInScope(targetProjectId, targetGroupId, order);
-        }
+        if (to !== -1) { order.splice(to + (after ? 1 : 0), 0, dragState.id); reorderInScope(targetProjectId, targetGroupId, order); }
       }
     }
-    loadPages();
   }
 
   async function onDropZone(e) {
@@ -2828,15 +2839,25 @@ export function renderPage() {
     const groupId = zone.dataset.groupId || '';
     const same = (dragState.projectId || '') === projectId && (dragState.groupId || '') === groupId;
     if (same) {
-      // append to end of this scope
+      zone.appendChild(dragState.el);
       const items = scopeItems(projectId, groupId);
       const order = items.map(el => el.dataset.dragId).filter(id => id !== dragState.id);
       order.push(dragState.id);
-      await reorderInScope(projectId, groupId, order);
+      reorderInScope(projectId, groupId, order);
     } else {
-      await movePageTo(dragState.id, projectId || null, groupId || null);
+      let dstZone = zone;
+      if (zone.dataset.dropScope === 'project') {
+        dstZone = zone.querySelector('.page-project-pages') || zone;
+      }
+      dstZone.appendChild(dragState.el);
+      try { await movePageTo(dragState.id, projectId || null, groupId || null); } catch {}
+      const items = scopeItems(projectId, groupId);
+      if (items.length) {
+        const order = items.map(el => el.dataset.dragId).filter(id => id !== dragState.id);
+        order.push(dragState.id);
+        reorderInScope(projectId, groupId, order);
+      }
     }
-    loadPages();
   }
 
   // ── Lightbox ──
