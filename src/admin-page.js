@@ -503,7 +503,7 @@ export function renderAdminPage() {
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-[10px] !py-1 !text-[.76rem]" id="adminPageBulkPrivate">设为私密</button>
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-[10px] !py-1 !text-[.76rem]" id="adminPageCancelSel">取消</button>
         </div>
-        <div class="pg-reorder-hint hidden mb-2 text-[.72rem] text-tx-3" id="adminPageReorderHint">已定位到单个项目/分组，可拖动 <span class="text-tx-2">⠿</span> 手柄调整顺序</div>
+        <div class="pg-reorder-hint mb-2 text-[.72rem] text-tx-3" id="adminPageReorderHint">拖动 <span class="text-tx-2">⠿</span> 手柄排序，拖到不同项目/分组行可移动页面</div>
         <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3">
           <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
             <thead><tr>
@@ -2250,12 +2250,12 @@ export function renderAdminPage() {
     const selMode = adminPageSelectMode;
     const checkCol = (selMode ? 'pg-check-col selecting' : 'pg-check-col') + ' hidden w-[30px] text-center [&.selecting]:table-cell';
     const scope = pageScope;
-    document.getElementById('pgDragHead')?.classList.toggle('scoped', scope.scoped);
-    document.getElementById('adminPageReorderHint')?.classList.toggle('hidden', !scope.scoped);
-    const dragCol = 'pg-drag-col' + (scope.scoped ? ' scoped' : '') + ' hidden w-[24px] text-center [&.scoped]:table-cell';
+    document.getElementById('pgDragHead')?.classList.toggle('scoped', true);
+    document.getElementById('adminPageReorderHint')?.classList.toggle('hidden', false);
+    const dragCol = 'pg-drag-col scoped hidden w-[24px] text-center [&.scoped]:table-cell';
     document.getElementById('adminPagesBody').innerHTML = sorted.length
-      ? sorted.map(p => \`<tr data-slug="\${esc(p.slug)}" \${scope.scoped ? 'draggable="true"' : ''} class="\${scope.scoped ? 'pg-drag-row' : ''}">
-          <td class="\${dragCol} cursor-grab select-none text-tx-3 active:cursor-grabbing">\${scope.scoped ? '⠿' : ''}</td>
+      ? sorted.map(p => \`<tr data-slug="\${esc(p.slug)}" draggable="true" class="pg-drag-row" data-project-id="\${esc(p.projectId||'')}" data-group-id="\${esc(p.groupId||'')}">
+          <td class="\${dragCol} cursor-grab select-none text-tx-3 active:cursor-grabbing">⠿</td>
           <td class="\${checkCol}"><input type="checkbox" class="h-[15px] w-[15px] cursor-pointer accent-tx-2" data-slug="\${esc(p.slug)}" \${adminPageSelected.has(p.slug)?'checked':''} onchange="adminPageToggleSel('\${esc(p.slug)}',this.checked)"></td>
           <td>
             <div class="font-medium text-[.88rem]">\${esc(p.title)}</div>
@@ -2284,46 +2284,156 @@ export function renderAdminPage() {
     initAdminPageDnD(scope);
   }
 
-  // ── Drag-to-reorder (only when the table is scoped to one project+group) ──
-  let adminDragSlug = null;
+  // ── Drag-to-reorder: always available, cross-scope move when project/group differs ──
+  let adminDragSlug = null, adminDragProjectId = null, adminDragGroupId = null;
   function initAdminPageDnD(scope) {
-    if (!scope?.scoped || adminPageSelectMode) return;
+    if (adminPageSelectMode) return;
     document.querySelectorAll('#adminPagesBody tr.pg-drag-row').forEach(row => {
       row.addEventListener('dragstart', (e) => {
         if (e.target.closest('button, a, input, select')) { e.preventDefault(); return; }
         adminDragSlug = row.dataset.slug;
+        adminDragProjectId = row.dataset.projectId || '';
+        adminDragGroupId = row.dataset.groupId || '';
         row.classList.add('opacity-30');
         e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', row.dataset.slug);
       });
       row.addEventListener('dragend', () => {
         row.classList.remove('opacity-30');
-        document.querySelectorAll('#adminPagesBody tr').forEach(r => r.classList.remove('border-t-2', 'border-t-accent'));
+        document.querySelectorAll('#adminPagesBody tr').forEach(r => r.classList.remove('border-t-2', 'border-t-accent', 'shadow-[inset_0_3px_0_0_var(--color-accent)]'));
         adminDragSlug = null;
+        adminDragProjectId = null;
+        adminDragGroupId = null;
       });
       row.addEventListener('dragover', (e) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
         if (!adminDragSlug || row.dataset.slug === adminDragSlug) return;
-        document.querySelectorAll('#adminPagesBody tr').forEach(r => r.classList.remove('border-t-2', 'border-t-accent'));
-        row.classList.add('border-t-2', 'border-t-accent');
+        document.querySelectorAll('#adminPagesBody tr').forEach(r => r.classList.remove('border-t-2', 'border-t-accent', 'shadow-[inset_0_3px_0_0_var(--color-accent)]'));
+        row.classList.add('border-t-2', 'border-t-accent', 'shadow-[inset_0_3px_0_0_var(--color-accent)]');
       });
       row.addEventListener('drop', async (e) => {
         e.preventDefault();
         row.classList.remove('border-t-2', 'border-t-accent');
         if (!adminDragSlug || row.dataset.slug === adminDragSlug) return;
-        const rows = [...document.querySelectorAll('#adminPagesBody tr.pg-drag-row')];
-        const order = rows.map(r => r.dataset.slug);
-        const from = order.indexOf(adminDragSlug);
-        let to = order.indexOf(row.dataset.slug);
-        if (from === -1 || to === -1) return;
-        order.splice(from, 1);
-        to = order.indexOf(row.dataset.slug);
-        order.splice(to, 0, adminDragSlug);
-        await adminFetch('/admin/pages/reorder', {
-          method: 'PATCH', headers: authH(),
-          body: JSON.stringify({ projectId: scope.projectId, groupId: scope.groupId, order }),
-        });
+        const tgtProjectId = row.dataset.projectId || '';
+        const tgtGroupId = row.dataset.groupId || '';
+        const sameScope = adminDragProjectId === tgtProjectId && adminDragGroupId === tgtGroupId;
+        if (sameScope) {
+          // same scope: reorder
+          const rows = [...document.querySelectorAll('#adminPagesBody tr.pg-drag-row')];
+          const order = rows.map(r => r.dataset.slug);
+          const from = order.indexOf(adminDragSlug);
+          let to = order.indexOf(row.dataset.slug);
+          if (from === -1 || to === -1) return;
+          order.splice(from, 1);
+          to = order.indexOf(row.dataset.slug);
+          order.splice(to, 0, adminDragSlug);
+          await adminFetch('/admin/pages/reorder', {
+            method: 'PATCH', headers: authH(),
+            body: JSON.stringify({ projectId: tgtProjectId || null, groupId: tgtGroupId || null, order }),
+          });
+        } else {
+          // cross scope: move + reorder in target scope
+          await adminFetch('/admin/pages/' + encodeURIComponent(adminDragSlug), {
+            method: 'PATCH', headers: authH(),
+            body: JSON.stringify({ projectId: tgtProjectId || null, groupId: tgtGroupId || null }),
+          });
+          // reorder in target scope (place near the target row)
+          const rows = [...document.querySelectorAll('#adminPagesBody tr.pg-drag-row')];
+          const order = rows.map(r => r.dataset.slug).filter(id => id !== adminDragSlug);
+          const to = order.indexOf(row.dataset.slug);
+          if (to !== -1) order.splice(to, 0, adminDragSlug);
+          else order.push(adminDragSlug);
+          await adminFetch('/admin/pages/reorder', {
+            method: 'PATCH', headers: authH(),
+            body: JSON.stringify({ projectId: tgtProjectId || null, groupId: tgtGroupId || null, order }),
+          });
+        }
         loadAdminPages();
+      });
+    });
+    initAdminTouchDnD();
+  }
+
+  // ── Admin touch drag support (long-press to activate, elementFromPoint for drop targets) ──
+  function initAdminTouchDnD() {
+    if (adminPageSelectMode) return;
+    let tState = null, tGhost = null, tTimer = null;
+    document.querySelectorAll('#adminPagesBody tr.pg-drag-row').forEach(row => {
+      row.addEventListener('touchstart', (e) => {
+        if (e.target.closest('button, a, input, select')) return;
+        tTimer = setTimeout(() => {
+          tState = { slug: row.dataset.slug, projectId: row.dataset.projectId || '', groupId: row.dataset.groupId || '', el: row };
+          const r = row.getBoundingClientRect();
+          tGhost = row.cloneNode(true);
+          Object.assign(tGhost.style, {
+            position: 'fixed', left: r.left + 'px', top: r.top + 'px',
+            width: r.width + 'px', opacity: '0.7', pointerEvents: 'none',
+            zIndex: '9999', transform: 'scale(1.02)',
+            border: '2px dashed var(--color-accent)', borderRadius: '6px',
+          });
+          document.body.appendChild(tGhost);
+          row.classList.add('opacity-30');
+          document.body.style.overflow = 'hidden';
+        }, 300);
+      }, { passive: true });
+      row.addEventListener('touchmove', (e) => {
+        if (!tState) { clearTimeout(tTimer); return; }
+        e.preventDefault();
+        const t = e.touches[0];
+        if (tGhost) { tGhost.style.left = (t.clientX - 20) + 'px'; tGhost.style.top = (t.clientY - 20) + 'px'; }
+        document.querySelectorAll('#adminPagesBody tr').forEach(r => r.classList.remove('border-t-2', 'border-t-accent', 'shadow-[inset_0_3px_0_0_var(--color-accent)]'));
+        const under = document.elementFromPoint(t.clientX, t.clientY);
+        const tr = under?.closest('#adminPagesBody tr.pg-drag-row');
+        if (tr && tr !== row) tr.classList.add('border-t-2', 'border-t-accent', 'shadow-[inset_0_3px_0_0_var(--color-accent)]');
+      }, { passive: false });
+      row.addEventListener('touchend', async (e) => {
+        clearTimeout(tTimer);
+        if (!tState) return;
+        if (tGhost) { tGhost.remove(); tGhost = null; }
+        document.body.style.overflow = '';
+        const t = e.changedTouches[0];
+        const under = document.elementFromPoint(t.clientX, t.clientY);
+        const target = under?.closest('#adminPagesBody tr.pg-drag-row');
+        if (target && target !== row) {
+          const tgtProjectId = target.dataset.projectId || '';
+          const tgtGroupId = target.dataset.groupId || '';
+          const sameScope = tState.projectId === tgtProjectId && tState.groupId === tgtGroupId;
+          if (sameScope) {
+            const rows = [...document.querySelectorAll('#adminPagesBody tr.pg-drag-row')];
+            const order = rows.map(r => r.dataset.slug);
+            const from = order.indexOf(tState.slug);
+            let to = order.indexOf(target.dataset.slug);
+            if (from !== -1 && to !== -1 && from !== to) {
+              order.splice(from, 1);
+              to = order.indexOf(target.dataset.slug);
+              order.splice(to, 0, tState.slug);
+              await adminFetch('/admin/pages/reorder', {
+                method: 'PATCH', headers: authH(),
+                body: JSON.stringify({ projectId: tgtProjectId || null, groupId: tgtGroupId || null, order }),
+              });
+            }
+          } else {
+            await adminFetch('/admin/pages/' + encodeURIComponent(tState.slug), {
+              method: 'PATCH', headers: authH(),
+              body: JSON.stringify({ projectId: tgtProjectId || null, groupId: tgtGroupId || null }),
+            });
+            const rows = [...document.querySelectorAll('#adminPagesBody tr.pg-drag-row')];
+            const order = rows.map(r => r.dataset.slug).filter(id => id !== tState.slug);
+            const to = order.indexOf(target.dataset.slug);
+            if (to !== -1) order.splice(to, 0, tState.slug);
+            else order.push(tState.slug);
+            await adminFetch('/admin/pages/reorder', {
+              method: 'PATCH', headers: authH(),
+              body: JSON.stringify({ projectId: tgtProjectId || null, groupId: tgtGroupId || null, order }),
+            });
+          }
+          loadAdminPages();
+        }
+        row.classList.remove('opacity-30');
+        document.querySelectorAll('#adminPagesBody tr').forEach(r => r.classList.remove('border-t-2', 'border-t-accent', 'shadow-[inset_0_3px_0_0_var(--color-accent)]'));
+        tState = null;
       });
     });
   }

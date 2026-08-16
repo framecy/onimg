@@ -1888,32 +1888,32 @@ export function renderPage() {
       const projGroups = groups.filter(g => g.projectId === proj.id);
       const projPages = pages.filter(p => p.projectId === proj.id && !p.groupId).sort((a,b) => (a.sort??0) - (b.sort??0));
       const total = pages.filter(p => p.projectId === proj.id).length;
-      html += \`<div class="page-project overflow-hidden rounded-lg border border-bd bg-bg-3 [&.drag-over-proj]:border-accent" data-drag-type="project" data-drag-id="\${esc(proj.id)}">
-        <div class="page-project-header flex cursor-pointer select-none items-center gap-[10px] px-4 py-[14px] hover:bg-bg-4" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.expand-icon').classList.toggle('open')">
-          <span class="expand-icon open w-[14px] shrink-0 text-center text-[.6rem] text-tx-3 transition-transform duration-150 [&.open]:rotate-90">▶</span>
+      html += \`<div class="page-project overflow-hidden rounded-lg border border-bd bg-bg-3 [&.drag-over-proj]:border-accent [&.collapsed_.page-project-body]:max-h-0 [&.collapsed_.page-project-body]:opacity-0 [&.collapsed_.expand-icon]:rotate-0" data-drag-type="project" data-drag-id="\${esc(proj.id)}">
+        <div class="page-project-header group/proj flex cursor-pointer select-none items-center gap-[10px] px-4 py-[14px] hover:bg-bg-4" draggable="true" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="expand-icon w-[14px] shrink-0 text-center text-[.6rem] text-tx-3 transition-transform duration-150 rotate-90">▶</span>
           <span class="project-name flex-1 text-[.88rem] font-semibold text-tx">\${esc(proj.name)}</span>
           <span class="count-badge rounded-xs bg-bg-5 px-[7px] py-0.5 text-[.66rem] font-semibold text-tx-3">\${total}</span>
-          <span class="proj-actions ml-1.5 flex gap-[3px]">
+          <span class="proj-actions ml-1.5 flex gap-[3px] opacity-0 transition group-hover/proj:opacity-100">
             <button class="proj-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();editProject('\${esc(proj.id)}')" title="编辑项目">编辑</button>
             <button class="proj-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();createGroupInProject('\${esc(proj.id)}')" title="新建分组">+ 分组</button>
             <button class="proj-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx !text-red" onclick="event.stopPropagation();deleteProject('\${esc(proj.id)}')" title="删除项目">删除</button>
           </span>
         </div>
-        <div class="page-project-body border-t border-bd">\`;
+        <div class="page-project-body border-t border-bd transition-all duration-200 overflow-hidden max-h-[4000px] opacity-100">\`;
       // groups
       for (const grp of projGroups) {
         const grpPages = pages.filter(p => p.groupId === grp.id).sort((a,b) => (a.sort??0) - (b.sort??0));
-        html += \`<div class="page-group ml-[18px] border-l-2 border-bd" data-drag-type="group" data-drag-id="\${esc(grp.id)}" data-project-id="\${esc(proj.id)}">
-          <div class="page-group-header flex cursor-pointer select-none items-center gap-[7px] px-3 py-2 [&.drag-over-grp]:bg-bg-5 hover:bg-bg-4" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.expand-icon').classList.toggle('open')">
-            <span class="expand-icon open w-[14px] shrink-0 text-center !text-[.55rem] text-tx-3 transition-transform duration-150 [&.open]:rotate-90">▶</span>
+        html += \`<div class="page-group ml-[18px] border-l border-bd-2 [&.collapsed_.page-group-body]:max-h-0 [&.collapsed_.page-group-body]:opacity-0 [&.collapsed_.expand-icon]:rotate-0" data-drag-type="group" data-drag-id="\${esc(grp.id)}" data-project-id="\${esc(proj.id)}">
+          <div class="page-group-header group/grp flex cursor-pointer select-none items-center gap-[7px] px-3 py-2 [&.drag-over-grp]:bg-bg-5 hover:bg-bg-4" draggable="true" onclick="this.parentElement.classList.toggle('collapsed')">
+            <span class="expand-icon w-[14px] shrink-0 text-center !text-[.55rem] text-tx-3 transition-transform duration-150 rotate-90">▶</span>
             <span class="group-name flex-1 text-[.88rem] font-semibold text-tx">\${esc(grp.name)}</span>
             <span class="count-badge rounded-xs bg-bg-5 px-[7px] py-0.5 text-[.66rem] font-semibold text-tx-3">\${grpPages.length}</span>
-            <span class="grp-actions ml-1.5 flex gap-[3px]">
+            <span class="grp-actions ml-1.5 flex gap-[3px] opacity-0 transition group-hover/grp:opacity-100">
               <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();editGroup('\${esc(grp.id)}')" title="编辑分组">编辑</button>
               <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx !text-red" onclick="event.stopPropagation();deleteGroup('\${esc(grp.id)}')" title="删除分组">删除</button>
             </span>
           </div>
-          <div class="page-group-body page-tree-docs page-drop-zone ml-[18px] border-l-2 border-bd [&.drag-over-zone]:outline [&.drag-over-zone]:outline-1 [&.drag-over-zone]:outline-dashed [&.drag-over-zone]:outline-accent [&.drag-over-zone]:-outline-offset-2 [&.drag-over-zone]:bg-accent-muted [&.drag-over-zone]:min-h-[28px]" data-drop-scope="group" data-project-id="\${esc(proj.id)}" data-group-id="\${esc(grp.id)}">\`;
+          <div class="page-group-body page-tree-docs page-drop-zone ml-[18px] border-l border-bd-2 transition-all duration-200 overflow-hidden max-h-[4000px] opacity-100 [&.drag-over-zone]:outline [&.drag-over-zone]:outline-1 [&.drag-over-zone]:outline-dashed [&.drag-over-zone]:outline-accent [&.drag-over-zone]:-outline-offset-2 [&.drag-over-zone]:bg-accent-muted [&.drag-over-zone]:min-h-[28px]" data-drop-scope="group" data-project-id="\${esc(proj.id)}" data-group-id="\${esc(grp.id)}">\`;
         for (const p of grpPages) html += renderDocItem(p);
         html += \`</div></div>\`;
       }
@@ -1929,17 +1929,17 @@ export function renderPage() {
         html += \`<div class="pages-independent mt-2"><div class="indep-label mt-[10px] mb-1.5 ml-0.5 text-[.72rem] font-bold uppercase tracking-[.06em] text-tx-3">独立分组</div>\`;
         for (const grp of independentGroups) {
           const grpPages = pages.filter(p => p.groupId === grp.id).sort((a,b) => (a.sort??0) - (b.sort??0));
-          html += \`<div class="page-group ml-[18px] border-l-2 border-bd" data-drag-type="group" data-drag-id="\${esc(grp.id)}" data-project-id="">
-            <div class="page-group-header flex cursor-pointer select-none items-center gap-[7px] px-3 py-2 [&.drag-over-grp]:bg-bg-5 hover:bg-bg-4" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.expand-icon').classList.toggle('open')">
-              <span class="expand-icon open w-[14px] shrink-0 text-center !text-[.55rem] text-tx-3 transition-transform duration-150 [&.open]:rotate-90">▶</span>
+          html += \`<div class="page-group ml-[18px] border-l border-bd-2 [&.collapsed_.page-group-body]:max-h-0 [&.collapsed_.page-group-body]:opacity-0 [&.collapsed_.expand-icon]:rotate-0" data-drag-type="group" data-drag-id="\${esc(grp.id)}" data-project-id="">
+            <div class="page-group-header group/grp flex cursor-pointer select-none items-center gap-[7px] px-3 py-2 [&.drag-over-grp]:bg-bg-5 hover:bg-bg-4" draggable="true" onclick="this.parentElement.classList.toggle('collapsed')">
+              <span class="expand-icon w-[14px] shrink-0 text-center !text-[.55rem] text-tx-3 transition-transform duration-150 rotate-90">▶</span>
               <span class="group-name flex-1 text-[.88rem] font-semibold text-tx">\${esc(grp.name)}</span>
               <span class="count-badge rounded-xs bg-bg-5 px-[7px] py-0.5 text-[.66rem] font-semibold text-tx-3">\${grpPages.length}</span>
-              <span class="grp-actions ml-1.5 flex gap-[3px]">
+              <span class="grp-actions ml-1.5 flex gap-[3px] opacity-0 transition group-hover/grp:opacity-100">
                 <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();editGroup('\${esc(grp.id)}')" title="编辑分组">编辑</button>
                 <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx !text-red" onclick="event.stopPropagation();deleteGroup('\${esc(grp.id)}')" title="删除分组">删除</button>
               </span>
             </div>
-            <div class="page-group-body page-tree-docs page-drop-zone ml-[18px] border-l-2 border-bd [&.drag-over-zone]:outline [&.drag-over-zone]:outline-1 [&.drag-over-zone]:outline-dashed [&.drag-over-zone]:outline-accent [&.drag-over-zone]:-outline-offset-2 [&.drag-over-zone]:bg-accent-muted [&.drag-over-zone]:min-h-[28px]" data-drop-scope="group" data-project-id="" data-group-id="\${esc(grp.id)}">\`;
+            <div class="page-group-body page-tree-docs page-drop-zone ml-[18px] border-l border-bd-2 transition-all duration-200 overflow-hidden max-h-[4000px] opacity-100 [&.drag-over-zone]:outline [&.drag-over-zone]:outline-1 [&.drag-over-zone]:outline-dashed [&.drag-over-zone]:outline-accent [&.drag-over-zone]:-outline-offset-2 [&.drag-over-zone]:bg-accent-muted [&.drag-over-zone]:min-h-[28px]" data-drop-scope="group" data-project-id="" data-group-id="\${esc(grp.id)}">\`;
           for (const p of grpPages) html += renderDocItem(p);
           html += \`</div></div>\`;
         }
@@ -1967,7 +1967,7 @@ export function renderPage() {
       ? \`<input type="checkbox" class="page-check h-[15px] w-[15px] shrink-0 cursor-pointer accent-accent" data-slug="\${esc(p.slug)}" \${sel?'checked':''} onclick="event.stopPropagation();togglePageSel('\${esc(p.slug)}')">\`
       : '';
     const drag = pageSelectMode ? 'false' : 'true';
-    const cls = 'page-tree-item relative flex items-center gap-[10px] my-0.5 rounded-md border border-transparent bg-bg-2 px-[14px] py-[10px] transition hover:border-bd hover:bg-bg-3 [&.dragging]:opacity-30 [&.dragging]:border-dashed [&.dragging]:border-bd-2 [&.drag-over-top]:border-t-2 [&.drag-over-top]:border-t-accent [&.drag-over-top]:-mt-0.5 [&.drag-over-bot]:border-b-2 [&.drag-over-bot]:border-b-accent [&.drag-over-bot]:-mb-0.5 [&.selecting]:cursor-pointer [&.selected]:border-accent [&.selected]:bg-accent-muted' + (pageSelectMode ? ' selecting' : '') + (sel ? ' selected' : '');
+    const cls = 'page-tree-item relative flex items-center gap-[10px] my-0.5 rounded-md border border-transparent bg-bg-2 px-[14px] py-[10px] transition hover:border-bd hover:bg-bg-3 [&.dragging]:opacity-30 [&.dragging]:border-dashed [&.dragging]:border-bd-2 [&.drag-over-top]:border-t-2 [&.drag-over-top]:border-t-accent [&.drag-over-top]:-mt-0.5 [&.drag-over-top]:shadow-[inset_0_3px_0_0_var(--color-accent)] [&.drag-over-bot]:border-b-2 [&.drag-over-bot]:border-b-accent [&.drag-over-bot]:-mb-0.5 [&.drag-over-bot]:shadow-[inset_0_-3px_0_0_var(--color-accent)] [&.selecting]:cursor-pointer [&.selected]:border-accent [&.selected]:bg-accent-muted' + (pageSelectMode ? ' selecting' : '') + (sel ? ' selected' : '');
     const clickAttr = pageSelectMode ? \`onclick="togglePageSel('\${esc(p.slug)}')"\` : '';
     const status = p.isPublic
       ? '公开'
@@ -2534,6 +2534,176 @@ export function renderPage() {
       el.addEventListener('drop', onDropZone);
       el.addEventListener('dragleave', onDragLeaveZone);
     });
+    // group headers: drag to re-parent
+    document.querySelectorAll('.page-group-header[draggable="true"]').forEach(el => {
+      el.addEventListener('dragstart', (e) => {
+        if (e.target.closest('button, a, input, select, textarea')) { e.preventDefault(); return; }
+        const groupEl = el.closest('[data-drag-id]');
+        if (!groupEl) return;
+        dragState = {
+          type: 'group',
+          id: groupEl.dataset.dragId || '',
+          projectId: groupEl.dataset.projectId || '',
+          groupId: groupEl.dataset.dragId || '',
+          el: groupEl,
+        };
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', dragState.id);
+      });
+      el.addEventListener('dragend', onDragEnd);
+    });
+    // project headers: drop target for groups
+    document.querySelectorAll('.page-project-header').forEach(el => {
+      el.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (dragState?.type === 'group') {
+          el.closest('.page-project')?.classList.add('drag-over-proj');
+        }
+      });
+      el.addEventListener('dragleave', () => {
+        el.closest('.page-project')?.classList.remove('drag-over-proj');
+      });
+      el.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        el.closest('.page-project')?.classList.remove('drag-over-proj');
+        if (!dragState || dragState.type !== 'group') return;
+        const targetProj = el.closest('[data-drag-id]')?.dataset.dragId;
+        if (!targetProj) return;
+        await fetch('/api/groups/' + encodeURIComponent(dragState.id), {
+          method: 'PATCH', headers: authH(),
+          body: JSON.stringify({ projectId: targetProj }),
+        });
+        clearDragOver();
+        dragState = null;
+        loadPages();
+      });
+    });
+    initTouchDnD();
+  }
+
+  // ── Touch drag support (long-press to activate, elementFromPoint for drop targets) ──
+  function initTouchDnD() {
+    if (pageSelectMode) return;
+    let tState = null, tGhost = null, tTimer = null;
+    const sel = '.page-tree-item[draggable="true"], .page-group-header[draggable="true"]';
+    document.querySelectorAll(sel).forEach(el => {
+      el.addEventListener('touchstart', (e) => {
+        if (e.target.closest('button, a, input, select, textarea')) return;
+        const target = e.currentTarget;
+        tTimer = setTimeout(() => {
+          let type, id, projectId, groupId;
+          if (target.classList.contains('page-tree-item')) {
+            type = 'page'; id = target.dataset.dragId;
+            projectId = target.dataset.projectId || ''; groupId = target.dataset.groupId || '';
+          } else {
+            const grp = target.closest('[data-drag-id]');
+            type = 'group'; id = grp?.dataset.dragId || '';
+            projectId = grp?.dataset.projectId || ''; groupId = grp?.dataset.dragId || '';
+          }
+          tState = { type, id, projectId, groupId, el: target };
+          const r = target.getBoundingClientRect();
+          tGhost = target.cloneNode(true);
+          Object.assign(tGhost.style, {
+            position: 'fixed', left: r.left + 'px', top: r.top + 'px',
+            width: r.width + 'px', opacity: '0.7', pointerEvents: 'none',
+            zIndex: '9999', transform: 'scale(1.02)',
+            border: '2px dashed var(--color-accent)', borderRadius: '6px',
+          });
+          document.body.appendChild(tGhost);
+          target.classList.add('dragging');
+          document.body.style.overflow = 'hidden';
+        }, 300);
+      }, { passive: true });
+      el.addEventListener('touchmove', (e) => {
+        if (!tState) { clearTimeout(tTimer); return; }
+        e.preventDefault();
+        const t = e.touches[0];
+        if (tGhost) { tGhost.style.left = (t.clientX - 20) + 'px'; tGhost.style.top = (t.clientY - 20) + 'px'; }
+        clearDragOver();
+        const under = document.elementFromPoint(t.clientX, t.clientY);
+        if (!under) return;
+        const item = under.closest('.page-tree-item');
+        if (item && item !== tState.el) {
+          const r = item.getBoundingClientRect();
+          item.classList.add(t.clientY < r.top + r.height / 2 ? 'drag-over-top' : 'drag-over-bot');
+        } else {
+          const zone = under.closest('.page-drop-zone');
+          if (zone) zone.classList.add('drag-over-zone');
+        }
+      }, { passive: false });
+      el.addEventListener('touchend', async (e) => {
+        clearTimeout(tTimer);
+        if (!tState) return;
+        if (tGhost) { tGhost.remove(); tGhost = null; }
+        document.body.style.overflow = '';
+        const t = e.changedTouches[0];
+        const under = document.elementFromPoint(t.clientX, t.clientY);
+        if (under && tState.type === 'page') {
+          const item = under.closest('.page-tree-item');
+          if (item && item !== tState.el) {
+            const targetGroupId = item.dataset.groupId || '';
+            const targetProjectId = item.dataset.projectId || '';
+            const rect = item.getBoundingClientRect();
+            const after = t.clientY >= rect.top + rect.height / 2;
+            if (targetGroupId === tState.groupId && targetProjectId === tState.projectId) {
+              const items = scopeItems(targetProjectId, targetGroupId);
+              const ids = items.map(el => el.dataset.dragId);
+              const from = ids.indexOf(tState.id);
+              let to = ids.indexOf(item.dataset.dragId);
+              if (from !== -1 && to !== -1 && from !== to) {
+                const order = ids.slice();
+                order.splice(from, 1);
+                let insertAt = order.indexOf(item.dataset.dragId);
+                if (after) insertAt += 1;
+                order.splice(insertAt, 0, tState.id);
+                await reorderInScope(targetProjectId, targetGroupId, order);
+              }
+            } else {
+              await movePageTo(tState.id, targetProjectId || null, targetGroupId || null);
+              const items = scopeItems(targetProjectId, targetGroupId);
+              if (items.length) {
+                const order = items.map(el => el.dataset.dragId).filter(id => id !== tState.id);
+                const to = order.indexOf(item.dataset.dragId);
+                if (to !== -1) { order.splice(to + (after ? 1 : 0), 0, tState.id); await reorderInScope(targetProjectId, targetGroupId, order); }
+              }
+            }
+            loadPages();
+          } else {
+            const zone = under.closest('.page-drop-zone');
+            if (zone) {
+              const projectId = zone.dataset.projectId || '';
+              const groupId = zone.dataset.groupId || '';
+              const same = tState.projectId === projectId && tState.groupId === groupId;
+              if (same) {
+                const items = scopeItems(projectId, groupId);
+                const order = items.map(el => el.dataset.dragId).filter(id => id !== tState.id);
+                order.push(tState.id);
+                await reorderInScope(projectId, groupId, order);
+              } else {
+                await movePageTo(tState.id, projectId || null, groupId || null);
+              }
+              loadPages();
+            }
+          }
+        } else if (under && tState.type === 'group') {
+          const proj = under.closest('.page-project-header');
+          if (proj) {
+            const targetProj = proj.closest('[data-drag-id]')?.dataset.dragId;
+            if (targetProj) {
+              await fetch('/api/groups/' + encodeURIComponent(tState.id), {
+                method: 'PATCH', headers: authH(),
+                body: JSON.stringify({ projectId: targetProj }),
+              });
+              loadPages();
+            }
+          }
+        }
+        clearDragOver();
+        tState.el?.classList.remove('dragging');
+        tState = null;
+      });
+    });
   }
 
   function onDragStart(e) {
@@ -2630,10 +2800,18 @@ export function renderPage() {
       order.splice(insertAt, 0, dragState.id);
       await reorderInScope(targetProjectId, targetGroupId, order);
     } else {
-      // cross scope: move then place near target
+      // cross scope: move + place near target
       await movePageTo(dragState.id, targetProjectId || null, targetGroupId || null);
-      // best-effort: rebuild order in target scope with dragged id near target
-      // (loadPages will refresh; skip fine-grained reorder for simplicity after move)
+      // try to reorder in target scope (works when target scope is visible in DOM)
+      const items = scopeItems(targetProjectId, targetGroupId);
+      if (items.length) {
+        const order = items.map(el => el.dataset.dragId).filter(id => id !== dragState.id);
+        const to = order.indexOf(target.dataset.dragId);
+        if (to !== -1) {
+          order.splice(to + (placeAfter ? 1 : 0), 0, dragState.id);
+          await reorderInScope(targetProjectId, targetGroupId, order);
+        }
+      }
     }
     loadPages();
   }
