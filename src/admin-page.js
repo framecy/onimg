@@ -1606,7 +1606,7 @@ export function renderAdminPage() {
     const body = isEdit
       ? { permissions, disabled, tokenTtlDays, ...(password ? { password } : {}) }
       : { username, password, permissions, tokenTtlDays };
-    const res = await fetch(isEdit ? '/admin/users/' + encodeURIComponent(username) : '/admin/users', {
+    const res = await adminFetch(isEdit ? '/admin/users/' + encodeURIComponent(username) : '/admin/users', {
       method: isEdit ? 'PATCH' : 'POST',
       headers: authH(),
       body: JSON.stringify(body),
@@ -1818,7 +1818,7 @@ export function renderAdminPage() {
   async function pvmDeleteVersion(ver) {
     if (!confirm(\`确认删除 v\${ver}？该操作仅删除版本记录，不影响当前原型内容。\`)) return;
     const pid = pvmProto.protoId;
-    const res = await fetch(\`/admin/proto-versions/\${encodeURIComponent(pid)}/v\${ver}\`, { method: 'DELETE', headers: authH() });
+    const res = await adminFetch(\`/admin/proto-versions/\${encodeURIComponent(pid)}/v\${ver}\`, { method: 'DELETE', headers: authH() });
     const d = await res.json().catch(() => ({}));
     if (!res.ok) { toast('删除失败: ' + (d.error || '')); return; }
     // Remove from local cache & update pvmProto
@@ -1869,7 +1869,7 @@ export function renderAdminPage() {
     pvmShowLoading();
     try {
       const pid = pvmProto.protoId;
-      const res = await fetch(\`/admin/proto-vfiles/\${encodeURIComponent(pid)}/\${token}\`, { headers: authH() });
+      const res = await adminFetch(\`/admin/proto-vfiles/\${encodeURIComponent(pid)}/\${token}\`, { headers: authH() });
       const data = res.ok ? await res.json() : {};
       pvmFileCache[token] = data.files ?? null;
     } catch { pvmFileCache[token] = null; }
@@ -2848,7 +2848,7 @@ export function renderAdminPage() {
     const body = isEdit
       ? { title, content, type, isPublic, accessPassword, projectId, groupId }
       : { slug, title, content, type, isPublic, accessPassword, projectId, groupId };
-    const res = await fetch(url, { method:meth, headers:authH(), body:JSON.stringify(body) });
+    const res = await adminFetch(url, { method:meth, headers:authH(), body:JSON.stringify(body) });
     const data = await res.json();
     if (!res.ok) { toast('失败: ' + data.error); return; }
     destroyApmVditor();

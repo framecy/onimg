@@ -902,6 +902,23 @@ export function renderPage() {
 
   function authH() { return { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }; }
 
+  // 统一 fetch 封装：自动拦截 401 过期，提示重新登录
+  let _unauthLock = false;
+  function handleUnauth() {
+    if (_unauthLock) return;
+    _unauthLock = true;
+    localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(PERM_KEY); localStorage.removeItem(USER_KEY); localStorage.removeItem(ADMIN_KEY);
+    token = null; perms = null; username = null; isAdminUser = false;
+    updateUserArea();
+    toast('登录已过期，请重新登录');
+    setTimeout(() => { openLoginOverlay(); _unauthLock = false; }, 600);
+  }
+  async function apiFetch(url, opts) {
+    const res = await fetch(url, opts);
+    if (res.status === 401) handleUnauth();
+    return res;
+  }
+
   // ── Vditor editor management ──────────────────────────────────────────────
   let vditorGen = 0;
   function getContent() {
@@ -1303,7 +1320,7 @@ export function renderPage() {
   async function loadPublicGallery() {
     const grid = document.getElementById('pubGrid');
     if (!grid.children.length) skelCards(grid, 10);
-    const res = await fetch('/api/gallery');
+    const res = await apiFetch('/api/gallery');
     if (!res.ok) { if (grid.querySelector('.skel-card')) grid.innerHTML = ''; return; }
     const { items } = await res.json();
     document.getElementById('pubEmpty').style.display = items.length ? 'none' : 'block';
@@ -1417,7 +1434,7 @@ export function renderPage() {
         try { data = JSON.parse(xhr.responseText); } catch {}
         if (xhr.status >= 400) { resolve({ ok: false, name: file.name, error: data.error || '上传失败', file }); return; }
         if (makePublic && data.key) {
-          await fetch('/api/image/' + encodeURIComponent(data.key) + '/visibility', { method: 'PATCH', headers: { Authorization: 'Bearer ' + token } }).catch(() => {});
+          await apiFetch('/api/image/' + encodeURIComponent(data.key) + '/visibility', { method: 'PATCH', headers: { Authorization: 'Bearer ' + token } }).catch(() => {});
         }
         resolve({ ok: true, url: data.url, key: data.key, name: file.name });
       });
@@ -1493,7 +1510,7 @@ export function renderPage() {
     if (!token) return;
     document.getElementById('quotaBar').style.display = 'flex';
     try {
-      const r = await fetch('/auth/quota', { headers: { Authorization: 'Bearer ' + token } });
+      const r = await apiFetch('/auth/quota', { headers: { Authorization: 'Bearer ' + token } });
       if (!r.ok) return;
       const { total, daily } = await r.json();
       document.getElementById('qDaily').textContent = daily;
@@ -1509,8 +1526,8 @@ export function renderPage() {
   async function loadMineGallery() {
     if (!token) return;
     if (!mineItems.length) skelCards(document.getElementById('mineGrid'), 8);
-    const res = await fetch('/list', { headers: { Authorization: 'Bearer ' + token } });
-    if (res.status === 401) { logout(); return; }
+    const res = await apiFetch('/list', { headers: { Authorization: 'Bearer ' + token } });
+    if (!res.ok) return;
     const { items } = await res.json();
     mineItems = items;
     renderMineGallery();
@@ -1654,7 +1671,7 @@ export function renderPage() {
     if (!confirm('确认将选中的 ' + keys.length + ' 张图片移至回收站？可在回收站恢复。')) return;
     toast('处理中…');
     const { ok, fail } = await runPool(keys, 6, async key => {
-      const r = await fetch('/delete/' + key, { method:'DELETE', headers:{ Authorization:'Bearer '+token } });
+      const r = await apiFetch('/delete/' + key, { method:'DELETE', headers:{ Authorization:'Bearer '+token } });
       if (!r.ok) throw new Error();
       mineItems = mineItems.filter(i => i.key !== key);
       mineSelected.delete(key);
@@ -1671,7 +1688,7 @@ export function renderPage() {
     if (!keys.length) { toast('选中图片已是目标状态'); return; }
     toast('处理中…');
     const { ok, fail } = await runPool(keys, 6, async key => {
-      const r = await fetch('/api/image/' + encodeURIComponent(key) + '/visibility', { method:'PATCH', headers:{ Authorization:'Bearer '+token } });
+      const r = await apiFetch('/api/image/' + encodeURIComponent(key) + '/visibility', { method:'PATCH', headers:{ Authorization:'Bearer '+token } });
       if (!r.ok) throw new Error();
       const { isPublic } = await r.json();
       const idx = mineItems.findIndex(i => i.key === key);
@@ -1685,7 +1702,7 @@ export function renderPage() {
   document.getElementById('batchPrivate').addEventListener('click', () => batchSetVisibility(false));
 
   async function toggleVis(key, btn) {
-    const res = await fetch('/api/image/' + encodeURIComponent(key) + '/visibility', { method:'PATCH', headers:{ Authorization:'Bearer '+token } });
+    const res = await apiFetch('/api/image/' + encodeURIComponent(key) + '/visibility', { method:'PATCH', headers:{ Authorization:'Bearer '+token } });
     if (!res.ok) { toast('操作失败'); return; }
     const { isPublic } = await res.json();
     const idx = mineItems.findIndex(i => i.key === key);
@@ -1698,7 +1715,7 @@ export function renderPage() {
 
   async function delMine(key) {
     if (!confirm('将此图片移至回收站？可在回收站恢复。')) return;
-    await fetch('/delete/' + key, { method:'DELETE', headers:{ Authorization:'Bearer '+token } });
+    await apiFetch('/delete/' + key, { method:'DELETE', headers:{ Authorization:'Bearer '+token } });
     mineItems = mineItems.filter(i => i.key !== key);
     renderMineGallery();
     document.getElementById('lightbox').classList.remove('show');
@@ -1716,7 +1733,7 @@ export function renderPage() {
     const body = document.getElementById('trashBody');
     body.innerHTML = '<div class="p-12 text-center text-[.88rem] font-medium text-tx-3">加载中…</div>';
     try {
-      const res = await fetch('/api/trash', { headers: { Authorization: 'Bearer ' + token } });
+      const res = await apiFetch('/api/trash', { headers: { Authorization: 'Bearer ' + token } });
       if (!res.ok) { body.innerHTML = '<div class="p-12 text-center text-[.88rem] font-medium text-tx-3">加载失败</div>'; return; }
       trashData = await res.json();
       renderTrash();
@@ -1755,7 +1772,7 @@ export function renderPage() {
   }
   window.restoreTrash = async function(type, id) {
     const payload = type === 'image' ? { type, key: decodeURIComponent(id) } : { type, protoId: id };
-    const res = await fetch('/api/trash/restore', { method:'POST', headers: authH(), body: JSON.stringify(payload) });
+    const res = await apiFetch('/api/trash/restore', { method:'POST', headers: authH(), body: JSON.stringify(payload) });
     if (!res.ok) { toast('恢复失败'); return; }
     toast('已恢复');
     if (type === 'image') loadMineGallery(); else loadProtos(true);
@@ -1764,7 +1781,7 @@ export function renderPage() {
   window.purgeTrash = async function(type, id) {
     if (!confirm('彻底删除后无法恢复，确定？')) return;
     const payload = type === 'image' ? { type, key: decodeURIComponent(id) } : { type, protoId: id };
-    const res = await fetch('/api/trash/purge', { method:'DELETE', headers: authH(), body: JSON.stringify(payload) });
+    const res = await apiFetch('/api/trash/purge', { method:'DELETE', headers: authH(), body: JSON.stringify(payload) });
     if (!res.ok) { toast('删除失败'); return; }
     toast('已彻底删除');
     loadTrash();
@@ -1827,11 +1844,11 @@ export function renderPage() {
     try {
       let res;
       if (tagTarget.type === 'image') {
-        res = await fetch('/api/image/' + encodeURIComponent(tagTarget.id) + '/tags', {
+        res = await apiFetch('/api/image/' + encodeURIComponent(tagTarget.id) + '/tags', {
           method: 'PATCH', headers: authH(), body: JSON.stringify({ tags: tagDraft }),
         });
       } else {
-        res = await fetch('/api/protos/' + encodeURIComponent(tagTarget.id), {
+        res = await apiFetch('/api/protos/' + encodeURIComponent(tagTarget.id), {
           method: 'PATCH', headers: authH(), body: JSON.stringify({ tags: tagDraft }),
         });
       }
@@ -2051,7 +2068,7 @@ export function renderPage() {
   async function loadPages() {
     if (!token) return;
     if (!userPages.length) document.getElementById('pagesTree').innerHTML = '';
-    const res = await fetch('/api/pages', { headers: { Authorization: 'Bearer ' + token } });
+    const res = await apiFetch('/api/pages', { headers: { Authorization: 'Bearer ' + token } });
     if (!res.ok) return;
     const data = await res.json();
     userPages = data.pages || [];
@@ -2152,7 +2169,7 @@ export function renderPage() {
     setSlugSaveState(false);
     document.getElementById('pmType').value = p.type;
     // Fetch full page content (list API may omit content / password)
-    const res = await fetch('/api/pages/' + encodeURIComponent(slug), { headers: authH() });
+    const res = await apiFetch('/api/pages/' + encodeURIComponent(slug), { headers: authH() });
     const full = res.ok ? await res.json() : null;
     const content = full?.content ?? '';
     document.getElementById('pmContent').value = content;
@@ -2194,7 +2211,7 @@ export function renderPage() {
       ? { title, content, type, isPublic, accessPassword, projectId, groupId }
       : { slug, title, content, type, isPublic, accessPassword, projectId, groupId };
 
-    const res = await fetch(url, { method: meth, headers: authH(), body: JSON.stringify(body) });
+    const res = await apiFetch(url, { method: meth, headers: authH(), body: JSON.stringify(body) });
     const data = await res.json();
     if (!res.ok) {
       if (res.status === 409) { toast('后缀已被占用，请换一个'); return; }
@@ -2220,7 +2237,7 @@ export function renderPage() {
 
   async function deletePage(slug) {
     if (!confirm('确认删除页面 /p/' + slug + '？')) return;
-    await fetch('/api/pages/' + encodeURIComponent(slug), { method:'DELETE', headers:{ Authorization:'Bearer '+token } });
+    await apiFetch('/api/pages/' + encodeURIComponent(slug), { method:'DELETE', headers:{ Authorization:'Bearer '+token } });
     toast('已删除'); loadPages();
   }
 
@@ -2259,7 +2276,7 @@ export function renderPage() {
     const isEdit = !!editingProjectId;
     const url = isEdit ? '/api/projects/' + encodeURIComponent(editingProjectId) : '/api/projects';
     const meth = isEdit ? 'PATCH' : 'POST';
-    const res = await fetch(url, { method: meth, headers: authH(), body: JSON.stringify({ name }) });
+    const res = await apiFetch(url, { method: meth, headers: authH(), body: JSON.stringify({ name }) });
     if (!res.ok) { toast('失败'); return; }
     document.getElementById('projectModal').classList.remove('show');
     toast(isEdit ? '项目已更新' : '项目已创建');
@@ -2270,7 +2287,7 @@ export function renderPage() {
     const proj = userProjects.find(p => p.id === id);
     if (!proj) return;
     if (!confirm('确认删除项目「' + proj.name + '」？其下所有文档将变为未分类')) return;
-    await fetch('/api/projects/' + encodeURIComponent(id), { method: 'DELETE', headers: authH() });
+    await apiFetch('/api/projects/' + encodeURIComponent(id), { method: 'DELETE', headers: authH() });
     toast('项目已删除'); loadPages();
   };
 
@@ -2315,7 +2332,7 @@ export function renderPage() {
     const meth = isEdit ? 'PATCH' : 'POST';
     // create: name + optional projectId; edit: name (+ projectId if changed)
     const body = isEdit ? { name, projectId } : { name, ...(projectId ? { projectId } : {}) };
-    const res = await fetch(url, { method: meth, headers: authH(), body: JSON.stringify(body) });
+    const res = await apiFetch(url, { method: meth, headers: authH(), body: JSON.stringify(body) });
     if (!res.ok) { const d = await res.json().catch(() => ({})); toast('失败: ' + (d.error || '')); return; }
     document.getElementById('groupModal').classList.remove('show');
     toast(isEdit ? '分组已更新' : '分组已创建');
@@ -2329,7 +2346,7 @@ export function renderPage() {
       ? '确认删除分组「' + grp.name + '」？其下文档将移至项目根'
       : '确认删除独立分组「' + grp.name + '」？其下文档将变为未分类';
     if (!confirm(msg)) return;
-    await fetch('/api/groups/' + encodeURIComponent(id), { method: 'DELETE', headers: authH() });
+    await apiFetch('/api/groups/' + encodeURIComponent(id), { method: 'DELETE', headers: authH() });
     toast('分组已删除'); loadPages();
   };
 
@@ -2428,7 +2445,7 @@ export function renderPage() {
     if (pid) fd.append('projectId', pid);
     if (gid) fd.append('groupId', gid);
 
-    const res = await fetch('/api/pages/import', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd });
+    const res = await apiFetch('/api/pages/import', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd });
     if (!res.ok) { const d = await res.json().catch(() => ({})); toast('导入失败: ' + (d.error || '')); return; }
     document.getElementById('importModal').classList.remove('show');
     toast('页面已导入');
@@ -2464,7 +2481,7 @@ export function renderPage() {
     const slugs = [...pageSelected];
     if (!slugs.length) { toast('请先选择页面'); return; }
     const { ok, fail } = await runPool(slugs, 6, async slug => {
-      const res = await fetch('/api/pages/' + encodeURIComponent(slug), {
+      const res = await apiFetch('/api/pages/' + encodeURIComponent(slug), {
         method: 'PATCH', headers: authH(), body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error();
@@ -2481,7 +2498,7 @@ export function renderPage() {
     if (!slugs.length) { toast('请先选择页面'); return; }
     if (!confirm('确认删除选中的 ' + slugs.length + ' 个页面？')) return;
     const { ok, fail } = await runPool(slugs, 6, async slug => {
-      const res = await fetch('/api/pages/' + encodeURIComponent(slug), { method: 'DELETE', headers: authH() });
+      const res = await apiFetch('/api/pages/' + encodeURIComponent(slug), { method: 'DELETE', headers: authH() });
       if (!res.ok) throw new Error();
     });
     toast(fail ? \`删除 \${ok}，失败 \${fail}\` : \`已删除 \${ok} 个页面\`, fail ? 'error' : 'success');
@@ -2572,7 +2589,7 @@ export function renderPage() {
         if (!dragState || dragState.type !== 'group') return;
         const targetProj = el.closest('[data-drag-id]')?.dataset.dragId;
         if (!targetProj) return;
-        fetch('/api/groups/' + encodeURIComponent(dragState.id), {
+        apiFetch('/api/groups/' + encodeURIComponent(dragState.id), {
           method: 'PATCH', headers: authH(),
           body: JSON.stringify({ projectId: targetProj }),
         }).then(() => loadPages());
@@ -2694,7 +2711,7 @@ export function renderPage() {
           if (proj) {
             const targetProj = proj.closest('[data-drag-id]')?.dataset.dragId;
             if (targetProj) {
-              fetch('/api/groups/' + encodeURIComponent(tState.id), {
+              apiFetch('/api/groups/' + encodeURIComponent(tState.id), {
                 method: 'PATCH', headers: authH(),
                 body: JSON.stringify({ projectId: targetProj }),
               }).then(() => loadPages());
@@ -2754,7 +2771,7 @@ export function renderPage() {
   }
 
   async function reorderInScope(projectId, groupId, order) {
-    await fetch('/api/pages/reorder', {
+    await apiFetch('/api/pages/reorder', {
       method: 'PATCH', headers: authH(),
       body: JSON.stringify({
         groupId: groupId || null,
@@ -2765,7 +2782,7 @@ export function renderPage() {
   }
 
   async function movePageTo(slug, projectId, groupId) {
-    await fetch('/api/pages/' + encodeURIComponent(slug), {
+    await apiFetch('/api/pages/' + encodeURIComponent(slug), {
       method: 'PATCH', headers: authH(),
       body: JSON.stringify({ projectId: projectId || null, groupId: groupId || null }),
     });
@@ -3125,7 +3142,7 @@ export function renderPage() {
 
     // Step 1: init（更新模式下后端回传上一版本 manifest）
     setStatus('初始化上传会话…', 12);
-    const initRes = await fetch(initUrl, {
+    const initRes = await apiFetch(initUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ title, password, entryPoint, totalSize, protoId: existingProtoId || undefined }),
@@ -3153,7 +3170,7 @@ export function renderPage() {
       let lastErr;
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
-          const bRes = await fetch(filesUrl, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+          const bRes = await apiFetch(filesUrl, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
           if (bRes.ok) return;
           const d = await bRes.json().catch(() => ({}));
           lastErr = new Error(d.error || ('批次 ' + (b + 1) + ' 上传失败'));
@@ -3185,7 +3202,7 @@ export function renderPage() {
 
     // Step 3: finalize（filePaths 记录完整清单，manifest 写回供下次 diff）
     setStatus('正在写入元数据…', 93);
-    const fRes = await fetch(finalizeUrl, {
+    const fRes = await apiFetch(finalizeUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ protoId, filePaths: safePaths, manifest: newManifest }),
@@ -3279,7 +3296,7 @@ export function renderPage() {
     if (!token) return;
     if (!silent) document.getElementById('protoTableBody').innerHTML = '<tr><td class="text-center text-tx-3 p-8" colspan="10">加载中…</td></tr>';
     try {
-      const res = await fetch('/api/protos', { headers: { Authorization: 'Bearer ' + token } });
+      const res = await apiFetch('/api/protos', { headers: { Authorization: 'Bearer ' + token } });
       if (!res.ok) return;
       const { protos } = await res.json();
       userProtos = protos || [];
@@ -3364,7 +3381,7 @@ export function renderPage() {
     renderProtos();
     toast('删除中…');
     try {
-      const res = await fetch('/api/protos/' + encodeURIComponent(protoId), { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
+      const res = await apiFetch('/api/protos/' + encodeURIComponent(protoId), { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         userProtos = backup; renderProtos(); toast('删除失败: ' + (d.error || ''));
@@ -3436,7 +3453,7 @@ export function renderPage() {
     document.getElementById('upvmContent').innerHTML = '<div class="text-tx-3 text-center py-10">加载中…</div>';
     try {
       const pid = upvmProto.protoId;
-      const res = await fetch(\`/api/proto-vfiles/\${encodeURIComponent(pid)}/\${key}\`, { headers: { Authorization: 'Bearer ' + token } });
+      const res = await apiFetch(\`/api/proto-vfiles/\${encodeURIComponent(pid)}/\${key}\`, { headers: { Authorization: 'Bearer ' + token } });
       upvmFileCache[key] = res.ok ? (await res.json()).files ?? null : null;
     } catch { upvmFileCache[key] = null; }
     return upvmFileCache[key];
@@ -3485,7 +3502,7 @@ export function renderPage() {
 
   async function upvmDeleteVer(ver) {
     if (!confirm(\`确认删除 v\${ver}？该操作仅删除版本记录，不影响当前原型内容。\`)) return;
-    const res = await fetch(\`/api/proto-versions/\${encodeURIComponent(upvmProto.protoId)}/v\${ver}\`, { method:'DELETE', headers:{ Authorization:'Bearer '+token } });
+    const res = await apiFetch(\`/api/proto-versions/\${encodeURIComponent(upvmProto.protoId)}/v\${ver}\`, { method:'DELETE', headers:{ Authorization:'Bearer '+token } });
     const d = await res.json().catch(()=>({}));
     if (!res.ok) { toast('删除失败: '+(d.error||'')); return; }
     upvmProto.versions = (upvmProto.versions??[]).filter(v=>v.v!==ver);
@@ -3530,7 +3547,7 @@ export function renderPage() {
     const isPrivate   = document.getElementById('pePrivate').checked;
     const passwordExpiry = password && expiryDays > 0 ? Date.now() + expiryDays * 86400 * 1000 : null;
     const updates = { title, password, passwordExpiry, isPrivate };
-    const res = await fetch('/api/protos/' + encodeURIComponent(editingProtoId), {
+    const res = await apiFetch('/api/protos/' + encodeURIComponent(editingProtoId), {
       method: 'PATCH', headers: authH(), body: JSON.stringify(updates)
     });
     const data = await res.json();
@@ -3745,7 +3762,7 @@ export function renderPage() {
     const btn = document.getElementById('changePwdSave');
     btn.disabled = true; btn.textContent = '保存中…';
     try {
-      const res = await fetch('/auth/password', {
+      const res = await apiFetch('/auth/password', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
         body: JSON.stringify({ currentPassword: cur, newPassword: nw }),
