@@ -681,11 +681,15 @@ function serveDeviceAuthPage(url) {
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
+<script>(function(){try{var t=localStorage.getItem('onimg_theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Onimg — 设备授权</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"></noscript>
 <style>
 ${apertureCss}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 @keyframes loginSpin{to{transform:rotate(360deg)}}
 @keyframes loginShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 </style>
