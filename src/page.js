@@ -2929,10 +2929,28 @@ export function renderPage() {
   }
 
   // ── Shared chunked upload engine ─────────────────────────────────────────────
+  // 批次切分是双约束的：文件数受服务端 subrequest 预算约束（45 put + staging
+  // 读取 + cfBump 两次 KV = 48 ≤ 免费版 50），字节数受请求体与内存约束
+  // （Cloudflare 免费站点套餐单请求体上限 100 MB；服务端一批内所有文件会同时
+  // 解进内存，单 isolate 上限 128 MB）。只按个数切会让「45 张 3MB 大图」
+  // 凑成 135 MB 的一批，内存和请求体双双爆掉。
+  const PROTO_BATCH_MAX_FILES = 45;       // subrequest 预算
+  const PROTO_BATCH_MAX_BYTES = 24 * 1024 * 1024; // 24 MB：留出 multipart 编码与内存余量
+  function _protoPlanBatches(paths, files) {
+    const batches = [];
+    let cur = [], curBytes = 0;
+    for (const p of paths) {
+      const size = files[p]?.byteLength ?? 0;
+      // 单文件超过整批字节上限时独立成批（仍需上传；极端大文件由服务端兜底）
+      if (cur.length && (cur.length >= PROTO_BATCH_MAX_FILES || curBytes + size > PROTO_BATCH_MAX_BYTES)) {
+        batches.push(cur); cur = []; curBytes = 0;
+      }
+      cur.push(p); curBytes += size;
+    }
+    if (cur.length) batches.push(cur);
+    return batches;
+  }
   async function _protoChunkedUpload({ zipFile, filesMap, title, password, existingProtoId, setStatus, initUrl, filesUrl, finalizeUrl }) {
-    // 每批 45 文件：每批为独立 Worker 调用、各享免费版 50 subrequest 预算
-    // （45 put + staging.get + cfBump 两次 KV = 48 ≤ 50）。
-    const BATCH = 45;
     const CONCURRENCY = 3;  // 批间并发：多个独立 Worker 调用并行，各自独立预算
     let files;
     if (filesMap) {
@@ -2976,13 +2994,14 @@ export function renderPage() {
       : safePaths;
     const skipped = safePaths.length - uploadPaths.length;
 
-    // Step 2: upload in batches —— 并发池 + 单批重试（免费版约束下提速）
-    const totalBatches = Math.ceil(uploadPaths.length / BATCH) || 0;
+    // Step 2: upload in batches —— 双约束切批 + 并发池 + 单批重试
+    const batches = _protoPlanBatches(uploadPaths, files);
+    const totalBatches = batches.length;
     if (skipped > 0) setStatus(\`增量上传：\${uploadPaths.length} 个变更，跳过 \${skipped} 个未变文件\`, 15);
 
     // 单批上传：最多重试 3 次（指数退避）；4xx（除 429）不重试
     async function uploadBatch(b) {
-      const batchPaths = uploadPaths.slice(b * BATCH, (b + 1) * BATCH);
+      const batchPaths = batches[b];
       const fd = new FormData();
       fd.append('protoId', protoId);
       batchPaths.forEach(p => { fd.append('paths[]', p); fd.append('files[]', new Blob([files[p]]), p); });
@@ -3010,7 +3029,7 @@ export function renderPage() {
         catch (e) { abortErr = e; return; }
         done++;
         const pct = Math.round(15 + (done / totalBatches) * 75);
-        const filesDone = Math.min(done * BATCH, uploadPaths.length);
+        const filesDone = batches.slice(0, done).reduce((s, b) => s + b.length, 0);
         setStatus('已上传 ' + done + '/' + totalBatches + ' 批（' + filesDone + ' / ' + uploadPaths.length + ' 个变更文件 · 并发 ' + CONCURRENCY + '）', pct);
       }
     }

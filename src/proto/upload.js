@@ -255,7 +255,10 @@ export async function handleProtoUpload(request, env, owner) {
   }, { status: existingMeta ? 200 : 201 });
 }
 
-// ── Chunked upload API (free-tier safe: ≤ 40 subrequests per call) ──────────
+// ── Chunked upload API ───────────────────────────────────────────────────────
+// 免费版预算：每批 ≤ 45 文件（45 R2 put + staging KV get + cfBump KV get/put
+// = 48 ≤ 50 subrequest/request）。客户端（src/page.js）按「文件数 ≤ 45 且
+// 单批 ≤ 24 MB」双约束切批，服务端不依赖具体批大小。
 
 /**
  * Step 1 — init: create/validate protoId, store lightweight staging record.
