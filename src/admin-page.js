@@ -1,4 +1,5 @@
 import { FFLATE_UMD } from './fflate-inline.js';
+import { PROTO_ENGINE_JS } from './proto-upload-engine.js';
 import apertureCss from './ui/aperture.generated.js';
 export function renderAdminPage() {
   return `<!DOCTYPE html>
@@ -909,6 +910,7 @@ export function renderAdminPage() {
 <div class="toast fixed bottom-6 left-1/2 z-[300] -translate-x-1/2 translate-y-20 whitespace-nowrap rounded-md border border-bd-2 bg-bg-3 px-[18px] py-[9px] font-sans text-sm font-medium text-tx shadow-sm transition-transform duration-300 ease-[cubic-bezier(.34,1.56,.64,1)] [&.show]:translate-y-0 [&.t-success]:border-green-r [&.t-success]:bg-green-g [&.t-success]:text-green [&.t-warn]:border-amber-r [&.t-warn]:bg-amber-g [&.t-warn]:text-amber [&.t-error]:border-red-r [&.t-error]:bg-red-g [&.t-error]:text-red" id="toast"></div>
 
 <script>
+  ${PROTO_ENGINE_JS}
   // Tailwind utility-class constants for elements whose className is fully
   // reassigned at runtime (className=, not classList.add) — declared once
   // here so they survive every reassignment site.
@@ -2792,39 +2794,10 @@ export function renderAdminPage() {
 
   // ── Admin Proto Upload ────────────────────────────────────────────────────────
   let adminPendingProtoFile = null;
-  const ADMIN_PROTO_BATCH = 40;
-
-  // client-side utilities (mirrors page.js / server logic)
-  function _adminProtoDetectEntry(paths) {
-    const rootHtml = paths.filter(p => !p.includes('/') && p.toLowerCase().endsWith('.html'));
-    const find = (arr, name) => arr.find(p => p.toLowerCase() === name);
-    if (find(rootHtml, 'start.html')) return 'start.html';
-    if (find(rootHtml, 'index.html')) return 'index.html';
-    if (rootHtml.length) return rootHtml[0];
-    const deep = paths.filter(p => { const s = p.split('/'); return s.length === 2 && s[1].toLowerCase().endsWith('.html'); });
-    return deep.find(p => p.toLowerCase().endsWith('start.html')) || deep.find(p => p.toLowerCase().endsWith('index.html')) || null;
-  }
-  function _adminProtoFixEnc(path) {
-    if ([...path].every(c => c.charCodeAt(0) <= 255)) {
-      try { const b = new Uint8Array([...path].map(c => c.charCodeAt(0))); const d = new TextDecoder('utf-8',{fatal:true}).decode(b); if (d !== path) return d; } catch {}
-    }
-    return path;
-  }
-  function _adminProtoStrip(files) {
-    const paths = Object.keys(files); if (!paths.length) return files;
-    const first = paths[0].split('/')[0];
-    if (paths.every(p => p.startsWith(first + '/'))) {
-      const out = {}; for (const [p,d] of Object.entries(files)) out[p.slice(first.length+1)] = d; return out;
-    }
-    return files;
-  }
-  function _adminProtoFilter(files) {
-    return Object.keys(files).filter(p => {
-      if (!p || p.startsWith('/') || p.includes('..') || p.endsWith('/')) return false;
-      if (p.startsWith('__MACOSX/') || p.includes('/.DS_Store') || p === '.DS_Store') return false;
-      return true;
-    });
-  }
+  // client-side utilities（_protoDetectEntry/_protoFixEnc/_protoStrip/
+  // _protoFilter/_fnv1a/_protoPlanBatches）与上传引擎 _protoChunkedUpload
+  // 由服务端注入的共享引擎提供，见 src/proto-upload-engine.js ——
+  // 与用户端上传共用同一份实现（双约束切批 + 3 路并发 + 增量 + 重试）。
 
   async function _adminProtoChunkedUpload(zipFile) {
     const title    = document.getElementById('adminProtoTitle').value.trim();
@@ -2851,54 +2824,27 @@ export function renderAdminPage() {
     }
 
     try {
-      setStatus('正在解压 ZIP…', 3);
-      const bytes = new Uint8Array(await zipFile.arrayBuffer());
-      let files;
-      try {
-        const raw = _fflate().unzipSync(bytes);
-        const fixed = {}; for (const [p,d] of Object.entries(raw)) fixed[_adminProtoFixEnc(p)] = d;
-        files = _adminProtoStrip(fixed);
-      } catch(e) { throw new Error('解压失败：' + e.message); }
-      setStatus(\`分析文件结构… 发现 \${Object.keys(files).length} 个文件\`, 8);
-
-      const safePaths = _adminProtoFilter(files);
-      if (!safePaths.length) throw new Error('ZIP 中未找到有效文件');
-      const entryPoint = _adminProtoDetectEntry(safePaths);
-      if (!entryPoint) throw new Error('未找到入口文件（start.html 或 index.html）');
-      const totalSize = safePaths.reduce((s, p) => s + (files[p]?.byteLength ?? 0), 0);
-
-      setStatus('初始化上传会话…', 12);
-      const initRes = await adminFetch('/admin/proto/init', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken },
-        body: JSON.stringify({ title, password, entryPoint, totalSize }),
+      // 共享引擎：解压/认证由本页注入；引擎内部含双约束切批、
+      // 3 路批间并发、单批 3 次退避重试、增量上传（内容指纹 diff）
+      const result = await _protoChunkedUpload({
+        zipFile,
+        title, password, existingProtoId: null,
+        setStatus,
+        unzip: async (bytes) => _fflate().unzipSync(bytes),
+        authToken: adminToken, fetchImpl: adminFetch,
+        initUrl: '/admin/proto/init', filesUrl: '/admin/proto/files', finalizeUrl: '/admin/proto/finalize',
       });
-      const initData = await initRes.json().catch(() => ({}));
-      if (!initRes.ok) throw new Error(initData.error || '初始化失败');
-      const { protoId } = initData;
 
-      const totalBatches = Math.ceil(safePaths.length / ADMIN_PROTO_BATCH);
-      for (let b = 0; b < totalBatches; b++) {
-        const batchPaths = safePaths.slice(b * ADMIN_PROTO_BATCH, (b + 1) * ADMIN_PROTO_BATCH);
-        const from = b * ADMIN_PROTO_BATCH + 1, to = Math.min((b + 1) * ADMIN_PROTO_BATCH, safePaths.length);
-        const pct = Math.round(15 + (b / totalBatches) * 75);
-        setStatus(\`上传第 \${b+1}/\${totalBatches} 批（\${from}–\${to} / \${safePaths.length} 个文件）\`, pct);
-        const fd = new FormData();
-        fd.append('protoId', protoId);
-        batchPaths.forEach(p => { fd.append('paths[]', p); fd.append('files[]', new Blob([files[p]]), p); });
-        const bRes = await adminFetch('/admin/proto/files', { method: 'POST', headers: { 'Authorization': 'Bearer ' + adminToken }, body: fd });
-        if (!bRes.ok) { const d = await bRes.json().catch(()=>({})); throw new Error(d.error || \`批次 \${b+1} 上传失败\`); }
-      }
-
-      setStatus('正在写入元数据…', 93);
-      const fRes = await adminFetch('/admin/proto/finalize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken },
-        body: JSON.stringify({ protoId, filePaths: safePaths }),
-      });
-      const fData = await fRes.json().catch(() => ({}));
-      if (!fRes.ok) throw new Error(fData.error || '最终化失败');
-      setStatus('上传完成！', 100);
+      setTimeout(() => {
+        bar.style.width = '0%'; resetProg();
+        document.getElementById('adminProtoTitle').value = '';
+        document.getElementById('adminProtoPassword').value = '';
+        document.getElementById('adminProtoDropText').textContent = '点击选择 ZIP 文件';
+        document.getElementById('adminProtoUploadBtn').disabled = true;
+        adminPendingProtoFile = null;
+        toast(result.safePaths ? ('原型上传成功：' + result.safePaths.length + ' 个文件') : '原型上传成功');
+        loadAdminProtos();
+      }, 900);
 
       setTimeout(() => {
         bar.style.width = '0%'; resetProg();
