@@ -42,8 +42,28 @@ export function createKV() {
 // In-memory R2 Bucket
 export function createR2() {
   const store = new Map();
+  // 真实 R2 会把 ReadableStream 完整落盘；mock 需要同样物化，
+  // 否则流式直传（src/upload.js、src/proto/upload.js）在测试里存进去的是流对象本身
+  async function materialize(body) {
+    if (body && typeof body.getReader === 'function') {
+      const reader = body.getReader();
+      const chunks = [];
+      let total = 0;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value); total += value.byteLength ?? 0;
+      }
+      const out = new Uint8Array(total);
+      let off = 0;
+      for (const c of chunks) { out.set(c, off); off += c.byteLength ?? 0; }
+      return out.buffer;
+    }
+    return body;
+  }
   return {
     async put(key, body, opts = {}) {
+      body = await materialize(body);
       const isStr = typeof body === 'string';
       const size = isStr ? body.length : (body?.byteLength ?? 0);
       store.set(key, {

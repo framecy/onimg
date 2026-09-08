@@ -313,7 +313,7 @@ export async function readManifest(env, protoId) {
 }
 
 /**
- * Step 2 — files: upload one batch (≤ 40 files) to R2.
+ * Step 2 — files: upload one batch (客户端按 ≤45 文件且 ≤24 MB 切批，服务端不依赖具体批大小).
  * FormData fields: protoId, paths[] (strings), files[] (blobs)
  */
 export async function handleProtoFileBatch(request, env, owner) {
@@ -331,22 +331,33 @@ export async function handleProtoFileBatch(request, env, owner) {
   const paths = fd.getAll('paths[]');
   const files = fd.getAll('files[]');
 
+  // 先过滤（安全检查 + 配对），再按组限流写入。
+  // 原实现 Promise.all 让整批所有文件的 arrayBuffer() 同时物化在内存里，
+  // 一批大图就能把 128 MB 的 isolate 顶到内存墙；改用 file.stream() 直传
+  // R2（零整文件物化），并发固定为每组 4 个，组间串行，错误语义不变。
+  const items = [];
+  for (let i = 0; i < paths.length; i++) {
+    const path = paths[i], file = files[i];
+    if (!path || path.startsWith('/') || path.includes('..') || path.endsWith('/')) continue;
+    if (path.startsWith('__MACOSX/') || path.includes('/.DS_Store') || path === '.DS_Store') continue;
+    if (!file) continue;
+    items.push([path, file]);
+  }
+
+  const PUT_CONCURRENCY = 4;
   let uploaded = 0;
-  await Promise.all(paths.map(async (path, i) => {
-    // Security filter
-    if (!path || path.startsWith('/') || path.includes('..') || path.endsWith('/')) return;
-    if (path.startsWith('__MACOSX/') || path.includes('/.DS_Store') || path === '.DS_Store') return;
-    const file = files[i];
-    if (!file) return;
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    const ext = path.split('.').pop()?.toLowerCase() ?? '';
-    const ct = MIME_MAP[ext] ?? 'application/octet-stream';
-    const cacheCtrl = ext === 'html' || ext === 'htm' ? 'no-cache' : 'public, max-age=31536000';
-    await env.BUCKET.put(`proto/${protoId}/${path}`, bytes, {
-      httpMetadata: { contentType: ct, cacheControl: cacheCtrl },
-    });
-    uploaded++;
-  }));
+  for (let g = 0; g < items.length; g += PUT_CONCURRENCY) {
+    await Promise.all(items.slice(g, g + PUT_CONCURRENCY).map(async ([path, file]) => {
+      const ext = path.split('.').pop()?.toLowerCase() ?? '';
+      const ct = MIME_MAP[ext] ?? 'application/octet-stream';
+      const cacheCtrl = ext === 'html' || ext === 'htm' ? 'no-cache' : 'public, max-age=31536000';
+      const body = typeof file.stream === 'function' ? file.stream() : await file.arrayBuffer();
+      await env.BUCKET.put(`proto/${protoId}/${path}`, body, {
+        httpMetadata: { contentType: ct, cacheControl: cacheCtrl },
+      });
+      uploaded++;
+    }));
+  }
 
   // R2 Class A 追踪：批量上传的文件数
   if (uploaded > 0) {
