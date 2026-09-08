@@ -114,7 +114,7 @@ export function createEnv(overrides = {}) {
     ADMIN_USERNAME: 'admin',
     ADMIN_PASSWORD: 'AdminP@ss99!',
     TOKEN_SECRET: 'test-secret-at-least-32-bytes!!',
-    MAX_FILE_SIZE: '10485760',
+    MAX_FILE_SIZE: '10485760',  // 与线上默认一致的 10MB；streaming 测试按此断言 413
     ALLOWED_TYPES: 'image/jpeg,image/png,image/gif,image/webp,image/svg+xml',
     ...overrides,
   };
