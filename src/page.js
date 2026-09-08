@@ -1302,6 +1302,10 @@ export function renderPage() {
   const fileInput = document.getElementById('fileInput');
   let pendingFiles = [];
   let uploadBusy = false;
+  // 并发上传路数：Cloudflare 免费版无并发请求数限制（仅 10 万次/天），
+  // 浏览器对同域名走 HTTP/2 多路复用，5 路已能吃满大多数家庭上行带宽，
+  // 同时给额度查询等其他请求留 1 个连接位（HTTP/1.1 同域上限 6）。
+  const UPLOAD_CONCURRENCY = 5;
   dropZone.addEventListener('click', () => { if (!token) { openLoginOverlay(); return; } if (uploadBusy) return; fileInput.click(); });
   dropZone.addEventListener('dragover', e => { e.preventDefault(); if (!uploadBusy) dropZone.classList.add('over'); });
   dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
@@ -1448,19 +1452,38 @@ export function renderPage() {
     const cntEl   = document.getElementById('imgProgressCount');
     const makePublic = document.getElementById('uploadPublic').checked;
     const total = queue.length;
-    const results = [];
+    const results = new Array(total);
+    // 并发池上传：进度按「所有文件已传字节 / 总字节」聚合，结果按队列顺序回填
+    const totalBytes = queue.reduce((s, f) => s + (f.size || 0), 0);
+    const loadedMap  = new Array(total).fill(0);
+    let doneCount = 0, nextIdx = 0;
 
-    for (let i = 0; i < total; i++) {
-      const file = queue[i];
-      cntEl.textContent = \`\${i + 1} / \${total} 张\`;
-      const result = await uploadOne(file, makePublic, (loaded, totalBytes) => {
-        const overallPct = Math.round(((i + loaded / totalBytes) / total) * 100);
-        bar.style.width   = overallPct + '%';
-        pctEl.textContent = overallPct + '%';
-        bytesEl.textContent = fmtSize(loaded) + ' / ' + fmtSize(totalBytes);
-      });
-      results.push(result);
+    const paintBytes = () => {
+      const sum = loadedMap.reduce((a, b) => a + b, 0);
+      const pct = totalBytes ? Math.min(99, Math.round((sum / totalBytes) * 100)) : 0;
+      bar.style.width    = pct + '%';
+      pctEl.textContent  = pct + '%';
+      bytesEl.textContent = fmtSize(sum) + ' / ' + fmtSize(totalBytes);
+    };
+    const paintCount = () => { cntEl.textContent = doneCount + ' / ' + total + ' 张'; };
+    paintCount();
+
+    async function uploadWorker() {
+      while (nextIdx < total) {
+        const i = nextIdx++;
+        const file = queue[i];
+        const result = await uploadOne(file, makePublic, (loaded) => {
+          loadedMap[i] = loaded;
+          paintBytes();
+        });
+        loadedMap[i] = file.size || 0;
+        results[i] = result;
+        doneCount++;
+        paintCount();
+        paintBytes();
+      }
     }
+    await Promise.all(Array.from({ length: Math.min(UPLOAD_CONCURRENCY, total) }, uploadWorker));
 
     bar.style.width = '100%'; pctEl.textContent = '100%';
     setTimeout(() => { prog.classList.remove('show'); bar.style.width = '0%'; info.classList.remove('show'); }, 700);
