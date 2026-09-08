@@ -1,5 +1,6 @@
 import { verifyAdminToken } from './admin/auth.js';
 import { verifyUserToken } from './user-auth.js';
+import { mergeUserImgEntry } from './imglist.js';
 
 export async function handleList(request, env) {
   const isAdmin = await verifyAdminToken(request, env);
@@ -84,12 +85,9 @@ export async function handleSetImageTags(request, env, key) {
     metadata: existing.metadata,
   });
 
-  // 冗余进 userimgs 列表项，供前端筛选无需逐项读取
+  // 冗余进 userimgs 列表项，供前端筛选无需逐项读取（并发安全更新）
   const owner = existing.metadata.owner;
-  const imgsKv = 'userimgs:' + owner;
-  const list = await env.STATS.get(imgsKv, 'json') ?? [];
-  const idx = list.findIndex(e => e.key === key);
-  if (idx !== -1) { list[idx].tags = tags; await env.STATS.put(imgsKv, JSON.stringify(list)); }
+  await mergeUserImgEntry(env, owner, key, { tags });
 
   return Response.json({ key, tags });
 }
@@ -127,12 +125,9 @@ export async function handleToggleVisibility(request, env, key) {
     metadata: { ...existing.metadata, isPublic: newPublic },
   });
 
-  // Update userimgs list entry too
+  // Update userimgs list entry too（并发安全更新：上传回写公开状态与本切换并发时防覆盖）
   const owner = existing.metadata.owner;
-  const imgsKv = 'userimgs:' + owner;
-  const list = await env.STATS.get(imgsKv, 'json') ?? [];
-  const idx = list.findIndex(e => e.key === key);
-  if (idx !== -1) { list[idx].isPublic = newPublic; await env.STATS.put(imgsKv, JSON.stringify(list)); }
+  await mergeUserImgEntry(env, owner, key, { isPublic: newPublic });
 
   return Response.json({ key, isPublic: newPublic });
 }

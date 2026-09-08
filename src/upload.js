@@ -1,4 +1,5 @@
 import { verifyUserToken, checkAndIncrementQuota } from './user-auth.js';
+import { mergeUserImgEntry } from './imglist.js';
 import { verifyAdminToken as checkAdmin } from './admin/auth.js';
 import { getUploadConfig } from './admin/config-handler.js';
 import { cfBump, cfMonth } from './admin/cfCounters.js';
@@ -81,11 +82,9 @@ export async function handleUpload(request, env, ctx) {
 
 export async function trackImage(env, username, key, size, isPublic) {
   const uploadedAt = Date.now();
-  const imgsKv = 'userimgs:' + username;
-  const list = await env.STATS.get(imgsKv, 'json') ?? [];
-  list.unshift({ key, size, uploadedAt, isPublic });
   await Promise.all([
-    env.STATS.put(imgsKv, JSON.stringify(list)),
+    // userimgs 列表：并发安全更新（写后校验+重试），避免并发上传互相覆盖丢条目
+    mergeUserImgEntry(env, username, key, { size, uploadedAt, isPublic }, { ensure: true }),
     env.STATS.put('imgmeta:' + key, JSON.stringify({ uploadedAt }), {
       metadata: { isPublic, owner: username },
     }),

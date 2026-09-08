@@ -1,3 +1,4 @@
+import { mergeUserImgEntry } from './imglist.js';
 import { verifyAdminToken } from './admin/auth.js';
 import { verifyUserToken } from './user-auth.js';
 import { cfBump, cfMonth } from './admin/cfCounters.js';
@@ -93,11 +94,11 @@ async function restoreImage(env, actor, key, ctx) {
 
   // userimgs 列表项清除 deletedAt
   const owner  = md.owner;
-  const imgsKv = 'userimgs:' + owner;
-  const list = await env.STATS.get(imgsKv, 'json') ?? [];
-  const idx = list.findIndex(e => e.key === key);
   let size = 0;
-  if (idx !== -1) { delete list[idx].deletedAt; size = list[idx].size ?? 0; await env.STATS.put(imgsKv, JSON.stringify(list)); }
+  // userimgs 列表项清除 deletedAt（并发安全更新）
+  const before = await env.STATS.get('userimgs:' + owner, 'json') ?? [];
+  size = before.find(e => e.key === key)?.size ?? 0;
+  await mergeUserImgEntry(env, owner, key, { deletedAt: null });
 
   // 恢复进「在用」统计
   ctx?.waitUntil(bumpGlobalStats(env, 1, size));
@@ -134,12 +135,7 @@ export async function purgeImage(env, key, owner) {
     env.STATS.delete('stats:' + key),
   ];
   if (owner) {
-    tasks.push((async () => {
-      const imgsKv = 'userimgs:' + owner;
-      const list = await env.STATS.get(imgsKv, 'json') ?? [];
-      const updated = list.filter(e => e.key !== key);
-      if (updated.length !== list.length) await env.STATS.put(imgsKv, JSON.stringify(updated));
-    })());
+    tasks.push(mergeUserImgEntry(env, owner, key, {}, { remove: true }));
   }
   await Promise.all(tasks);
 }

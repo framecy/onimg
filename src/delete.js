@@ -1,3 +1,4 @@
+import { mergeUserImgEntry } from './imglist.js';
 import { verifyAdminToken } from './admin/auth.js';
 import { verifyUserToken } from './user-auth.js';
 import { bumpGlobalStats } from './admin/gstats.js';
@@ -61,12 +62,8 @@ async function imageSize(env, key) {
 }
 
 async function markUserListTrashed(env, username, key, deletedAt, size) {
-  const imgsKv = 'userimgs:' + username;
-  const list = await env.STATS.get(imgsKv, 'json') ?? [];
-  const idx = list.findIndex(e => e.key === key);
-  if (idx !== -1) {
-    list[idx].deletedAt = deletedAt;
-    if (!list[idx].size && size) list[idx].size = size;
-    await env.STATS.put(imgsKv, JSON.stringify(list));
-  }
+  // 并发安全更新：批量删除并发执行时防止互相覆盖
+  const patch = { deletedAt };
+  if (size) patch.size = size;
+  await mergeUserImgEntry(env, username, key, patch);
 }
