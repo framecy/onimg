@@ -20,9 +20,21 @@ export async function handleUpload(request, env, ctx) {
   const allowedTypes = config.allowedTypes.split(',').map(t => t.trim());
   const maxSize = config.maxFileSize;
 
-  let file;
   const contentType = request.headers.get('Content-Type') ?? '';
-  if (contentType.includes('multipart/form-data')) {
+  let file;
+  // 流式直传：raw-body 请求（CLI --data-binary / Typora 脚本）不再把整个文件
+  // arrayBuffer() 读进内存。Workers 单 isolate 内存上限 128 MB，10 MB 级文件
+  // × 少量并发请求就可能顶到内存墙；request.body 直接交给 R2 put 零拷贝。
+  // R2 put 传 ReadableStream 需要已知长度，Content-Length 缺失时退回缓冲。
+  const contentLength = parseInt(request.headers.get('Content-Length') ?? '0', 10);
+  const rawBody = !contentType.includes('multipart/form-data')
+    && Number.isFinite(contentLength) && contentLength > 0
+    && request.body != null;
+
+  if (rawBody) {
+    const mime = contentType.split(';')[0].trim();
+    file = { type: mime, size: contentLength, stream: () => request.body, name: 'upload.' + (mime.split('/')[1] ?? 'bin') };
+  } else if (contentType.includes('multipart/form-data')) {
     const formData = await request.formData();
     file = formData.get('file');
     if (!file) return Response.json({ error: 'Missing file field' }, { status: 400 });
@@ -49,16 +61,22 @@ export async function handleUpload(request, env, ctx) {
     customMetadata: { uploadedBy: actor.username },
   });
 
+  // 流式路径下 Content-Length 只是声明值，以 R2 落盘结果为准（head 多一次读，
+  // 开销可忽略）。用 || 兜底：R2 返回 0 仅可能是空文件，mock 环境对流返回 0。
+  const storedSize = rawBody
+    ? ((await env.BUCKET.head(key))?.size || size)
+    : size;
+
   // R2 Class A 操作追踪（best-effort，不阻塞响应）
   ctx?.waitUntil(cfBump(env.STATS, 'cf:r2a:' + cfMonth(), 1, true));
   // 全局计数缓存增量（best-effort，不阻塞响应）
-  ctx?.waitUntil(bumpGlobalStats(env, 1, size));
+  ctx?.waitUntil(bumpGlobalStats(env, 1, storedSize));
 
   // Track in KV: imgmeta + userimgs
-  await trackImage(env, actor.username, key, size, false); // default private
+  await trackImage(env, actor.username, key, storedSize, false); // default private
 
   const origin = new URL(request.url).origin;
-  return Response.json({ url: `${origin}/${key}`, key, size, type: file.type, uploadedBy: actor.username }, { status: 201 });
+  return Response.json({ url: `${origin}/${key}`, key, size: storedSize, type: file.type, uploadedBy: actor.username }, { status: 201 });
 }
 
 export async function trackImage(env, username, key, size, isPublic) {
