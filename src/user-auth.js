@@ -127,3 +127,12 @@ export async function getUserQuotaInfo(env, username) {
   ]);
   return { total: parseInt(totalStr ?? '0'), daily: parseInt(dailyStr ?? '0') };
 }
+
+// 上传页预检用的站点配置（体积上限 / 允许的类型），登录用户可读。
+// 管理员在后台改配置后，普通用户也能拿到一致的上限，避免整个文件
+// 传完才被服务端 413 拒绝（白等十几秒 + 白耗上行带宽）。
+export async function getUploadLimits(env) {
+  const { getUploadConfig } = await import('./admin/config-handler.js');
+  const config = await getUploadConfig(env);
+  return { maxFileSize: config.maxFileSize, allowedTypes: config.allowedTypes };
+}

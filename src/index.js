@@ -10,7 +10,7 @@ import { handleAdminStats, handleReconcileStats, handleAllImageStats, handleImag
 import { cfBump, cfDay } from './admin/cfCounters.js';
 import { handleListUsers, handleCreateUser, handleUpdateUser, handleDeleteUser } from './admin/users.js';
 import { handleGetConfig, handleUpdateConfig } from './admin/config-handler.js';
-import { handleUserLogin, verifyUserToken, getUserQuotaInfo, getUser, putUser, hashPassword, randomSalt } from './user-auth.js';
+import { handleUserLogin, verifyUserToken, getUserQuotaInfo, getUploadLimits, getUser, putUser, hashPassword, randomSalt } from './user-auth.js';
 import { servePage } from './pages/handler.js';
 import { listPages, handleGetPage, handleListPages, handleCreatePage, handleUpdatePage, handleDeletePage, handleReorderPages, handleImportPage } from './pages/manage.js';
 import { handleCreateProject, handleListProjects, handleUpdateProject, handleDeleteProject, handleReorderProjects } from './pages/project.js';
@@ -74,6 +74,13 @@ export default {
         const user = await verifyUserToken(request, env);
         if (!user) return withCors(Response.json({ error: 'Unauthorized' }, { status: 401 }), request);
         return withCors(Response.json(await getUserQuotaInfo(env, user.username)), request);
+      }
+      // 上传预检配置（登录即可读，非管理员）：前端选文件时就地拦截超限文件，
+      // 避免整个文件传完才被服务端 413 拒绝（白等十几秒 + 白耗上行带宽）
+      if (method === 'GET'   && path === '/auth/upload-limits') {
+        const user = await verifyUserToken(request, env);
+        if (!user) return withCors(Response.json({ error: 'Unauthorized' }, { status: 401 }), request);
+        return withCors(Response.json(await getUploadLimits(env)), request);
       }
 
       // ── User API ─────────────────────────────────────────────────────────────

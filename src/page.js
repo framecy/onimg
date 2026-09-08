@@ -1072,10 +1072,21 @@ export function renderPage() {
     toast(p.accessPassword ? '已复制地址与密码' : '已复制地址');
   };
 
+  // 上传预检配置：体积上限 + 允许类型（登录用户可读）。拉取失败不阻塞上传，
+  // 只退化为「选文件时不拦截、由服务端把关」。
+  let uploadLimits = null;
+  async function loadUploadLimits() {
+    try {
+      const r = await fetch('/auth/upload-limits', { headers: { Authorization: 'Bearer ' + token } });
+      if (r.ok) uploadLimits = await r.json();
+    } catch {}
+  }
+
   // Boot
   updateUserArea();
   loadPublicGallery();
   if (token) loadQuota();
+  if (token) loadUploadLimits();
 
   function buildPermBadges() {
     if (!perms) return '';
@@ -1354,6 +1365,26 @@ export function renderPage() {
   }
   function appendFiles(files) {
     if (!files || !files.length) return;
+    // 体积/类型预检：超限文件就地拦截并提示，不再白传整个文件后等 413
+    const cfg = uploadLimits;
+    if (cfg) {
+      const maxSize = cfg.maxFileSize, allowed = cfg.allowedTypes;
+      const rejected = [], accepted = [];
+      for (const f of files) {
+        const mime = (f.type || '').split(';')[0].trim();
+        if (f.size > maxSize) {
+          rejected.push(f.name + '（' + fmtShortSize(f.size) + ' > 上限 ' + fmtShortSize(maxSize) + '）');
+        } else if (allowed && !allowed.split(',').map(t => t.trim()).includes(mime)) {
+          rejected.push(f.name + '（类型 ' + (mime || '未知') + ' 不在允许列表）');
+        } else accepted.push(f);
+      }
+      if (rejected.length) {
+        document.getElementById('uploadErr').textContent = '已拦截 ' + rejected.length + ' 个文件：' + rejected.join('；');
+        toast('已拦截 ' + rejected.length + ' 个超限/类型不符的文件', 'error');
+      }
+      files = accepted;
+      if (!files.length) return;
+    }
     pendingFiles = pendingFiles.concat(files);
     renderUploadQueue();
   }
