@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Onimg 设计系统 v3 — Monochrome 完整版（审查预览）</title>
+<style>
+  /* ==========================================================================
+     Onimg 设计系统 v3 — Monochrome（完整版）
+     参考：Linear / Vercel / Notion 的极简中性路线
+           + Notion / Manus 的极简几何插画语言
+     核心：全站无彩色强调；层次靠中性灰阶 + 边框；主按钮高对比黑/白；
+           插画用几何形状 + 单色 + 留白表达，不依赖渐变与装饰。
+     ========================================================================== */
+
+  :root {
+    /* 画布 / 层次 */
+    --bg:        #0f0f11;
+    --bg-2:      #141417;
+    --bg-3:      #1a1a1e;
+    --bg-4:      #212125;
+    --bg-5:      #2a2a2f;
+    --bg-hover:  #1f1f23;
+    --bg-active: #2e2e33;
+    --overlay:   rgba(5,5,8,.72);
+
+    /* 边框 */
+    --bd:        #26262b;
+    --bd-2:      #36363c;
+    --bd-focus:  #7c7c86;
+
+    /* 文本 */
+    --tx:        #f2f2f4;
+    --tx-2:      #a1a1ab;
+    --tx-3:      #6b6b74;
+    --tx-a:      #fafafa;
+    --tx-inv:    #0f0f11;
+
+    /* 强调（中性黑/白） */
+    --brand:        #f2f2f4;
+    --brand-hover:  #ffffff;
+    --brand-muted:  rgba(242,242,244,.1);
+    --brand-ring:   rgba(242,242,244,.28);
+    --brand-d:      #c8c8cf;
+    --accent:        #f2f2f4;
+    --accent-hover:  #ffffff;
+    --accent-muted:  rgba(242,242,244,.1);
+
+    /* 语义色（仅状态） */
+    --green:    #3fb950;
+    --green-g:  rgba(63,185,80,.14);
+    --green-r:  rgba(63,185,80,.28);
+    --blue:     #6ea8fe;   /* info 用，低饱和，非品牌强调 */
+    --blue-g:   rgba(110,168,254,.12);
+    --blue-r:   rgba(110,168,254,.24);
+    --amber:    #d29922;
+    --amber-g:  rgba(210,153,34,.14);
+    --amber-r:  rgba(210,153,34,.28);
+    --red:      #f85149;
+    --red-g:    rgba(248,81,73,.14);
+    --red-r:    rgba(248,81,73,.28);
+
+    /* 圆角 */
+    --r-xs: 4px; --r-sm: 6px; --r-md: 8px; --r-lg: 12px; --r-xl: 16px; --r-full: 999px;
+
+    /* 阴影 */
+    --shadow-xs: 0 1px 2px rgba(0,0,0,.3);
+    --shadow-sm: 0 2px 10px rgba(0,0,0,.35);
+    --shadow:    0 12px 32px rgba(0,0,0,.5);
+    --shadow-lg: 0 24px 56px rgba(0,0,0,.6);
+
+    /* 动效 */
+    --dur-fast: 120ms; --dur-base: 150ms; --dur-slow: 240ms;
+    --ease: cubic-bezier(.2,.8,.2,1);
+    --ease-out: cubic-bezier(0,0,.2,1);
+
+    /* 图标 */
+    --icon-xs: 12px; --icon-sm: 14px; --icon-md: 16px; --icon-lg: 20px; --icon-xl: 24px;
+    --stroke: 1.6;
+
+    /* 间距（Tailwind spacing 派生：1 单位 = 4px） */
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+    --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px; --sp-12: 48px; --sp-16: 64px;
+
+    --font: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  }
+
+  :root[data-theme="light"] {
+    --bg:        #fafafa;
+    --bg-2:      #f1f1f3;
+    --bg-3:      #ffffff;
+    --bg-4:      #f5f5f6;
+    --bg-5:      #e9e9ec;
+    --bg-hover:  #efeff2;
+    --bg-active: #e2e2e6;
+    --overlay:   rgba(15,15,18,.4);
+
+    --bd:        #e0e0e4;
+    --bd-2:      #cfcfd4;
+    --bd-focus:  #7c7c86;
+
+    --tx:        #17171b;
+    --tx-2:      #55555e;
+    --tx-3:      #8a8a92;
+    --tx-a:      #0f0f11;
+    --tx-inv:    #ffffff;
+
+    --brand:        #17171b;
+    --brand-hover:  #000000;
+    --brand-muted:  rgba(23,23,27,.06);
+    --brand-ring:   rgba(23,23,27,.2);
+    --brand-d:      #4a4a52;
+    --accent:        #17171b;
+    --accent-hover:  #000000;
+    --accent-muted:  rgba(23,23,27,.06);
+
+    --green:    #1a7f37;
+    --green-g:  rgba(26,127,55,.1);
+    --green-r:  rgba(26,127,55,.22);
+    --blue:     #0969da;
+    --blue-g:   rgba(9,105,218,.08);
+    --blue-r:   rgba(9,105,218,.18);
+    --amber:    #9a6700;
+    --amber-g:  rgba(154,103,0,.1);
+    --amber-r:  rgba(154,103,0,.22);
+    --red:      #cf222e;
+    --red-g:    rgba(207,34,46,.1);
+    --red-r:    rgba(207,34,46,.22);
+
+    --shadow-xs: 0 1px 2px rgba(20,20,26,.06);
+    --shadow-sm: 0 2px 10px rgba(20,20,26,.08);
+    --shadow:    0 12px 32px rgba(20,20,26,.12);
+    --shadow-lg: 0 20px 48px rgba(20,20,26,.16);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font); background: var(--bg); color: var(--tx);
+    line-height: 1.5; -webkit-font-smoothing: antialiased; font-size: 14px;
+  }
+  a { color: var(--tx); text-decoration: underline; text-underline-offset: 2px; }
+  a:hover { color: var(--tx-a); }
+  code { font-family: var(--mono); font-size: .85em; }
+
+  /* ── 预览布局 ─────────────────────────────────────────────────────────── */
+  .shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  .sidebar {
+    background: var(--bg-2); border-right: 1px solid var(--bd);
+    padding: 20px 12px; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  }
+  .sidebar .logo { display: flex; align-items: center; gap: 10px; padding: 4px 10px 18px; font-weight: 700; font-size: 15px; letter-spacing: -.02em; }
+  .sidebar .logo .mark { width: 28px; height: 28px; border-radius: 7px; background: var(--accent); display: grid; place-items: center; color: var(--tx-inv); font-weight: 800; font-size: 14px; }
+  .nav-label { padding: 14px 10px 6px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: var(--tx-3); }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--r-sm); color: var(--tx-2); font-size: 13px; font-weight: 500; cursor: pointer; transition: all var(--dur-base) var(--ease); }
+  .nav-item:hover { background: var(--bg-hover); color: var(--tx); }
+  .nav-item.active { background: var(--bg-active); color: var(--tx); }
+
+  .main { padding: 40px 48px 120px; max-width: 1120px; }
+  .theme-toggle { position: fixed; top: 18px; right: 20px; z-index: 10; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: var(--r-sm); border: 1px solid var(--bd-2); background: var(--bg-3); color: var(--tx-2); font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: all var(--dur-base) var(--ease); box-shadow: var(--shadow-sm); }
+  .theme-toggle:hover { border-color: var(--bd-focus); color: var(--tx); }
+
+  h1.page-title { font-size: 26px; font-weight: 750; letter-spacing: -.03em; margin-bottom: 6px; }
+  .page-sub { color: var(--tx-2); font-size: 14.5px; margin-bottom: 36px; max-width: 700px; }
+  .page-sub code { color: var(--tx); background: var(--bg-4); padding: 1px 6px; border-radius: 4px; border: 1px solid var(--bd); }
+
+  section { margin-bottom: 60px; }
+  section > h2 { font-size: 17px; font-weight: 700; letter-spacing: -.01em; padding-bottom: 10px; margin-bottom: 24px; border-bottom: 1px solid var(--bd); }
+  section > h2 .sec-no { color: var(--tx-3); margin-right: 10px; font-family: var(--mono); font-size: 14px; }
+  section > h3 { font-size: 13px; font-weight: 650; color: var(--tx-2); margin: 30px 0 14px; text-transform: uppercase; letter-spacing: .05em; }
+  .note { background: var(--bg-4); border: 1px solid var(--bd); border-radius: var(--r-sm); padding: 12px 16px; font-size: 13px; color: var(--tx-2); margin-bottom: 24px; }
+  .note strong { color: var(--tx); }
+  .muted-note { font-size: 12.5px; color: var(--tx-3); }
+
+  /* ── 色板 ─────────────────────────────────────────────────────────────── */
+  .swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+  .swatch { border: 1px solid var(--bd); border-radius: var(--r-md); overflow: hidden; background: var(--bg-3); }
+  .swatch .chip { height: 52px; border-bottom: 1px solid var(--bd); }
+  .swatch .meta { padding: 9px 12px; }
+  .swatch .meta .name { font-family: var(--mono); font-size: 11.5px; font-weight: 600; }
+  .swatch .meta .hex { font-family: var(--mono); font-size: 10.5px; color: var(--tx-3); margin-top: 2px; }
+
+  /* ── token 表格 ───────────────────────────────────────────────────────── */
+  .tok-table { width: 100%; border-collapse: collapse; font-size: 13px; border: 1px solid var(--bd); border-radius: var(--r-lg); overflow: hidden; }
+  .tok-table th { background: var(--bg-2); color: var(--tx-2); text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 10px 14px; border-bottom: 1px solid var(--bd); }
+  .tok-table td { padding: 9px 14px; border-bottom: 1px solid var(--bd); }
+  .tok-table td:first-child { font-family: var(--mono); font-size: 12px; color: var(--tx-2); }
+  .tok-table td:last-child { font-family: var(--mono); font-size: 12px; color: var(--tx); }
+  .tok-table tr:last-child td { border-bottom: none; }
+  .tok-table .viz { display: inline-block; vertical-align: middle; }
+
+  /* ── 排版 ─────────────────────────────────────────────────────────────── */
+  .type-row { display: flex; align-items: baseline; gap: 20px; padding: 12px 0; border-bottom: 1px solid var(--bd); }
+  .type-row .spec { width: 160px; font-family: var(--mono); font-size: 11.5px; color: var(--tx-3); flex-shrink: 0; }
+  .type-row .sample { flex: 1; }
+
+  /* ── 按钮 ─────────────────────────────────────────────────────────────── */
+  .btn-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 14px; border-radius: var(--r-sm); font-size: 13px; font-weight: 600; font-family: var(--font); cursor: pointer; border: 1px solid transparent; transition: all var(--dur-base) var(--ease); white-space: nowrap; }
+  .btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--brand-ring); }
+  .btn-primary { background: var(--accent); color: var(--tx-inv); }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-ghost { background: var(--bg-4); color: var(--tx-2); border-color: var(--bd); }
+  .btn-ghost:hover { background: var(--bg-hover); color: var(--tx); border-color: var(--bd-2); }
+  .btn-danger { background: var(--red-g); color: var(--red); border-color: var(--red-r); }
+  .btn-danger:hover { background: var(--red-r); }
+  .btn-warn { background: var(--amber-g); color: var(--amber); border-color: var(--amber-r); }
+  .btn-warn:hover { background: var(--amber-r); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; min-height: 28px; }
+  .btn-icon { padding: 8px; width: 32px; height: 32px; }
+  .btn:disabled { background: var(--bg-5); color: var(--tx-3); cursor: not-allowed; box-shadow: none; }
+  .btn.loading { opacity: .7; pointer-events: none; }
+  .spinner { width: 14px; height: 14px; border: 2px solid var(--tx-3); border-top-color: var(--tx); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── 表单 ─────────────────────────────────────────────────────────────── */
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; max-width: 360px; }
+  .field label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--tx-2); }
+  .input, .select, .textarea { padding: 9px 12px; border-radius: var(--r-sm); background: var(--bg-4); border: 1px solid var(--bd); color: var(--tx); font-size: 13.5px; font-family: var(--font); transition: all var(--dur-base) var(--ease); width: 100%; }
+  .input:focus, .select:focus, .textarea:focus { outline: none; border-color: var(--bd-focus); background: var(--bg-3); box-shadow: 0 0 0 3px var(--brand-ring); }
+  .input::placeholder, .textarea::placeholder { color: var(--tx-3); }
+  .select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16' fill='none' stroke='%236b6b74' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='4,6 8,10 12,6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 34px; }
+  .textarea { resize: vertical; min-height: 96px; font-family: var(--mono); font-size: 12.5px; }
+  .input-wrap { position: relative; max-width: 360px; }
+  .input-wrap .lead-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--tx-3); pointer-events: none; }
+  .input-wrap .input { padding-left: 32px; }
+  .input-wrap .trail-icon { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--tx-3); cursor: pointer; font-size: 14px; }
+  .checkbox, .radio { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13.5px; color: var(--tx-2); }
+  .checkbox input, .radio input { width: 15px; height: 15px; accent-color: var(--tx); cursor: pointer; }
+
+  /* toggle switch */
+  .switch { position: relative; display: inline-block; width: 38px; height: 22px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .track { position: absolute; inset: 0; background: var(--bg-5); border: 1px solid var(--bd-2); border-radius: 999px; transition: all var(--dur-base) var(--ease); cursor: pointer; }
+  .switch .track::before { content: ""; position: absolute; width: 16px; height: 16px; left: 2px; top: 2px; background: var(--tx-2); border-radius: 50%; transition: all var(--dur-base) var(--ease); }
+  .switch input:checked + .track { background: var(--accent); border-color: var(--accent); }
+  .switch input:checked + .track::before { transform: translateX(16px); background: var(--tx-inv); }
+  .switch-row { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--tx-2); }
+
+  /* segmented control */
+  .segmented { display: inline-flex; background: var(--bg-4); border: 1px solid var(--bd); border-radius: var(--r-sm); padding: 3px; gap: 2px; }
+  .segmented button { padding: 5px 14px; border: none; background: transparent; color: var(--tx-2); font-size: 12.5px; font-weight: 600; font-family: var(--font); border-radius: 4px; cursor: pointer; transition: all var(--dur-base) var(--ease); }
+  .segmented button.active { background: var(--bg-active); color: var(--tx); box-shadow: var(--shadow-xs); }
+  .segmented button:hover:not(.active) { color: var(--tx); }
+
+  /* ── 导航 ─────────────────────────────────────────────────────────────── */
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--bd); }
+  .tabs .tab { padding: 9px 16px; font-size: 13px; font-weight: 600; color: var(--tx-2); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all var(--dur-base) var(--ease); }
+  .tabs .tab:hover { color: var(--tx); }
+  .tabs .tab.active { color: var(--tx); border-bottom-color: var(--tx); }
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--tx-3); }
+  .breadcrumb .sep { color: var(--tx-3); }
+  .breadcrumb .current { color: var(--tx); font-weight: 500; }
+  .pagination { display: flex; gap: 6px; align-items: center; }
+  .pagination .pg { min-width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--r-sm); border: 1px solid var(--bd); background: var(--bg-3); color: var(--tx-2); font-size: 13px; font-weight: 600; cursor: pointer; transition: all var(--dur-base) var(--ease); }
+  .pagination .pg:hover { border-color: var(--bd-2); color: var(--tx); }
+  .pagination .pg.active { background: var(--accent); color: var(--tx-inv); border-color: var(--accent); }
+  .pagination .pg.disabled { opacity: .4; pointer-events: none; }
+  .dropdown { position: relative; display: inline-block; }
+  .dropdown-menu { display: none; position: absolute; top: calc(100% + 6px); left: 0; min-width: 180px; background: var(--bg-4); border: 1px solid var(--bd-2); border-radius: var(--r-md); box-shadow: var(--shadow); padding: 6px; z-index: 5; }
+  .dropdown.open .dropdown-menu { display: block; }
+  .dropdown-item { padding: 8px 10px; border-radius: var(--r-sm); font-size: 13px; color: var(--tx-2); cursor: pointer; display: flex; align-items: center; gap: 8px; }
+  .dropdown-item:hover { background: var(--bg-hover); color: var(--tx); }
+  .dropdown-item.danger { color: var(--red); }
+
+  /* ── 卡片 ─────────────────────────────────────────────────────────────── */
+  .card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-lg); overflow: hidden; transition: all var(--dur-base) var(--ease); }
+  .card.hover:hover { border-color: var(--bd-2); box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+  .card .card-img { background: var(--bg-2); display: grid; place-items: center; min-height: 160px; color: var(--tx-3); font-size: 12px; }
+  .card .card-body { padding: 12px 14px; }
+  .card .card-title { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--tx-2); word-break: break-all; }
+  .card .card-meta { font-size: 12px; color: var(--tx-3); margin-top: 6px; }
+  .stat-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-lg); padding: 20px 22px; }
+  .stat-card .stat-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--tx-3); }
+  .stat-card .stat-value { font-family: var(--mono); font-size: 30px; font-weight: 700; letter-spacing: -.04em; margin-top: 8px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+
+  /* ── 表格 ─────────────────────────────────────────────────────────────── */
+  .table-wrap { border: 1px solid var(--bd); border-radius: var(--r-lg); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { background: var(--bg-2); color: var(--tx-2); text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 10px 14px; border-bottom: 1px solid var(--bd); }
+  tbody td { padding: 11px 14px; border-bottom: 1px solid var(--bd); color: var(--tx); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--bg-hover); }
+  tbody tr.selected td { background: var(--bg-active); }
+
+  /* ── Badge / 胶囊 ─────────────────────────────────────────────────────── */
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid; }
+  .badge .bdot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .badge-green { color: var(--green); background: var(--green-g); border-color: var(--green-r); }
+  .badge-blue  { color: var(--blue);  background: var(--blue-g);  border-color: var(--blue-r); }
+  .badge-amber { color: var(--amber); background: var(--amber-g); border-color: var(--amber-r); }
+  .badge-red   { color: var(--red);   background: var(--red-g);   border-color: var(--red-r); }
+  .badge-gray  { color: var(--tx-2);  background: var(--bg-4);     border-color: var(--bd); }
+  .badge-neutral { color: var(--tx);  background: var(--bg-4);     border-color: var(--bd); }
+
+  /* ── 进度 ─────────────────────────────────────────────────────────────── */
+  .progress { height: 6px; border-radius: 999px; background: var(--bg-5); overflow: hidden; }
+  .progress .fill { height: 100%; border-radius: 999px; background: var(--tx); transition: width .3s var(--ease); }
+  .progress .fill.warn { background: var(--amber); }
+  .progress .fill.full { background: var(--red); }
+  .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--tx-2); margin-bottom: 6px; }
+  .progress-label .val { font-family: var(--mono); color: var(--tx); }
+  .ring { --p: 0; width: 72px; height: 72px; border-radius: 50%; background: conic-gradient(var(--tx) calc(var(--p)*1%), var(--bg-5) 0); display: grid; place-items: center; position: relative; }
+  .ring::after { content: ""; position: absolute; inset: 7px; border-radius: 50%; background: var(--bg-3); }
+  .ring .ring-val { position: relative; z-index: 1; font-family: var(--mono); font-size: 15px; font-weight: 700; }
+
+  /* ── 反馈 ─────────────────────────────────────────────────────────────── */
+  .toast { display: inline-flex; align-items: center; gap: 10px; background: var(--bg-3); border: 1px solid var(--bd-2); color: var(--tx); padding: 10px 16px; border-radius: var(--r-md); font-size: 13px; font-weight: 500; box-shadow: var(--shadow); max-width: 400px; }
+  .toast .ticon { font-weight: 700; }
+  .alert { display: flex; gap: 10px; padding: 12px 14px; border-radius: var(--r-md); border: 1px solid; font-size: 13px; align-items: flex-start; }
+  .alert .aicon { font-weight: 700; line-height: 1.4; }
+  .alert-info    { background: var(--blue-g);  border-color: var(--blue-r);  color: var(--tx-2); }
+  .alert-success { background: var(--green-g); border-color: var(--green-r); color: var(--tx-2); }
+  .alert-warning { background: var(--amber-g); border-color: var(--amber-r); color: var(--tx-2); }
+  .alert-error   { background: var(--red-g);   border-color: var(--red-r);   color: var(--tx-2); }
+  .alert strong { color: var(--tx); }
+  .modal { background: var(--bg-4); border: 1px solid var(--bd-2); border-radius: var(--r-xl); box-shadow: var(--shadow-lg); max-width: 480px; overflow: hidden; }
+  .modal .modal-head { display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--bd); }
+  .modal .modal-head h4 { flex: 1; font-size: 15px; font-weight: 700; }
+  .modal .modal-body { padding: 20px; color: var(--tx-2); font-size: 13.5px; }
+  .modal .modal-foot { display: flex; gap: 10px; justify-content: flex-end; padding: 14px 20px; border-top: 1px solid var(--bd); }
+  .empty { text-align: center; padding: 40px 24px; color: var(--tx-3); font-size: 13.5px; font-weight: 500; }
+  .skeleton { border-radius: var(--r-md); background: linear-gradient(90deg, var(--bg-3) 25%, var(--bg-4) 50%, var(--bg-3) 75%); background-size: 200% 100%; animation: shimmer 1.5s linear infinite; height: 48px; }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  /* ── 数据展示 ─────────────────────────────────────────────────────────── */
+  .kv { display: flex; justify-content: space-between; gap: 20px; padding: 10px 0; border-bottom: 1px solid var(--bd); font-size: 13.5px; max-width: 420px; }
+  .kv .k { color: var(--tx-2); }
+  .kv .v { font-family: var(--mono); font-size: 12.5px; color: var(--tx); }
+  .kbd { display: inline-block; padding: 2px 7px; border: 1px solid var(--bd-2); border-bottom-width: 2px; border-radius: 5px; background: var(--bg-4); font-family: var(--mono); font-size: 11px; color: var(--tx-2); }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--bg-active); display: grid; place-items: center; font-size: 12px; font-weight: 700; color: var(--tx-2); border: 1px solid var(--bd-2); }
+  .avatar.sm { width: 22px; height: 22px; font-size: 10px; }
+  .avatar.lg { width: 40px; height: 40px; font-size: 15px; }
+  .code-block { background: var(--bg-2); border: 1px solid var(--bd); border-radius: var(--r-md); padding: 14px 16px; font-family: var(--mono); font-size: 12.5px; overflow-x: auto; max-width: 480px; }
+  .code-block .c-comment { color: var(--tx-3); }
+  .code-block .c-str { color: var(--tx-2); }
+  .tooltip { position: relative; display: inline-block; }
+  .tooltip .tip { visibility: hidden; opacity: 0; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--tx); color: var(--tx-inv); padding: 5px 10px; border-radius: var(--r-sm); font-size: 12px; font-weight: 500; white-space: nowrap; transition: all var(--dur-base) var(--ease); pointer-events: none; }
+  .tooltip:hover .tip { visibility: visible; opacity: 1; }
+  .timeline { position: relative; padding-left: 24px; max-width: 420px; }
+  .timeline::before { content: ""; position: absolute; left: 7px; top: 6px; bottom: 6px; width: 1px; background: var(--bd-2); }
+  .timeline .tl-item { position: relative; padding: 8px 0; }
+  .timeline .tl-item::before { content: ""; position: absolute; left: -22px; top: 14px; width: 9px; height: 9px; border-radius: 50%; background: var(--bg-active); border: 2px solid var(--tx-2); }
+  .timeline .tl-item .tl-time { font-family: var(--mono); font-size: 11px; color: var(--tx-3); }
+  .timeline .tl-item .tl-text { font-size: 13px; color: var(--tx); }
+
+  /* ── 插画 ─────────────────────────────────────────────────────────────── */
+  .illus-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+  .illus-card { background: var(--bg-3); border: 1px solid var(--bd); border-radius: var(--r-lg); padding: 20px; text-align: center; }
+  .illus-card .illus-frame { background: var(--bg-2); border: 1px solid var(--bd); border-radius: var(--r-md); padding: 16px; margin-bottom: 12px; }
+  .illus-card .illus-name { font-size: 13px; font-weight: 650; }
+  .illus-card .illus-desc { font-size: 12px; color: var(--tx-3); margin-top: 4px; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌗 切换浅色</button>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="logo"><span class="mark">Oi</span><span>Onimg</span></div>
+    <div class="nav-label">Tokens</div>
+    <div class="nav-item active">色板</div>
+    <div class="nav-item">间距 / 字号</div>
+    <div class="nav-item">圆角 / 阴影</div>
+    <div class="nav-label">Components</div>
+    <div class="nav-item">按钮</div>
+    <div class="nav-item">表单</div>
+    <div class="nav-item">导航</div>
+    <div class="nav-item">卡片 / 表格</div>
+    <div class="nav-item">数据展示</div>
+    <div class="nav-item">反馈</div>
+    <div class="nav-label">Assets</div>
+    <div class="nav-item">手绘插画</div>
+  </aside>
+
+  <main class="main">
+    <h1 class="page-title">Onimg 设计系统 v3</h1>
+    <p class="page-sub">
+      <strong>Monochrome</strong> —— 参考 Linear / Vercel / Notion 的极简中性路线 + <strong>Notion 的手绘线条插画</strong>。
+      全站无彩色强调：层次交给中性灰阶 + 边框；主按钮高对比黑/白；插画用手绘线条 + 有机曲线 + 留白表达。
+      本页为完整审查预览，token 即最终落地 <code>aperture.css</code> <code>@theme</code> 的值。
+    </p>
+
+    <div class="note">
+      <strong>与旧版（Aperture v2）核心差异：</strong>
+      ① 背景 <code>#0c0b10</code>（带紫）→ <code>#0f0f11</code>（纯中性）；
+      ② 品牌色 <code>#7c5cff</code>（紫）→ <strong>无品牌色</strong>，强调用中性黑/白；
+      ③ 主按钮「浅紫实心」→「白/黑实心」；④ 选中态去竖条/圆点，仅背景+文字变化；
+      ⑤ 新增一整套手绘线条插画（空状态 / 404 / 上传 / 搜索 / 成功 / 文档），纯 SVG + CSS 变量，随主题切换。
+    </div>
+
+    <!-- ═══ 1. 色板 ═══ -->
+    <section>
+      <h2><span class="sec-no">01</span>色板 Color</h2>
+      <h3>画布与层次（纯中性石墨）</h3>
+      <div class="swatch-grid">
+        <div class="swatch"><div class="chip" style="background:var(--bg)"></div><div class="meta"><div class="name">bg</div><div class="hex">#0f0f11</div></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--bg-2)"></div><div class="meta"><div class="name">bg-2</div><div class="hex">#141417</div></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--bg-3)"></div><div class="meta"><div class="name">bg-3</div><div class="hex">#1a1a1e</div></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--bg-4)"></div><div class="meta"><div class="name">bg-4</div><div class="hex">#212125</div></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--bg-5)"></div><div class="meta"><div class="name">bg-5</div><div class="hex">#2a2a2f</div></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--bg-hover)"></div><div class="meta"><div class="name">bg-hover</div><div class="hex">#1f1f23</div></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--bg-active)"></div><div class="meta"><div class="name">bg-active</div><div class="hex">#2e2e33</div></div></div>
+      </div>
+
+      <h3>边框</h3>
+      <div class="swatch-grid">
+        <div class="swatch"><div class="chip" style="background:var(--bd)"></div><div class="meta"><div class="name">bd</div><div class="hex">#26262b</div></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--bd-2)"></div><div class="meta"><div class="name">bd-2</div><div class="hex">#36363c</div></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--bd-focus)"></div><div class="meta"><div class="name">bd-focus</div><div class="hex">#7c7c86</div></div></div>
+      </div>
+
+      <h3>文本 + 强调（中性黑/白）</h3>
+      <div class="swatch-grid">
+        <div class="swatch"><div class="chip" style="background:var(--tx)"></div><div class="meta"><div class="name">tx</div><div class="hex">#f2f2f4</div></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--tx-2)"></div><div class="meta"><div class="name">tx-2</div><div class="hex">#a1a1ab</div></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--tx-3)"></div><div class="meta"><div class="name">tx-3</div><div class="hex">#6b6b74</div></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--accent)"></div><div class="meta"><div class="name">accent</div><div class="hex">#f2f2f4</div></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--accent-hover)"></div><div class="meta"><div class="name">accent-hover</div><div class="hex">#ffffff</div></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--tx-inv)"></div><div class="meta"><div class="name">tx-inv</div><div class="hex">#0f0f11</div></div></div>
+      </div>
+
+      <h3>语义色（仅状态）</h3>
+      <div class="swatch-grid">
+        <div class="swatch"><div class="chip" style="background:var(--green)"></div><div class="meta"><div class="name">green</div><div class="hex">#3fb950</div></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--blue)"></div><div class="meta"><div class="name">blue (info)</div><div class="hex">#6ea8fe</div></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--amber)"></div><div class="meta"><div class="name">amber</div><div class="hex">#d29922</div></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--red)"></div><div class="meta"><div class="name">red</div><div class="hex">#f85149</div></div></div>
+      </div>
+      <p class="muted-note" style="margin-top:12px">浅色主题 token 见 <code>:root[data-theme="light"]</code>，右上角实时切换。<code>blue</code> 仅作「信息提示」状态色，非品牌强调。</p>
+    </section>
+
+    <!-- ═══ 2. 间距 + 字号 ═══ -->
+    <section>
+      <h2><span class="sec-no">02</span>间距 & 字号 Spacing / Type Scale</h2>
+      <div class="two-col">
+        <div>
+          <h3>间距（1 单位 = 4px，Tailwind 派生）</h3>
+          <table class="tok-table">
+            <thead><tr><th>token</th><th>值</th><th>预览</th></tr></thead>
+            <tbody>
+              <tr><td>sp-1</td><td>4px</td><td><span class="viz" style="display:inline-block;width:4px;height:12px;background:var(--tx-2);border-radius:2px"></span></td></tr>
+              <tr><td>sp-2</td><td>8px</td><td><span class="viz" style="display:inline-block;width:8px;height:12px;background:var(--tx-2);border-radius:2px"></span></td></tr>
+              <tr><td>sp-3</td><td>12px</td><td><span class="viz" style="display:inline-block;width:12px;height:12px;background:var(--tx-2);border-radius:2px"></span></td></tr>
+              <tr><td>sp-4</td><td>16px</td><td><span class="viz" style="display:inline-block;width:16px;height:12px;background:var(--tx-2);border-radius:2px"></span></td></tr>
+              <tr><td>sp-6</td><td>24px</td><td><span class="viz" style="display:inline-block;width:24px;height:12px;background:var(--tx-2);border-radius:2px"></span></td></tr>
+              <tr><td>sp-8</td><td>32px</td><td><span class="viz" style="display:inline-block;width:32px;height:12px;background:var(--tx-2);border-radius:2px"></span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <h3>字号（text-*）</h3>
+          <table class="tok-table">
+            <thead><tr><th>token</th><th>字号</th><th>行高</th></tr></thead>
+            <tbody>
+              <tr><td>text-2xs</td><td>11px</td><td>1.25</td></tr>
+              <tr><td>text-xs</td><td>12px</td><td>1.5</td></tr>
+              <tr><td>text-sm</td><td>13px</td><td>1.5</td></tr>
+              <tr><td>text-base-sm</td><td>15px</td><td>1.5</td></tr>
+              <tr><td>text-lg-sm</td><td>17px</td><td>1.25</td></tr>
+              <tr><td>text-xl-sm</td><td>22px</td><td>1.25</td></tr>
+            </tbody>
+          </table>
+          <h3>字重</h3>
+          <table class="tok-table">
+            <tbody>
+              <tr><td>font-medium</td><td>500</td></tr>
+              <tr><td>font-semibold</td><td>600</td></tr>
+              <tr><td>font-bold</td><td>700</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 3. 圆角 + 阴影 + 动效 ═══ -->
+    <section>
+      <h2><span class="sec-no">03</span>圆角 · 阴影 · 动效 Radius / Shadow / Motion</h2>
+      <div class="two-col">
+        <div>
+          <h3>圆角（radius）</h3>
+          <table class="tok-table">
+            <thead><tr><th>token</th><th>值</th><th>预览</th></tr></thead>
+            <tbody>
+              <tr><td>rounded-xs</td><td>4px</td><td><span class="viz" style="display:inline-block;width:36px;height:24px;background:var(--bg-4);border:1px solid var(--bd-2);border-radius:4px"></span></td></tr>
+              <tr><td>rounded-sm</td><td>6px</td><td><span class="viz" style="display:inline-block;width:36px;height:24px;background:var(--bg-4);border:1px solid var(--bd-2);border-radius:6px"></span></td></tr>
+              <tr><td>rounded-md</td><td>8px</td><td><span class="viz" style="display:inline-block;width:36px;height:24px;background:var(--bg-4);border:1px solid var(--bd-2);border-radius:8px"></span></td></tr>
+              <tr><td>rounded-lg</td><td>12px</td><td><span class="viz" style="display:inline-block;width:36px;height:24px;background:var(--bg-4);border:1px solid var(--bd-2);border-radius:12px"></span></td></tr>
+              <tr><td>rounded-xl</td><td>16px</td><td><span class="viz" style="display:inline-block;width:36px;height:24px;background:var(--bg-4);border:1px solid var(--bd-2);border-radius:16px"></span></td></tr>
+              <tr><td>rounded-full</td><td>999px</td><td><span class="viz" style="display:inline-block;width:24px;height:24px;background:var(--bg-4);border:1px solid var(--bd-2);border-radius:999px"></span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <h3>阴影层级（shadow）</h3>
+          <div style="display:flex;flex-direction:column;gap:14px;max-width:280px">
+            <div style="padding:14px;border-radius:8px;background:var(--bg-3);border:1px solid var(--bd);box-shadow:var(--shadow-xs)"><span style="font-family:var(--mono);font-size:11px;color:var(--tx-3)">shadow-xs</span></div>
+            <div style="padding:14px;border-radius:8px;background:var(--bg-3);border:1px solid var(--bd);box-shadow:var(--shadow-sm)"><span style="font-family:var(--mono);font-size:11px;color:var(--tx-3)">shadow-sm</span></div>
+            <div style="padding:14px;border-radius:8px;background:var(--bg-3);border:1px solid var(--bd);box-shadow:var(--shadow)"><span style="font-family:var(--mono);font-size:11px;color:var(--tx-3)">shadow</span></div>
+            <div style="padding:14px;border-radius:8px;background:var(--bg-3);border:1px solid var(--bd);box-shadow:var(--shadow-lg)"><span style="font-family:var(--mono);font-size:11px;color:var(--tx-3)">shadow-lg</span></div>
+          </div>
+          <h3>动效（motion）</h3>
+          <table class="tok-table">
+            <tbody>
+              <tr><td>dur-fast</td><td>120ms</td></tr>
+              <tr><td>dur-base</td><td>150ms</td></tr>
+              <tr><td>dur-slow</td><td>240ms</td></tr>
+              <tr><td>ease</td><td>cubic-bezier(.2,.8,.2,1)</td></tr>
+              <tr><td>ease-out</td><td>cubic-bezier(0,0,.2,1)</td></tr>
+            </tbody>
+          </table>
+          <h3>图标（icon）</h3>
+          <table class="tok-table">
+            <tbody>
+              <tr><td>icon-xs / sm / md / lg / xl</td><td>12 / 14 / 16 / 20 / 24px</td></tr>
+              <tr><td>stroke</td><td>1.6（描边线宽）</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 4. 排版 ═══ -->
+    <section>
+      <h2><span class="sec-no">04</span>排版 Typography</h2>
+      <div class="type-row"><span class="spec">text-xl-sm · 22px</span><span class="sample" style="font-size:22px;font-weight:700;letter-spacing:-.02em">面板标题 Page Heading</span></div>
+      <div class="type-row"><span class="spec">text-lg-sm · 17px</span><span class="sample" style="font-size:17px;font-weight:700">区块标题 Section Heading</span></div>
+      <div class="type-row"><span class="spec">text-base-sm · 15px</span><span class="sample" style="font-size:15px;font-weight:600">卡片标题 Card Title</span></div>
+      <div class="type-row"><span class="spec">text-sm · 13px</span><span class="sample" style="font-size:13px">正文 Body text — 用于列表、表单、说明文字</span></div>
+      <div class="type-row"><span class="spec">text-2xs · 11px</span><span class="sample" style="font-size:11px;color:var(--tx-3);text-transform:uppercase;letter-spacing:.08em;font-weight:700">微标签 MICRO LABEL</span></div>
+      <div class="type-row"><span class="spec">mono · 12px</span><span class="sample" style="font-family:var(--mono);font-size:12px">1712345678-abc123.jpg</span></div>
+      <p class="muted-note" style="margin-top:14px">字体：正文 <code>Inter / system-ui</code>（替代 Outfit）；等宽 <code>JetBrains Mono</code>。</p>
+    </section>
+
+    <!-- ═══ 5. 按钮 ═══ -->
+    <section>
+      <h2><span class="sec-no">05</span>按钮 Buttons</h2>
+      <h3>变体</h3>
+      <div class="btn-row">
+        <button class="btn btn-primary">Primary</button>
+        <button class="btn btn-ghost">Ghost</button>
+        <button class="btn btn-danger">Danger</button>
+        <button class="btn btn-warn">Warn</button>
+        <button class="btn btn-primary" disabled>Disabled</button>
+        <button class="btn btn-primary loading"><span class="spinner" style="border-color:var(--tx-3);border-top-color:var(--tx-inv)"></span>加载中</button>
+      </div>
+      <h3>尺寸 + 图标按钮</h3>
+      <div class="btn-row">
+        <button class="btn btn-primary">常规</button>
+        <button class="btn btn-primary btn-sm">小号</button>
+        <button class="btn btn-ghost btn-sm">小号 Ghost</button>
+        <button class="btn btn-ghost btn-icon" aria-label="复制">⧉</button>
+        <button class="btn btn-ghost btn-icon" aria-label="删除">🗑</button>
+      </div>
+      <p class="muted-note" style="margin-top:12px">落地工具类：主按钮 <code>bg-accent text-tx-inv</code>、Ghost <code>bg-bg-4 border-bd</code>、图标按钮 <code>btn-icon</code>（32×32）。</p>
+    </section>
+
+    <!-- ═══ 6. 表单 ═══ -->
+    <section>
+      <h2><span class="sec-no">06</span>表单 Forms</h2>
+      <div class="two-col">
+        <div>
+          <div class="field"><label>用户名</label><input class="input" placeholder="请输入用户名" value="admin"></div>
+          <div class="field"><label>带图标搜索</label>
+            <div class="input-wrap"><span class="lead-icon">⌕</span><input class="input" placeholder="搜索文件名 / 标签…"></div>
+          </div>
+          <div class="field"><label>密码</label>
+            <div class="input-wrap"><input class="input" type="password" placeholder="••••••" value="secret"><button class="trail-icon">👁</button></div>
+          </div>
+          <div class="field"><label>可见性</label>
+            <select class="select"><option>公开</option><option>私有</option></select>
+          </div>
+          <div class="field"><label>描述</label><textarea class="textarea" placeholder="Markdown / HTML 内容…"></textarea></div>
+        </div>
+        <div>
+          <h3 style="margin-top:0">开关 / 单选 / 复选</h3>
+          <div style="display:flex;flex-direction:column;gap:14px;margin-top:12px">
+            <label class="switch-row"><span class="switch"><input type="checkbox" checked><span class="track"></span></span>公开可见</label>
+            <label class="switch-row"><span class="switch"><input type="checkbox"><span class="track"></span></span>启用通知</label>
+            <label class="checkbox"><input type="checkbox" checked>记住我（30 天免登录）</label>
+            <label class="radio"><input type="radio" name="demo" checked>图片</label>
+            <label class="radio"><input type="radio" name="demo">原型</label>
+          </div>
+          <h3>分段控制</h3>
+          <div class="segmented" style="margin-top:12px">
+            <button class="active">全部</button>
+            <button>公开</button>
+            <button>私有</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 7. 导航 ═══ -->
+    <section>
+      <h2><span class="sec-no">07</span>导航 Navigation</h2>
+      <h3>Tabs</h3>
+      <div class="tabs" style="max-width:420px">
+        <div class="tab active">概览</div><div class="tab">图片</div><div class="tab">页面</div><div class="tab">原型</div>
+      </div>
+      <h3>面包屑</h3>
+      <div class="breadcrumb"><span>页面</span><span class="sep">/</span><span>项目 A</span><span class="sep">/</span><span class="current">首页.md</span></div>
+      <h3>下拉菜单</h3>
+      <div class="dropdown open">
+        <button class="btn btn-ghost btn-sm">操作 ▾</button>
+        <div class="dropdown-menu">
+          <div class="dropdown-item">复制直链</div>
+          <div class="dropdown-item">设为公开</div>
+          <div class="dropdown-item">编辑标签</div>
+          <div class="dropdown-item" style="height:1px;padding:0;background:var(--bd);margin:6px 0"></div>
+          <div class="dropdown-item danger">删除</div>
+        </div>
+      </div>
+      <h3>分页</h3>
+      <div class="pagination">
+        <span class="pg disabled">‹</span>
+        <span class="pg active">1</span>
+        <span class="pg">2</span>
+        <span class="pg">3</span>
+        <span class="pg">…</span>
+        <span class="pg">12</span>
+        <span class="pg">›</span>
+      </div>
+    </section>
+
+    <!-- ═══ 8. 卡片 + 表格 ═══ -->
+    <section>
+      <h2><span class="sec-no">08</span>卡片 & 表格 Cards / Table</h2>
+      <h3>统计卡</h3>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-label">存储用量</div><div class="stat-value">1.24 GB</div></div>
+        <div class="stat-card"><div class="stat-label">图片总数</div><div class="stat-value">3,482</div></div>
+        <div class="stat-card"><div class="stat-label">今日请求</div><div class="stat-value">12,409</div></div>
+        <div class="stat-card"><div class="stat-label">成员数</div><div class="stat-value">7</div></div>
+      </div>
+      <h3>图库卡</h3>
+      <div class="stat-grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">
+        <div class="card hover"><div class="card-img">图片</div><div class="card-body"><div class="card-title">1712-abc.jpg</div><div class="card-meta">1.4 MB · 公开</div></div></div>
+        <div class="card hover"><div class="card-img">图片</div><div class="card-body"><div class="card-title">1712-def.png</div><div class="card-meta">820 KB · 私有</div></div></div>
+        <div class="card hover"><div class="card-img">图片</div><div class="card-body"><div class="card-title">1712-ghi.webp</div><div class="card-meta">260 KB · 公开</div></div></div>
+      </div>
+      <h3>表格（含选中行）</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th></th><th>文件名</th><th>大小</th><th>可见性</th><th>上传时间</th></tr></thead>
+          <tbody>
+            <tr><td><input type="checkbox" style="accent-color:var(--tx)"></td><td style="font-family:var(--mono)">1712345-abc.jpg</td><td>1.4 MB</td><td><span class="badge badge-green"><span class="bdot"></span>公开</span></td><td>08-15 14:22</td></tr>
+            <tr class="selected"><td><input type="checkbox" checked style="accent-color:var(--tx)"></td><td style="font-family:var(--mono)">1712345-def.png</td><td>820 KB</td><td><span class="badge badge-gray"><span class="bdot"></span>私有</span></td><td>08-15 13:07</td></tr>
+            <tr><td><input type="checkbox" style="accent-color:var(--tx)"></td><td style="font-family:var(--mono)">1712345-ghi.webp</td><td>260 KB</td><td><span class="badge badge-green"><span class="bdot"></span>公开</span></td><td>08-14 22:41</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══ 9. 数据展示 ═══ -->
+    <section>
+      <h2><span class="sec-no">09</span>数据展示 Data Display</h2>
+      <div class="two-col">
+        <div>
+          <h3>徽章 Badges</h3>
+          <div class="btn-row" style="margin-bottom:20px">
+            <span class="badge badge-green"><span class="bdot"></span>公开</span>
+            <span class="badge badge-gray"><span class="bdot"></span>私有</span>
+            <span class="badge badge-blue"><span class="bdot"></span>信息</span>
+            <span class="badge badge-amber"><span class="bdot"></span>已过期</span>
+            <span class="badge badge-red"><span class="bdot"></span>禁用</span>
+            <span class="badge badge-neutral">Admin</span>
+          </div>
+          <h3>键值对 Key-Value</h3>
+          <div class="kv"><span class="k">存储用量</span><span class="v">1.24 GB</span></div>
+          <div class="kv"><span class="k">今日上传</span><span class="v">42 张</span></div>
+          <div class="kv"><span class="k">Token 到期</span><span class="v">2026-08-22</span></div>
+          <h3>头像 Avatar</h3>
+          <div class="btn-row" style="margin-top:12px">
+            <span class="avatar sm">A</span><span class="avatar">B</span><span class="avatar lg">C</span>
+            <span class="avatar" style="background:var(--accent);color:var(--tx-inv)">D</span>
+          </div>
+          <h3>键盘键 Keyboard</h3>
+          <div class="btn-row" style="margin-top:12px">
+            <span class="kbd">Ctrl</span> + <span class="kbd">V</span>
+            <span class="kbd">⌘</span> + <span class="kbd">K</span>
+          </div>
+        </div>
+        <div>
+          <h3>代码块</h3>
+          <div class="code-block"><span class="c-comment"># 上传直链</span><br>curl -H <span class="c-str">"Authorization: Bearer …"</span> -F <span class="c-str">"file=@a.png"</span> /upload</div>
+          <h3>时间线 Timeline</h3>
+          <div class="timeline">
+            <div class="tl-item"><div class="tl-time">08-15 14:22</div><div class="tl-text">上传了 3 张图片</div></div>
+            <div class="tl-item"><div class="tl-time">08-15 13:07</div><div class="tl-text">删除了 1 张图片</div></div>
+            <div class="tl-item"><div class="tl-time">08-14 22:41</div><div class="tl-text">更新了原型版本 v2</div></div>
+          </div>
+          <h3>Tooltip</h3>
+          <div class="tooltip" style="margin-top:12px">
+            <button class="btn btn-ghost btn-sm">悬停看提示</button>
+            <span class="tip">这是一个 tooltip</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 10. 反馈 ═══ -->
+    <section>
+      <h2><span class="sec-no">10</span>反馈 Feedback</h2>
+      <h3>告警条 Alert</h3>
+      <div style="display:flex;flex-direction:column;gap:10px;max-width:480px">
+        <div class="alert alert-info"><span class="aicon">ℹ</span><div><strong>信息：</strong>R2 存储为实时精确扫描。</div></div>
+        <div class="alert alert-success"><span class="aicon">✓</span><div><strong>成功：</strong>图片上传完成。</div></div>
+        <div class="alert alert-warning"><span class="aicon">⚠</span><div><strong>警告：</strong>KV 写入接近每日上限。</div></div>
+        <div class="alert alert-error"><span class="aicon">✕</span><div><strong>错误：</strong>文件类型不允许。</div></div>
+      </div>
+      <h3>Toast</h3>
+      <div class="toast"><span class="ticon" style="color:var(--green)">✓</span>已复制直链到剪贴板</div>
+      <h3>进度条 + 环形</h3>
+      <div style="max-width:420px">
+        <div class="progress-label"><span>R2 存储</span><span class="val">1.24 GB / 10 GB</span></div>
+        <div class="progress"><div class="fill" style="width:12%"></div></div>
+      </div>
+      <div style="max-width:420px; margin-top:16px">
+        <div class="progress-label"><span>KV 写入</span><span class="val">990 / 1,000</span></div>
+        <div class="progress"><div class="fill full" style="width:99%"></div></div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:center;margin-top:16px">
+        <div class="ring" style="--p:72"><span class="ring-val">72%</span></div>
+        <div class="ring" style="--p:35"><span class="ring-val">35%</span></div>
+      </div>
+      <h3>Modal</h3>
+      <div class="modal">
+        <div class="modal-head"><h4>编辑用户</h4><button class="btn btn-ghost btn-sm">✕</button></div>
+        <div class="modal-body">修改权限、配额与 Token 有效期。</div>
+        <div class="modal-foot"><button class="btn btn-ghost">取消</button><button class="btn btn-primary">保存</button></div>
+      </div>
+      <h3>骨架屏 + 空状态</h3>
+      <div class="stat-grid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:16px">
+        <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+      </div>
+      <div class="card" style="max-width:420px"><div class="empty">还没有图片，拖拽或点击上方上传</div></div>
+    </section>
+
+    <!-- ═══ 11. 极简插画 ═══ -->
+    <section>
+      <h2><span class="sec-no">11</span>手绘插画 Illustration</h2>
+      <p class="page-sub" style="margin-bottom:20px">
+        参考 <strong>Notion 的手绘线条插画</strong>：用<strong>有机曲线、不规则手绘圆、简笔小人、星点火花</strong>营造
+        涂鸦般的松弛感与气质，而非机械几何。<strong>单色中性</strong>（<code>tx-2</code> / <code>tx-3</code> / <code>bd-2</code>），
+        语义色仅用于成功插画，大量留白，无渐变无阴影。全部为内联 SVG + CSS 变量，随主题切换。
+      </p>
+      <div class="illus-grid">
+        <div class="illus-card">
+          <div class="illus-frame">
+            <svg viewBox="0 0 220 160" width="100%" height="auto" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M120 40 C 140 36, 158 38, 172 42 C 184 45, 189 53, 188 66 C 186 88, 187 108, 186 120 C 185 130, 178 135, 168 133 C 152 131, 136 132, 122 131 C 112 130, 108 124, 109 114 C 111 92, 110 66, 113 52 C 114 45, 114 41, 120 40 Z" stroke="var(--tx-2)" stroke-width="2"/>
+              <path d="M150 84 C 156 84, 161 89, 161 95 C 161 101, 156 106, 150 106 C 144 106, 139 101, 139 95 C 139 89, 144 84, 150 84" stroke="var(--tx-3)" stroke-width="1.8"/>
+              <path d="M150 76 C 149 71, 151 66, 150 62" stroke="var(--tx-3)" stroke-width="1.6"/>
+              <path d="M160 80 C 165 79, 169 80, 172 78" stroke="var(--tx-3)" stroke-width="1.6"/>
+              <path d="M138 112 C 146 104, 152 106, 158 112 C 163 106, 168 104, 172 110" stroke="var(--tx-3)" stroke-width="1.8"/>
+              <path d="M60 51 C 63 51, 66 54, 66 58 C 66 62, 63 65, 60 65 C 57 65, 54 62, 54 58 C 54 54, 57 51, 60 51" stroke="var(--tx-2)" stroke-width="2"/>
+              <path d="M60 65 C 60 72, 59 78, 57 84" stroke="var(--tx-2)" stroke-width="2"/>
+              <path d="M60 71 C 53 70, 48 71, 45 74" stroke="var(--tx-2)" stroke-width="2"/>
+              <path d="M60 71 C 66 70, 71 71, 74 74" stroke="var(--tx-2)" stroke-width="2"/>
+              <path d="M57 84 C 55 90, 53 96, 50 100" stroke="var(--tx-2)" stroke-width="2"/>
+              <path d="M57 84 C 59 90, 61 96, 64 100" stroke="var(--tx-2)" stroke-width="2"/>
+              <path d="M40 102 C 52 99, 70 99, 82 102" stroke="var(--bd-2)" stroke-width="1.6"/>
+              <path d="M40 40 C 41 36, 42 35, 46 34 C 42 33, 41 32, 40 28 C 39 32, 38 33, 34 34 C 38 35, 39 36, 40 40 Z" fill="var(--tx-3)"/>
+              <path d="M198 34 C 199 30, 200 29, 204 28 C 200 27, 199 26, 198 22 C 197 26, 196 27, 192 28 C 196 29, 197 30, 198 34 Z" fill="var(--bd-2)"/>
+            </svg>
+          </div>
+          <div class="illus-name">空状态 Empty</div>
+          <div class="illus-desc">空图库 / 无搜索结果</div>
+        </div>
+        <div class="illus-card">
+          <div class="illus-frame">
+            <svg viewBox="0 0 220 160" width="100%" height="auto" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M150 40 C 138 26, 152 8, 168 16 C 182 23, 178 44, 162 52 C 157 55, 155 58, 156 63 C 156 66, 158 69, 159 72" stroke="var(--tx-2)" stroke-width="2.5"/>
+              <circle cx="162" cy="92" r="4" fill="var(--tx-2)"/>
+              <path d="M52 51 C 55 51, 58 54, 58 58 C 58 62, 55 65, 52 65 C 49 65, 46 62, 46 58 C 46 54, 49 51, 52 51" stroke="var(--tx-2)" stroke-width="2"/>
+              <path d="M52 65 C 52 72, 51 78, 49 84" stroke="var(--tx-2)" stroke-width="2"/>
+              <path d="M52 71 C 45 70, 40 71, 37 74" stroke="var(--tx-2)" stroke-width="2"/>
+              <path d="M52 71 C 58 70, 63 71, 66 74" stroke="var(--tx-2)" stroke-width="2"/>
+              <path d="M49 84 C 47 90, 45 96, 42 100" stroke="var(--tx-2)" stroke-width="2"/>
+              <path d="M49 84 C 51 90, 53 96, 56 100" stroke="var(--tx-2)" stroke-width="2"/>
+              <path d="M34 102 C 46 99, 62 99, 74 102" stroke="var(--bd-2)" stroke-width="1.6"/>
+              <path d="M44 36 C 45 32, 46 31, 50 30 C 46 29, 45 28, 44 24 C 43 28, 42 29, 38 30 C 42 31, 43 32, 44 36 Z" fill="var(--tx-3)"/>
+              <path d="M130 108 C 131 104, 132 103, 136 102 C 132 101, 131 100, 130 96 C 129 100, 128 101, 124 102 C 128 103, 129 104, 130 108 Z" fill="var(--bd-2)"/>
+              <path d="M190 96 C 191 92, 192 91, 196 90 C 192 89, 191 88, 190 84 C 189 88, 188 89, 184 90 C 188 91, 189 92, 190 96 Z" fill="var(--tx-3)"/>
+            </svg>
+          </div>
+          <div class="illus-name">404 Not Found</div>
+          <div class="illus-desc">页面 / 对象不存在</div>
+        </div>
+        <div class="illus-card">
+          <div class="illus-frame">
+            <svg viewBox="0 0 220 160" width="100%" height="auto" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M76 106 C 62 106, 50 97, 51 86 C 51 75, 61 69, 72 71 C 71 60, 82 53, 92 58 C 97 49, 112 47, 119 55 C 132 52, 143 62, 139 73 C 149 75, 154 85, 145 92 C 141 96, 135 98, 129 98" stroke="var(--tx-2)" stroke-width="2"/>
+              <path d="M104 92 L 104 48" stroke="var(--tx-3)" stroke-width="2.2"/>
+              <path d="M88 64 L 104 46 L 120 64" stroke="var(--tx-3)" stroke-width="2.2"/>
+              <path d="M84 128 C 98 125, 118 125, 132 128" stroke="var(--bd-2)" stroke-width="1.8"/>
+              <path d="M162 44 C 163 40, 164 39, 168 38 C 164 37, 163 36, 162 32 C 161 36, 160 37, 156 38 C 160 39, 161 40, 162 44 Z" fill="var(--tx-3)"/>
+              <path d="M56 46 C 57 42, 58 41, 62 40 C 58 39, 57 38, 56 34 C 55 38, 54 39, 50 40 C 54 41, 55 42, 56 46 Z" fill="var(--bd-2)"/>
+            </svg>
+          </div>
+          <div class="illus-name">上传 Upload</div>
+          <div class="illus-desc">拖拽 / 上传入口</div>
+        </div>
+        <div class="illus-card">
+          <div class="illus-frame">
+            <svg viewBox="0 0 220 160" width="100%" height="auto" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M96 52 C 116 47, 132 60, 130 78 C 128 94, 110 102, 94 98 C 78 94, 68 78, 72 62 C 76 50, 86 54, 96 52" stroke="var(--tx-2)" stroke-width="2.5"/>
+              <path d="M120 100 C 127 108, 133 116, 137 124" stroke="var(--tx-2)" stroke-width="2.5"/>
+              <circle cx="90" cy="70" r="2.5" fill="var(--tx-3)"/>
+              <circle cx="102" cy="84" r="2.5" fill="var(--tx-3)"/>
+              <path d="M96 62 C 97 60, 98 59, 100 58 C 98 57, 97 56, 96 54 C 95 56, 94 57, 92 58 C 94 59, 95 60, 96 62 Z" fill="var(--tx-3)"/>
+              <path d="M56 40 C 57 36, 58 35, 62 34 C 58 33, 57 32, 56 28 C 55 32, 54 33, 50 34 C 54 35, 55 36, 56 40 Z" fill="var(--tx-3)"/>
+              <path d="M170 52 C 171 48, 172 47, 176 46 C 172 45, 171 44, 170 40 C 169 44, 168 45, 164 46 C 168 47, 169 48, 170 52 Z" fill="var(--bd-2)"/>
+              <path d="M160 114 C 161 112, 162 111, 164 110 C 162 109, 161 108, 160 106 C 159 108, 158 109, 156 110 C 158 111, 159 112, 160 114 Z" fill="var(--bd-2)"/>
+            </svg>
+          </div>
+          <div class="illus-name">搜索无结果 Search</div>
+          <div class="illus-desc">无匹配项</div>
+        </div>
+        <div class="illus-card">
+          <div class="illus-frame">
+            <svg viewBox="0 0 220 160" width="100%" height="auto" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M110 82 C 114 82, 117 85, 117 89 C 117 93, 114 96, 110 96 C 106 96, 103 93, 103 89 C 103 85, 106 82, 110 82" fill="var(--green)" stroke="none"/>
+              <path d="M110 80 C 106 70, 102 62, 96 58" stroke="var(--green)" stroke-width="2.2"/>
+              <path d="M112 82 C 118 74, 126 68, 134 66" stroke="var(--green)" stroke-width="2.2"/>
+              <path d="M118 90 C 126 92, 132 96, 136 102" stroke="var(--green)" stroke-width="2.2"/>
+              <path d="M114 96 C 116 104, 116 112, 114 118" stroke="var(--green)" stroke-width="2.2"/>
+              <path d="M104 90 C 96 94, 90 96, 82 96" stroke="var(--green)" stroke-width="2.2"/>
+              <path d="M110 96 C 108 108, 106 120, 108 132" stroke="var(--green)" stroke-width="2"/>
+              <path d="M108 118 C 98 116, 90 118, 86 124 C 94 126, 102 124, 108 122" stroke="var(--green)" stroke-width="1.8"/>
+              <path d="M158 52 C 159 48, 160 47, 164 46 C 160 45, 159 44, 158 40 C 157 44, 156 45, 152 46 C 156 47, 157 48, 158 52 Z" fill="var(--tx-3)"/>
+              <path d="M66 48 C 67 44, 68 43, 72 42 C 68 41, 67 40, 66 36 C 65 40, 64 41, 60 42 C 64 43, 65 44, 66 48 Z" fill="var(--bd-2)"/>
+              <path d="M164 120 C 165 118, 166 117, 168 116 C 166 115, 165 114, 164 112 C 163 114, 162 115, 160 116 C 162 117, 163 118, 164 120 Z" fill="var(--bd-2)"/>
+            </svg>
+          </div>
+          <div class="illus-name">成功 Success</div>
+          <div class="illus-desc">操作完成（唯一用语义色）</div>
+        </div>
+        <div class="illus-card">
+          <div class="illus-frame">
+            <svg viewBox="0 0 220 160" width="100%" height="auto" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M86 36 C 98 33, 110 34, 122 37 C 134 39, 138 47, 137 57 C 136 92, 137 118, 136 130 C 135 140, 127 144, 116 142 C 102 140, 90 141, 78 140 C 68 139, 64 132, 65 122 C 67 92, 66 57, 68 46 C 69 39, 76 37, 86 36 Z" stroke="var(--bd-2)" stroke-width="2"/>
+              <path d="M106 50 C 118 47, 130 48, 142 51 C 154 53, 158 61, 157 71 C 156 106, 157 132, 156 144 C 155 154, 147 158, 136 156 C 122 154, 110 155, 98 154 C 88 153, 84 146, 85 136 C 87 106, 86 71, 88 60 C 89 53, 96 51, 106 50 Z" stroke="var(--tx-2)" stroke-width="2"/>
+              <path d="M100 72 C 106 71, 112 71, 118 72" stroke="var(--tx-3)" stroke-width="1.8"/>
+              <path d="M100 84 C 108 83, 116 83, 124 84" stroke="var(--tx-3)" stroke-width="1.8"/>
+              <path d="M100 96 C 106 95, 112 95, 118 96" stroke="var(--tx-3)" stroke-width="1.8"/>
+              <path d="M126 114 C 131 114, 135 118, 135 123 C 135 128, 131 132, 126 132 C 121 132, 117 128, 117 123 C 117 118, 121 114, 126 114" stroke="var(--tx-3)" stroke-width="1.6"/>
+              <path d="M172 38 C 173 34, 174 33, 178 32 C 174 31, 173 30, 172 26 C 171 30, 170 31, 166 32 C 170 33, 171 34, 172 38 Z" fill="var(--tx-3)"/>
+              <path d="M56 114 C 57 110, 58 109, 62 108 C 58 107, 57 106, 56 102 C 55 106, 54 107, 50 108 C 54 109, 55 110, 56 114 Z" fill="var(--bd-2)"/>
+            </svg>
+          </div>
+          <div class="illus-name">复制 / 文档 Copy</div>
+          <div class="illus-desc">复制成功 / 文档占位</div>
+        </div>
+      </div>
+      <p class="muted-note" style="margin-top:14px">
+        插画设计语言：手绘线条 · 有机曲线与不规则手绘圆（<code>C</code> 贝塞尔，非机械 <code>circle</code>/<code>rect</code>）· 简笔小人 · 星点火花装饰 · 单色中性 · 描边 <code>1.6–2.5px</code> · 大量留白。
+      </p>
+    </section>
+
+    <!-- ═══ 12. 落地说明 ═══ -->
+    <section>
+      <h2><span class="sec-no">12</span>落地说明</h2>
+      <div class="note">
+        <strong>确认本预览后，我将：</strong><br>
+        ① 把全部 token 写入 <code>src/ui/aperture.css</code> 的 <code>@theme</code> 与浅色主题覆盖块；<br>
+        ② 保持工具类命名不变（<code>bg-bg-3</code> / <code>text-tx-2</code> / <code>bg-accent</code>…），<code>page.js</code>/<code>admin-page.js</code> 无需逐个改 class；<br>
+        ③ 将上述插画以 SVG 组件形式加入空状态 / 404 / 上传入口等场景；<br>
+        ④ 移除选中态竖条/圆点等点缀，重建 CSS 后 <code>wrangler dev</code> 验证前后台 + 设备授权页。
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+  function toggleTheme() {
+    const root = document.documentElement;
+    const btn = document.getElementById('themeBtn');
+    if (root.getAttribute('data-theme') === 'dark') {
+      root.setAttribute('data-theme', 'light');
+      btn.textContent = '🌙 切换深色';
+    } else {
+      root.setAttribute('data-theme', 'dark');
+      btn.textContent = '🌗 切换浅色';
+    }
+  }
+</script>
+</body>
+</html>

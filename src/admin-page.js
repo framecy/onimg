@@ -1,6 +1,25 @@
 import { FFLATE_UMD } from './fflate-inline.js';
 import { PROTO_ENGINE_JS } from './proto-upload-engine.js';
 import apertureCss from './ui/aperture.generated.js';
+
+/* 手绘风空状态插画（Notion 风格简笔小人 + 空相框），单色中性，随主题切换 */
+const EMPTY_ILLUS = `<svg class="mx-auto mb-4 block h-[92px] w-auto" viewBox="0 0 220 140" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M120 40 C 140 36, 158 38, 172 42 C 184 45, 189 53, 188 66 C 186 88, 187 108, 186 120 C 185 130, 178 135, 168 133 C 152 131, 136 132, 122 131 C 112 130, 108 124, 109 114 C 111 92, 110 66, 113 52 C 114 45, 114 41, 120 40 Z" stroke="var(--tx-3)" stroke-width="2"/>
+  <path d="M150 84 C 156 84, 161 89, 161 95 C 161 101, 156 106, 150 106 C 144 106, 139 101, 139 95 C 139 89, 144 84, 150 84" stroke="var(--tx-3)" stroke-width="1.8"/>
+  <path d="M150 76 C 149 71, 151 66, 150 62" stroke="var(--tx-3)" stroke-width="1.6"/>
+  <path d="M160 80 C 165 79, 169 80, 172 78" stroke="var(--tx-3)" stroke-width="1.6"/>
+  <path d="M138 112 C 146 104, 152 106, 158 112 C 163 106, 168 104, 172 110" stroke="var(--tx-3)" stroke-width="1.8"/>
+  <path d="M60 51 C 63 51, 66 54, 66 58 C 66 62, 63 65, 60 65 C 57 65, 54 62, 54 58 C 54 54, 57 51, 60 51" stroke="var(--tx-2)" stroke-width="2"/>
+  <path d="M60 65 C 60 72, 59 78, 57 84" stroke="var(--tx-2)" stroke-width="2"/>
+  <path d="M60 71 C 53 70, 48 71, 45 74" stroke="var(--tx-2)" stroke-width="2"/>
+  <path d="M60 71 C 66 70, 71 71, 74 74" stroke="var(--tx-2)" stroke-width="2"/>
+  <path d="M57 84 C 55 90, 53 96, 50 100" stroke="var(--tx-2)" stroke-width="2"/>
+  <path d="M57 84 C 59 90, 61 96, 64 100" stroke="var(--tx-2)" stroke-width="2"/>
+  <path d="M40 102 C 52 99, 70 99, 82 102" stroke="var(--bd-2)" stroke-width="1.6"/>
+  <path d="M40 40 C 41 36, 42 35, 46 34 C 42 33, 41 32, 40 28 C 39 32, 38 33, 34 34 C 38 35, 39 36, 40 40 Z" fill="var(--tx-3)"/>
+  <path d="M198 34 C 199 30, 200 29, 204 28 C 200 27, 199 26, 198 22 C 197 26, 196 27, 192 28 C 196 29, 197 30, 198 34 Z" fill="var(--bd-2)"/>
+</svg>`;
+
 export function renderAdminPage() {
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -11,8 +30,8 @@ export function renderAdminPage() {
   <title>Onimg Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-  <noscript><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"></noscript>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"></noscript>
   <!-- Vditor CSS/JS CDN 按需注入（见 ensureApmVditor），编辑器首次打开时加载 -->
   <style>
     /* Aperture token（@theme）+ 别名桥 + Tailwind 工具类，由 build:css 生成 */
@@ -105,7 +124,7 @@ export function renderAdminPage() {
 <div class="flex min-h-screen items-center justify-center bg-bg p-4 bg-[radial-gradient(ellipse_80%_50%_at_60%_20%,rgba(255,255,255,.025)_0%,transparent_60%)]" id="loginScreen">
   <div class="login-card relative w-full max-w-[380px] overflow-hidden rounded-xl border border-bd bg-bg-3 px-10 py-11 shadow before:absolute before:inset-x-0 before:top-0 before:h-px before:content-[''] before:bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,.08)_50%,transparent_100%)] [&.shake]:animate-[loginShake_.35s_ease]">
     <div class="mb-6 flex items-center gap-3">
-      <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--color-brand)_0%,var(--color-brand-d)_100%)] text-[.85rem] font-extrabold text-white shadow-[0_8px_20px_rgba(124,92,255,.35),inset_0_1px_0_rgba(255,255,255,.15)]">OI</span>
+      <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-[.85rem] font-extrabold text-tx-inv">OI</span>
       <div>
         <div class="text-[1.25rem] font-extrabold leading-[1.15] tracking-[-.02em] text-tx">Onimg</div>
         <div class="mt-px text-2xs font-bold uppercase tracking-[.1em] text-tx-3">Admin Console</div>
@@ -114,8 +133,8 @@ export function renderAdminPage() {
     <div class="mb-8 text-sm text-tx-3">使用管理员账号登录后台</div>
     <div class="flex flex-col gap-2 mb-5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">用户名</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3.5 py-[11px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="loginUser" placeholder="admin" autocomplete="username"></div>
     <div class="flex flex-col gap-2 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">密码</label><div class="relative"><input class="w-full rounded-md border border-bd bg-bg-2 px-3.5 py-[11px] pr-10 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"><button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center border-none bg-transparent p-0 text-tx-3 cursor-pointer transition hover:text-tx-2" id="loginPassToggle" title="显示/隐藏密码"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg></button></div></div>
-    <label class="mb-6 flex items-center gap-2 cursor-pointer select-none text-[.8rem] text-tx-2"><input class="h-3.5 w-3.5 cursor-pointer accent-brand" type="checkbox" id="loginRemember">记住我 30 天</label>
-    <button class="btn-login w-full rounded-md border-none bg-brand px-3 py-3 font-sans text-base-sm font-bold text-white shadow-[0_4px_14px_rgba(124,92,255,.3)] transition hover:-translate-y-px hover:bg-brand-hover hover:shadow-[0_8px_22px_rgba(124,92,255,.4)] disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none [&.loading]:pointer-events-none [&.loading]:before:content-[''] [&.loading]:before:inline-block [&.loading]:before:mr-2 [&.loading]:before:h-[14px] [&.loading]:before:w-[14px] [&.loading]:before:align-middle [&.loading]:before:rounded-full [&.loading]:before:border-2 [&.loading]:before:border-white/30 [&.loading]:before:border-t-white [&.loading]:before:animate-[loginSpin_.6s_linear_infinite]" id="loginBtn">登录</button>
+    <label class="mb-6 flex items-center gap-2 cursor-pointer select-none text-[.8rem] text-tx-2"><input class="h-3.5 w-3.5 cursor-pointer accent-tx" type="checkbox" id="loginRemember">记住我 30 天</label>
+    <button class="btn-login w-full rounded-md border-none bg-accent px-3 py-3 font-sans text-base-sm font-bold text-tx-inv transition hover:-translate-y-px hover:bg-accent-hover disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none [&.loading]:pointer-events-none [&.loading]:before:content-[''] [&.loading]:before:inline-block [&.loading]:before:mr-2 [&.loading]:before:h-[14px] [&.loading]:before:w-[14px] [&.loading]:before:align-middle [&.loading]:before:rounded-full [&.loading]:before:border-2 [&.loading]:before:border-[var(--tx-inv)] [&.loading]:before:border-t-transparent [&.loading]:before:animate-[loginSpin_.6s_linear_infinite]" id="loginBtn">登录</button>
     <div class="mt-3 min-h-[18px] text-center text-xs text-red" id="loginErr"></div>
   </div>
 </div>
@@ -135,31 +154,31 @@ export function renderAdminPage() {
       </div>
       <div class="px-4 pt-[14px] pb-[5px] text-2xs font-bold uppercase tracking-[.12em] text-tx-3">Navigation</div>
       <nav class="flex flex-1 flex-col gap-px overflow-y-auto px-2 pt-1 pb-2">
-        <button class="nav-item active relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="dashboard">
+        <button class="nav-item active relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="dashboard">
           <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg></span>
           概览
         </button>
-        <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="images">
+        <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="images">
           <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="14" height="14" rx="2.5"/><circle cx="5.5" cy="5.5" r="1.5"/><polyline points="1,12 5,8 8,11 11,8 15,12"/></svg></span>
           图库管理
         </button>
-        <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="users">
+        <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="users">
           <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5" r="3"/><path d="M1.5 15c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/></svg></span>
           用户管理
         </button>
-        <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="pages">
+        <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="pages">
           <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 1h7l4 4v10H3V1z"/><polyline points="10,1 10,5 14,5"/><line x1="4" y1="8" x2="12" y2="8"/><line x1="4" y1="11" x2="9" y2="11"/></svg></span>
           页面管理
         </button>
-        <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="protos">
+        <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="protos">
           <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v5l-8 8H2V2z"/><line x1="5" y1="2" x2="5" y2="5"/><line x1="8" y1="2" x2="8" y2="4"/><line x1="11" y1="2" x2="11" y2="5"/><line x1="2" y1="5" x2="4" y2="5"/><line x1="2" y1="8" x2="3" y2="8"/><line x1="2" y1="11" x2="4" y2="11"/></svg></span>
           原型管理
         </button>
-        <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="members">
+        <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="members">
           <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,12 5,7 9,9 13,4"/><polyline points="10,4 13,4 13,7"/></svg></span>
           成员统计
         </button>
-        <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="settings">
+        <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="settings">
           <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M12.95 3.05l-1.41 1.41M4.46 11.54l-1.41 1.41"/></svg></span>
           系统设置
         </button>
@@ -410,7 +429,8 @@ export function renderAdminPage() {
           <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">图库管理</div>
           <div class="text-sm font-medium text-tx-3">查看、删除图片及访问统计</div>
         </div>
-        <div class="toolbar flex flex-wrap items-center gap-3 mb-5 md:gap-[10px] md:mb-6">
+        <h3 class="mb-3 text-[.8rem] font-semibold text-tx-2">所有图片</h3>
+        <div class="toolbar flex flex-wrap items-center gap-[10px] mb-3">
           <input class="w-[210px] rounded-sm border border-bd bg-bg-3 px-[11px] py-[7px] font-sans text-[.83rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)]" id="gallerySearch" type="text" placeholder="搜索文件名…">
           <div class="flex-1"></div>
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="selectAllBtn">全选</button>
@@ -423,10 +443,12 @@ export function renderAdminPage() {
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r" id="bulkDeleteBtn">批量删除</button>
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="clearSelectBtn">取消</button>
         </div>
-        <div class="gallery-grid grid grid-cols-[repeat(auto-fill,minmax(168px,1fr))] gap-3 md:gap-4" id="galleryGrid"></div>
-        <div class="py-[60px] text-center text-[.86rem] text-tx-3" id="galleryEmpty" style="display:none">暂无图片</div>
-        <div class="mt-[22px] flex justify-center" id="loadMoreWrap" style="display:none">
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="loadMoreBtn">加载更多</button>
+        <div class="overflow-hidden rounded-lg border border-bd bg-bg-3">
+          <div class="gallery-grid grid grid-cols-[repeat(auto-fill,minmax(168px,1fr))] gap-3 md:gap-4 p-3" id="galleryGrid"></div>
+          <div class="py-[60px] text-center text-[.86rem] text-tx-3" id="galleryEmpty" style="display:none">${EMPTY_ILLUS}暂无图片</div>
+          <div class="mt-[22px] flex justify-center pb-3" id="loadMoreWrap" style="display:none">
+            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="loadMoreBtn">加载更多</button>
+          </div>
         </div>
       </div>
 
@@ -436,8 +458,8 @@ export function renderAdminPage() {
           <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">用户管理</div>
           <div class="text-sm font-medium text-tx-3">创建账号并设置上传权限</div>
         </div>
-        <div class="section-header flex flex-wrap items-center gap-[10px] mb-3">
-          <h3 class="text-[.8rem] font-semibold text-tx-2">所有账号</h3>
+        <h3 class="mb-3 text-[.8rem] font-semibold text-tx-2">所有账号</h3>
+        <div class="toolbar flex flex-wrap items-center gap-[10px] mb-3">
           <div class="min-w-[20px] flex-1"></div>
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="createUserBtn">+ 新建用户</button>
         </div>
@@ -450,13 +472,13 @@ export function renderAdminPage() {
       </div>
 
       <!-- ── Pages ── -->
-      <div class="section hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-pages">
+      <div class="section hidden max-w-[1200px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-pages">
         <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
           <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">页面管理</div>
           <div class="text-sm font-medium text-tx-3">托管的 MD / HTML 文档</div>
         </div>
-        <div class="section-header flex flex-wrap items-center gap-[10px] mb-3">
-          <h3 class="text-[.8rem] font-semibold text-tx-2">所有页面</h3>
+        <h3 class="mb-3 text-[.8rem] font-semibold text-tx-2">所有页面</h3>
+        <div class="toolbar flex flex-wrap items-center gap-[10px] mb-3">
           <input class="w-[210px] rounded-sm border border-bd bg-bg-3 px-[11px] py-[7px] font-sans text-[.83rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)] !max-w-[200px]" id="adminPageSearch" type="text" placeholder="搜索标题/slug/作者…">
           <div class="inline-flex items-center gap-1">
             <select class="max-w-[140px] cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-1.5 font-sans text-[.76rem] text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx ml-2" id="adminPageProjFilter"><option value="all">全部项目</option></select>
@@ -482,21 +504,101 @@ export function renderAdminPage() {
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-[10px] !py-1 !text-[.76rem]" id="adminPageBulkPrivate">设为私密</button>
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-[10px] !py-1 !text-[.76rem]" id="adminPageCancelSel">取消</button>
         </div>
-        <div class="pg-reorder-hint hidden mb-2 text-[.72rem] text-tx-3" id="adminPageReorderHint">已定位到单个项目/分组，可拖动 <span class="text-tx-2">⠿</span> 手柄调整顺序</div>
+        <div class="pg-reorder-hint mb-2 text-[.72rem] text-tx-3" id="adminPageReorderHint">拖动 <span class="text-tx-2">⠿</span> 手柄排序，拖到不同项目/分组行可移动页面</div>
+        <div class="table-wrap overflow-x-auto rounded-lg border border-bd bg-bg-3">
+          <table class="data-table w-full border-collapse text-[.82rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[10px] [&_th]:py-[8px] [&_th]:text-left [&_th]:text-[.64rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.1em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[10px] [&_td]:py-[7px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
+            <thead><tr>
+              <th class="pg-drag-col hidden w-[28px] text-center [&.scoped]:table-cell" id="pgDragHead"></th>
+              <th class="pg-check-col hidden w-[34px] text-center [&.selecting]:table-cell" id="pgCheckHead"><input type="checkbox" class="h-[15px] w-[15px] cursor-pointer accent-tx-2" id="adminPageSelectAll"></th>
+              <th class="w-[26%] cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('title')">标题 / Slug</th>
+              <th class="w-[48px] cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('type')">类型</th>
+              <th class="w-[64px] cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('owner')">作者</th>
+              <th class="w-[80px]">项目</th><th class="w-[80px]">分组</th>
+              <th class="w-[44px] cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('status')">状态</th>
+              <th class="w-[64px] cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('updated')">更新</th>
+              <th class="w-[1%] whitespace-nowrap"></th>
+            </tr></thead>
+            <tbody id="adminPagesBody"><tr><td colspan="10" class="text-center text-tx-3 p-6">加载中…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── Protos ── -->
+      <div class="section hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-protos">
+        <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
+          <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">原型管理</div>
+          <div class="text-sm font-medium text-tx-3">AxureRP / HTML 原型文件托管</div>
+        </div>
+
+        <!-- Upload UI -->
+        <div class="proto-upload-card mb-[18px] rounded-lg border border-bd bg-bg-3 p-[18px]">
+          <h3 class="mb-3.5 border-b border-bd pb-[10px] text-[.65rem] font-bold uppercase tracking-[.12em] text-tx-3">上传新原型</h3>
+          <div id="adminProtoDropZone" class="proto-drop-zone flex cursor-pointer flex-col items-center gap-[7px] rounded-md border-[1.5px] border-dashed border-bd-2 bg-bg-2 px-5 py-5 text-center transition mb-[10px] hover:border-brand hover:bg-brand-muted" onclick="document.getElementById('adminProtoFileInput').click()">
+            <svg class="h-6 w-6 text-tx-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7v10l10 5 10-5V7L12 2z"/><polyline points="2,7 12,12 22,7"/><line x1="12" y1="12" x2="12" y2="22"/></svg>
+            <div class="text-[.82rem] font-medium text-tx-2" id="adminProtoDropText">点击选择 ZIP 文件</div>
+            <div class="text-[.7rem] text-tx-3">或拖拽至此 · 最大 50 MB</div>
+          </div>
+          <input class="hidden" type="file" id="adminProtoFileInput" accept=".zip,application/zip">
+          <input class="hidden" type="file" id="adminProtoFolderInput" webkitdirectory>
+          <div class="proto-field-row grid grid-cols-2 gap-[10px] mb-[10px]">
+            <div class="flex flex-col gap-[5px] mb-3.5 !m-0"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">原型名称</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="adminProtoTitle" placeholder="My Prototype"></div>
+            <div class="flex flex-col gap-[5px] mb-3.5 !m-0"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">访问密码（可选，6位）</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)] font-mono tracking-[.12em]" type="text" id="adminProtoPassword" placeholder="留空则公开访问" maxlength="6"></div>
+          </div>
+          <div class="proto-prog hidden h-[5px] overflow-hidden rounded-xs bg-bd [&.show]:block" id="adminProtoProgress"><div class="proto-prog-bar h-[5px] w-0 rounded-xs bg-[linear-gradient(90deg,var(--color-brand-d),var(--color-brand))] transition-[width] duration-[.4s]" id="adminProtoProgressBar"></div></div>
+          <div class="proto-prog-info hidden items-center justify-between mt-[5px] text-[.7rem] text-tx-3 [&.show]:flex" id="adminProtoProgressInfo">
+            <span class="hidden" id="adminProtoStatusText"></span>
+            <span id="adminProtoProgressPct">0%</span>
+          </div>
+          <div class="proto-err mt-1 min-h-[16px] text-[.76rem] text-red" id="adminProtoErr"></div>
+          <div class="proto-upload-actions flex flex-wrap items-center gap-[7px]">
+            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="adminProtoUploadBtn" disabled>上传原型</button>
+            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="document.getElementById('adminProtoFolderInput').click()">选择文件夹</button>
+          </div>
+        </div>
+
+        <h3 class="mb-3 text-[.8rem] font-semibold text-tx-2">所有原型</h3>
+        <div class="toolbar flex flex-wrap items-center gap-[10px] mb-3">
+          <div class="min-w-[20px] flex-1"></div>
+          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="refreshAdminProtos"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.65 4.35A6 6 0 1 0 14 8"/><polyline points="13.5,1.5 13.5,4.5 10.5,4.5"/></svg>刷新</button>
+        </div>
+        <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3">
+          <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
+            <thead><tr><th>名称</th><th>作者</th><th>文件数</th><th>大小</th><th>密码</th><th>版本</th><th>访问</th><th>上传时间</th><th>更新时间</th><th></th></tr></thead>
+            <tbody id="adminProtosBody"><tr><td colspan="10" class="text-center text-tx-3 p-6">加载中…</td></tr></tbody>
+          </table>
+        </div>
+        <div class="py-[60px] text-center text-[.86rem] text-tx-3" id="adminProtosEmpty" style="display:none">${EMPTY_ILLUS}暂无原型</div>
+      </div>
+
+      <!-- ── Members ── -->
+      <div class="section hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-members">
+        <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
+          <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">成员统计</div>
+          <div class="text-sm font-medium text-tx-3">成员账号的详细上传与配额数据</div>
+        </div>
+        <div class="mb-summary grid grid-cols-[repeat(auto-fit,minmax(130px,1fr))] gap-[10px] mb-[18px]">
+          <div class="rounded-md border border-bd bg-bg-3 p-[14px]"><div class="mb-1.5 text-[.62rem] font-bold uppercase tracking-[.1em] text-tx-3">注册成员</div><div class="font-mono text-[1.65rem] font-bold leading-none text-tx" id="mbTotal">—</div></div>
+          <div class="rounded-md border border-bd bg-bg-3 p-[14px]"><div class="mb-1.5 text-[.62rem] font-bold uppercase tracking-[.1em] text-tx-3">今日活跃</div><div class="font-mono text-[1.65rem] font-bold leading-none text-tx" id="mbActive">—</div></div>
+          <div class="rounded-md border border-bd bg-bg-3 p-[14px]"><div class="mb-1.5 text-[.62rem] font-bold uppercase tracking-[.1em] text-tx-3">今日上传合计</div><div class="font-mono text-[1.65rem] font-bold leading-none text-tx" id="mbSumToday">—</div></div>
+          <div class="rounded-md border border-bd bg-bg-3 p-[14px]"><div class="mb-1.5 text-[.62rem] font-bold uppercase tracking-[.1em] text-tx-3">总上传合计</div><div class="font-mono text-[1.65rem] font-bold leading-none text-tx" id="mbSumTotal">—</div></div>
+        </div>
+        <h3 class="mb-3 text-[.8rem] font-semibold text-tx-2">成员列表</h3>
+        <div class="toolbar flex flex-wrap items-center gap-[10px] mb-3">
+          <div class="min-w-[20px] flex-1"></div>
+          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="loadMemberStats()"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.65 4.35A6 6 0 1 0 14 8"/><polyline points="13.5,1.5 13.5,4.5 10.5,4.5"/></svg>刷新</button>
+        </div>
         <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3">
           <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
             <thead><tr>
-              <th class="pg-drag-col hidden w-[24px] text-center [&.scoped]:table-cell" id="pgDragHead"></th>
-              <th class="pg-check-col hidden w-[30px] text-center [&.selecting]:table-cell" id="pgCheckHead"><input type="checkbox" class="h-[15px] w-[15px] cursor-pointer accent-tx-2" id="adminPageSelectAll"></th>
-              <th class="cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('title')">标题 / Slug</th>
-              <th class="cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('type')">类型</th>
-              <th class="cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('owner')">作者</th>
-              <th>项目</th><th>分组</th>
-              <th class="cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('status')">状态</th>
-              <th class="cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('updated')">更新</th>
-              <th></th>
+              <th class="cursor-pointer select-none hover:text-tx-2" onclick="memberSort('name')">用户名</th>
+              <th>状态</th>
+              <th class="cursor-pointer select-none hover:text-tx-2" onclick="memberSort('today')">今日上传 / 日限</th>
+              <th class="cursor-pointer select-none hover:text-tx-2" onclick="memberSort('total')">累计上传 / 总限</th>
+              <th class="cursor-pointer select-none hover:text-tx-2 text-center" onclick="memberSort('pages')">页面数</th>
+              <th>权限</th>
+              <th class="cursor-pointer select-none hover:text-tx-2" onclick="memberSort('created')">注册时间</th>
             </tr></thead>
-            <tbody id="adminPagesBody"><tr><td colspan="10" class="text-center text-tx-3 p-6">加载中…</td></tr></tbody>
+            <tbody id="memberTableBody"><tr><td colspan="7" class="text-center text-tx-3 p-8">加载中…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -538,86 +640,6 @@ export function renderAdminPage() {
               npx wrangler secret put TOKEN_SECRET
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- ── Protos ── -->
-      <div class="section hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-protos">
-        <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
-          <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">原型管理</div>
-          <div class="text-sm font-medium text-tx-3">AxureRP / HTML 原型文件托管</div>
-        </div>
-
-        <!-- Upload UI -->
-        <div class="proto-upload-card mb-[18px] rounded-lg border border-bd bg-bg-3 p-[18px]">
-          <h3 class="mb-3.5 border-b border-bd pb-[10px] text-[.65rem] font-bold uppercase tracking-[.12em] text-tx-3">上传新原型</h3>
-          <div id="adminProtoDropZone" class="proto-drop-zone flex cursor-pointer flex-col items-center gap-[7px] rounded-md border-[1.5px] border-dashed border-bd-2 bg-bg-2 px-5 py-5 text-center transition mb-[10px] hover:border-brand hover:bg-brand-muted" onclick="document.getElementById('adminProtoFileInput').click()">
-            <svg class="h-6 w-6 text-tx-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7v10l10 5 10-5V7L12 2z"/><polyline points="2,7 12,12 22,7"/><line x1="12" y1="12" x2="12" y2="22"/></svg>
-            <div class="text-[.82rem] font-medium text-tx-2" id="adminProtoDropText">点击选择 ZIP 文件</div>
-            <div class="text-[.7rem] text-tx-3">或拖拽至此 · 最大 50 MB</div>
-          </div>
-          <input class="hidden" type="file" id="adminProtoFileInput" accept=".zip,application/zip">
-          <input class="hidden" type="file" id="adminProtoFolderInput" webkitdirectory>
-          <div class="proto-field-row grid grid-cols-2 gap-[10px] mb-[10px]">
-            <div class="flex flex-col gap-[5px] mb-3.5 !m-0"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">原型名称</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="adminProtoTitle" placeholder="My Prototype"></div>
-            <div class="flex flex-col gap-[5px] mb-3.5 !m-0"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">访问密码（可选，6位）</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)] font-mono tracking-[.12em]" type="text" id="adminProtoPassword" placeholder="留空则公开访问" maxlength="6"></div>
-          </div>
-          <div class="proto-prog hidden h-[5px] overflow-hidden rounded-xs bg-bd [&.show]:block" id="adminProtoProgress"><div class="proto-prog-bar h-[5px] w-0 rounded-xs bg-[linear-gradient(90deg,var(--color-brand-d),var(--color-brand))] transition-[width] duration-[.4s]" id="adminProtoProgressBar"></div></div>
-          <div class="proto-prog-info hidden items-center justify-between mt-[5px] text-[.7rem] text-tx-3 [&.show]:flex" id="adminProtoProgressInfo">
-            <span class="hidden" id="adminProtoStatusText"></span>
-            <span id="adminProtoProgressPct">0%</span>
-          </div>
-          <div class="proto-err mt-1 min-h-[16px] text-[.76rem] text-red" id="adminProtoErr"></div>
-          <div class="proto-upload-actions flex flex-wrap items-center gap-[7px]">
-            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="adminProtoUploadBtn" disabled>上传原型</button>
-            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="document.getElementById('adminProtoFolderInput').click()">选择文件夹</button>
-          </div>
-        </div>
-
-        <div class="section-header flex flex-wrap items-center gap-[10px] mb-3">
-          <h3 class="text-[.8rem] font-semibold text-tx-2">所有原型</h3>
-          <div class="min-w-[20px] flex-1"></div>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="refreshAdminProtos"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.65 4.35A6 6 0 1 0 14 8"/><polyline points="13.5,1.5 13.5,4.5 10.5,4.5"/></svg>刷新</button>
-        </div>
-        <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3">
-          <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
-            <thead><tr><th>名称</th><th>作者</th><th>文件数</th><th>大小</th><th>密码</th><th>版本</th><th>访问</th><th>创建时间</th><th>更新时间</th><th></th></tr></thead>
-            <tbody id="adminProtosBody"><tr><td colspan="10" class="text-center text-tx-3 p-6">加载中…</td></tr></tbody>
-          </table>
-        </div>
-        <div class="py-[60px] text-center text-[.86rem] text-tx-3" id="adminProtosEmpty" style="display:none">暂无原型</div>
-      </div>
-
-      <!-- ── Members ── -->
-      <div class="section hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-members">
-        <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
-          <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">成员统计</div>
-          <div class="text-sm font-medium text-tx-3">成员账号的详细上传与配额数据</div>
-        </div>
-        <div class="mb-summary grid grid-cols-[repeat(auto-fit,minmax(130px,1fr))] gap-[10px] mb-[18px]">
-          <div class="rounded-md border border-bd bg-bg-3 p-[14px]"><div class="mb-1.5 text-[.62rem] font-bold uppercase tracking-[.1em] text-tx-3">注册成员</div><div class="font-mono text-[1.65rem] font-bold leading-none text-tx" id="mbTotal">—</div></div>
-          <div class="rounded-md border border-bd bg-bg-3 p-[14px]"><div class="mb-1.5 text-[.62rem] font-bold uppercase tracking-[.1em] text-tx-3">今日活跃</div><div class="font-mono text-[1.65rem] font-bold leading-none text-tx" id="mbActive">—</div></div>
-          <div class="rounded-md border border-bd bg-bg-3 p-[14px]"><div class="mb-1.5 text-[.62rem] font-bold uppercase tracking-[.1em] text-tx-3">今日上传合计</div><div class="font-mono text-[1.65rem] font-bold leading-none text-tx" id="mbSumToday">—</div></div>
-          <div class="rounded-md border border-bd bg-bg-3 p-[14px]"><div class="mb-1.5 text-[.62rem] font-bold uppercase tracking-[.1em] text-tx-3">总上传合计</div><div class="font-mono text-[1.65rem] font-bold leading-none text-tx" id="mbSumTotal">—</div></div>
-        </div>
-        <div class="section-header flex flex-wrap items-center gap-[10px] mb-3">
-          <h3 class="text-[.8rem] font-semibold text-tx-2">成员列表</h3>
-          <div class="min-w-[20px] flex-1"></div>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="loadMemberStats()"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.65 4.35A6 6 0 1 0 14 8"/><polyline points="13.5,1.5 13.5,4.5 10.5,4.5"/></svg>刷新</button>
-        </div>
-        <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3">
-          <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
-            <thead><tr>
-              <th class="cursor-pointer select-none hover:text-tx-2" onclick="memberSort('name')">用户名</th>
-              <th>状态</th>
-              <th class="cursor-pointer select-none hover:text-tx-2" onclick="memberSort('today')">今日上传 / 日限</th>
-              <th class="cursor-pointer select-none hover:text-tx-2" onclick="memberSort('total')">累计上传 / 总限</th>
-              <th class="cursor-pointer select-none hover:text-tx-2 text-center" onclick="memberSort('pages')">页面数</th>
-              <th>权限</th>
-              <th class="cursor-pointer select-none hover:text-tx-2" onclick="memberSort('created')">注册时间</th>
-            </tr></thead>
-            <tbody id="memberTableBody"><tr><td colspan="7" class="text-center text-tx-3 p-8">加载中…</td></tr></tbody>
-          </table>
         </div>
       </div>
 
@@ -681,12 +703,12 @@ export function renderAdminPage() {
         <span class="text-[.72rem] text-tx-3 mt-1">访问地址：<span class="text-tx-2" id="apmSlugPreview"></span></span>
       </div>
       <div class="grid grid-cols-2 gap-3">
-        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">类型</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="apmType"><option value="markdown">Markdown</option><option value="html">HTML</option></select></div>
+        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">类型</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="apmType"><option value="markdown">Markdown</option><option value="html">HTML</option></select></div>
         <div class="flex flex-col gap-[5px] mb-3.5"><label class="flex items-center gap-2 mt-[26px] cursor-pointer"><input type="checkbox" id="apmPublic" checked> 公开访问</label></div>
       </div>
       <div class="grid grid-cols-2 gap-3">
-        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">项目</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="apmProject"><option value="">-- 无 --</option></select></div>
-        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">分组</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="apmGroup"><option value="">-- 无 --</option></select></div>
+        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">项目</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="apmProject"><option value="">-- 无 --</option></select></div>
+        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">分组</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="apmGroup"><option value="">-- 无 --</option></select></div>
       </div>
       <div class="flex flex-col gap-[5px] mb-3.5" id="apmPwdSection" style="display:none">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">访问密码</label>
@@ -714,8 +736,8 @@ export function renderAdminPage() {
   <div class="flex w-full max-w-[520px] max-h-[90vh] flex-col overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow">
     <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]"><h3 class="flex-1 text-[.93rem] font-semibold text-tx">批量移动页面</h3><button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-2 hover:text-tx" id="apgMoveClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button></div>
     <div class="modal-body flex-1 overflow-y-auto px-[18px] py-4">
-      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">目标项目</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="apgMoveProject"><option value="">-- 无 --</option></select></div>
-      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">目标分组</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="apgMoveGroup"><option value="">-- 无 --</option></select></div>
+      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">目标项目</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="apgMoveProject"><option value="">-- 无 --</option></select></div>
+      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">目标分组</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="apgMoveGroup"><option value="">-- 无 --</option></select></div>
       <p class="text-[.76rem] text-tx-3 mt-[6px]">选中的 <span class="font-semibold text-tx" id="apgMoveCount">0</span> 个页面将被移动到所选项目/分组</p>
     </div>
     <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
@@ -730,7 +752,7 @@ export function renderAdminPage() {
   <div class="flex w-full max-w-[520px] max-h-[90vh] flex-col overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow">
     <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]"><h3 class="flex-1 text-[.93rem] font-semibold text-tx" id="apgGrpModalTitle">新建分组</h3><button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-2 hover:text-tx" id="apgNewGrpClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button></div>
     <div class="modal-body flex-1 overflow-y-auto px-[18px] py-4">
-      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属项目 <span class="text-tx-3 font-normal">（可选）</span></label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="apgNewGrpProject"><option value="">-- 独立分组 --</option></select></div>
+      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属项目 <span class="text-tx-3 font-normal">（可选）</span></label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="apgNewGrpProject"><option value="">-- 独立分组 --</option></select></div>
       <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">分组名称</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="apgNewGrpName" placeholder="分组名称" maxlength="60"></div>
     </div>
     <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
@@ -768,9 +790,9 @@ export function renderAdminPage() {
       <div id="aimPreview" style="display:none">
         <div class="flex flex-col gap-[5px] mb-3.5 mt-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">标题</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="aimTitle"></div>
         <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">Slug</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="aimSlug"></div>
-        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">类型</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="aimType"><option value="markdown">Markdown</option><option value="html">HTML</option></select></div>
-        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属项目</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="aimProject"><option value="">-- 无 --</option></select></div>
-        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属分组</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="aimGroup"><option value="">-- 无 --</option></select></div>
+        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">类型</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="aimType"><option value="markdown">Markdown</option><option value="html">HTML</option></select></div>
+        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属项目</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="aimProject"><option value="">-- 无 --</option></select></div>
+        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属分组</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="aimGroup"><option value="">-- 无 --</option></select></div>
         <div class="flex flex-col gap-[5px] mb-3.5"><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="aimPublic" checked> 公开访问</label></div>
       </div>
     </div>
@@ -1586,7 +1608,7 @@ export function renderAdminPage() {
     const body = isEdit
       ? { permissions, disabled, tokenTtlDays, ...(password ? { password } : {}) }
       : { username, password, permissions, tokenTtlDays };
-    const res = await fetch(isEdit ? '/admin/users/' + encodeURIComponent(username) : '/admin/users', {
+    const res = await adminFetch(isEdit ? '/admin/users/' + encodeURIComponent(username) : '/admin/users', {
       method: isEdit ? 'PATCH' : 'POST',
       headers: authH(),
       body: JSON.stringify(body),
@@ -1798,7 +1820,7 @@ export function renderAdminPage() {
   async function pvmDeleteVersion(ver) {
     if (!confirm(\`确认删除 v\${ver}？该操作仅删除版本记录，不影响当前原型内容。\`)) return;
     const pid = pvmProto.protoId;
-    const res = await fetch(\`/admin/proto-versions/\${encodeURIComponent(pid)}/v\${ver}\`, { method: 'DELETE', headers: authH() });
+    const res = await adminFetch(\`/admin/proto-versions/\${encodeURIComponent(pid)}/v\${ver}\`, { method: 'DELETE', headers: authH() });
     const d = await res.json().catch(() => ({}));
     if (!res.ok) { toast('删除失败: ' + (d.error || '')); return; }
     // Remove from local cache & update pvmProto
@@ -1849,7 +1871,7 @@ export function renderAdminPage() {
     pvmShowLoading();
     try {
       const pid = pvmProto.protoId;
-      const res = await fetch(\`/admin/proto-vfiles/\${encodeURIComponent(pid)}/\${token}\`, { headers: authH() });
+      const res = await adminFetch(\`/admin/proto-vfiles/\${encodeURIComponent(pid)}/\${token}\`, { headers: authH() });
       const data = res.ok ? await res.json() : {};
       pvmFileCache[token] = data.files ?? null;
     } catch { pvmFileCache[token] = null; }
@@ -2226,32 +2248,32 @@ export function renderAdminPage() {
         case 'updated': default: va = a.updatedAt||0; vb = b.updatedAt||0; return adminPageSortAsc ? va - vb : vb - va;
       }
     });
-    const TYPE_LABEL = { markdown: '<span class="bg-[rgba(59,130,246,.1)] text-accent px-1.5 py-0.5 rounded text-[.72rem]">MD</span>', html: '<span class="bg-[rgba(245,158,11,.1)] text-[#f59e0b] px-1.5 py-0.5 rounded text-[.72rem]">HTML</span>' };
+    const TYPE_LABEL = { markdown: '<span class="bg-[rgba(59,130,246,.1)] text-accent px-1.5 py-0.5 rounded text-[.7rem]">MD</span>', html: '<span class="bg-[rgba(245,158,11,.1)] text-[#f59e0b] px-1.5 py-0.5 rounded text-[.7rem]">HTML</span>' };
     const selMode = adminPageSelectMode;
-    const checkCol = (selMode ? 'pg-check-col selecting' : 'pg-check-col') + ' hidden w-[30px] text-center [&.selecting]:table-cell';
+    const checkCol = (selMode ? 'pg-check-col selecting' : 'pg-check-col') + ' hidden w-[34px] text-center [&.selecting]:table-cell';
     const scope = pageScope;
-    document.getElementById('pgDragHead')?.classList.toggle('scoped', scope.scoped);
-    document.getElementById('adminPageReorderHint')?.classList.toggle('hidden', !scope.scoped);
-    const dragCol = 'pg-drag-col' + (scope.scoped ? ' scoped' : '') + ' hidden w-[24px] text-center [&.scoped]:table-cell';
+    document.getElementById('pgDragHead')?.classList.toggle('scoped', true);
+    document.getElementById('adminPageReorderHint')?.classList.toggle('hidden', false);
+    const dragCol = 'pg-drag-col scoped hidden w-[28px] text-center [&.scoped]:table-cell';
     document.getElementById('adminPagesBody').innerHTML = sorted.length
-      ? sorted.map(p => \`<tr data-slug="\${esc(p.slug)}" \${scope.scoped ? 'draggable="true"' : ''} class="\${scope.scoped ? 'pg-drag-row' : ''}">
-          <td class="\${dragCol} cursor-grab select-none text-tx-3 active:cursor-grabbing">\${scope.scoped ? '⠿' : ''}</td>
+      ? sorted.map(p => \`<tr data-slug="\${esc(p.slug)}" draggable="true" class="pg-drag-row" data-project-id="\${esc(p.projectId||'')}" data-group-id="\${esc(p.groupId||'')}">
+          <td class="\${dragCol} cursor-grab select-none text-tx-3 active:cursor-grabbing pointer-events-none">⠿</td>
           <td class="\${checkCol}"><input type="checkbox" class="h-[15px] w-[15px] cursor-pointer accent-tx-2" data-slug="\${esc(p.slug)}" \${adminPageSelected.has(p.slug)?'checked':''} onchange="adminPageToggleSel('\${esc(p.slug)}',this.checked)"></td>
           <td>
-            <div class="font-medium text-[.88rem]">\${esc(p.title)}</div>
-            <div class="font-mono text-[.72rem] text-tx-3">/p/\${p.slug}</div>
+            <div class="font-medium text-[.84rem]">\${esc(p.title)}</div>
+            <div class="font-mono text-[.7rem] text-tx-3">/p/\${p.slug}</div>
           </td>
           <td>\${TYPE_LABEL[p.type] || p.type}</td>
-          <td class="text-[.79rem] text-tx-2">@\${p.owner}</td>
-          <td class="text-[.79rem] text-tx-2 !text-[.78rem]">\${p.projectId ? esc(projMap[p.projectId] || '--') : '--'}</td>
-          <td class="text-[.79rem] text-tx-2 !text-[.78rem]">\${p.groupId ? esc(grpMap[p.groupId] || '--') : '--'}</td>
-          <td>\${p.isPublic ? '<span class="text-green text-[.78rem]">公开</span>' : '<span class="text-tx-3 text-[.78rem]">私密</span>'}</td>
-          <td class="text-[.79rem] text-tx-2">\${timeAgo(p.updatedAt)}</td>
+          <td class="text-[.76rem] text-tx-2">@\${p.owner}</td>
+          <td class="text-[.76rem] text-tx-2">\${p.projectId ? esc(projMap[p.projectId] || '--') : '--'}</td>
+          <td class="text-[.76rem] text-tx-2">\${p.groupId ? esc(grpMap[p.groupId] || '--') : '--'}</td>
+          <td>\${p.isPublic ? '<span class="text-green text-[.76rem]">公开</span>' : '<span class="text-tx-3 text-[.76rem]">私密</span>'}</td>
+          <td class="text-[.76rem] text-tx-2">\${timeAgo(p.updatedAt)}</td>
           <td class="whitespace-nowrap">
-            <a href="/p/\${p.slug}" target="_blank" class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.75rem] no-underline">预览</a>
-            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.75rem]" onclick="adminEditPage('\${p.slug}')">编辑</button>
-            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.75rem]" data-title="\${esc(p.title)}" onclick="openPageStatsModal('\${p.slug}',this.dataset.title)">统计</button>
-            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-1 !text-[.75rem]" onclick="adminDeletePage('\${p.slug}')">删除</button>
+            <a href="/p/\${p.slug}" target="_blank" draggable="false" class="inline-flex items-center rounded-sm border border-bd bg-bg-4 px-2 py-1 text-[.72rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx no-underline" onclick="event.stopPropagation()">预览</a>
+            <button class="inline-flex items-center rounded-sm border border-bd bg-bg-4 px-2 py-1 text-[.72rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="event.stopPropagation();adminEditPage('\${p.slug}')">编辑</button>
+            <button class="inline-flex items-center rounded-sm border border-bd bg-bg-4 px-2 py-1 text-[.72rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-title="\${esc(p.title)}" onclick="event.stopPropagation();openPageStatsModal('\${p.slug}',this.dataset.title)">统计</button>
+            <button class="inline-flex items-center rounded-sm border border-red-r bg-red-g px-2 py-1 text-[.72rem] font-semibold text-red transition hover:bg-red-r" onclick="event.stopPropagation();adminDeletePage('\${p.slug}')">删除</button>
           </td>
         </tr>\`).join('')
       : '<tr><td colspan="10" class="text-center text-tx-3 p-6">暂无页面</td></tr>';
@@ -2264,46 +2286,151 @@ export function renderAdminPage() {
     initAdminPageDnD(scope);
   }
 
-  // ── Drag-to-reorder (only when the table is scoped to one project+group) ──
-  let adminDragSlug = null;
+  // ── Drag-to-reorder: always available, cross-scope move when project/group differs ──
+  let adminDragSlug = null, adminDragProjectId = null, adminDragGroupId = null;
   function initAdminPageDnD(scope) {
-    if (!scope?.scoped || adminPageSelectMode) return;
+    if (adminPageSelectMode) return;
     document.querySelectorAll('#adminPagesBody tr.pg-drag-row').forEach(row => {
       row.addEventListener('dragstart', (e) => {
         if (e.target.closest('button, a, input, select')) { e.preventDefault(); return; }
         adminDragSlug = row.dataset.slug;
+        adminDragProjectId = row.dataset.projectId || '';
+        adminDragGroupId = row.dataset.groupId || '';
         row.classList.add('opacity-30');
         e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', row.dataset.slug);
       });
       row.addEventListener('dragend', () => {
         row.classList.remove('opacity-30');
-        document.querySelectorAll('#adminPagesBody tr').forEach(r => r.classList.remove('border-t-2', 'border-t-accent'));
+        document.querySelectorAll('#adminPagesBody tr').forEach(r => r.classList.remove('border-t-2', 'border-t-accent', 'shadow-[inset_0_3px_0_0_var(--color-accent)]'));
         adminDragSlug = null;
+        adminDragProjectId = null;
+        adminDragGroupId = null;
       });
       row.addEventListener('dragover', (e) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
         if (!adminDragSlug || row.dataset.slug === adminDragSlug) return;
-        document.querySelectorAll('#adminPagesBody tr').forEach(r => r.classList.remove('border-t-2', 'border-t-accent'));
-        row.classList.add('border-t-2', 'border-t-accent');
+        document.querySelectorAll('#adminPagesBody tr').forEach(r => r.classList.remove('border-t-2', 'border-t-accent', 'shadow-[inset_0_3px_0_0_var(--color-accent)]'));
+        row.classList.add('border-t-2', 'border-t-accent', 'shadow-[inset_0_3px_0_0_var(--color-accent)]');
       });
       row.addEventListener('drop', async (e) => {
         e.preventDefault();
         row.classList.remove('border-t-2', 'border-t-accent');
         if (!adminDragSlug || row.dataset.slug === adminDragSlug) return;
-        const rows = [...document.querySelectorAll('#adminPagesBody tr.pg-drag-row')];
-        const order = rows.map(r => r.dataset.slug);
-        const from = order.indexOf(adminDragSlug);
-        let to = order.indexOf(row.dataset.slug);
-        if (from === -1 || to === -1) return;
-        order.splice(from, 1);
-        to = order.indexOf(row.dataset.slug);
-        order.splice(to, 0, adminDragSlug);
-        await adminFetch('/admin/pages/reorder', {
-          method: 'PATCH', headers: authH(),
-          body: JSON.stringify({ projectId: scope.projectId, groupId: scope.groupId, order }),
-        });
-        loadAdminPages();
+        const tgtProjectId = row.dataset.projectId || '';
+        const tgtGroupId = row.dataset.groupId || '';
+        const tbody = row.parentElement;
+        const sameScope = adminDragProjectId === tgtProjectId && adminDragGroupId === tgtGroupId;
+        if (sameScope) {
+          // optimistic local reorder
+          const fromRow = tbody.querySelector('tr[data-slug="' + CSS.escape(adminDragSlug) + '"]');
+          if (fromRow) tbody.insertBefore(fromRow, row.nextSibling);
+          const order = [...tbody.querySelectorAll('tr.pg-drag-row')].map(r => r.dataset.slug);
+          adminFetch('/admin/pages/reorder', {
+            method: 'PATCH', headers: authH(),
+            body: JSON.stringify({ projectId: tgtProjectId || null, groupId: tgtGroupId || null, order }),
+          }).catch(() => {});
+        } else {
+          // optimistic move: update row dataset + move visually
+          row.dataset.projectId = tgtProjectId;
+          row.dataset.groupId = tgtGroupId;
+          // move/page persist, then reorder
+          try { await adminFetch('/admin/pages/' + encodeURIComponent(adminDragSlug), {
+            method: 'PATCH', headers: authH(),
+            body: JSON.stringify({ projectId: tgtProjectId || null, groupId: tgtGroupId || null }),
+          }); } catch {}
+          const order = [...tbody.querySelectorAll('tr.pg-drag-row')].map(r => r.dataset.slug).filter(id => id !== adminDragSlug);
+          const to = order.indexOf(row.dataset.slug);
+          if (to !== -1) order.splice(to, 0, adminDragSlug);
+          else order.push(adminDragSlug);
+          adminFetch('/admin/pages/reorder', {
+            method: 'PATCH', headers: authH(),
+            body: JSON.stringify({ projectId: tgtProjectId || null, groupId: tgtGroupId || null, order }),
+          }).catch(() => {});
+        }
+      });
+    });
+    initAdminTouchDnD();
+  }
+
+  // ── Admin touch drag support (long-press to activate, elementFromPoint for drop targets) ──
+  function initAdminTouchDnD() {
+    if (adminPageSelectMode) return;
+    let tState = null, tGhost = null, tTimer = null;
+    document.querySelectorAll('#adminPagesBody tr.pg-drag-row').forEach(row => {
+      row.addEventListener('touchstart', (e) => {
+        if (e.target.closest('button, a, input, select')) return;
+        tTimer = setTimeout(() => {
+          tState = { slug: row.dataset.slug, projectId: row.dataset.projectId || '', groupId: row.dataset.groupId || '', el: row };
+          const r = row.getBoundingClientRect();
+          tGhost = row.cloneNode(true);
+          Object.assign(tGhost.style, {
+            position: 'fixed', left: r.left + 'px', top: r.top + 'px',
+            width: r.width + 'px', opacity: '0.7', pointerEvents: 'none',
+            zIndex: '9999', transform: 'scale(1.02)',
+            border: '2px dashed var(--color-accent)', borderRadius: '6px',
+          });
+          document.body.appendChild(tGhost);
+          row.classList.add('opacity-30');
+          document.body.style.overflow = 'hidden';
+        }, 300);
+      }, { passive: true });
+      row.addEventListener('touchmove', (e) => {
+        if (!tState) { clearTimeout(tTimer); return; }
+        e.preventDefault();
+        const t = e.touches[0];
+        if (tGhost) { tGhost.style.left = (t.clientX - 20) + 'px'; tGhost.style.top = (t.clientY - 20) + 'px'; }
+        document.querySelectorAll('#adminPagesBody tr').forEach(r => r.classList.remove('border-t-2', 'border-t-accent', 'shadow-[inset_0_3px_0_0_var(--color-accent)]'));
+        const under = document.elementFromPoint(t.clientX, t.clientY);
+        const tr = under?.closest('#adminPagesBody tr.pg-drag-row');
+        if (tr && tr !== row) tr.classList.add('border-t-2', 'border-t-accent', 'shadow-[inset_0_3px_0_0_var(--color-accent)]');
+      }, { passive: false });
+      row.addEventListener('touchend', async (e) => {
+        clearTimeout(tTimer);
+        if (!tState) return;
+        if (tGhost) { tGhost.remove(); tGhost = null; }
+        document.body.style.overflow = '';
+        const t = e.changedTouches[0];
+        const under = document.elementFromPoint(t.clientX, t.clientY);
+        const target = under?.closest('#adminPagesBody tr.pg-drag-row');
+        if (target && target !== row) {
+          const tgtProjectId = target.dataset.projectId || '';
+          const tgtGroupId = target.dataset.groupId || '';
+          const sameScope = tState.projectId === tgtProjectId && tState.groupId === tgtGroupId;
+          if (sameScope) {
+            const fromRow = row.parentElement.querySelector('tr[data-slug="' + CSS.escape(tState.slug) + '"]');
+            if (fromRow) {
+              if (target.nextSibling) target.parentElement.insertBefore(fromRow, target.nextSibling);
+              else target.parentElement.appendChild(fromRow);
+            }
+            const order = [...row.parentElement.querySelectorAll('tr.pg-drag-row')].map(r => r.dataset.slug);
+            adminFetch('/admin/pages/reorder', {
+              method: 'PATCH', headers: authH(),
+              body: JSON.stringify({ projectId: tgtProjectId || null, groupId: tgtGroupId || null, order }),
+            }).catch(() => {});
+          } else {
+            target.dataset.projectId = tgtProjectId;
+            target.dataset.groupId = tgtGroupId;
+            const fromRow = row.parentElement.querySelector('tr[data-slug="' + CSS.escape(tState.slug) + '"]');
+            if (fromRow) target.parentElement.insertBefore(fromRow, target);
+            try { await adminFetch('/admin/pages/' + encodeURIComponent(tState.slug), {
+              method: 'PATCH', headers: authH(),
+              body: JSON.stringify({ projectId: tgtProjectId || null, groupId: tgtGroupId || null }),
+            }); } catch {}
+            const order = [...row.parentElement.querySelectorAll('tr.pg-drag-row')].map(r => r.dataset.slug).filter(id => id !== tState.slug);
+            const to = order.indexOf(target.dataset.slug);
+            if (to !== -1) order.splice(to, 0, tState.slug);
+            else order.push(tState.slug);
+            adminFetch('/admin/pages/reorder', {
+              method: 'PATCH', headers: authH(),
+              body: JSON.stringify({ projectId: tgtProjectId || null, groupId: tgtGroupId || null, order }),
+            }).catch(() => {});
+          }
+        }
+        row.classList.remove('opacity-30');
+        document.querySelectorAll('#adminPagesBody tr').forEach(r => r.classList.remove('border-t-2', 'border-t-accent', 'shadow-[inset_0_3px_0_0_var(--color-accent)]'));
+        tState = null;
       });
     });
   }
@@ -2723,7 +2850,7 @@ export function renderAdminPage() {
     const body = isEdit
       ? { title, content, type, isPublic, accessPassword, projectId, groupId }
       : { slug, title, content, type, isPublic, accessPassword, projectId, groupId };
-    const res = await fetch(url, { method:meth, headers:authH(), body:JSON.stringify(body) });
+    const res = await adminFetch(url, { method:meth, headers:authH(), body:JSON.stringify(body) });
     const data = await res.json();
     if (!res.ok) { toast('失败: ' + data.error); return; }
     destroyApmVditor();

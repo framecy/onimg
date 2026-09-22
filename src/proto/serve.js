@@ -124,6 +124,12 @@ export async function serveProto(env, protoId, filePath, request) {
   let decodedPath = filePath;
   try { decodedPath = decodeURIComponent(filePath); } catch {}
 
+  // 路径遍历防护：拒绝 .. 与绝对路径，避免跨原型读取其他 proto 的文件
+  //（R2 键为 `proto/{id}/{path}`，`..` 会拼出 `proto/{id}/../other/...` 逃逸出当前原型）。
+  if (decodedPath.includes('..') || decodedPath.startsWith('/')) {
+    return new Response('Not Found', { status: 404 });
+  }
+
   // Fetch from R2
   const r2Key = `proto/${protoId}/${decodedPath}`;
   const obj   = await env.BUCKET.get(r2Key);

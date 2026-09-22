@@ -60,18 +60,6 @@ export async function handleCreateUser(request, env) {
   const salt = randomSalt();
   const passwordHash = await hashPassword(password, salt);
 
-  // Validate storageQuota if provided
-  let storageQuota = -1;
-  if (body.storageQuota !== undefined && body.storageQuota !== -1) {
-    storageQuota = Number(body.storageQuota);
-    if (isNaN(storageQuota) || storageQuota < 100 * 1024 * 1024) {
-      return Response.json({ error: 'storageQuota must be -1 (unlimited) or >= 100 MB' }, { status: 400 });
-    }
-    if (storageQuota > 5 * 1024 * 1024 * 1024) {
-      return Response.json({ error: 'storageQuota must be <= 5 GB' }, { status: 400 });
-    }
-  }
-
   const ttlDays = body.tokenTtlDays !== undefined ? parseInt(body.tokenTtlDays) : 7;
   const user = {
     passwordHash,
@@ -83,7 +71,6 @@ export async function handleCreateUser(request, env) {
       canEdit: permissions?.canEdit ?? false,
       maxTotalUploads: permissions?.maxTotalUploads ?? 100,
       dailyUploadLimit: permissions?.dailyUploadLimit ?? 20,
-      storageQuota,
     },
     tokenTtlDays: (isNaN(ttlDays) || ttlDays < 1) ? 7 : Math.min(ttlDays, 365),
     createdAt: Date.now(),
@@ -115,20 +102,6 @@ export async function handleUpdateUser(request, env, username) {
   if (body.tokenTtlDays !== undefined) {
     const ttl = parseInt(body.tokenTtlDays);
     existing.tokenTtlDays = (!isNaN(ttl) && ttl >= 1) ? Math.min(ttl, 365) : 7;
-  }
-  // Validate storageQuota if provided at top level or in permissions
-  const sqRaw = body.storageQuota ?? body.permissions?.storageQuota;
-  if (sqRaw !== undefined) {
-    const sq = Number(sqRaw);
-    if (sq !== -1) {
-      if (isNaN(sq) || sq < 100 * 1024 * 1024) {
-        return Response.json({ error: 'storageQuota must be -1 (unlimited) or >= 100 MB' }, { status: 400 });
-      }
-      if (sq > 5 * 1024 * 1024 * 1024) {
-        return Response.json({ error: 'storageQuota must be <= 5 GB' }, { status: 400 });
-      }
-    }
-    existing.permissions.storageQuota = sq;
   }
   existing.updatedAt = Date.now();
 

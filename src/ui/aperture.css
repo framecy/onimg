@@ -3,7 +3,7 @@
    :root 下再输出短名别名，让现有手写组件类继续工作（阶段2/3 改完后再删别名桥）。
    构建产物 aperture.generated.js 由 build:css 生成，被三端 <style> 内联。 */
 
-@import "tailwindcss";
+@import "tailwindcss" source(none);
 
 /* ── 扫描范围（HTML 内联在 JS 字符串里，显式声明防漏扫） ── */
 @source "../page.js";
@@ -22,44 +22,49 @@
    @theme —— 命名空间化 token（驱动 bg-/text-/border-/rounded- 等工具类）
    ───────────────────────────────────────────────────────────── */
 @theme {
-  /* ── 颜色（暖石墨 + 电靛紫，2026-08 改版） ── */
-  --color-bg:        #0c0b10;
-  --color-bg-2:      #131118;
-  --color-bg-3:      #1a171f;
-  --color-bg-4:      #221e29;
-  --color-bg-5:      #2d2735;
-  --color-bg-hover:  #292330;
-  --color-bg-active: #362f3f;
-  --color-overlay:   rgba(8,7,11,.72);
+  /* ── 颜色（Monochrome 中性石墨 + 黑白强调，2026-08 改版） ── */
+  --color-bg:        #0f0f11;
+  --color-bg-2:      #141417;
+  --color-bg-3:      #1a1a1e;
+  --color-bg-4:      #212125;
+  --color-bg-5:      #2a2a2f;
+  --color-bg-hover:  #1f1f23;
+  --color-bg-active: #2e2e33;
+  --color-overlay:   rgba(5,5,8,.72);
 
-  --color-bd:        #2c2733;
-  --color-bd-2:      #3d3548;
-  --color-bd-focus: #7a7288;
+  --color-bd:        #26262b;
+  --color-bd-2:      #36363c;
+  --color-bd-focus:  #7c7c86;
 
-  --color-tx:        #f5f3f7;
-  --color-tx-2:      #bcb6c4;
-  --color-tx-3:      #8b8494;
-  --color-tx-a:      #ece7f0;
-  --color-tx-inv:    #0c0b10;
+  --color-tx:        #f2f2f4;
+  --color-tx-2:      #a1a1ab;
+  --color-tx-3:      #6b6b74;
+  --color-tx-a:      #fafafa;
+  --color-tx-inv:    #0f0f11;
 
-  --color-brand:        #7c5cff;
-  --color-brand-hover:  #9478ff;
-  --color-brand-muted:  rgba(124,92,255,.16);
-  --color-brand-ring:   rgba(124,92,255,.32);
-  --color-brand-d:      #5f47c9;   /* 深 brand 变体（旧 --blue-d，用于进度条渐变深端） */
-  --color-accent:       #e6dfff;
-  --color-accent-hover: #f2ecff;
-  --color-accent-muted: rgba(124,92,255,.16);
+  /* 强调统一为中性黑/白（去品牌紫），brand 与 accent 同源 */
+  --color-brand:        #f2f2f4;
+  --color-brand-hover:  #ffffff;
+  --color-brand-muted:  rgba(242,242,244,.1);
+  --color-brand-ring:   rgba(242,242,244,.28);
+  --color-brand-d:      #c8c8cf;
+  --color-accent:       #f2f2f4;
+  --color-accent-hover: #ffffff;
+  --color-accent-muted: rgba(242,242,244,.1);
 
-  --color-green: #3ecf8e;
-  --color-green-g: rgba(62,207,142,.12);
-  --color-green-r: rgba(62,207,142,.24);
-  --color-amber: #f0b94a;
-  --color-amber-g: rgba(240,185,74,.14);
-  --color-amber-r: rgba(240,185,74,.26);
-  --color-red:   #f2717a;
-  --color-red-g:   rgba(242,113,122,.14);
-  --color-red-r:   rgba(242,113,122,.26);
+  /* 语义色（仅状态）：blue 仅作信息提示，非品牌强调 */
+  --color-blue:   #6ea8fe;
+  --color-blue-g: rgba(110,168,254,.12);
+  --color-blue-r: rgba(110,168,254,.24);
+  --color-green:  #3fb950;
+  --color-green-g: rgba(63,185,80,.14);
+  --color-green-r: rgba(63,185,80,.28);
+  --color-amber:  #d29922;
+  --color-amber-g: rgba(210,153,34,.14);
+  --color-amber-r: rgba(210,153,34,.28);
+  --color-red:    #f85149;
+  --color-red-g:  rgba(248,81,73,.14);
+  --color-red-r:  rgba(248,81,73,.28);
 
   /* ── 圆角 ── */
   --radius-xs: 4px;
@@ -71,7 +76,7 @@
   --radius: 12px;
 
   /* ── 字体 ── */
-  --font-sans: 'Outfit', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
   /* ── 间距基础单位（v4 据此派生 p-1=4px p-4=16px p-8=32px…，取代 --sp-1..8） ── */
@@ -96,9 +101,10 @@
   --leading-loose: 1.65;
 
   /* ── 阴影 ── */
-  --shadow-sm:  0 4px 16px rgba(0,0,0,.35);
-  --shadow:     0 18px 48px rgba(0,0,0,.55);
-  --shadow-lg:  0 28px 64px rgba(0,0,0,.65);
+  --shadow-xs:  0 1px 2px rgba(0,0,0,.3);
+  --shadow-sm:  0 2px 10px rgba(0,0,0,.35);
+  --shadow:     0 12px 32px rgba(0,0,0,.5);
+  --shadow-lg:  0 24px 56px rgba(0,0,0,.6);
 
   /* ── 缓动 ── */
   --ease-aperture: cubic-bezier(.2,.8,.2,1);
@@ -148,10 +154,13 @@
   --brand-d:      var(--color-brand-d);
   --accent:       var(--color-accent);
   --accent-hover: var(--color-accent-hover);
-  --accent-muted: var(--color-brand-muted);
+  --accent-muted: var(--color-accent-muted);
 
   --focus-ring: 0 0 0 3px var(--color-brand-ring);
 
+  --blue:     var(--color-blue);
+  --blue-g:   var(--color-blue-g);
+  --blue-r:   var(--color-blue-r);
   --green:    var(--color-green);
   --green-g:  var(--color-green-g);
   --green-r:  var(--color-green-r);
@@ -184,7 +193,7 @@
   --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
   --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
 
-  /* --shadow 系列已由 @theme 的 --shadow/--shadow-sm/--shadow-lg 提供，此处无需重复 */
+  /* --shadow 系列已由 @theme 的 --shadow-xs/--shadow-sm/--shadow/--shadow-lg 提供，此处无需重复 */
 
   --ease: var(--ease-aperture);
   --t: color .15s var(--ease-aperture), background .15s var(--ease-aperture),
@@ -194,8 +203,6 @@
 
   --font: var(--font-sans);
   --mono: var(--font-mono);
-
-  /* 后台遗留 --blue* 别名已被替换为 --brand*，别名桥的历史糖在此移除 */
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -208,90 +215,113 @@
    ───────────────────────────────────────────────────────────── */
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
-    --color-bg:        #faf9fb;
-    --color-bg-2:      #f3f1f5;
+    --color-bg:        #fafafa;
+    --color-bg-2:      #f1f1f3;
     --color-bg-3:      #ffffff;
-    --color-bg-4:      #f6f4f8;
-    --color-bg-5:      #ece8ef;
-    --color-bg-hover:  #efedf2;
-    --color-bg-active: #e6e2ea;
-    --color-overlay:   rgba(22,19,28,.4);
+    --color-bg-4:      #f5f5f6;
+    --color-bg-5:      #e9e9ec;
+    --color-bg-hover:  #efeff2;
+    --color-bg-active: #e2e2e6;
+    --color-overlay:   rgba(15,15,18,.4);
 
-    --color-bd:        #e4e1e8;
-    --color-bd-2:      #d3cedb;
-    --color-bd-focus:  #948aa3;
+    --color-bd:        #e0e0e4;
+    --color-bd-2:      #cfcfd4;
+    --color-bd-focus:  #7c7c86;
 
-    --color-tx:        #1c1a22;
-    --color-tx-2:      #57515f;
-    --color-tx-3:      #837c8c;
-    --color-tx-a:      #2a2733;
+    --color-tx:        #17171b;
+    --color-tx-2:      #55555e;
+    --color-tx-3:      #8a8a92;
+    --color-tx-a:      #0f0f11;
     --color-tx-inv:    #ffffff;
 
-    --color-brand:        #7c5cff;
-    --color-brand-hover:  #6a47f5;
-    --color-brand-muted:  rgba(124,92,255,.1);
-    --color-brand-ring:   rgba(124,92,255,.28);
-    --color-brand-d:      #5f47c9;
-    --color-accent:       #221f2c;
-    --color-accent-hover: #34303f;
-    --color-accent-muted: rgba(34,31,44,.07);
+    --color-brand:        #17171b;
+    --color-brand-hover:  #000000;
+    --color-brand-muted:  rgba(23,23,27,.06);
+    --color-brand-ring:   rgba(23,23,27,.2);
+    --color-brand-d:      #4a4a52;
+    --color-accent:       #17171b;
+    --color-accent-hover: #000000;
+    --color-accent-muted: rgba(23,23,27,.06);
 
-    --color-green:   #17945f;
-    --color-green-g: rgba(23,148,95,.1);
-    --color-green-r: rgba(23,148,95,.22);
-    --color-amber:   #ad7209;
-    --color-amber-g: rgba(173,114,9,.1);
-    --color-amber-r: rgba(173,114,9,.22);
-    --color-red:     #d1414c;
-    --color-red-g:   rgba(209,65,76,.1);
-    --color-red-r:   rgba(209,65,76,.22);
+    --color-blue:   #0969da;
+    --color-blue-g: rgba(9,105,218,.08);
+    --color-blue-r: rgba(9,105,218,.18);
+    --color-green:  #1a7f37;
+    --color-green-g: rgba(26,127,55,.1);
+    --color-green-r: rgba(26,127,55,.22);
+    --color-amber:  #9a6700;
+    --color-amber-g: rgba(154,103,0,.1);
+    --color-amber-r: rgba(154,103,0,.22);
+    --color-red:    #cf222e;
+    --color-red-g:  rgba(207,34,46,.1);
+    --color-red-r:  rgba(207,34,46,.22);
 
-    --shadow-sm: 0 2px 10px rgba(24,20,32,.07);
-    --shadow:    0 12px 32px rgba(24,20,32,.1);
-    --shadow-lg: 0 20px 48px rgba(24,20,32,.14);
+    --shadow-xs: 0 1px 2px rgba(20,20,26,.06);
+    --shadow-sm: 0 2px 10px rgba(20,20,26,.08);
+    --shadow:    0 12px 32px rgba(20,20,26,.12);
+    --shadow-lg: 0 20px 48px rgba(20,20,26,.16);
   }
 }
 :root[data-theme="light"] {
-  --color-bg:        #faf9fb;
-  --color-bg-2:      #f3f1f5;
+  --color-bg:        #fafafa;
+  --color-bg-2:      #f1f1f3;
   --color-bg-3:      #ffffff;
-  --color-bg-4:      #f6f4f8;
-  --color-bg-5:      #ece8ef;
-  --color-bg-hover:  #efedf2;
-  --color-bg-active: #e6e2ea;
-  --color-overlay:   rgba(22,19,28,.4);
+  --color-bg-4:      #f5f5f6;
+  --color-bg-5:      #e9e9ec;
+  --color-bg-hover:  #efeff2;
+  --color-bg-active: #e2e2e6;
+  --color-overlay:   rgba(15,15,18,.4);
 
-  --color-bd:        #e4e1e8;
-  --color-bd-2:      #d3cedb;
-  --color-bd-focus:  #948aa3;
+  --color-bd:        #e0e0e4;
+  --color-bd-2:      #cfcfd4;
+  --color-bd-focus:  #7c7c86;
 
-  --color-tx:        #1c1a22;
-  --color-tx-2:      #57515f;
-  --color-tx-3:      #837c8c;
-  --color-tx-a:      #2a2733;
+  --color-tx:        #17171b;
+  --color-tx-2:      #55555e;
+  --color-tx-3:      #8a8a92;
+  --color-tx-a:      #0f0f11;
   --color-tx-inv:    #ffffff;
 
-  --color-brand:        #7c5cff;
-  --color-brand-hover:  #6a47f5;
-  --color-brand-muted:  rgba(124,92,255,.1);
-  --color-brand-ring:   rgba(124,92,255,.28);
-  --color-brand-d:      #5f47c9;
-  --color-accent:       #221f2c;
-  --color-accent-hover: #34303f;
-  --color-accent-muted: rgba(34,31,44,.07);
+  --color-brand:        #17171b;
+  --color-brand-hover:  #000000;
+  --color-brand-muted:  rgba(23,23,27,.06);
+  --color-brand-ring:   rgba(23,23,27,.2);
+  --color-brand-d:      #4a4a52;
+  --color-accent:       #17171b;
+  --color-accent-hover: #000000;
+  --color-accent-muted: rgba(23,23,27,.06);
 
-  --color-green:   #17945f;
-  --color-green-g: rgba(23,148,95,.1);
-  --color-green-r: rgba(23,148,95,.22);
-  --color-amber:   #ad7209;
-  --color-amber-g: rgba(173,114,9,.1);
-  --color-amber-r: rgba(173,114,9,.22);
-  --color-red:     #d1414c;
-  --color-red-g:   rgba(209,65,76,.1);
-  --color-red-r:   rgba(209,65,76,.22);
+  --color-blue:   #0969da;
+  --color-blue-g: rgba(9,105,218,.08);
+  --color-blue-r: rgba(9,105,218,.18);
+  --color-green:  #1a7f37;
+  --color-green-g: rgba(26,127,55,.1);
+  --color-green-r: rgba(26,127,55,.22);
+  --color-amber:  #9a6700;
+  --color-amber-g: rgba(154,103,0,.1);
+  --color-amber-r: rgba(154,103,0,.22);
+  --color-red:    #cf222e;
+  --color-red-g:  rgba(207,34,46,.1);
+  --color-red-r:  rgba(207,34,46,.22);
 
-  --shadow-sm: 0 2px 10px rgba(24,20,32,.07);
-  --shadow:    0 12px 32px rgba(24,20,32,.1);
-  --shadow-lg: 0 20px 48px rgba(24,20,32,.14);
+  --shadow-xs: 0 1px 2px rgba(20,20,26,.06);
+  --shadow-sm: 0 2px 10px rgba(20,20,26,.08);
+  --shadow:    0 12px 32px rgba(20,20,26,.12);
+  --shadow-lg: 0 20px 48px rgba(20,20,26,.16);
 }
 
+/* ─────────────────────────────────────────────────────────────
+   原生 select 统一外观：去原生箭头 + 自定义 chevron（中性灰）。
+   属于「工具类无法表达的 data:image/svg+xml」例外，故保留在此。
+   未分层裸 CSS，优先级高于 utilities 层，确保 padding-right 覆盖 px-*。
+   ───────────────────────────────────────────────────────────── */
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16' fill='none' stroke='%236b6b74' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='4,6 8,10 12,6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px 12px;
+  padding-right: 32px;
+}
