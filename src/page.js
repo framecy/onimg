@@ -281,6 +281,12 @@ export function renderPage() {
         <label class="flex cursor-pointer items-center gap-1.5 select-none text-[.82rem] text-tx-2"><input type="checkbox" id="mineSelectAll"> 全选</label>
         <span class="font-mono text-[.8rem] text-tx-3" id="mineSelCount">已选 0</span>
         <div class="flex-1"></div>
+        <select class="search-input w-full max-w-[260px] rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-[.84rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)] mob:max-w-none md:w-[220px] !w-auto cursor-pointer" id="batchCopyFmt">
+          <option value="url">复制链接</option>
+          <option value="md">复制 MD</option>
+          <option value="bb">复制 BBCode</option>
+        </select>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx disabled:cursor-not-allowed disabled:opacity-45" id="batchCopy" disabled>复制</button>
         <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="batchPublic">设为公开</button>
         <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="batchPrivate">设为私密</button>
         <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r" id="batchDelete">删除选中</button>
@@ -1447,7 +1453,7 @@ export function renderPage() {
 
   function resultItemHtml(r) {
     if (r.ok) {
-      return \`<div class="result-item flex items-center gap-3 rounded-lg border border-bd bg-bg-3 px-[14px] py-[10px]"><img class="h-11 w-11 rounded-xs border border-bd object-cover" src="\${r.url}" loading="lazy"><div class="min-w-0 flex-1"><div class="text-[.8rem] font-medium text-tx">\${esc(r.name)}</div><div class="mt-1 flex gap-[5px]"><input class="min-w-0 flex-1 rounded-xs border border-bd bg-bg-2 px-2 py-[3px] font-mono text-xs text-tx outline-none" value="\${r.url}" readonly onclick="this.select()"><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="cp('\${r.url}',this)">复制</button><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="cp('![](\${r.url})',this)">MD</button><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="cp('[img]\${r.url}[/img]',this)">BB</button></div></div></div>\`;
+      return \`<div class="result-item flex items-center gap-3 rounded-lg border border-bd bg-bg-3 px-[14px] py-[10px]"><img class="h-11 w-11 rounded-xs border border-bd object-cover" src="\${r.url}" loading="lazy"><div class="min-w-0 flex-1"><div class="text-[.8rem] font-medium text-tx">\${esc(r.name)}</div><div class="mt-1 flex gap-[5px]"><input class="min-w-0 flex-1 rounded-xs border border-bd bg-bg-2 px-2 py-[3px] font-mono text-xs text-tx outline-none" value="\${r.url}" readonly onclick="this.select()"><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="cp('\${r.url}',this)">复制</button><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="cpMd('\${r.url}',\${jsStr(r.name)},this)">MD</button><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="cpBb('\${r.url}',this)">BB</button></div></div></div>\`;
     }
     const fid = 'f' + (++uploadFidSeq);
     if (r.file) uploadFailMap.set(fid, r.file);
@@ -1660,6 +1666,8 @@ export function renderPage() {
     const vis = visibleMineKeys();
     const allSel = vis.length > 0 && vis.every(k => mineSelected.has(k));
     const sa = document.getElementById('mineSelectAll'); if (sa) sa.checked = allSel;
+    const copyBtn = document.getElementById('batchCopy');
+    if (copyBtn) copyBtn.disabled = mineSelected.size === 0;
   }
   document.getElementById('mineSelectToggle').addEventListener('click', () => {
     mineSelectMode = !mineSelectMode;
@@ -1724,6 +1732,23 @@ export function renderPage() {
   }
   document.getElementById('batchPublic').addEventListener('click', () => batchSetVisibility(true));
   document.getElementById('batchPrivate').addEventListener('click', () => batchSetVisibility(false));
+
+  // 按当前筛选后的展示顺序复制，方便和眼前看到的顺序对上
+  document.getElementById('batchCopy').addEventListener('click', () => {
+    const keys = visibleMineKeys().filter(k => mineSelected.has(k));
+    if (!keys.length) { toast('未选择图片'); return; }
+    const fmt = document.getElementById('batchCopyFmt')?.value || 'url';
+    const text = keys.map(k => {
+      const url = location.origin + '/' + k;
+      const it = mineItems.find(i => i.key === k);
+      if (fmt === 'md') return imgMd(url, it && (it.basename || it.name));
+      if (fmt === 'bb') return imgBb(url);
+      return url;
+    }).join('\\n');
+    const label = fmt === 'md' ? '条 Markdown' : fmt === 'bb' ? '条 BBCode' : '条链接';
+    cp(text, document.getElementById('batchCopy'));
+    toast('已复制 ' + keys.length + ' ' + label, 'success');
+  });
 
   async function toggleVis(key, btn) {
     const res = await fetch('/api/image/' + encodeURIComponent(key) + '/visibility', { method:'PATCH', headers:{ Authorization:'Bearer '+token } });
@@ -2742,11 +2767,15 @@ export function renderPage() {
   }
   document.getElementById('lbClose').addEventListener('click', () => document.getElementById('lightbox').classList.remove('show'));
   document.getElementById('lightbox').addEventListener('click', e => { if (e.target === document.getElementById('lightbox')) document.getElementById('lightbox').classList.remove('show'); });
+  function lbItemName(key) {
+    const it = mineItems.find(i => i.key === key);
+    return it && (it.basename || it.name) || '';
+  }
   document.getElementById('lbCopy').addEventListener('click', () => { cp(location.origin + '/' + lbKey); toast('已复制'); });
-  document.getElementById('lbMd').addEventListener('click',   () => { cp('![](' + location.origin + '/' + lbKey + ')'); toast('已复制 MD'); });
+  document.getElementById('lbMd').addEventListener('click',   () => { cp(imgMd(location.origin + '/' + lbKey, lbItemName(lbKey))); toast('已复制 MD'); });
   document.getElementById('lbPrev').addEventListener('click', () => lbNavigate(-1));
   document.getElementById('lbNext').addEventListener('click', () => lbNavigate(1));
-  document.getElementById('lbBbcode').addEventListener('click', () => { cp('[img]' + location.origin + '/' + lbKey + '[/img]'); toast('已复制 BBCode'); });
+  document.getElementById('lbBbcode').addEventListener('click', () => { cp(imgBb(location.origin + '/' + lbKey)); toast('已复制 BBCode'); });
   document.getElementById('lbDelete').addEventListener('click', () => delMine(lbKey));
 
   // Mobile: full-screen swipe — left/right switches image, down dismisses
@@ -3465,7 +3494,16 @@ export function renderPage() {
   });
 
   // ── Utils ──
+  // Markdown 图片语法 ![名称](地址)：名称里的方括号、反斜杠会截断语法，先转义
+  function mdAlt(name) {
+    return String(name || '').replace(/\\\\/g, '\\\\\\\\').replace(/\\[/g, '\\\\[').replace(/\\]/g, '\\\\]');
+  }
+  function imgMd(url, name) { return '![' + mdAlt(name) + '](' + url + ')'; }
+  function imgBb(url) { return '[img]' + url + '[/img]'; }
+  function jsStr(s) { return JSON.stringify(String(s ?? '')); }
   function cp(text, btn) { navigator.clipboard.writeText(text).then(() => { if(btn){const o=btn.innerHTML;btn.innerHTML='<svg class="inline-block h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>';setTimeout(()=>btn.innerHTML=o,1400);} }); }
+  window.cpMd = function (url, name, btn) { cp(imgMd(url, name), btn); };
+  window.cpBb = function (url, btn) { cp(imgBb(url), btn); };
   function toast(msg, type) {
     const t = document.getElementById('toast');
     t.className = TOAST_BASE + ' toast show' + (type ? ' t-' + type : '');
