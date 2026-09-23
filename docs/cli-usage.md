@@ -312,9 +312,18 @@ TOKEN=$(curl -sf -X POST https://img.diswant.space/auth/login \
 curl -sf -X POST https://img.diswant.space/upload \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: image/jpeg" \
+  -H "X-File-Name: $(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "我的照片.jpg")" \
   --data-binary "@photo.jpg"
-# → {"url":"https://img.diswant.space/...","key":"...","size":...}
+# → {"url":"https://img.diswant.space/...","key":"1711234567890-abcd1234ef56.jpg",
+#    "name":"我的照片.jpg","basename":"我的照片.jpg","size":...}
 ```
+
+`key` 是随机生成的存储键（决定直链路径），**不派生自文件名**。上传时记录的原始文件名放在
+`name`（原样，含路径前缀）和 `basename`（展示用）里，并同步写入 KV 索引与 R2 对象元数据。
+- raw-body 上传（`--data-binary`）用 `X-File-Name` 头声明原名（HTTP 头只能承载 latin-1，值需 URL 编码）；
+- multipart 上传直接取 `file.name`，传了 `X-File-Name` 时以它为准；
+- 没提供原名时 `name` 为空字符串，`key` 与下载都不受影响；
+- 访问图片时响应带 `Content-Disposition`，浏览器「另存为」即可得到原文件名。
 
 ### 设备授权（CLI 流程）
 

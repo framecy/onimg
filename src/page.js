@@ -509,6 +509,7 @@ export function renderPage() {
   <div class="w-full max-w-[760px] overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow max-md:h-full max-md:max-w-none max-md:flex max-md:flex-col max-md:rounded-none max-md:border-none" id="lbCard">
     <div class="flex min-h-[280px] max-h-[55vh] items-center justify-center bg-bg-2 max-md:h-0 max-md:max-h-none max-md:min-h-0 max-md:flex-1 max-md:touch-none" id="lbImgWrap"><img class="max-h-[55vh] max-w-full object-contain max-md:h-full max-md:max-h-full" id="lbImg" src="" alt=""></div>
     <div class="px-[18px] py-[14px]">
+      <div class="truncate text-[.8rem] font-medium text-tx-2" id="lbName" style="display:none"></div>
       <div class="break-all font-mono text-[.85rem] text-tx" id="lbKey"></div>
       <div class="mt-3 flex gap-[7px]">
         <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbCopy">复制链接</button>
@@ -1437,7 +1438,7 @@ export function renderPage() {
         if (makePublic && data.key) {
           await fetch('/api/image/' + encodeURIComponent(data.key) + '/visibility', { method: 'PATCH', headers: { Authorization: 'Bearer ' + token } }).catch(() => {});
         }
-        resolve({ ok: true, url: data.url, key: data.key, name: file.name });
+        resolve({ ok: true, url: data.url, key: data.key, name: data.name || file.name });
       });
       xhr.addEventListener('error', () => resolve({ ok: false, name: file.name, error: '网络错误', file }));
       xhr.send(fd);
@@ -1587,7 +1588,10 @@ export function renderPage() {
     const vis = document.getElementById('mineVisFilter')?.value || 'all';
     const sort = document.getElementById('mineSort')?.value || 'new';
     const out = mineItems.filter(i => {
-      if (q && !i.key.toLowerCase().includes(q) && !(i.tags || []).some(t => t.toLowerCase().includes(q))) return false;
+      // 匹配 key（兼容老图）、原始文件名或标签
+      if (q && !i.key.toLowerCase().includes(q)
+        && !(i.name || '').toLowerCase().includes(q)
+        && !(i.tags || []).some(t => t.toLowerCase().includes(q))) return false;
       // 标签筛选：AND 语义（须包含全部选中标签）
       if (mineTagFilter.size && ![...mineTagFilter].every(t => (i.tags || []).includes(t))) return false;
       if (vis === 'public'  && !i.isPublic) return false;
@@ -1599,7 +1603,7 @@ export function renderPage() {
     if (sort === 'new')       sorted.sort((a, b) => (b.uploadedAt || 0) - (a.uploadedAt || 0));
     else if (sort === 'old')  sorted.sort((a, b) => (a.uploadedAt || 0) - (b.uploadedAt || 0));
     else if (sort === 'big')  sorted.sort((a, b) => (b.size || 0) - (a.size || 0));
-    else if (sort === 'name') sorted.sort((a, b) => a.key.localeCompare(b.key));
+    else if (sort === 'name') sorted.sort((a, b) => (a.basename || a.key).localeCompare(b.basename || b.key, 'zh'));
     return sorted;
   }
 
@@ -1619,7 +1623,7 @@ export function renderPage() {
         <input type="checkbox" class="gitem-sel absolute left-2 top-2 z-[3] hidden h-5 w-5 cursor-pointer accent-accent group-[.selecting]/grid:block" \${sel?'checked':''} onchange="toggleSel('\${item.key}')">
         <img class="block h-auto w-full aspect-square cursor-pointer bg-bg-2 object-cover" src="\${url}" loading="lazy" onload="this.classList.add('loaded')" \${clickAttr}>
         <div class="px-[11px] py-[9px]">
-          <div class="truncate font-mono text-[.72rem] font-medium text-tx-2">\${item.key}</div>
+          <div class="truncate font-mono text-[.72rem] font-medium text-tx-2" title="\${esc(item.name || item.key)}">\${esc(item.basename || item.key)}</div>
           \${tagsHtml}
           <div class="mt-[5px] flex items-center justify-between">
             <button class="\${item.isPublic?BTN_PUBLIC:BTN_PRIVATE}" id="vis-\${item.key}" onclick="toggleVis('\${item.key}', this)">\${item.isPublic?'公开':'私密'}</button>
@@ -2717,6 +2721,11 @@ export function renderPage() {
     lbKey = key;
     document.getElementById('lbImg').src = location.origin + '/' + key;
     document.getElementById('lbKey').textContent = key;
+    // 有记录时展示上传时的原始文件名（老图无此字段，隐藏该行）
+    const lbNameEl = document.getElementById('lbName');
+    const nm = (mineItems.find(i => i.key === key) || {}).name;
+    if (nm) { lbNameEl.textContent = nm; lbNameEl.style.display = 'block'; }
+    else lbNameEl.style.display = 'none';
     document.getElementById('lbDelete').style.display = (showDelete && perms?.canDelete) ? 'block' : 'none';
     const lb = document.getElementById('lightbox');
     lb.classList.add('show');

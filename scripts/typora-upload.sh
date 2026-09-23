@@ -166,6 +166,7 @@ upload_one() {
   http_code=$(curl -sf -o "$tmp" -w "%{http_code}" -X POST "$ONIMG_URL/upload" \
     -H "Authorization: Bearer $token" \
     -H "Content-Type: $mime" \
+    -H "X-File-Name: $(url_encode "$(basename "$path")")" \
     --data-binary "@$path") || http_code="000"
 
   resp=$(cat "$tmp"); rm -f "$tmp"

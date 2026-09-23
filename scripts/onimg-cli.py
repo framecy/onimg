@@ -92,7 +92,7 @@ def tok_info(tok):
 # ── HTTP ──────────────────────────────────────────────────────────────────────
 
 def api(url, method='GET', data=None, token=None, content_type='application/json',
-        binary_path=None):
+        binary_path=None, extra_headers=None):
     """→ (status_code, response_body_dict | None)"""
     try:
         if binary_path:
@@ -109,6 +109,8 @@ def api(url, method='GET', data=None, token=None, content_type='application/json
             req.add_header('Authorization', f'Bearer {token}')
         if body:
             req.add_header('Content-Type', content_type)
+        for hk, hv in (extra_headers or {}).items():
+            req.add_header(hk, hv)
 
         with urllib.request.urlopen(req, timeout=15) as r:
             return r.status, json.loads(r.read())
@@ -286,13 +288,17 @@ def do_upload(cfg, tok):
     if not mime: mime = 'application/octet-stream'
     url = '%s/upload' % cfg['ONIMG_URL'].rstrip('/')
     print('\n  %s上传中…%s' % (DIM, RST), end='', flush=True)
+    # X-File-Name 带上原始文件名（URL 编码：HTTP 头只能承载 latin-1）
+    headers = {'X-File-Name': urllib.parse.quote(os.path.basename(path), safe='')}
     status, resp = api(url, method='POST', token=tok,
-                       content_type=mime, binary_path=path)
+                       content_type=mime, binary_path=path, extra_headers=headers)
     print()
     if status == 201 and resp and 'url' in resp:
         img_url = resp['url']
         size    = fmt_size(resp.get('size', 0))
         msg_ok('上传成功  (%s)' % size)
+        if resp.get('name'):
+            print('\n  %s原名: %s%s' % (DIM, RST, resp['name']))
         print('\n  %sURL:%s' % (BOLD, RST))
         print('  %s%s%s' % (BCYN, img_url, RST))
         print('\n  %sMarkdown:%s' % (DIM, RST))
@@ -314,11 +320,14 @@ def do_recent(cfg, tok):
         msg_inf('暂无上传记录'); return
 
     print('\n  %s最近上传%s  %s(共 %d 条)%s\n' % (BOLD, RST, DIM, len(items), RST))
-    w_key = min(max(len(it['key']) for it in items), 44)
+    # 显示名：上传时记录的原始文件名，老图无此字段则回落到随机 key
+    def disp_name(it):
+        return it.get('basename') or it.get('name') or it.get('key', '')
+    w_key = min(max(len(disp_name(it)) for it in items), 44)
     print('  %s%-*s  %8s  %-14s  公开%s' % (DIM, w_key, '文件名', '大小', '时间', RST))
     print('  ' + '─' * (w_key + 36))
     for it in items[:20]:
-        key  = it['key'][:w_key]
+        key  = disp_name(it)[:w_key]
         size = fmt_size(it.get('size', 0))
         ts   = fmt_time(it.get('uploadedAt', 0))
         pub  = '%s公开%s' % (BGRN, RST) if it.get('isPublic') else '%s私有%s' % (DIM, RST)
