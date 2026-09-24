@@ -249,3 +249,17 @@ R2 前缀：图片对象（根）、`proto/`、`manifests/`。
 - D1 单行上限 2 MB（大原型文件清单存 R2）
 - R2 边缘图片缩放为付费功能，故缩略图 / WebP 暂未实现
 - 访问统计写入 D1（按行计费，免费版 10 万行写/天），避免 KV 1000 写/天的额度瓶颈
+
+---
+
+## 许可证
+
+[Apache-2.0](LICENSE) © 2026 framecy
+
+自建部署提示：安装 CLI（`curl -fsSL https://img.diswant.space/install.sh | bash`）时，
+脚本会询问服务器地址并**默认指向本项目的线上实例**。自建部署请填你自己的域名，
+或在安装时用 `--url` 指定：
+
+```bash
+bash install.sh --url https://your-domain.example
+```

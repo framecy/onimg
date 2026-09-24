@@ -59,6 +59,7 @@ fi
 if [[ -z "$ONIMG_URL" ]]; then
   echo ""
   echo -e "  ${YLW}请输入 Onimg 服务器地址${RST}"
+  echo -e "  ${DIM}回车使用默认线上实例；自建部署请填你自己的域名${RST}"
   read -rp "  URL [https://img.diswant.space]: " input_url
   ONIMG_URL="${input_url:-https://img.diswant.space}"
 fi
