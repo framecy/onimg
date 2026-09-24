@@ -47,6 +47,14 @@ export function sanitizeOriginalName(raw) {
   const s = truncateByBytes(
     String(raw)
       .replace(/[\u0000-\u001f\u007f]/g, '')  // 控制符（含 tab / 换行 / DEL）
+      // 剔除 HTML/属性上下文里有特殊含义的字符：原名会被渲染进 title=""、
+      // data-*="" 等属性，也会出现在 Content-Disposition 头里。
+      // 前端虽有 esc()，但它只转义 &<>，不含引号 —— 文件名里的 " 足以突破
+      // 属性边界（如 a" onload="alert(1).jpg）。在源头拦掉最省事也最彻底。
+      //
+      // 注意不含反斜杠：\ 在文件名里是路径分隔符（Windows 风格），
+      // baseName() 依赖它取最后一个路径分量。删掉会让 a"b\c.png 丢掉 c.png 这一段。
+      .replace(/["'`<>&]/g, '')
       .replace(/\s+/g, ' ')                   // 连续空白折成一个空格
       .trim(),
     MAX_NAME_LEN,

@@ -1372,7 +1372,7 @@ export function renderAdminPage() {
       const cur = sel.value;
       const actions = [...new Set(all.map(e => e.action).filter(Boolean))].sort();
       sel.innerHTML = '<option value="">全部</option>' +
-        actions.map(a => \`<option value="\${esc(a)}">\${esc(auditLabel(a))}（\${all.filter(e => e.action === a).length}）</option>\`).join('');
+        actions.map(a => \`<option value="\${escAttr(a)}">\${esc(auditLabel(a))}（\${all.filter(e => e.action === a).length}）</option>\`).join('');
       if (actions.includes(cur)) sel.value = cur;
 
       renderAudit(all);
@@ -1595,7 +1595,7 @@ export function renderAdminPage() {
             <td>\${TYPE_PG}</td>
             <td class="font-mono text-[.82rem] font-bold text-tx">\${(s.count??0).toLocaleString()}</td>
             <td class="text-[.79rem] text-tx-2">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
-            <td><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.73rem]" data-title="\${esc(pm.title)}" onclick="openPageStatsModal('\${esc(slug)}',this.dataset.title)">详情</button></td>
+            <td><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.73rem]" data-title="\${escAttr(pm.title)}" onclick="openPageStatsModal('\${esc(slug)}',this.dataset.title)">详情</button></td>
           </tr>\`;
         }).join('')
       : '<tr><td colspan="5" class="text-center text-tx-3 p-8">暂无访问记录</td></tr>';
@@ -1618,11 +1618,11 @@ export function renderAdminPage() {
     const protoActions = (id, pm) => {
       const url = location.origin + '/proto/' + id + '/';
       const previewUrl = url + (pm.accessPassword ? '?pwd=' + encodeURIComponent(pm.accessPassword) : '');
-      const pwdAttr = pm.accessPassword ? \` data-pwd="\${esc(pm.accessPassword)}"\` : '';
+      const pwdAttr = pm.accessPassword ? \` data-pwd="\${escAttr(pm.accessPassword)}"\` : '';
       return \`<div class="flex gap-1 flex-wrap">
         <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.73rem]" data-url="\${url}"\${pwdAttr} onclick="copyProtoAddr(this)">复制地址</button>
         <a href="\${previewUrl}" target="_blank" class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.73rem] no-underline">预览</a>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.73rem]" data-title="\${esc(pm.title||id)}" onclick="openProtoStatsModal('\${esc(id)}',this.dataset.title)">统计数据</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.73rem]" data-title="\${escAttr(pm.title||id)}" onclick="openProtoStatsModal('\${esc(id)}',this.dataset.title)">统计数据</button>
       </div>\`;
     };
     const prRows = sortedPr.length
@@ -2579,9 +2579,9 @@ export function renderAdminPage() {
     document.getElementById('adminPageReorderHint')?.classList.toggle('hidden', false);
     const dragCol = 'pg-drag-col scoped hidden w-[28px] text-center [&.scoped]:table-cell';
     document.getElementById('adminPagesBody').innerHTML = sorted.length
-      ? sorted.map(p => \`<tr data-slug="\${esc(p.slug)}" draggable="true" class="pg-drag-row" data-project-id="\${esc(p.projectId||'')}" data-group-id="\${esc(p.groupId||'')}">
+      ? sorted.map(p => \`<tr data-slug="\${escAttr(p.slug)}" draggable="true" class="pg-drag-row" data-project-id="\${escAttr(p.projectId||'')}" data-group-id="\${escAttr(p.groupId||'')}">
           <td class="\${dragCol} cursor-grab select-none text-tx-3 active:cursor-grabbing pointer-events-none">⠿</td>
-          <td class="\${checkCol}"><input type="checkbox" class="h-[15px] w-[15px] cursor-pointer accent-tx-2" data-slug="\${esc(p.slug)}" \${adminPageSelected.has(p.slug)?'checked':''} onchange="adminPageToggleSel('\${esc(p.slug)}',this.checked)"></td>
+          <td class="\${checkCol}"><input type="checkbox" class="h-[15px] w-[15px] cursor-pointer accent-tx-2" data-slug="\${escAttr(p.slug)}" \${adminPageSelected.has(p.slug)?'checked':''} onchange="adminPageToggleSel('\${esc(p.slug)}',this.checked)"></td>
           <td>
             <div class="font-medium text-[.84rem]">\${esc(p.title)}</div>
             <div class="font-mono text-[.7rem] text-tx-3">/p/\${p.slug}</div>
@@ -2595,7 +2595,7 @@ export function renderAdminPage() {
           <td class="whitespace-nowrap">
             <a href="/p/\${p.slug}" target="_blank" draggable="false" class="inline-flex items-center rounded-sm border border-bd bg-bg-4 px-2 py-1 text-[.72rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx no-underline" onclick="event.stopPropagation()">预览</a>
             <button class="inline-flex items-center rounded-sm border border-bd bg-bg-4 px-2 py-1 text-[.72rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="event.stopPropagation();adminEditPage('\${p.slug}')">编辑</button>
-            <button class="inline-flex items-center rounded-sm border border-bd bg-bg-4 px-2 py-1 text-[.72rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-title="\${esc(p.title)}" onclick="event.stopPropagation();openPageStatsModal('\${p.slug}',this.dataset.title)">统计</button>
+            <button class="inline-flex items-center rounded-sm border border-bd bg-bg-4 px-2 py-1 text-[.72rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-title="\${escAttr(p.title)}" onclick="event.stopPropagation();openPageStatsModal('\${p.slug}',this.dataset.title)">统计</button>
             <button class="inline-flex items-center rounded-sm border border-red-r bg-red-g px-2 py-1 text-[.72rem] font-semibold text-red transition hover:bg-red-r" onclick="event.stopPropagation();adminDeletePage('\${p.slug}')">删除</button>
           </td>
         </tr>\`).join('')

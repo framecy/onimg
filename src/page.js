@@ -1470,7 +1470,7 @@ export function renderPage(env = {}) {
 
   function resultItemHtml(r) {
     if (r.ok) {
-      return \`<div class="result-item flex items-center gap-3 rounded-lg border border-bd bg-bg-3 px-[14px] py-[10px]"><img class="h-11 w-11 rounded-xs border border-bd object-cover" src="\${esc(r.url)}" loading="lazy"><div class="min-w-0 flex-1"><div class="text-[.8rem] font-medium text-tx">\${esc(r.name)}</div><div class="mt-1 flex gap-[5px]"><input class="min-w-0 flex-1 rounded-xs border border-bd bg-bg-2 px-2 py-[3px] font-mono text-xs text-tx outline-none" value="\${esc(r.url)}" readonly onclick="this.select()"><button class="copy-btn inline-flex min-h-8 min-w-[46px] shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1.5 text-[.78rem] font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${esc(r.url)}">复制</button><button class="copy-btn inline-flex min-h-8 min-w-[46px] shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1.5 text-[.78rem] font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${esc(imgMd(r.url, r.name))}">MD</button><button class="copy-btn inline-flex min-h-8 min-w-[46px] shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1.5 text-[.78rem] font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${esc(imgBb(r.url))}">BB</button></div></div></div>\`;
+      return \`<div class="result-item flex items-center gap-3 rounded-lg border border-bd bg-bg-3 px-[14px] py-[10px]"><img class="h-11 w-11 rounded-xs border border-bd object-cover" src="\${escAttr(r.url)}" loading="lazy"><div class="min-w-0 flex-1"><div class="text-[.8rem] font-medium text-tx">\${esc(r.name)}</div><div class="mt-1 flex gap-[5px]"><input class="min-w-0 flex-1 rounded-xs border border-bd bg-bg-2 px-2 py-[3px] font-mono text-xs text-tx outline-none" value="\${escAttr(r.url)}" readonly onclick="this.select()"><button class="copy-btn inline-flex min-h-8 min-w-[46px] shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1.5 text-[.78rem] font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${escAttr(r.url)}">复制</button><button class="copy-btn inline-flex min-h-8 min-w-[46px] shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1.5 text-[.78rem] font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${escAttr(imgMd(r.url, r.name))}">MD</button><button class="copy-btn inline-flex min-h-8 min-w-[46px] shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1.5 text-[.78rem] font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${escAttr(imgBb(r.url))}">BB</button></div></div></div>\`;
     }
     const fid = 'f' + (++uploadFidSeq);
     if (r.file) uploadFailMap.set(fid, r.file);
@@ -1663,14 +1663,14 @@ export function renderPage(env = {}) {
         <input type="checkbox" class="gitem-sel absolute left-2 top-2 z-[3] hidden h-5 w-5 cursor-pointer accent-accent group-[.selecting]/grid:block" \${sel?'checked':''} onchange="toggleSel('\${item.key}')">
         <img class="block h-auto w-full aspect-square cursor-pointer bg-bg-2 object-cover" src="\${url}" loading="lazy" onload="this.classList.add('loaded')" \${clickAttr}>
         <div class="px-[11px] py-[9px]">
-          <div class="truncate font-mono text-[.72rem] font-medium text-tx-2" title="\${esc(item.name || item.key)}">\${esc(item.basename || item.key)}</div>
+          <div class="truncate font-mono text-[.72rem] font-medium text-tx-2" title="\${escAttr(item.name || item.key)}">\${esc(item.basename || item.key)}</div>
           \${tagsHtml}
           <div class="mt-[5px] flex items-center justify-between">
             <button class="\${item.isPublic?BTN_PUBLIC:BTN_PRIVATE}" id="vis-\${item.key}" onclick="toggleVis('\${item.key}', this)">\${item.isPublic?'公开':'私密'}</button>
             <span class="text-[.68rem] text-tx-3">\${fmtSize(item.size)}</span>
           </div>
           <div class="mt-1.5 flex gap-1">
-            <button class="copy-btn inline-flex min-h-8 min-w-[46px] shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1.5 text-[.78rem] font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${esc(url)}">复制</button>
+            <button class="copy-btn inline-flex min-h-8 min-w-[46px] shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1.5 text-[.78rem] font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${escAttr(url)}">复制</button>
             <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="openTagEditor('\${item.key}')">标签</button>
             \${perms?.canDelete?\`<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-[3px]" onclick="delMine('\${item.key}')">删除</button>\`:''}
           </div>
@@ -2004,7 +2004,7 @@ export function renderPage(env = {}) {
       const projGroups = groups.filter(g => g.projectId === proj.id);
       const projPages = pages.filter(p => p.projectId === proj.id && !p.groupId).sort((a,b) => (a.sort??0) - (b.sort??0));
       const total = pages.filter(p => p.projectId === proj.id).length;
-      html += \`<div class="page-project overflow-hidden rounded-lg border border-bd bg-bg-3 [&.drag-over-proj]:border-accent" data-drag-type="project" data-drag-id="\${esc(proj.id)}">
+      html += \`<div class="page-project overflow-hidden rounded-lg border border-bd bg-bg-3 [&.drag-over-proj]:border-accent" data-drag-type="project" data-drag-id="\${escAttr(proj.id)}">
         <div class="page-project-header flex cursor-pointer select-none items-center gap-[10px] px-4 py-[14px] hover:bg-bg-4" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.expand-icon').classList.toggle('open')">
           <span class="expand-icon open w-[14px] shrink-0 text-center text-[.6rem] text-tx-3 transition-transform duration-150 [&.open]:rotate-90">▶</span>
           <span class="project-name flex-1 text-[.88rem] font-semibold text-tx">\${esc(proj.name)}</span>
@@ -2019,7 +2019,7 @@ export function renderPage(env = {}) {
       // groups
       for (const grp of projGroups) {
         const grpPages = pages.filter(p => p.groupId === grp.id).sort((a,b) => (a.sort??0) - (b.sort??0));
-        html += \`<div class="page-group ml-[18px] border-l-2 border-bd" data-drag-type="group" data-drag-id="\${esc(grp.id)}" data-project-id="\${esc(proj.id)}">
+        html += \`<div class="page-group ml-[18px] border-l-2 border-bd" data-drag-type="group" data-drag-id="\${escAttr(grp.id)}" data-project-id="\${escAttr(proj.id)}">
           <div class="page-group-header flex cursor-pointer select-none items-center gap-[7px] px-3 py-2 [&.drag-over-grp]:bg-bg-5 hover:bg-bg-4" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.expand-icon').classList.toggle('open')">
             <span class="expand-icon open w-[14px] shrink-0 text-center !text-[.55rem] text-tx-3 transition-transform duration-150 [&.open]:rotate-90">▶</span>
             <span class="group-name flex-1 text-[.88rem] font-semibold text-tx">\${esc(grp.name)}</span>
@@ -2029,12 +2029,12 @@ export function renderPage(env = {}) {
               <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx !text-red" onclick="event.stopPropagation();deleteGroup('\${esc(grp.id)}')" title="删除分组">删除</button>
             </span>
           </div>
-          <div class="page-group-body page-tree-docs page-drop-zone ml-[18px] border-l-2 border-bd [&.drag-over-zone]:outline [&.drag-over-zone]:outline-1 [&.drag-over-zone]:outline-dashed [&.drag-over-zone]:outline-accent [&.drag-over-zone]:-outline-offset-2 [&.drag-over-zone]:bg-accent-muted [&.drag-over-zone]:min-h-[28px]" data-drop-scope="group" data-project-id="\${esc(proj.id)}" data-group-id="\${esc(grp.id)}">\`;
+          <div class="page-group-body page-tree-docs page-drop-zone ml-[18px] border-l-2 border-bd [&.drag-over-zone]:outline [&.drag-over-zone]:outline-1 [&.drag-over-zone]:outline-dashed [&.drag-over-zone]:outline-accent [&.drag-over-zone]:-outline-offset-2 [&.drag-over-zone]:bg-accent-muted [&.drag-over-zone]:min-h-[28px]" data-drop-scope="group" data-project-id="\${escAttr(proj.id)}" data-group-id="\${escAttr(grp.id)}">\`;
         for (const p of grpPages) html += renderDocItem(p);
         html += \`</div></div>\`;
       }
       // pages directly under project (no group)
-      html += \`<div class="page-project-pages page-drop-zone [&.drag-over-zone]:outline [&.drag-over-zone]:outline-1 [&.drag-over-zone]:outline-dashed [&.drag-over-zone]:outline-accent [&.drag-over-zone]:-outline-offset-2 [&.drag-over-zone]:bg-accent-muted [&.drag-over-zone]:min-h-[28px]" data-drop-scope="project" data-project-id="\${esc(proj.id)}" data-group-id="">\`;
+      html += \`<div class="page-project-pages page-drop-zone [&.drag-over-zone]:outline [&.drag-over-zone]:outline-1 [&.drag-over-zone]:outline-dashed [&.drag-over-zone]:outline-accent [&.drag-over-zone]:-outline-offset-2 [&.drag-over-zone]:bg-accent-muted [&.drag-over-zone]:min-h-[28px]" data-drop-scope="project" data-project-id="\${escAttr(proj.id)}" data-group-id="">\`;
       for (const p of projPages) html += renderDocItem(p);
       html += \`</div></div></div>\`;
     }
@@ -2045,7 +2045,7 @@ export function renderPage(env = {}) {
         html += \`<div class="pages-independent mt-2"><div class="indep-label mt-[10px] mb-1.5 ml-0.5 text-[.72rem] font-bold uppercase tracking-[.06em] text-tx-3">独立分组</div>\`;
         for (const grp of independentGroups) {
           const grpPages = pages.filter(p => p.groupId === grp.id).sort((a,b) => (a.sort??0) - (b.sort??0));
-          html += \`<div class="page-group ml-[18px] border-l-2 border-bd" data-drag-type="group" data-drag-id="\${esc(grp.id)}" data-project-id="">
+          html += \`<div class="page-group ml-[18px] border-l-2 border-bd" data-drag-type="group" data-drag-id="\${escAttr(grp.id)}" data-project-id="">
             <div class="page-group-header flex cursor-pointer select-none items-center gap-[7px] px-3 py-2 [&.drag-over-grp]:bg-bg-5 hover:bg-bg-4" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.expand-icon').classList.toggle('open')">
               <span class="expand-icon open w-[14px] shrink-0 text-center !text-[.55rem] text-tx-3 transition-transform duration-150 [&.open]:rotate-90">▶</span>
               <span class="group-name flex-1 text-[.88rem] font-semibold text-tx">\${esc(grp.name)}</span>
@@ -2055,7 +2055,7 @@ export function renderPage(env = {}) {
                 <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx !text-red" onclick="event.stopPropagation();deleteGroup('\${esc(grp.id)}')" title="删除分组">删除</button>
               </span>
             </div>
-            <div class="page-group-body page-tree-docs page-drop-zone ml-[18px] border-l-2 border-bd [&.drag-over-zone]:outline [&.drag-over-zone]:outline-1 [&.drag-over-zone]:outline-dashed [&.drag-over-zone]:outline-accent [&.drag-over-zone]:-outline-offset-2 [&.drag-over-zone]:bg-accent-muted [&.drag-over-zone]:min-h-[28px]" data-drop-scope="group" data-project-id="" data-group-id="\${esc(grp.id)}">\`;
+            <div class="page-group-body page-tree-docs page-drop-zone ml-[18px] border-l-2 border-bd [&.drag-over-zone]:outline [&.drag-over-zone]:outline-1 [&.drag-over-zone]:outline-dashed [&.drag-over-zone]:outline-accent [&.drag-over-zone]:-outline-offset-2 [&.drag-over-zone]:bg-accent-muted [&.drag-over-zone]:min-h-[28px]" data-drop-scope="group" data-project-id="" data-group-id="\${escAttr(grp.id)}">\`;
           for (const p of grpPages) html += renderDocItem(p);
           html += \`</div></div>\`;
         }
@@ -2080,7 +2080,7 @@ export function renderPage(env = {}) {
   function renderDocItem(p) {
     const sel = pageSelected.has(p.slug);
     const check = pageSelectMode
-      ? \`<input type="checkbox" class="page-check h-[15px] w-[15px] shrink-0 cursor-pointer accent-accent" data-slug="\${esc(p.slug)}" \${sel?'checked':''} onclick="event.stopPropagation();togglePageSel('\${esc(p.slug)}')">\`
+      ? \`<input type="checkbox" class="page-check h-[15px] w-[15px] shrink-0 cursor-pointer accent-accent" data-slug="\${escAttr(p.slug)}" \${sel?'checked':''} onclick="event.stopPropagation();togglePageSel('\${esc(p.slug)}')">\`
       : '';
     const drag = pageSelectMode ? 'false' : 'true';
     const cls = 'page-tree-item relative flex items-center gap-[10px] my-0.5 rounded-md border border-transparent bg-bg-2 px-[14px] py-[10px] transition hover:border-bd hover:bg-bg-3 [&.dragging]:opacity-30 [&.dragging]:border-dashed [&.dragging]:border-bd-2 [&.drag-over-top]:border-t-2 [&.drag-over-top]:border-t-accent [&.drag-over-top]:-mt-0.5 [&.drag-over-bot]:border-b-2 [&.drag-over-bot]:border-b-accent [&.drag-over-bot]:-mb-0.5 [&.selecting]:cursor-pointer [&.selected]:border-accent [&.selected]:bg-accent-muted' + (pageSelectMode ? ' selecting' : '') + (sel ? ' selected' : '');
@@ -2089,7 +2089,7 @@ export function renderPage(env = {}) {
       ? '公开'
       : (p.accessPassword ? '加密' : '私密');
     const previewHref = pagePreviewUrl(p);
-    return \`<div class="\${cls}" draggable="\${drag}" data-drag-type="page" data-drag-id="\${esc(p.slug)}" data-project-id="\${esc(p.projectId||'')}" data-group-id="\${esc(p.groupId||'')}" \${clickAttr}>
+    return \`<div class="\${cls}" draggable="\${drag}" data-drag-type="page" data-drag-id="\${escAttr(p.slug)}" data-project-id="\${escAttr(p.projectId||'')}" data-group-id="\${escAttr(p.groupId||'')}" \${clickAttr}>
       \${check}
       <span class="drag-handle cursor-grab px-0.5 text-[.78rem] text-tx-3 active:cursor-grabbing" title="拖拽排序">⠿</span>
       <div class="page-item-info flex-1 min-w-0">
@@ -3599,6 +3599,13 @@ export function renderPage(env = {}) {
   function fmtSize(b) { if(b<1024) return b+' B'; if(b<1048576) return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
   function fmtDate(ms) { if(!ms) return '—'; return new Date(ms).toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit',year:'2-digit'}); }
   function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  // 属性上下文专用：esc() 不含引号，值里出现 " 会突破 title="..." 这类属性边界。
+  // 不要拿它替换 onclick 里的 esc() —— 那是「属性 + JS 字符串」双重上下文，
+  // 转成 &quot; 后 JS 拿到的不是引号，参数值会出错。
+  function escAttr(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+      .replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
   document.addEventListener('keydown', e => {
     const lb = document.getElementById('lightbox');
     if (e.key === 'Escape') {
