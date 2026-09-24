@@ -38,14 +38,67 @@ GitHub 不提供读回 secret，所以**没法事后比对**——只能靠"改�
 
 ## 代码约定
 
-### `src/page.js` 与 `src/admin-page.js` 的反引号转义
+### ⚠️ `src/page.js` / `src/admin-page.js`：模板字符串转义（最容易踩的坑）
 
-这两个文件的内联 JS 整体嵌在外层模板字符串里，**内层反引号必须写成 `` \` ``，
-`${}` 必须写成 `\${}`**。漏转义会导致语法错误、服务起不来：
+这两个文件的整体 HTML 是**在 Node 端拼出来的模板字符串**，里面嵌着要交给浏览器的 JS。
+理解这一点是改这两个文件的前提：
+
+- **`${...}` 是 Node 端插值**，会在渲染页面时立即求值
+- **`\${...}` 是转义**，产物里留下 `${...}` 交给浏览器求值
+
+**规则**：引用**浏览器端函数**（`esc` / `escAttr` / `jsStr` / `cp` / `openLb` …）时必须写 `\${fn(x)}`。
+
+漏掉反斜杠的后果是**运行时 500**，不是语法错误：
 
 ```
-SyntaxError: Unexpected token 'class'
+{"error":"jsStr is not defined"}      # Node 端没有这个函数
 ```
+
+**反引号同理**：内层反引号必须写成 `` \` ``，否则报 `SyntaxError: Unexpected token`。
+
+#### 更隐蔽的一种：字符串里的反斜杠会被吃掉
+
+模板字符串会解析 `\\` → `\`、`\n` → 换行。所以**在模板字符串里写的正则或转义序列会被破坏**：
+
+```js
+// 源码里这样写（看起来对，实际坏掉）：
+.replace(/\\/g, '\\\\')     // 产物里变成 .replace(/\/g, '\\')  ← 正则坏了
+.replace(/\r/g, '\\r')      // 产物里变成 .replace(/g, '\r')    ← 正则空了
+```
+
+**规避方式**：需要反斜杠时**别用字面量**，改用码点构造。`jsStr` 就是这么写的：
+
+```js
+var BS = String.fromCharCode(92);   // 反斜杠
+var SQ = String.fromCharCode(39);   // 单引号
+// 用 charCodeAt 判断 CR/LF/U+2028，源码里一个反斜杠都不出现
+```
+
+#### 改完必须真实渲染一次
+
+**单元测试抓不到这类错误** —— 绝大多数测试直接调 handler，不走 `renderPage`。
+发生过一次：243 项测试全绿，但线上页面直接 500。
+
+```bash
+node -e "import('./src/page.js').then(m=>console.log(m.renderPage({}).length))"
+# 或起本地服务看首页是否 200
+```
+
+`test/features/render-smoke.test.js` 已覆盖这一点，改完这两个文件务必确认它通过。
+
+### 转义函数的选用（三种上下文）
+
+| 上下文 | 用哪个 | 说明 |
+|---|---|---|
+| 文本节点 `<div>${esc(x)}</div>` | `esc()` | 只转 `& < >` |
+| 属性值 `title="${escAttr(x)}"` | `escAttr()` | 额外转 `"`，防止突破属性边界 |
+| `onclick="fn(\${jsStr(x)})"` | `jsStr()` | **属性 + JS 字符串双重上下文**，自带引号，不要再手写 `''` |
+
+**不要用 `escAttr()` 去替换 onclick 里的 `esc()`** —— 转成 `&quot;` 后 JS 拿到的不是引号，
+参数值会出错。同理不要用 `esc()` 处理属性值。
+
+新增这类代码时，`test/features/js-attr-escaping.test.js` 里的往返验证
+（HTML 解析 → JS 求值应等于原值）是判断转义是否正确的可靠手段。
 
 ### 内联脚本的双份维护
 
@@ -65,7 +118,15 @@ SyntaxError: Unexpected token 'class'
 ## 提交与验证
 
 - 推 `main` 会自动触发 CI 部署（`.github/workflows/deploy.yml`）
-- 提交前跑 `npx vitest run`（当前 204 项）
+- 提交前跑 `npx vitest run`（当前 253 项 / 21 个文件）
 - CI 顺序要求 `build:css` 在 `npm test` 之前：`src/ui/aperture.generated.js` 是
   Tailwind 生成物且被 gitignore，而 `d1-integration` 测试会 import `src/index.js`，
   顺着 `index → page` 链条要求该文件存在
+
+### 改动 `page.js` / `admin-page.js` 后的必查项
+
+1. `node --check src/page.js`（语法）
+2. `npx vitest run test/features/render-smoke.test.js`（**真实渲染**，抓 Node 端误求值）
+3. 起本地服务看首页与管理端是否 200（最终确认）
+
+第 2 步不能省 —— 这是唯一能抓住「模板字符串里漏写反斜杠」的测试。
