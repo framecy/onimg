@@ -31,6 +31,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # wrangler.toml 不进仓库（含个人账号的资源 ID），CI 从 secret 还原一份。
+      # 在仓库 Settings → Secrets and variables → Actions 里添加 WRANGLER_TOML，
+      # 内容就是本地 wrangler.toml 的全文。未配置时退回 example（dry-run 仍能跑通，
+      # 只是资源 ID 是占位符）。
+      - name: Restore wrangler.toml
+        run: |
+          if [ -n "${{ secrets.WRANGLER_TOML }}" ]; then
+            printf '%s\n' "${{ secrets.WRANGLER_TOML }}" > wrangler.toml
+            echo "已从 secret 还原 wrangler.toml"
+          else
+            cp wrangler.toml.example wrangler.toml
+            echo "::warning::未配置 WRANGLER_TOML secret，使用 example 占位配置"
+          fi
+
       # 必须跑在测试之前：src/ui/aperture.generated.js 是 Tailwind 生成物且被
       # .gitignore 忽略，干净 checkout 里不存在。任何 import 到 src/index.js 的
       # 测试（如 d1-integration）都会顺着 index → page 这条链要求它存在。
@@ -64,6 +78,15 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Restore wrangler.toml
+        run: |
+          if [ -n "${{ secrets.WRANGLER_TOML }}" ]; then
+            printf '%s\n' "${{ secrets.WRANGLER_TOML }}" > wrangler.toml
+          else
+            echo "::error::未配置 WRANGLER_TOML secret，无法确定部署目标"
+            exit 1
+          fi
 
       - name: Build CSS (Tailwind — generated file is gitignored)
         run: npm run build:css

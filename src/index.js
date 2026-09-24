@@ -1,7 +1,7 @@
 import { handleUpload } from './upload.js';
 import { handleGet } from './get.js';
 import { handleDelete } from './delete.js';
-import { handleList, handlePublicGallery, handleToggleVisibility, handleSetImageTags } from './list.js';
+import { handleList, handlePublicGallery, handleToggleVisibility, handleSetImageTags, handleGetImageMeta } from './list.js';
 import { renderPage } from './page.js';
 import { renderAdminPage } from './admin-page.js';
 import apertureCss from './ui/aperture.generated.js';
@@ -105,6 +105,11 @@ export default {
 
       // ── User API ─────────────────────────────────────────────────────────────
       if (method === 'GET'    && path === '/api/gallery')          return withCors(await handlePublicGallery(env), request);
+      // 单图元数据（公开状态 / 标签 / 归属）：编辑标签前取一次，admin 与属主都可用
+      if (method === 'GET'    && path.startsWith('/api/image/') && path.endsWith('/meta')) {
+        const key = decodeURIComponent(path.slice('/api/image/'.length, -'/meta'.length));
+        return withCors(await handleGetImageMeta(request, env, key), request);
+      }
       if (method === 'PATCH'  && path.startsWith('/api/image/') && path.endsWith('/visibility')) {
         const key = decodeURIComponent(path.slice('/api/image/'.length, -'/visibility'.length));
         return withCors(await handleToggleVisibility(request, env, key), request);

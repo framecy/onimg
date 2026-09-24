@@ -865,12 +865,39 @@ export function renderAdminPage() {
     <div class="px-[18px] py-[14px]">
       <div class="break-all font-mono text-[.84rem] text-tx-2" id="lbKey"></div>
       <div class="mt-[5px] flex gap-[14px] text-[.75rem] text-tx-3"><span id="lbSize"></span><span id="lbDate"></span></div>
-      <div class="mt-3 flex gap-[7px]">
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbCopy">复制链接</button>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbMd">复制 MD</button>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbStats">访问统计</button>
+      <div class="mt-3 flex flex-wrap gap-[7px]">
+        <button class="inline-flex min-h-8 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2.5 py-1.5 whitespace-nowrap text-[.78rem] font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbCopy">复制链接</button>
+        <button class="inline-flex min-h-8 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2.5 py-1.5 whitespace-nowrap text-[.78rem] font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbMd">复制 MD</button>
+        <button class="inline-flex min-h-8 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2.5 py-1.5 whitespace-nowrap text-[.78rem] font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbBbcode">复制 BBCode</button>
+        <button class="inline-flex min-h-8 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2.5 py-1.5 whitespace-nowrap text-[.78rem] font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbTag">标签</button>
+        <button class="inline-flex min-h-8 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2.5 py-1.5 whitespace-nowrap text-[.78rem] font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbVis">可见性</button>
+        <button class="inline-flex min-h-8 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2.5 py-1.5 whitespace-nowrap text-[.78rem] font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbStats">访问统计</button>
         <div class="flex-1"></div>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r" id="lbDelete">删除</button>
+        <button class="inline-flex min-h-8 shrink-0 items-center justify-center rounded-sm border border-red-r bg-red-g px-2.5 py-1.5 whitespace-nowrap text-[.78rem] font-semibold leading-tight text-red transition hover:bg-red-r" id="lbDelete">删除</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Tag Editor（管理端标签编辑：补齐与用户端的能力差异） -->
+<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="adminTagModal">
+  <div class="flex w-full max-w-[420px] flex-col overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow">
+    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
+      <h3 class="flex-1 truncate text-[.98rem] font-bold tracking-[-.01em] text-tx">编辑标签 <span class="font-mono text-[.7rem] font-normal text-tx-3" id="adminTagTarget"></span></h3>
+      <button class="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="adminTagModalClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+    </div>
+    <div class="flex flex-col gap-3 p-[18px]">
+      <div class="flex min-h-[28px] flex-wrap gap-1.5" id="adminTagList"></div>
+      <div class="flex flex-col gap-[5px]">
+        <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">添加标签（最多 10 个）</label>
+        <div class="flex gap-2">
+          <input class="min-w-0 flex-1 rounded-md border border-bd bg-bg-2 px-3 py-[7px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus" type="text" id="adminTagInput" placeholder="输入后回车或点添加" maxlength="24">
+          <button class="shrink-0 rounded-md border border-bd bg-bg-4 px-3 py-[7px] text-[.8rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:text-tx" id="adminTagAdd">添加</button>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button class="rounded-md border border-bd bg-bg-4 px-3.5 py-[7px] text-[.82rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:text-tx" onclick="document.getElementById('adminTagModal').classList.remove('show')">取消</button>
+        <button class="rounded-md border border-bd-focus bg-brand-muted px-3.5 py-[7px] text-[.82rem] font-semibold text-tx transition hover:opacity-90 disabled:opacity-50" id="adminTagSave">保存</button>
       </div>
     </div>
   </div>
@@ -1489,6 +1516,78 @@ export function renderAdminPage() {
   async function deleteSingle(key) { if (!confirm('确认删除？')) return; await doDelete(key); allImages=allImages.filter(i=>i.key!==key); selected.delete(key); updateBulkBar(); renderGallery(); toast('已删除'); }
   async function doDelete(key) { await adminFetch('/delete/'+key, { method:'DELETE', headers:authH() }); }
 
+  // 把一次修改（可见性/标签）同步进本地列表并重绘，避免整表重新拉取
+  async function syncImageMeta(key, patch) {
+    const i = allImages.findIndex(x => x.key === key);
+    if (i !== -1) allImages[i] = { ...allImages[i], ...patch };
+    renderGallery();
+  }
+
+  // ── 管理端标签编辑 ───────────────────────────────────────────────────────────
+  // 管理端此前没有标签 UI（用户端有），列表接口也不带 tags —— 标签存在
+  // imgmeta 的 value 里，不在 list 返回的 metadata 中，所以打开时单独取一次。
+  let adminTagKey = '', adminTagDraft = [];
+
+  async function openAdminTagEditor(key) {
+    adminTagKey = key;
+    adminTagDraft = [];
+    document.getElementById('adminTagTarget').textContent = key;
+    document.getElementById('adminTagList').innerHTML = '<span class="text-[.76rem] text-tx-3">加载中…</span>';
+    document.getElementById('adminTagModal').classList.add('show');
+    try {
+      const r = await adminFetch('/api/image/' + encodeURIComponent(key) + '/meta', { headers: authH() });
+      if (r.ok) {
+        const d = await r.json();
+        adminTagDraft = Array.isArray(d.tags) ? [...d.tags] : [];
+      }
+    } catch {}
+    renderAdminTags();
+  }
+
+  function renderAdminTags() {
+    const el = document.getElementById('adminTagList');
+    el.innerHTML = adminTagDraft.length
+      ? adminTagDraft.map((t, i) => \`<span class="inline-flex items-center gap-1.5 rounded-xl border border-bd bg-bg-3 px-2.5 py-[3px] text-[.75rem] font-semibold text-tx-2">\${esc(t)}<button class="text-tx-3 transition hover:text-red" data-tag-i="\${i}" title="移除">×</button></span>\`).join('')
+      : '<span class="text-[.76rem] text-tx-3">暂无标签</span>';
+    el.querySelectorAll('[data-tag-i]').forEach(b => {
+      b.addEventListener('click', () => { adminTagDraft.splice(Number(b.dataset.tagI), 1); renderAdminTags(); });
+    });
+  }
+
+  document.getElementById('adminTagModalClose').addEventListener('click', () => document.getElementById('adminTagModal').classList.remove('show'));
+  document.getElementById('adminTagModal').addEventListener('click', e => { if (e.target === document.getElementById('adminTagModal')) document.getElementById('adminTagModal').classList.remove('show'); });
+  document.getElementById('adminTagAdd').addEventListener('click', () => {
+    const inp = document.getElementById('adminTagInput');
+    // 安全过滤（去 HTML 危险字符）由后端 normalizeTags 统一负责，前端只做 trim 与长度限制
+    const t = String(inp.value || '').trim().slice(0, 24);
+    inp.value = '';
+    if (!t) return;
+    if (adminTagDraft.length >= 10) { toast('最多 10 个标签', 'warn'); return; }
+    if (adminTagDraft.some(x => x.toLowerCase() === t.toLowerCase())) { toast('标签已存在', 'warn'); return; }
+    adminTagDraft.push(t);
+    renderAdminTags();
+  });
+  document.getElementById('adminTagInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('adminTagAdd').click(); }
+  });
+  document.getElementById('adminTagSave').addEventListener('click', async () => {
+    const btn = document.getElementById('adminTagSave');
+    btn.disabled = true;
+    try {
+      const r = await adminFetch('/api/image/' + encodeURIComponent(adminTagKey) + '/tags', {
+        method: 'PATCH',
+        headers: { ...authH(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tags: adminTagDraft }),
+      });
+      if (!r.ok) { const d = await r.json().catch(()=>({})); toast('保存失败：' + (d.error || ('HTTP ' + r.status)), 'error'); return; }
+      const { tags } = await r.json();
+      await syncImageMeta(adminTagKey, { tags });
+      document.getElementById('adminTagModal').classList.remove('show');
+      toast('标签已保存');
+    } catch { toast('保存失败：网络错误', 'error'); }
+    finally { btn.disabled = false; }
+  });
+
   // ── User Management ──────────────────────────────────────────────────────────
   async function loadUsers() {
     document.getElementById('usersBody').innerHTML = '<tr><td colspan="6" class="text-center text-tx-3 p-6">加载中…</td></tr>';
@@ -1980,7 +2079,27 @@ export function renderAdminPage() {
   document.getElementById('lightbox').addEventListener('click', e => { if (e.target===document.getElementById('lightbox')) document.getElementById('lightbox').classList.remove('show'); });
   document.getElementById('lbCopy').addEventListener('click', () => { navigator.clipboard.writeText(origin+'/'+lbKey); toast('已复制链接'); });
   document.getElementById('lbMd').addEventListener('click',  () => { navigator.clipboard.writeText('![]('+origin+'/'+lbKey+')'); toast('已复制 MD'); });
+  document.getElementById('lbBbcode').addEventListener('click', () => { navigator.clipboard.writeText('[img]'+origin+'/'+lbKey+'[/img]'); toast('已复制 BBCode'); });
   document.getElementById('lbStats').addEventListener('click', () => { document.getElementById('lightbox').classList.remove('show'); openStatsModal(lbKey); });
+
+  // 可见性切换：管理端此前只能删，不能改公开状态（用户端有，管理端缺）。
+  // 后端 /api/image/{key}/visibility 认 admin token，无需额外接口。
+  document.getElementById('lbVis').addEventListener('click', async () => {
+    const btn = document.getElementById('lbVis');
+    btn.disabled = true;
+    try {
+      const r = await adminFetch('/api/image/' + encodeURIComponent(lbKey) + '/visibility', { method:'PATCH', headers: authH() });
+      if (!r.ok) { const d = await r.json().catch(()=>({})); toast('操作失败：' + (d.error || ('HTTP ' + r.status)), 'error'); return; }
+      const { isPublic } = await r.json();
+      await syncImageMeta(lbKey, { isPublic });
+      toast(isPublic ? '已设为公开' : '已设为私密');
+    } catch { toast('操作失败：网络错误', 'error'); }
+    finally { btn.disabled = false; }
+  });
+
+  // 标签编辑：复用后端 /api/image/{key}/tags（同样认 admin token）
+  document.getElementById('lbTag').addEventListener('click', () => openAdminTagEditor(lbKey));
+
   document.getElementById('lbDelete').addEventListener('click', async () => {
     if (!confirm('确认删除？')) return;
     await doDelete(lbKey);

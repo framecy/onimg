@@ -112,6 +112,19 @@ export function renderPage(env = {}) {
       animation: shimmer 1.4s ease infinite;
     }
     .gitem img.loaded, .pub-item img.loaded { animation: none; background: var(--bg-2); }
+
+    /* 复制按钮：文字与对钩图标叠放在同一个固定尺寸的格子里，
+       切换时只改可见性，按钮尺寸不随之变化（避免点复制后按钮高度跳动）。 */
+    .copy-btn { position: relative; }
+    .copy-btn .cp-label { display: block; }
+    .copy-btn .cp-mark {
+      position: absolute; inset: 0;
+      display: none;
+      align-items: center; justify-content: center;
+    }
+    .copy-btn.copied .cp-label { visibility: hidden; }
+    .copy-btn.copied .cp-mark { display: flex; }
+
     /* Responsive */
     @media (max-width: 600px) {
       main { padding: 16px 16px 28px; }
@@ -1457,7 +1470,7 @@ export function renderPage(env = {}) {
 
   function resultItemHtml(r) {
     if (r.ok) {
-      return \`<div class="result-item flex items-center gap-3 rounded-lg border border-bd bg-bg-3 px-[14px] py-[10px]"><img class="h-11 w-11 rounded-xs border border-bd object-cover" src="\${esc(r.url)}" loading="lazy"><div class="min-w-0 flex-1"><div class="text-[.8rem] font-medium text-tx">\${esc(r.name)}</div><div class="mt-1 flex gap-[5px]"><input class="min-w-0 flex-1 rounded-xs border border-bd bg-bg-2 px-2 py-[3px] font-mono text-xs text-tx outline-none" value="\${esc(r.url)}" readonly onclick="this.select()"><button class="copy-btn inline-flex min-h-8 w-[42px] shrink-0 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${esc(r.url)}">复制</button><button class="copy-btn inline-flex min-h-8 w-[42px] shrink-0 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${esc(imgMd(r.url, r.name))}">MD</button><button class="copy-btn inline-flex min-h-8 w-[42px] shrink-0 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${esc(imgBb(r.url))}">BB</button></div></div></div>\`;
+      return \`<div class="result-item flex items-center gap-3 rounded-lg border border-bd bg-bg-3 px-[14px] py-[10px]"><img class="h-11 w-11 rounded-xs border border-bd object-cover" src="\${esc(r.url)}" loading="lazy"><div class="min-w-0 flex-1"><div class="text-[.8rem] font-medium text-tx">\${esc(r.name)}</div><div class="mt-1 flex gap-[5px]"><input class="min-w-0 flex-1 rounded-xs border border-bd bg-bg-2 px-2 py-[3px] font-mono text-xs text-tx outline-none" value="\${esc(r.url)}" readonly onclick="this.select()"><button class="copy-btn inline-flex min-h-8 min-w-[46px] shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1.5 text-[.78rem] font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${esc(r.url)}">复制</button><button class="copy-btn inline-flex min-h-8 min-w-[46px] shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1.5 text-[.78rem] font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${esc(imgMd(r.url, r.name))}">MD</button><button class="copy-btn inline-flex min-h-8 min-w-[46px] shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1.5 text-[.78rem] font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${esc(imgBb(r.url))}">BB</button></div></div></div>\`;
     }
     const fid = 'f' + (++uploadFidSeq);
     if (r.file) uploadFailMap.set(fid, r.file);
@@ -1535,6 +1548,14 @@ export function renderPage(env = {}) {
     clearFiles();
     loadQuota();
     document.getElementById('resultList').innerHTML = results.map(resultItemHtml).join('');
+
+    // 上传完成后刷新图库：此前这里只刷了结果列表，导致「勾选公开上传后，
+    // 公开图库里看不到刚传的图」，必须手动切标签或点刷新才出现。
+    // 有成功上传才刷（全失败时刷新没意义，还白跑两次请求）。
+    if (results.some(r => r && r.ok)) {
+      loadMineGallery();
+      loadPublicGallery();
+    }
   });
 
   async function loadQuota() {
@@ -1649,7 +1670,7 @@ export function renderPage(env = {}) {
             <span class="text-[.68rem] text-tx-3">\${fmtSize(item.size)}</span>
           </div>
           <div class="mt-1.5 flex gap-1">
-            <button class="copy-btn inline-flex min-h-8 w-[42px] shrink-0 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${esc(url)}">复制</button>
+            <button class="copy-btn inline-flex min-h-8 min-w-[46px] shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1.5 text-[.78rem] font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${esc(url)}">复制</button>
             <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="openTagEditor('\${item.key}')">标签</button>
             \${perms?.canDelete?\`<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-[3px]" onclick="delMine('\${item.key}')">删除</button>\`:''}
           </div>
@@ -1777,10 +1798,26 @@ export function renderPage(env = {}) {
 
   async function delMine(key) {
     if (!confirm('将此图片移至回收站？可在回收站恢复。')) return;
-    await fetch('/delete/' + key, { method:'DELETE', headers:{ Authorization:'Bearer '+token } });
+    // 必须检查响应：此前不看 res.ok，后端失败（403/409/网络错误）时界面照样
+    // 把图从列表移除并提示「已移至回收站」，刷新后图又回来 —— 表现为「删除无效」。
+    let ok = false, err = '';
+    try {
+      const r = await fetch('/delete/' + encodeURIComponent(key), { method:'DELETE', headers:{ Authorization:'Bearer '+token } });
+      ok = r.ok;
+      if (!ok) {
+        const data = await r.json().catch(() => ({}));
+        err = data.error || ('HTTP ' + r.status);
+      }
+    } catch { err = '网络错误'; }
+
+    if (!ok) { toast('删除失败：' + err, 'error'); return; }
+
     mineItems = mineItems.filter(i => i.key !== key);
+    mineSelected.delete(key);
     renderMineGallery();
     document.getElementById('lightbox').classList.remove('show');
+    // 公开图库是全局汇总，删除后要同步刷新，否则已删的图还挂在里面
+    loadPublicGallery();
     toast('已移至回收站');
   }
 
@@ -3513,14 +3550,26 @@ export function renderPage(env = {}) {
   }
   function imgMd(url, name) { return '![' + mdAlt(name) + '](' + url + ')'; }
   function imgBb(url) { return '[img]' + url + '[/img]'; }
-  const COPY_MARK = '<svg class="inline-block h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>';
+  const COPY_MARK = '<svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>';
+  // 复制反馈：把按钮内容换成对钩。
+  //
+  // 此前是「保存 innerHTML → 整体替换成纯 SVG → 1.4s 后还原」。因为原内容是文字、
+  // 替换后只剩一个图标，按钮高度由内容撑开，切换瞬间会明显跳动（用户反馈的
+  // 「点了复制按钮，变成对钩后高度变了」）。
+  //
+  // 现在改成：首次点击时把原内容包进一个固定行高的 <span>，图标用绝对定位覆盖在
+  // 同一位置。按钮尺寸自始至终由原来的文字内容决定，切换只改透明度/可见性。
   function cp(text, btn) {
     navigator.clipboard.writeText(text).then(() => {
       if (!btn) return;
-      const o = btn.innerHTML;
-      btn.innerHTML = COPY_MARK;
+      if (!btn.dataset.cpReady) {
+        const label = btn.innerHTML;
+        btn.innerHTML = \`<span class="cp-label">\${label}</span><span class="cp-mark">\${COPY_MARK}</span>\`;
+        btn.dataset.cpReady = '1';
+      }
+      btn.classList.add('copied');
       clearTimeout(btn._copyTid);
-      btn._copyTid = setTimeout(() => { btn.innerHTML = o; }, 1400);
+      btn._copyTid = setTimeout(() => btn.classList.remove('copied'), 1400);
     });
   }
   document.addEventListener('click', e => {
@@ -3536,7 +3585,7 @@ export function renderPage(env = {}) {
     clearTimeout(t._tid);
     t._tid = setTimeout(() => t.classList.remove('show'), 2600);
   }
-  const SKEL = 'rounded-sm bg-[linear-gradient(90deg,var(--color-bg-3)_25%,var(--color-bg-4)_50%,var(--color-bg-3)_75%)] bg-[length:400%_100%] animate-[shimmer_1.4s_ease_infinite]';
+  var SKEL = 'rounded-sm bg-[linear-gradient(90deg,var(--color-bg-3)_25%,var(--color-bg-4)_50%,var(--color-bg-3)_75%)] bg-[length:400%_100%] animate-[shimmer_1.4s_ease_infinite]';
   function skelCards(el, n) {
     if (!el) return;
     el.innerHTML = Array.from({ length: n }, () =>

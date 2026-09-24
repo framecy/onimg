@@ -10,13 +10,18 @@ export async function handleList(request, env) {
     const cursor = url.searchParams.get('cursor') ?? undefined;
     const limit  = Math.min(parseInt(url.searchParams.get('limit') ?? '50'), 200);
 
-    // 收集所有已软删除的 key（单次 KV list，metadata 含 deletedAt 无需额外读取）
+    // 收集所有已软删除的 key + 公开状态（单次 KV list，metadata 含
+    // deletedAt / isPublic / owner，无需额外读取）。管理端要显示和切换
+    // 可见性，此前这里只取了 trashed，导致后台看不到图片是公开还是私密。
     const trashed = new Set();
+    const metaOf = new Map();
     let kvCursor;
     do {
       const kv = await env.STATS.list({ prefix: 'imgmeta:', cursor: kvCursor, limit: 1000 });
       for (const k of kv.keys) {
-        if (k.metadata?.deletedAt) trashed.add(k.name.slice('imgmeta:'.length));
+        const key = k.name.slice('imgmeta:'.length);
+        metaOf.set(key, k.metadata ?? null);
+        if (k.metadata?.deletedAt) trashed.add(key);
       }
       kvCursor = kv.list_complete ? undefined : kv.cursor;
     } while (kvCursor);
@@ -25,7 +30,16 @@ export async function handleList(request, env) {
     return Response.json({
       items: result.objects
         .filter(o => !o.key.startsWith('proto/') && !o.key.startsWith('manifests/') && !trashed.has(o.key))
-        .map(o => ({ key: o.key, size: o.size, uploaded: o.uploaded, etag: o.etag })),
+        .map(o => {
+          const md = metaOf.get(o.key);
+          return {
+            key: o.key, size: o.size, uploaded: o.uploaded, etag: o.etag,
+            // 未索引的裸对象（老数据/手工上传）md 为 null，前端按私密处理
+            isPublic: !!md?.isPublic,
+            owner: md?.owner ?? null,
+            indexed: !!md,
+          };
+        }),
       cursor: result.truncated ? result.cursor : null,
       truncated: result.truncated,
     });
@@ -91,6 +105,35 @@ export async function handleSetImageTags(request, env, key) {
   await mergeUserImgEntry(env, owner, key, { tags });
 
   return Response.json({ key, tags });
+}
+
+// 单张图片的元数据（公开状态 / 标签 / 归属）。
+// 管理端的图库列表来自 R2 原生 list，只有 key/size/uploaded，标签存在
+// imgmeta 的 value 里、不在 list 返回的 metadata 中，所以编辑标签前需要
+// 单独取一次。避免在列表接口里为每张图逐项读取（那会打爆子请求预算）。
+export async function handleGetImageMeta(request, env, key) {
+  const user = await verifyUserToken(request, env);
+  const isAdmin = !user && await verifyAdminToken(request, env);
+  if (!user && !isAdmin) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const existing = await env.STATS.getWithMetadata('imgmeta:' + key, 'json');
+  if (!existing?.metadata) {
+    return Response.json({ key, indexed: false, isPublic: false, tags: [], owner: null });
+  }
+  if (!isAdmin && existing.metadata.owner !== user.username) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 });
+  }
+  return Response.json({
+    key,
+    indexed: true,
+    isPublic: !!existing.metadata.isPublic,
+    owner: existing.metadata.owner ?? null,
+    deletedAt: existing.metadata.deletedAt ?? null,
+    tags: Array.isArray(existing.value?.tags) ? existing.value.tags : [],
+    name: existing.value?.name ?? '',
+    size: existing.value?.size ?? 0,
+    uploadedAt: existing.value?.uploadedAt ?? null,
+  });
 }
 
 // Public gallery — no auth required

@@ -1,0 +1,64 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Onimg 部署配置示例
+#
+# 用法：复制成 wrangler.toml 并填入自己的值
+#     cp wrangler.toml.example wrangler.toml
+#
+# wrangler.toml 已被 .gitignore 忽略，因为里面的资源 ID 属于个人账号信息，
+# 不适合随公开仓库分发（每个人都需要用自己的 ID）。
+#
+# 三个 ID 的获取方式：
+#     npx wrangler whoami                          → account_id
+#     npx wrangler kv namespace create STATS       → KV namespace id
+#     npx wrangler d1 create onimg-stats           → D1 database id
+#     npx wrangler r2 bucket create onimg-images   → R2 bucket（名字可自取）
+# ─────────────────────────────────────────────────────────────────────────────
+
+name = "onimg"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# 你的 Cloudflare 账号 ID
+account_id = "<YOUR_ACCOUNT_ID>"
+
+# 自定义域名。没有自己的域名就删掉整个 routes 段，改用 *.workers.dev 地址。
+routes = [
+  { pattern = "img.example.com", custom_domain = true }
+]
+
+# 每日 03:00 UTC 清理回收站中超过 30 天的软删除内容
+[triggers]
+crons = ["0 3 * * *"]
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "onimg-images"
+
+# 存储层：env.STATS 的读写实际走 D1（接线见 src/index.js 的 withD1Stats）。
+# KV 绑定保留是为了随时回滚 —— 删掉下面的 [[d1_databases]] 段，Worker 会自动退回 KV。
+[[kv_namespaces]]
+binding = "STATS"
+id = "<YOUR_KV_NAMESPACE_ID>"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "onimg-stats"
+database_id = "<YOUR_D1_DATABASE_ID>"
+# 建表：npx wrangler d1 execute onimg-stats --remote --file=docs/d1-schema.sql
+
+[vars]
+MAX_FILE_SIZE = "52428800"
+ALLOWED_TYPES = "image/jpeg,image/png,image/gif,image/webp,image/svg+xml"
+PROTO_MAX_SIZE = "52428800"
+# 首页页脚文案，`|` 分隔、首项高亮。换成自建存储时可按实际形态改写，例如：
+# SITE_NOTES = "自建对象存储|单机 SSD|带宽计费"
+SITE_NOTES = "Cloudflare R2|10 GB 免费存储额度|无出口流量费用|全球 CDN 加速"
+
+# Cloudflare Analytics API（后台显示精确额度用）。
+# 不填也能跑，后台只是不显示 CF 额度面板。
+# 需要时创建一个有 Account Analytics 读权限的 API Token：
+#     npx wrangler secret put CF_API_TOKEN
+CF_ACCOUNT_ID = "<YOUR_ACCOUNT_ID>"
+CF_KV_STATS_ID = "<YOUR_KV_NAMESPACE_ID>"
+CF_R2_BUCKET = "onimg-images"
+CF_WORKER_NAME = "onimg"
