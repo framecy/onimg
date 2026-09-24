@@ -1,4 +1,4 @@
-import { mergeUserImgEntry } from './imglist.js';
+import { deleteImageRecords, mergeUserImgEntry, putImageRecords } from './imglist.js';
 import { verifyAdminToken } from './admin/auth.js';
 import { verifyUserToken } from './user-auth.js';
 import { cfBump, cfMonth } from './admin/cfCounters.js';
@@ -90,7 +90,7 @@ async function restoreImage(env, actor, key, ctx) {
   const value = existing.value ?? {};
   delete value.deletedAt;
   const newMd = { ...md }; delete newMd.deletedAt;
-  await env.STATS.put(metaKey, JSON.stringify(value), { metadata: newMd });
+  await putImageRecords(env, key, value, newMd);
 
   // userimgs 列表项清除 deletedAt
   const owner  = md.owner;
@@ -131,7 +131,7 @@ async function purgeImageEndpoint(env, actor, key, ctx) {
 export async function purgeImage(env, key, owner) {
   await env.BUCKET.delete(key);
   const tasks = [
-    env.STATS.delete('imgmeta:' + key),
+    owner ? deleteImageRecords(env, key, owner) : env.STATS.delete('imgmeta:' + key),
     env.STATS.delete('stats:' + key),
   ];
   if (owner) {

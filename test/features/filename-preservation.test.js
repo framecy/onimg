@@ -199,7 +199,9 @@ describe('sanitizeOriginalName / baseName', () => {
     await createTestUser(env, 'bob', 'pass', { canUpload: true });
     await trackImage(env, 'bob', 'legacy.png', 12, false);
     const meta = JSON.parse(await env.STATS.get('imgmeta:legacy.png'));
-    expect(meta).toEqual({ uploadedAt: expect.any(Number) });
+    // size 也在索引里（/list 自愈清单时不需要额外 head R2 就能恢复体积）；
+    // 原名依旧缺省不写，避免老客户端/老代码被空值干扰。
+    expect(meta).toEqual({ uploadedAt: expect.any(Number), size: 12 });
     const entry = (await env.STATS.get('userimgs:bob', 'json')).find(e => e.key === 'legacy.png');
     expect(entry.name).toBeUndefined();
   });

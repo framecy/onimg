@@ -1,7 +1,19 @@
 import { FFLATE_UMD } from './fflate-inline.js';
 import { PROTO_ENGINE_JS } from './proto-upload-engine.js';
 import apertureCss from './ui/aperture.generated.js';
-export function renderPage() {
+// 页脚文案：部署在 CF 上说的是 R2 免费额度与免出口流量，自托管后这些都不成立 ——
+// 所以从 SITE_NOTES 读（`|` 分隔，首项高亮），不配置时保持原有 Cloudflare 文案。
+const SITE_NOTES_DEFAULT = 'Cloudflare R2|10 GB 免费存储额度|无出口流量费用|全球 CDN 加速';
+
+function footerNotes(env) {
+  const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const notes = String(env?.SITE_NOTES ?? SITE_NOTES_DEFAULT).split('|').map(s => s.trim()).filter(Boolean);
+  return notes.map((n, i) => i === 0
+    ? `<span class="text-[#f97316] font-bold">${esc(n)}</span>`
+    : `<span>${esc(n)}</span>`).join('\n    <span class="text-bd-2">·</span>\n    ');
+}
+
+export function renderPage(env = {}) {
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -286,7 +298,7 @@ export function renderPage() {
           <option value="md">复制 MD</option>
           <option value="bb">复制 BBCode</option>
         </select>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx disabled:cursor-not-allowed disabled:opacity-45" id="batchCopy" disabled>复制</button>
+        <button class="copy-btn inline-flex min-h-8 w-[64px] shrink-0 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx disabled:cursor-not-allowed disabled:opacity-45" id="batchCopy" disabled>复制</button>
         <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="batchPublic">设为公开</button>
         <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="batchPrivate">设为私密</button>
         <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r" id="batchDelete">删除选中</button>
@@ -386,13 +398,7 @@ export function renderPage() {
   </main>
   <footer class="border-t border-bd px-[30px] py-[14px] flex items-center gap-[10px] text-[.75rem] text-tx-3 flex-wrap font-medium">
     <span>图片存储于</span>
-    <span class="text-[#f97316] font-bold">Cloudflare R2</span>
-    <span class="text-bd-2">·</span>
-    <span>10 GB 免费存储额度</span>
-    <span class="text-bd-2">·</span>
-    <span>无出口流量费用</span>
-    <span class="text-bd-2">·</span>
-    <span>全球 CDN 加速</span>
+    ${footerNotes(env)}
   </footer>
   </div>
 </div>
@@ -1433,6 +1439,7 @@ export function renderPage() {
   function uploadOne(file, makePublic, onProgress) {
     return new Promise(resolve => {
       const fd = new FormData(); fd.append('file', file);
+      if (makePublic) fd.append('makePublic', '1');   // 上传时一次写入公开标记，不再二次 PATCH
       const xhr = new XMLHttpRequest();
       xhr.open('POST', '/upload');
       xhr.setRequestHeader('Authorization', 'Bearer ' + token);
@@ -1441,9 +1448,6 @@ export function renderPage() {
         let data = {};
         try { data = JSON.parse(xhr.responseText); } catch {}
         if (xhr.status >= 400) { resolve({ ok: false, name: file.name, error: data.error || '上传失败', file }); return; }
-        if (makePublic && data.key) {
-          await fetch('/api/image/' + encodeURIComponent(data.key) + '/visibility', { method: 'PATCH', headers: { Authorization: 'Bearer ' + token } }).catch(() => {});
-        }
         resolve({ ok: true, url: data.url, key: data.key, name: data.name || file.name });
       });
       xhr.addEventListener('error', () => resolve({ ok: false, name: file.name, error: '网络错误', file }));
@@ -1453,7 +1457,7 @@ export function renderPage() {
 
   function resultItemHtml(r) {
     if (r.ok) {
-      return \`<div class="result-item flex items-center gap-3 rounded-lg border border-bd bg-bg-3 px-[14px] py-[10px]"><img class="h-11 w-11 rounded-xs border border-bd object-cover" src="\${r.url}" loading="lazy"><div class="min-w-0 flex-1"><div class="text-[.8rem] font-medium text-tx">\${esc(r.name)}</div><div class="mt-1 flex gap-[5px]"><input class="min-w-0 flex-1 rounded-xs border border-bd bg-bg-2 px-2 py-[3px] font-mono text-xs text-tx outline-none" value="\${r.url}" readonly onclick="this.select()"><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="cp('\${r.url}',this)">复制</button><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="cpMd('\${r.url}',\${jsStr(r.name)},this)">MD</button><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="cpBb('\${r.url}',this)">BB</button></div></div></div>\`;
+      return \`<div class="result-item flex items-center gap-3 rounded-lg border border-bd bg-bg-3 px-[14px] py-[10px]"><img class="h-11 w-11 rounded-xs border border-bd object-cover" src="\${esc(r.url)}" loading="lazy"><div class="min-w-0 flex-1"><div class="text-[.8rem] font-medium text-tx">\${esc(r.name)}</div><div class="mt-1 flex gap-[5px]"><input class="min-w-0 flex-1 rounded-xs border border-bd bg-bg-2 px-2 py-[3px] font-mono text-xs text-tx outline-none" value="\${esc(r.url)}" readonly onclick="this.select()"><button class="copy-btn inline-flex min-h-8 w-[42px] shrink-0 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${esc(r.url)}">复制</button><button class="copy-btn inline-flex min-h-8 w-[42px] shrink-0 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${esc(imgMd(r.url, r.name))}">MD</button><button class="copy-btn inline-flex min-h-8 w-[42px] shrink-0 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${esc(imgBb(r.url))}">BB</button></div></div></div>\`;
     }
     const fid = 'f' + (++uploadFidSeq);
     if (r.file) uploadFailMap.set(fid, r.file);
@@ -1553,9 +1557,18 @@ export function renderPage() {
   async function loadMineGallery() {
     if (!token) return;
     if (!mineItems.length) skelCards(document.getElementById('mineGrid'), 8);
-    const res = await fetch('/list', { headers: { Authorization: 'Bearer ' + token } });
+    let res;
+    try {
+      res = await fetch('/list', { headers: { Authorization: 'Bearer ' + token } });
+    } catch {
+      toast('图库加载失败，请重试', 'error'); return;
+    }
     if (res.status === 401) { logout(); return; }
-    const { items } = await res.json();
+    // 非 2xx 时不能把 mineItems 置空 —— 否则界面变成「一张都没有」，
+    // 让人以为图片丢了（数据其实还在）。
+    if (!res.ok) { toast('图库加载失败（' + res.status + '），请重试', 'error'); return; }
+    let items = [];
+    try { items = (await res.json()).items ?? []; } catch { items = []; }
     mineItems = items;
     renderMineGallery();
   }
@@ -1636,7 +1649,7 @@ export function renderPage() {
             <span class="text-[.68rem] text-tx-3">\${fmtSize(item.size)}</span>
           </div>
           <div class="mt-1.5 flex gap-1">
-            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="cp('\${url}',this)">复制</button>
+            <button class="copy-btn inline-flex min-h-8 w-[42px] shrink-0 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${esc(url)}">复制</button>
             <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="openTagEditor('\${item.key}')">标签</button>
             \${perms?.canDelete?\`<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-[3px]" onclick="delMine('\${item.key}')">删除</button>\`:''}
           </div>
@@ -3500,10 +3513,22 @@ export function renderPage() {
   }
   function imgMd(url, name) { return '![' + mdAlt(name) + '](' + url + ')'; }
   function imgBb(url) { return '[img]' + url + '[/img]'; }
-  function jsStr(s) { return JSON.stringify(String(s ?? '')); }
-  function cp(text, btn) { navigator.clipboard.writeText(text).then(() => { if(btn){const o=btn.innerHTML;btn.innerHTML='<svg class="inline-block h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>';setTimeout(()=>btn.innerHTML=o,1400);} }); }
-  window.cpMd = function (url, name, btn) { cp(imgMd(url, name), btn); };
-  window.cpBb = function (url, btn) { cp(imgBb(url), btn); };
+  const COPY_MARK = '<svg class="inline-block h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>';
+  function cp(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+      if (!btn) return;
+      const o = btn.innerHTML;
+      btn.innerHTML = COPY_MARK;
+      clearTimeout(btn._copyTid);
+      btn._copyTid = setTimeout(() => { btn.innerHTML = o; }, 1400);
+    });
+  }
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.copy-btn');
+    if (!btn || !btn.dataset.copy) return;
+    e.preventDefault();
+    cp(btn.dataset.copy, btn);
+  });
   function toast(msg, type) {
     const t = document.getElementById('toast');
     t.className = TOAST_BASE + ' toast show' + (type ? ' t-' + type : '');

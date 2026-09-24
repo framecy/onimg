@@ -1,4 +1,4 @@
-import { mergeUserImgEntry } from './imglist.js';
+import { mergeUserImgEntry, putImageRecords } from './imglist.js';
 import { verifyAdminToken } from './admin/auth.js';
 import { verifyUserToken } from './user-auth.js';
 import { bumpGlobalStats } from './admin/gstats.js';
@@ -43,11 +43,9 @@ export async function handleDelete(request, env, key, ctx) {
   const owner = md.owner ?? username;
   const size  = await imageSize(env, key);
 
-  // 标记软删除：imgmeta metadata + value，并在 userimgs 列表项打标
+  // 标记软删除：imgmeta metadata + value（+ 单图索引），并在 userimgs 列表项打标
   await Promise.all([
-    env.STATS.put(metaKey, JSON.stringify({ ...(existing.value ?? {}), deletedAt: now }), {
-      metadata: { ...md, deletedAt: now },
-    }),
+    putImageRecords(env, key, { ...(existing.value ?? {}), deletedAt: now }, { ...md, deletedAt: now }),
     owner ? markUserListTrashed(env, owner, key, now, size) : Promise.resolve(),
   ]);
 

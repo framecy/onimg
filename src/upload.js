@@ -1,5 +1,5 @@
 import { verifyUserToken, checkAndIncrementQuota } from './user-auth.js';
-import { mergeUserImgEntry } from './imglist.js';
+import { mergeUserImgEntry, putImageRecords } from './imglist.js';
 import { verifyAdminToken as checkAdmin } from './admin/auth.js';
 import { getUploadConfig } from './admin/config-handler.js';
 import { cfBump, cfMonth } from './admin/cfCounters.js';
@@ -80,6 +80,10 @@ export async function handleUpload(request, env, ctx) {
   const contentType = request.headers.get('Content-Type') ?? '';
   let file;
   let originalName = '';
+  // 「设为公开」在上传时一次写入（前端传 makePublic=1 / X-Make-Public: 1）。
+  // 此前是上传成功后再 PATCH 一次可见性：两个写者改同一张图的清单条目，
+  // 上传的合并写落晚时把公开标记盖回 false（表现为「勾选公开无效」）。
+  let makePublic = /^(1|true)$/i.test(request.headers.get('X-Make-Public') ?? '');
   // 流式直传：raw-body 请求（CLI --data-binary / Typora 脚本）不再把整个文件
   // arrayBuffer() 读进内存。Workers 单 isolate 内存上限 128 MB，10 MB 级文件
   // × 少量并发请求就可能顶到内存墙；request.body 直接交给 R2 put 零拷贝。
@@ -98,6 +102,8 @@ export async function handleUpload(request, env, ctx) {
     const formData = await request.formData();
     file = formData.get('file');
     if (!file) return Response.json({ error: 'Missing file field' }, { status: 400 });
+    const mp = formData.get('makePublic');
+    if (mp === '1' || mp === 'true') makePublic = true;
     // X-File-Name 优先（Vditor 等编辑器会改写上传文件名），否则用 File.name
     originalName = sanitizeOriginalName(
       safeDecode(request.headers.get('X-File-Name')) || (typeof file.name === 'string' ? file.name : ''),
@@ -138,8 +144,8 @@ export async function handleUpload(request, env, ctx) {
   // 全局计数缓存增量（best-effort，不阻塞响应）
   ctx?.waitUntil(bumpGlobalStats(env, 1, storedSize));
 
-  // Track in KV: imgmeta + userimgs
-  await trackImage(env, actor.username, key, storedSize, false, originalName); // default private
+  // Track in KV: imgmeta + userimg 单图索引 + userimgs 清单
+  await trackImage(env, actor.username, key, storedSize, makePublic, originalName);
 
   const origin = new URL(request.url).origin;
   return Response.json({
@@ -157,13 +163,13 @@ export async function trackImage(env, username, key, size, isPublic, name) {
   const uploadedAt = Date.now();
   // 原名为可选：老图片 / 未声明名的客户端上传时不写入，读侧用 key 兜底
   const withName = n => (n ? { name: n, basename: baseName(n) } : {});
-  await Promise.all([
-    // userimgs 列表：并发安全更新（写后校验+重试），避免并发上传互相覆盖丢条目
-    mergeUserImgEntry(env, username, key, { size, uploadedAt, isPublic, ...withName(name) }, { ensure: true }),
-    env.STATS.put('imgmeta:' + key, JSON.stringify({ uploadedAt, ...withName(name) }), {
-      metadata: { isPublic, owner: username },
-    }),
-  ]);
+  const value = { uploadedAt, size, ...withName(name) };
+  // 单图索引 + imgmeta：两个不同的键各写一次，不存在读改写，永不互相覆盖。
+  // 单图索引是「该用户拥有这张图」的权威来源（/list 靠它自愈清单）。
+  await putImageRecords(env, key, value, { isPublic, owner: username });
+  // userimgs 清单：读优化缓存（一次 get 拿全表）。合并 + 读后校验 + 重试；
+  // 返回 false 时数据并未丢失，下次 /list 的 repairUserManifest 会补进来。
+  await mergeUserImgEntry(env, username, key, { size, uploadedAt, isPublic, ...withName(name) }, { ensure: true });
 }
 
 async function resolveActor(request, env) {

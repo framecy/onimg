@@ -1,6 +1,6 @@
 import { verifyAdminToken } from './admin/auth.js';
 import { verifyUserToken } from './user-auth.js';
-import { mergeUserImgEntry } from './imglist.js';
+import { mergeUserImgEntry, putImageRecords, repairUserManifest } from './imglist.js';
 
 export async function handleList(request, env) {
   const isAdmin = await verifyAdminToken(request, env);
@@ -35,9 +35,12 @@ export async function handleList(request, env) {
   const user = await verifyUserToken(request, env);
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const list = await env.STATS.get('userimgs:' + user.username, 'json') ?? [];
+  // 读前先自愈：并发上传下清单可能被后写覆盖丢条目，用单图索引回补，
+  // 保证「上传成功 → 图库可见」不会因为清单写入失败而静默消失。
+  // 正常情况只多一次 list 调用（不带逐项读取），清单已完整时无写入。
+  const { manifest } = await repairUserManifest(env, user.username);
   // 排除回收站中（软删除）的图片
-  return Response.json({ items: list.filter(e => !e.deletedAt), cursor: null, truncated: false });
+  return Response.json({ items: manifest.filter(e => !e.deletedAt), cursor: null, truncated: false });
 }
 
 // 标签规范化：去重、trim、去空、长度上限，最多 10 个，每个 ≤ 24 字符。
@@ -80,10 +83,8 @@ export async function handleSetImageTags(request, env, key) {
   }
   if (existing.metadata.deletedAt) return Response.json({ error: '图片在回收站中，请先恢复' }, { status: 409 });
 
-  // 持久来源：imgmeta value（metadata 保持不变，避免超出 1KB metadata 上限）
-  await env.STATS.put(metaKey, JSON.stringify({ ...(existing.value ?? {}), tags }), {
-    metadata: existing.metadata,
-  });
+  // 持久来源：imgmeta value + 单图索引（metadata 保持不变，避免超出 1KB 上限）
+  await putImageRecords(env, key, { ...(existing.value ?? {}), tags }, existing.metadata);
 
   // 冗余进 userimgs 列表项，供前端筛选无需逐项读取（并发安全更新）
   const owner = existing.metadata.owner;
@@ -121,9 +122,7 @@ export async function handleToggleVisibility(request, env, key) {
   if (existing.metadata.deletedAt) return Response.json({ error: '图片在回收站中，请先恢复' }, { status: 409 });
 
   const newPublic = !existing.metadata.isPublic;
-  await env.STATS.put(metaKey, JSON.stringify(existing.value ?? {}), {
-    metadata: { ...existing.metadata, isPublic: newPublic },
-  });
+  await putImageRecords(env, key, existing.value ?? {}, { ...existing.metadata, isPublic: newPublic });
 
   // Update userimgs list entry too（并发安全更新：上传回写公开状态与本切换并发时防覆盖）
   const owner = existing.metadata.owner;
