@@ -31,11 +31,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm test
-
+      # 必须跑在测试之前：src/ui/aperture.generated.js 是 Tailwind 生成物且被
+      # .gitignore 忽略，干净 checkout 里不存在。任何 import 到 src/index.js 的
+      # 测试（如 d1-integration）都会顺着 index → page 这条链要求它存在。
       - name: Build CSS (Tailwind — generated file is gitignored)
         run: npm run build:css
+
+      - name: Run tests
+        run: npm test
 
       - name: Build check (wrangler dry-run)
         run: npx wrangler deploy --dry-run --outdir /tmp/wrangler-check
