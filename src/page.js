@@ -3636,7 +3636,7 @@ export function renderPage(env = {}) {
       else out += c;
     }
     return escAttr(SQ + out + SQ);
-  }}
+  }
 
   document.addEventListener('keydown', e => {
     const lb = document.getElementById('lightbox');

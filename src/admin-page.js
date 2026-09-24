@@ -1366,7 +1366,7 @@ export function renderAdminPage() {
       else out += c;
     }
     return escAttr(SQ + out + SQ);
-  }}
+  }
 
 
   function auditRowHtml(e) {
