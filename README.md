@@ -123,12 +123,23 @@ onimg
 
 > 需要 Node.js ≥ 22（wrangler 4 要求）。
 
+第一步先复制配置文件：`wrangler.toml` 存的是账号资源 ID（account_id / KV namespace / D1 database），
+属于个人账号信息，所以不入仓库、已 gitignore，仓库里只有示例文件 `wrangler.toml.example`。
+缺了它 `npm run dev` 会直接报 `Missing entry-point to Worker script or to assets directory`
+—— Worker 的入口 `main` 就写在配置里，没有配置自然找不到入口。
+
 ```bash
+cp wrangler.toml.example wrangler.toml   # 本地开发保留占位符即可，不必填真实 ID
 npm install
 npm run dev        # 本地 wrangler dev
 npm test           # vitest 单元测试（253 项）
-npx wrangler deploy --dry-run   # 构建校验
+npx wrangler deploy --dry-run   # 构建校验（只校验构建产物，见下）
 ```
+
+> `--dry-run` 只校验构建产物能不能正常打出来（编译、依赖、绑定表），
+> **不校验资源 ID 是否真实存在**：配置里全是 `<YOUR_ACCOUNT_ID>` 这类占位符时，
+> 它照样 exit 0 并正常打印绑定表。ID 写错要等真正 `npm run deploy` 才会暴露，
+> 别把「dry-run 通过」当成「配置正确」。
 
 本地凭据放在 `.dev.vars`（已 gitignore）：
 
@@ -152,6 +163,7 @@ cp wrangler.toml.example wrangler.toml
 创建资源并回填 ID：
 
 ```bash
+npx wrangler login                         # 首次使用先登录授权（浏览器 OAuth，只需一次）
 npx wrangler whoami                        # 拿 account_id
 npx wrangler kv namespace create STATS     # 拿 KV namespace id
 npx wrangler d1 create onimg-stats         # 拿 D1 database id

@@ -9,8 +9,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "build:css": "tailwindcss -i ./src/ui/aperture.css -o ./src/ui/aperture.generated.css --minify && node scripts/wrap-css.mjs",
+    "pretest": "npm run build:css",
     "predev": "npm run build:css",
     "predeploy": "npm run build:css"
+  },
+  "engines": {
+    "node": ">=22"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",

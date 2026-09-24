@@ -1,5 +1,5 @@
 -- Onimg D1 建表（kv_store 与 src/schema.js 的 D1_SCHEMA 保持一致）
--- 用法：wrangler d1 execute onimg-stats --remote --file=scripts/d1-schema.sql
+-- 用法：wrangler d1 execute onimg-stats --remote --file=docs/d1-schema.sql
 --
 -- 为什么把 KV 整体搬进 D1：全站 KV 写入的大头是「图片每次被访问写一条访问记录」，
 -- 外链页面每加载一次就打过来一次，用户自己完全无感；KV 免费版 1000 写/天扛不住。
