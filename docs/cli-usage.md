@@ -319,7 +319,7 @@ curl -sf -X POST https://img.diswant.space/upload \
 ```
 
 `key` 是随机生成的存储键（决定直链路径），**不派生自文件名**。上传时记录的原始文件名放在
-`name`（原样，含路径前缀）和 `basename`（展示用）里，并同步写入 KV 索引与 R2 对象元数据。
+`name`（原样，含路径前缀）和 `basename`（展示用）里，并同步写入 D1 索引与 R2 对象元数据。
 - raw-body 上传（`--data-binary`）用 `X-File-Name` 头声明原名（HTTP 头只能承载 latin-1，值需 URL 编码）；
 - multipart 上传直接取 `file.name`，传了 `X-File-Name` 时以它为准；
 - 没提供原名时 `name` 为空字符串，`key` 与下载都不受影响；

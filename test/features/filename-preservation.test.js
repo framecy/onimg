@@ -105,9 +105,9 @@ describe('Original filename is preserved', () => {
   });
 
   test('a full path is kept in name, last component exposed as basename', async () => {
-    const res = await handleUpload(multipartRequest(token, '/Users/alice/文稿/照片.png'), env, NOOP_CTX);
+    const res = await handleUpload(multipartRequest(token, 'assets/文稿/照片.png'), env, NOOP_CTX);
     const body = await res.json();
-    expect(body.name).toBe('/Users/alice/文稿/照片.png');
+    expect(body.name).toBe('assets/文稿/照片.png');
     expect(body.basename).toBe('照片.png');
     expect(body.key).not.toContain('/');
   });
@@ -242,7 +242,7 @@ describe('Content-Disposition carries the original filename', () => {
   test('a full path is reduced to the last component', async () => {
     const env = createEnv();
     await env.BUCKET.put('k.png', new Uint8Array(8).buffer, {
-      customMetadata: { name: '/Users/x/y/照片.png' },
+      customMetadata: { name: 'docs/images/照片.png' },
     });
     const res = await handleGet(env, NOOP_CTX, 'k.png', new Request('http://localhost/k.png'));
     expect(res.headers.get('content-disposition')).toBe("inline; filename*=UTF-8''%E7%85%A7%E7%89%87.png");
