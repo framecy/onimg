@@ -20,9 +20,29 @@ import { serveProto } from './proto/serve.js';
 import { listProtos, deleteProto, updateProtoMeta, deleteProtoVersion } from './proto/manage.js';
 import { handleTrashList, handleTrashRestore, handleTrashPurge, purgeExpiredTrash } from './trash.js';
 import { logAudit, clientIp, handleAuditLog } from './admin/audit.js';
+import { createD1Kv } from './kv-d1.js';
+
+// ── 存储层接线 ───────────────────────────────────────────────────────────────
+// 把 env.STATS 从 Workers KV 换成 D1 适配器。
+//
+// 全站只通过 env.STATS 访问 KV，且只用到 KVNamespace 的五个方法
+// （get / getWithMetadata / put / delete / list），因此就地替换即可，
+// 业务代码没有任何一个调用点需要改。
+//
+// 为什么值得换：KV 免费版 1000 写/天，而占写入量大头的是「图片每次被访问都要
+// 写一条访问记录」——外链页面每加载一次就打过来一次，用户自己完全无感。
+// 换到 D1 后额度是 10 万行写/天，且 D1 是强一致，imglist 的写后校验不再需要退避重试。
+//
+// 回滚：删掉 wrangler.toml 里的 d1_databases 绑定即可回到原始 KV 行为。
+function withD1Stats(env) {
+  if (env?.DB) env.STATS = createD1Kv(env.DB);
+  return env;
+}
 
 export default {
   async fetch(request, env, ctx) {
+    withD1Stats(env);
+
     const url = new URL(request.url);
     const { method } = request;
     const path = url.pathname;
@@ -255,7 +275,7 @@ export default {
         return withCors(res, request);
       }
       if (method === 'GET'    && path === '/list')             return withCors(await handleList(request, env), request);
-      if (method === 'GET'    && path === '/')                 return addSecurityHeaders(new Response(renderPage(), { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } }));
+      if (method === 'GET'    && path === '/')                 return addSecurityHeaders(new Response(renderPage(env), { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } }));
       if (method === 'GET'    && path.startsWith('/static/'))  return serveStaticAsset(env, path.slice('/static/'.length));
       if (method === 'GET'    && path.startsWith('/'))         return withCors(await handleGet(env, ctx, path.slice(1), request), request);
 
@@ -267,7 +287,13 @@ export default {
 
   // Cron Trigger：每日清理超过 30 天保留期的回收站内容（见 wrangler.toml [triggers]）
   async scheduled(event, env, ctx) {
+    withD1Stats(env);
     ctx.waitUntil(purgeExpiredTrash(env).catch(() => {}));
+    // D1 不像 KV 那样自动过期，由这里补上 TTL 清理
+    // （cf: 用量计数、ucount:daily:、audit: 审计日志、proto:staging: 暂存）
+    if (typeof env.STATS?.sweepExpired === 'function') {
+      ctx.waitUntil(env.STATS.sweepExpired().catch(() => {}));
+    }
   },
 };
 

@@ -5,3 +5,12 @@ node_modules/
 # Tailwind v4 构建产物（由 build:css 生成，源文件为 src/ui/aperture.css）
 src/ui/aperture.generated.css
 src/ui/aperture.generated.js
+
+# 一次性验证/调试脚本（下划线前缀约定：本机探针、临时核验，不随仓库分发）
+scripts/_*.mjs
+scripts/_*.sh
+scripts/migrate/_*.mjs
+scripts/migrate/_*.sh
+
+# 本地 IDE / 工具配置
+.claude/

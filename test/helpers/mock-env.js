@@ -1,4 +1,11 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 import { hashPassword, randomSalt } from '../../src/user-auth.js';
+import { createSqliteKv } from '../../src/kv-sqlite.js';
+import { createDiskBucket } from '../../src/storage-disk.js';
+import { D1_SCHEMA } from '../../src/schema.js';
 
 // In-memory KV Namespace
 export function createKV() {
@@ -106,11 +113,33 @@ export function createR2() {
   };
 }
 
+// 真实存储模式（ONIMG_REAL_STORAGE=1）：同一批测试跑在 SQLite + 磁盘 adapter 上，
+// 用来证明「迁移后的存储形态能被现有代码原样读出来」。默认仍是内存 mock。
+// 隔离策略：每个 vitest worker 一个根目录（并行 worker 不能共用，否则会互相删掉正在写的文件），
+// 每次 createEnv 一份全新存储 —— 与内存 mock 的「每次 createEnv 都是干净环境」语义对齐。
+let workerDir = null;
+let envSeq = 0;
+function realStorage() {
+  if (!workerDir) {
+    const base = process.env.ONIMG_TEST_ROOT ?? path.join(os.tmpdir(), 'onimg-real-storage-test');
+    workerDir = path.join(base, `w${process.pid}`);
+    fs.rmSync(workerDir, { recursive: true, force: true });
+    fs.mkdirSync(workerDir, { recursive: true });
+  }
+  const dir = path.join(workerDir, `env${++envSeq}`);
+  fs.mkdirSync(dir, { recursive: true });
+  const kv = createSqliteKv({ dbFile: path.join(dir, 'onimg.db') });
+  const bucket = createDiskBucket({ dataDir: path.join(dir, 'data'), db: kv.db });
+  return { kv, bucket };
+}
+
 // Build a test environment
 export function createEnv(overrides = {}) {
+  const store = process.env.ONIMG_REAL_STORAGE === '1'
+    ? (() => { const { kv, bucket } = realStorage(); return { STATS: kv, BUCKET: bucket }; })()
+    : { STATS: createKV(), BUCKET: createR2() };
   return {
-    STATS: createKV(),
-    BUCKET: createR2(),
+    ...store,
     ADMIN_USERNAME: 'admin',
     ADMIN_PASSWORD: 'AdminP@ss99!',
     TOKEN_SECRET: 'test-secret-at-least-32-bytes!!',
@@ -184,4 +213,76 @@ export async function createTestImage(env, key, owner) {
   const list = await env.STATS.get('userimgs:' + owner, 'json') ?? [];
   list.unshift({ key, size: 512, uploadedAt: Date.now(), isPublic: true });
   await env.STATS.put('userimgs:' + owner, JSON.stringify(list));
+}
+
+// ── 内存 D1 模拟 ──────────────────────────────────────────────────────────────
+// 契约与真实 D1 完全一致（用 miniflare 的 workerd 实测对齐过）：
+//   run()   → { success, meta: { changes, last_row_id, ... }, results: [] }
+//   all()   → { success, meta, results: [ {col: val}, ... ] }
+//   first() → 行对象；**未命中返回 null**（不是 undefined）
+//   raw()   → 列值的二维数组
+//   batch() → 数组，每项同 run()/all() 结构；在同一事务内，任一失败全部回滚
+//   exec()  → { count, duration }，支持一个字符串里的多条语句
+// 底层是真实 SQLite（node:sqlite），所以能测出 src/kv-d1.js 里 SQL 的真实行为。
+export function createD1({ schema = D1_SCHEMA } = {}) {
+  const db = new DatabaseSync(':memory:');
+  if (schema) db.exec(schema);
+
+  const metaOf = (info, changes = 0) => ({
+    served_by: 'mock.d1',
+    duration: 0,
+    changes: Number(changes),
+    last_row_id: Number(info?.lastInsertRowid ?? 0),
+    changed_db: Number(changes) > 0,
+    size_after: 0,
+    rows_read: 0,
+    rows_written: Number(changes),
+  });
+
+  const prepare = (sql) => {
+    const stmt = db.prepare(sql);
+    let bound = [];
+    const api = {
+      bind(...args) { bound = args.map(a => (a === undefined ? null : a)); return api; },
+      async run() {
+        const info = stmt.run(...bound);
+        return { success: true, meta: metaOf(info, info.changes), results: [] };
+      },
+      async all() {
+        const results = stmt.all(...bound);
+        return { success: true, meta: metaOf(null, 0), results };
+      },
+      async first() {
+        const rows = stmt.all(...bound);
+        return rows.length ? rows[0] : null;
+      },
+      async raw() {
+        const rows = stmt.all(...bound);
+        return rows.map(r => Object.values(r));
+      },
+    };
+    return api;
+  };
+
+  return {
+    prepare,
+    /** 事务性批量：与真实 D1 一致，任一语句失败则整批回滚 */
+    async batch(stmts) {
+      db.exec('BEGIN');
+      try {
+        const out = [];
+        for (const s of stmts) out.push(await s.all());
+        db.exec('COMMIT');
+        return out;
+      } catch (e) {
+        db.exec('ROLLBACK');
+        throw e;
+      }
+    },
+    async exec(sql) {
+      db.exec(sql);
+      return { count: 1, duration: 0 };
+    },
+    _db: db,
+  };
 }
