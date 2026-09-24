@@ -1,4 +1,5 @@
 import { renderMarkdown, extractHeadings } from './markdown.js';
+import { bumpDaily } from '../admin/dailyStats.js';
 
 export async function servePage(env, slug, ctx, request) {
   const page = await env.STATS.get('page:' + slug, 'json');
@@ -25,6 +26,8 @@ export async function servePage(env, slug, ctx, request) {
   }
 
   if (ctx && request) ctx.waitUntil(recordPageAccess(env, slug, request));
+  // 按天计数：后台趋势图的真实数据源
+  if (ctx) ctx.waitUntil(bumpDaily(env.STATS, 'pageview'));
 
   // Auto-detect HTML if type is ambiguous or content starts with a doctype/html tag
   const isHtml = page.type === 'html' ||

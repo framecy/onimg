@@ -1,4 +1,5 @@
 import { sanitizeOriginalName } from './upload.js';
+import { bumpDaily } from './admin/dailyStats.js';
 
 export async function handleGet(env, ctx, key, request) {
   if (!key) return new Response('Not Found', { status: 404 });
@@ -8,6 +9,8 @@ export async function handleGet(env, ctx, key, request) {
 
   // 后台记录访问，不阻塞响应
   ctx.waitUntil(recordAccess(env, key, request));
+  // 按天计数：后台趋势图的真实数据源（localStorage 那套模拟已废弃）
+  ctx.waitUntil(bumpDaily(env.STATS, 'imgview'));
 
   const headers = {
     'Content-Type': object.httpMetadata?.contentType ?? 'application/octet-stream',

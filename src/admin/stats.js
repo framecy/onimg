@@ -1,3 +1,5 @@
+import { DAILY_METRICS, readDailyRange } from './dailyStats.js';
+
 import { getGlobalStats, reconcileGlobalStats } from './gstats.js';
 
 // ── Cloudflare 免费额度 — CF Analytics API 优先，自追踪降级 ──────────────────────
@@ -463,4 +465,29 @@ export async function handleProtoStats(env, protoId) {
     ips,
     accesses: accesses.slice(0, 100),
   });
+}
+
+// ── 趋势数据（后台迷你趋势线的真实来源）────────────────────────────────────────
+//
+// 返回最近 N 天各指标的每日计数。原先后台的趋势线是用 localStorage 记录
+// 「每次打开后台时的数值」模拟的（最多 10 点、换浏览器归零），这里改为读
+// dailyStats 模块真实累加的按天计数。
+//
+// 一并返回 collectedDays：有数据的天数。为 0 说明刚上线还没积累，
+// 前端据此显示「数据积累中」而不是画一条全 0 的假线。
+export async function handleTrend(env, url) {
+  const daysParam = parseInt(url?.searchParams?.get('days') ?? '30', 10);
+  const days = Math.min(Math.max(Number.isFinite(daysParam) ? daysParam : 30, 7), 90);
+
+  const metrics = DAILY_METRICS;
+  const series = await Promise.all(metrics.map(m => readDailyRange(env.STATS, m, days)));
+
+  const out = {};
+  let collectedDays = 0;
+  metrics.forEach((m, i) => {
+    out[m] = series[i];
+    if (series[i].some(p => p.count > 0)) collectedDays++;
+  });
+
+  return Response.json({ days, series: out, collectedMetrics: collectedDays, generatedAt: Date.now() });
 }

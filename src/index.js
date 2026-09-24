@@ -6,7 +6,7 @@ import { renderPage } from './page.js';
 import { renderAdminPage } from './admin-page.js';
 import apertureCss from './ui/aperture.generated.js';
 import { handleAdminLogin, verifyAdminToken, timingSafeEqual } from './admin/auth.js';
-import { handleAdminStats, handleReconcileStats, handleAllImageStats, handleImageStats, handleR2DetailedStats, handleMemberStats, handleAllPageStats, handlePageStats, handleAllProtoStats, handleProtoStats, handleCfQuota } from './admin/stats.js';
+import { handleAdminStats, handleReconcileStats, handleAllImageStats, handleImageStats, handleR2DetailedStats, handleMemberStats, handleAllPageStats, handlePageStats, handleAllProtoStats, handleProtoStats, handleCfQuota, handleTrend } from './admin/stats.js';
 import { cfBump, cfDay } from './admin/cfCounters.js';
 import { handleListUsers, handleCreateUser, handleUpdateUser, handleDeleteUser } from './admin/users.js';
 import { handleGetConfig, handleUpdateConfig } from './admin/config-handler.js';
@@ -175,6 +175,7 @@ export default {
 
         if (method === 'GET'  && path === '/admin/cf-quota')         return withCors(await handleCfQuota(env), request);
         if (method === 'GET'  && path === '/admin/audit')            return withCors(await handleAuditLog(env, url), request);
+        if (method === 'GET'  && path === '/admin/trend')            return withCors(await handleTrend(env, url), request);
         if (method === 'GET'  && path === '/admin/stats')           return withCors(await handleAdminStats(env), request);
         if (method === 'POST' && path === '/admin/stats/reconcile') return withCors(await handleReconcileStats(env), request);
         if (method === 'GET'  && path === '/admin/all-image-stats') return withCors(await handleAllImageStats(env), request);

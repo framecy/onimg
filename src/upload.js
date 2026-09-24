@@ -4,6 +4,7 @@ import { verifyAdminToken as checkAdmin } from './admin/auth.js';
 import { getUploadConfig } from './admin/config-handler.js';
 import { cfBump, cfMonth } from './admin/cfCounters.js';
 import { bumpGlobalStats } from './admin/gstats.js';
+import { bumpDaily } from './admin/dailyStats.js';
 
 // ── 原始文件名 ───────────────────────────────────────────────────────────────
 //
@@ -143,6 +144,8 @@ export async function handleUpload(request, env, ctx) {
   ctx?.waitUntil(cfBump(env.STATS, 'cf:r2a:' + cfMonth(), 1, true));
   // 全局计数缓存增量（best-effort，不阻塞响应）
   ctx?.waitUntil(bumpGlobalStats(env, 1, storedSize));
+  // 按天计数：后台趋势图的真实数据源
+  ctx?.waitUntil(bumpDaily(env.STATS, 'upload'));
 
   // Track in KV: imgmeta + userimg 单图索引 + userimgs 清单
   await trackImage(env, actor.username, key, storedSize, makePublic, originalName);

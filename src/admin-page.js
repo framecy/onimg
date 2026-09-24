@@ -178,6 +178,10 @@ export function renderAdminPage() {
           <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,12 5,7 9,9 13,4"/><polyline points="10,4 13,4 13,7"/></svg></span>
           成员统计
         </button>
+        <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="audit">
+          <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 1.5h7l3 3v10H3z"/><path d="M10 1.5v3h3"/><line x1="5.5" y1="8" x2="10.5" y2="8"/><line x1="5.5" y1="10.5" x2="10.5" y2="10.5"/></svg></span>
+          审计日志
+        </button>
         <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="settings">
           <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M12.95 3.05l-1.41 1.41M4.46 11.54l-1.41 1.41"/></svg></span>
           系统设置
@@ -601,6 +605,60 @@ export function renderAdminPage() {
             <tbody id="memberTableBody"><tr><td colspan="7" class="text-center text-tx-3 p-8">加载中…</td></tr></tbody>
           </table>
         </div>
+      </div>
+
+      <!-- ── Audit Log ── -->
+      <div class="section hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-audit">
+        <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
+          <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">审计日志</div>
+          <div class="text-sm font-medium text-tx-3">登录、删除、用户与配置变更等敏感操作记录（保留 92 天）</div>
+        </div>
+
+        <!-- 筛选条 -->
+        <div class="mb-4 flex flex-wrap items-center gap-2.5 rounded-lg border border-bd bg-bg-3 px-4 py-3">
+          <label class="text-[.78rem] font-semibold text-tx-2">时间范围</label>
+          <select class="rounded-sm border border-bd bg-bg-2 px-2.5 py-1.5 text-[.8rem] text-tx outline-none transition focus:border-bd-focus" id="auditDays">
+            <option value="1">今天</option>
+            <option value="7" selected>最近 7 天</option>
+            <option value="30">最近 30 天</option>
+            <option value="31">最近 31 天</option>
+          </select>
+
+          <label class="ml-2 text-[.78rem] font-semibold text-tx-2">操作类型</label>
+          <select class="rounded-sm border border-bd bg-bg-2 px-2.5 py-1.5 text-[.8rem] text-tx outline-none transition focus:border-bd-focus" id="auditAction">
+            <option value="">全部</option>
+          </select>
+
+          <label class="ml-2 text-[.78rem] font-semibold text-tx-2">操作者</label>
+          <input class="w-[140px] rounded-sm border border-bd bg-bg-2 px-2.5 py-1.5 text-[.8rem] text-tx outline-none transition focus:border-bd-focus" type="text" id="auditActor" placeholder="用户名">
+
+          <button class="rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-[.8rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="auditRefresh">刷新</button>
+          <div class="flex-1"></div>
+          <span class="font-mono text-[.75rem] text-tx-3" id="auditSummary"></span>
+        </div>
+
+        <!-- 列表 -->
+        <div class="overflow-hidden rounded-lg border border-bd bg-bg-3">
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse text-left">
+              <thead>
+                <tr class="border-b border-bd bg-bg-4">
+                  <th class="whitespace-nowrap px-4 py-2.5 text-[.65rem] font-bold uppercase tracking-[.1em] text-tx-3">时间</th>
+                  <th class="whitespace-nowrap px-4 py-2.5 text-[.65rem] font-bold uppercase tracking-[.1em] text-tx-3">操作</th>
+                  <th class="whitespace-nowrap px-4 py-2.5 text-[.65rem] font-bold uppercase tracking-[.1em] text-tx-3">操作者</th>
+                  <th class="whitespace-nowrap px-4 py-2.5 text-[.65rem] font-bold uppercase tracking-[.1em] text-tx-3">对象</th>
+                  <th class="whitespace-nowrap px-4 py-2.5 text-[.65rem] font-bold uppercase tracking-[.1em] text-tx-3">状态</th>
+                  <th class="whitespace-nowrap px-4 py-2.5 text-[.65rem] font-bold uppercase tracking-[.1em] text-tx-3">来源 IP</th>
+                </tr>
+              </thead>
+              <tbody id="auditBody">
+                <tr><td colspan="6" class="p-8 text-center text-tx-3">加载中…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mt-3 text-[.73rem] text-tx-3" id="auditHint"></div>
       </div>
 
       <!-- ── Settings ── -->
@@ -1248,7 +1306,98 @@ export function renderAdminPage() {
     if (name === 'pages') loadAdminPages();
     if (name === 'protos') loadAdminProtos();
     if (name === 'members') loadMemberStats();
+    if (name === 'audit') loadAudit();
   }
+
+  // ── 审计日志 ────────────────────────────────────────────────────────────────
+  // 后端 /admin/audit 早已存在，但后台一直没有入口（grep audit 命中 0 次）。
+  // 这里补上列表、筛选与汇总。
+  const AUDIT_ACTION_LABEL = {
+    'user.login': '用户登录', 'admin.login': '管理员登录',
+    'user.logout': '退出登录', 'user.create': '新建用户', 'user.update': '修改用户',
+    'user.delete': '删除用户', 'user.password': '修改密码',
+    'image.delete': '删除图片', 'image.purge': '彻底删除图片',
+    'image.restore': '恢复图片', 'image.visibility': '切换可见性', 'image.tags': '修改标签',
+    'page.create': '新建页面', 'page.update': '修改页面', 'page.delete': '删除页面',
+    'proto.create': '上传原型', 'proto.update': '更新原型', 'proto.delete': '删除原型',
+    'config.update': '修改配置',
+  };
+  let auditLoaded = false;
+  let lastAuditAll = [];
+
+  function auditLabel(action) {
+    return AUDIT_ACTION_LABEL[action] || action || '—';
+  }
+
+  function auditRowHtml(e) {
+    const t = e.ts ? new Date(e.ts).toLocaleString('zh-CN', { hour12: false }) : '—';
+    const ok = (e.status ?? 'ok') === 'ok';
+    const badge = ok
+      ? '<span class="rounded-xs border border-[rgba(52,211,153,.25)] bg-[rgba(52,211,153,.12)] px-1.5 py-px text-[.68rem] font-semibold text-[#34d399]">成功</span>'
+      : '<span class="rounded-xs border border-red-r bg-red-g px-1.5 py-px text-[.68rem] font-semibold text-red">失败</span>';
+    return \`<tr class="border-b border-bd last:border-b-0 hover:bg-bg-4">
+      <td class="whitespace-nowrap px-4 py-2.5 font-mono text-[.76rem] text-tx-2">\${esc(t)}</td>
+      <td class="whitespace-nowrap px-4 py-2.5 text-[.8rem] text-tx">\${esc(auditLabel(e.action))}<span class="ml-1.5 font-mono text-[.68rem] text-tx-3">\${esc(e.action || '')}</span></td>
+      <td class="whitespace-nowrap px-4 py-2.5 text-[.8rem] text-tx-2">\${esc(e.actor || '—')}</td>
+      <td class="max-w-[240px] truncate px-4 py-2.5 font-mono text-[.74rem] text-tx-3" title="\${esc(e.target || '')}">\${esc(e.target || '—')}</td>
+      <td class="whitespace-nowrap px-4 py-2.5">\${badge}</td>
+      <td class="whitespace-nowrap px-4 py-2.5 font-mono text-[.74rem] text-tx-3">\${esc(e.ip || '—')}</td>
+    </tr>\`;
+  }
+
+  async function loadAudit() {
+    const body = document.getElementById('auditBody');
+    const days = document.getElementById('auditDays').value;
+    body.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-tx-3">加载中…</td></tr>';
+    try {
+      const r = await adminFetch('/admin/audit?days=' + encodeURIComponent(days), { headers: authH() });
+      if (!r.ok) {
+        body.innerHTML = \`<tr><td colspan="6" class="p-8 text-center text-red">加载失败（HTTP \${r.status}）</td></tr>\`;
+        return;
+      }
+      const data = await r.json();
+      auditLoaded = true;
+      const all = Array.isArray(data.entries) ? data.entries : [];
+      lastAuditAll = all;
+
+      // 操作类型下拉：按实际出现过的 action 填充（保留当前选择）
+      const sel = document.getElementById('auditAction');
+      const cur = sel.value;
+      const actions = [...new Set(all.map(e => e.action).filter(Boolean))].sort();
+      sel.innerHTML = '<option value="">全部</option>' +
+        actions.map(a => \`<option value="\${esc(a)}">\${esc(auditLabel(a))}（\${all.filter(e => e.action === a).length}）</option>\`).join('');
+      if (actions.includes(cur)) sel.value = cur;
+
+      renderAudit(all);
+    } catch {
+      body.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-red">加载失败：网络错误</td></tr>';
+    }
+  }
+
+  function renderAudit(all) {
+    const body = document.getElementById('auditBody');
+    const action = document.getElementById('auditAction').value;
+    const actor = document.getElementById('auditActor').value.trim().toLowerCase();
+
+    const rows = all.filter(e =>
+      (!action || e.action === action) &&
+      (!actor || String(e.actor || '').toLowerCase().includes(actor)),
+    );
+
+    document.getElementById('auditSummary').textContent = \`共 \${rows.length} 条\` + (rows.length !== all.length ? \`（已筛选，全部 \${all.length} 条）\` : '');
+    document.getElementById('auditHint').textContent = all.length
+      ? '审计日志按 UTC 天滚动存储，每天最多 500 条，保留 92 天。'
+      : '所选时间范围内没有记录。';
+
+    body.innerHTML = rows.length
+      ? rows.map(auditRowHtml).join('')
+      : '<tr><td colspan="6" class="p-8 text-center text-tx-3">没有符合条件的记录</td></tr>';
+  }
+
+  document.getElementById('auditRefresh').addEventListener('click', loadAudit);
+  document.getElementById('auditDays').addEventListener('change', loadAudit);
+  document.getElementById('auditAction').addEventListener('change', () => renderAudit(lastAuditAll));
+  document.getElementById('auditActor').addEventListener('input', () => renderAudit(lastAuditAll));
 
   // ── Dashboard stats tab switching ────────────────────────────────────────────
   document.querySelectorAll('[data-dash-tab]').forEach(btn => {
@@ -1290,31 +1439,79 @@ export function renderAdminPage() {
     }
     return hist;
   }
-  function renderSpark(elId, id, value) {
-    const el = document.getElementById(elId);
-    if (!el) return;
-    const hist = sparkTrack(id, value);
-    if (hist.length < 2) { el.innerHTML = ''; return; }
-    const n = hist.length, w = 52, h = 16;
-    const min = Math.min(...hist), max = Math.max(...hist);
-    const pts = hist.map((v, i) => {
-      const x = (i / (n - 1)) * w;
+  // 趋势线：优先用后端按天统计的真实数据（/admin/trend），
+  // 无对应指标时退回「本地记录每次刷新值」的降级方式（仅作参考，会标注）。
+  //
+  // 旧的纯 localStorage 实现已废弃：它只在管理员打开后台时采样、最多 10 点、
+  // 换浏览器就归零，画出来的曲线并不能反映真实趋势。
+  let trendCache = null;          // { imgview: [...], pageview: [...], ... }
+  let trendCollected = 0;
+
+  async function loadTrend() {
+    try {
+      const r = await adminFetch('/admin/trend?days=30', { headers: authH() });
+      if (!r.ok) return;
+      const d = await r.json();
+      trendCache = d.series || null;
+      trendCollected = d.collectedMetrics ?? 0;
+    } catch { /* 拉不到就退回降级方式 */ }
+  }
+
+  function sparkSvg(values, opts = {}) {
+    const w = 52, h = 16;
+    if (!values || values.length < 2) return '';
+    const min = Math.min(...values), max = Math.max(...values);
+    const pts = values.map((v, i) => {
+      const x = (i / (values.length - 1)) * w;
       const y = max === min ? h / 2 : h - ((v - min) / (max - min)) * h;
       return x.toFixed(1) + ',' + y.toFixed(1);
     }).join(' ');
-    const prev = hist[n - 2], curr = hist[n - 1];
+    return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" fill="none">' +
+      '<polyline points="' + pts + '" stroke="' + (opts.color || 'var(--color-brand)') + '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  }
+
+  function renderSpark(elId, metric, fallbackId, fallbackValue) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+
+    // 1) 真实按天数据
+    const series = trendCache && metric ? trendCache[metric] : null;
+    if (series && series.length >= 2 && series.some(p => p.count > 0)) {
+      const counts = series.map(p => p.count);
+      const today = counts[counts.length - 1], yday = counts[counts.length - 2];
+      const flat = today === yday;
+      const up = today > yday;
+      const delta = yday !== 0 ? Math.abs((today - yday) / yday) * 100 : (today > 0 ? 100 : 0);
+      const color = flat ? 'var(--color-tx-3)' : (up ? 'var(--color-green)' : 'var(--color-red)');
+      const txt = flat ? '持平' : ((up ? '↑ ' : '↓ ') + (delta >= 1000 ? Math.round(delta) : delta.toFixed(1)) + '%');
+      el.innerHTML = sparkSvg(counts, { color }) +
+        '<span class="font-mono text-[.68rem] font-bold" style="color:' + color + '" title="今日 ' + today + ' / 昨日 ' + yday + '">' + txt + '</span>';
+      return;
+    }
+
+    // 2) 还没积累够数据：说明清楚，不画假线
+    if (metric && trendCache) {
+      el.innerHTML = '<span class="text-[.66rem] text-tx-3">趋势数据积累中</span>';
+      return;
+    }
+
+    // 3) 无对应指标（如图片总数、存储用量）：沿用本地记录，并标注来源
+    const hist = sparkTrack(fallbackId, fallbackValue);
+    if (hist.length < 2) { el.innerHTML = ''; return; }
+    const prev = hist[hist.length - 2], curr = hist[hist.length - 1];
     const flat = curr === prev;
     const up = curr > prev;
     const delta = prev !== 0 ? Math.abs((curr - prev) / prev) * 100 : (curr > 0 ? 100 : 0);
     const color = flat ? 'var(--color-tx-3)' : (up ? 'var(--color-green)' : 'var(--color-red)');
-    const arrow = flat ? '' : (up ? '↑' : '↓');
-    const deltaTxt = flat ? '持平' : (arrow + ' ' + (delta >= 1000 ? Math.round(delta) : delta.toFixed(1)) + '%');
-    el.innerHTML = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" fill="none">' +
-      '<polyline points="' + pts + '" stroke="' + color + '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-      '<span class="font-mono text-[.68rem] font-bold" style="color:' + color + '">' + deltaTxt + '</span>';
+    const deltaTxt = flat ? '持平' : ((up ? '↑ ' : '↓ ') + (delta >= 1000 ? Math.round(delta) : delta.toFixed(1)) + '%');
+    el.innerHTML = sparkSvg(hist, { color }) +
+      '<span class="font-mono text-[.68rem] font-bold" style="color:' + color + '" title="本地记录，非服务端历史">' + deltaTxt + '</span>' +
+      '<span class="text-[.6rem] text-tx-3">本地</span>';
   }
 
   async function loadDashboard() {
+    // 趋势数据要在渲染卡片前拿到（renderSpark 依赖 trendCache）
+    await loadTrend();
     const [sRes, iRes, pRes, psRes, prRes, prsRes] = await Promise.all([
       adminFetch('/admin/stats',           { headers: authH() }),
       adminFetch('/admin/all-image-stats', { headers: authH() }),
@@ -1336,22 +1533,22 @@ export function renderAdminPage() {
     allPageStats = pgStats;
 
     document.getElementById('statImages').textContent = totalImages.toLocaleString();
-    renderSpark('statImagesSpark', 'images', totalImages);
+    renderSpark('statImagesSpark', 'upload', 'images', totalImages);
     const { val, unit } = fmtSizeParts(totalSize);
     document.getElementById('statSize').textContent = val;
     document.getElementById('statSizeUnit').textContent = unit;
-    renderSpark('statSizeSpark', 'size', totalSize);
+    renderSpark('statSizeSpark', null, 'size', totalSize);
     const freeGb = Math.max(0, 10 - totalSize/1073741824);
     document.getElementById('statFree').textContent = freeGb.toFixed(2);
-    renderSpark('statFreeSpark', 'free', freeGb);
+    renderSpark('statFreeSpark', null, 'free', freeGb);
     const totalViews = Object.values(stats).reduce((s,v) => s+(v.count??0), 0);
     document.getElementById('statViews').textContent = totalViews.toLocaleString();
-    renderSpark('statViewsSpark', 'views', totalViews);
+    renderSpark('statViewsSpark', 'imgview', 'views', totalViews);
     document.getElementById('statPages').textContent = pages.length.toLocaleString();
-    renderSpark('statPagesSpark', 'pages', pages.length);
+    renderSpark('statPagesSpark', null, 'pages', pages.length);
     const totalPageViews = Object.values(pgStats).reduce((s,v) => s+(v.count??0), 0);
     document.getElementById('statPageViews').textContent = totalPageViews.toLocaleString();
-    renderSpark('statPageViewsSpark', 'pageviews', totalPageViews);
+    renderSpark('statPageViewsSpark', 'pageview', 'pageviews', totalPageViews);
 
     // Tab count badges
     const imgWithViews = Object.values(stats).filter(s => (s.count??0) > 0).length;

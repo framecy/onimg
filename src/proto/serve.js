@@ -1,5 +1,6 @@
 import { MIME_MAP } from './upload.js';
 import { cfBump, cfMonth } from '../admin/cfCounters.js';
+import { bumpDaily } from '../admin/dailyStats.js';
 
 function parseCookies(header) {
   const out = {};
@@ -158,6 +159,8 @@ export async function serveProto(env, protoId, filePath, request) {
         });
         // R2 Class B 追踪：附带在同一个 async 块，不额外消耗 KV 写入配额
         await cfBump(env.STATS, 'cf:r2b:' + cfMonth(), 1, true);
+        // 按天计数：后台趋势图的真实数据源
+        await bumpDaily(env.STATS, 'protoview');
       } catch {}
     })();
   }
