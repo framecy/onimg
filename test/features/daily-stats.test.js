@@ -147,3 +147,46 @@ describe('/admin/trend 接口', () => {
     expect(d.days).toBe(30);
   });
 });
+
+describe('读取的子请求预算（免费版单请求上限 50）', () => {
+  // 这不是理论问题：90 天 × 4 指标若逐 key 取值 = 360+ 次绑定调用，接口会直接失败。
+  // 计数冗余进 metadata 后，list() 一次带回全部计数，子请求数与天数无关。
+  test('readDailyRange 只做 1 次 list，不随天数增长', async () => {
+    const env = createEnv();
+    for (let i = 0; i < 40; i++) {
+      await env.STATS.put(dailyKey('imgview', utcDay(Date.now() - i * 86400000)), String(i), {
+        metadata: { count: i },
+      });
+    }
+    let lists = 0, gets = 0;
+    const spy = {
+      list: (...a) => { lists++; return env.STATS.list(...a); },
+      get: (...a) => { gets++; return env.STATS.get(...a); },
+    };
+    const seq = await readDailyRange(spy, 'imgview', 90);
+    expect(seq).toHaveLength(90);
+    expect(lists).toBe(1);
+    expect(gets).toBe(0);            // metadata 命中，完全不需要逐 key 取
+    expect(seq[seq.length - 1].count).toBe(0);
+    expect(seq[seq.length - 2].count).toBe(1);
+  });
+
+  test('bumpDaily 把计数同时写进 metadata', async () => {
+    const env = createEnv();
+    await bumpDaily(env.STATS, 'imgview', 7);
+    const { value, metadata } = await env.STATS.getWithMetadata(dailyKey('imgview'));
+    expect(value).toBe('7');
+    expect(metadata).toEqual({ count: 7 });
+  });
+
+  test('老数据没有 metadata 时退回逐 key 取值（兼容升级前）', async () => {
+    const env = createEnv();
+    const day = utcDay();
+    await env.STATS.put(dailyKey('pageview', day), '42');   // 故意不带 metadata
+    let gets = 0;
+    const spy = { list: (...a) => env.STATS.list(...a), get: (...a) => { gets++; return env.STATS.get(...a); } };
+    const seq = await readDailyRange(spy, 'pageview', 3);
+    expect(gets).toBe(1);                                    // 只对缺 metadata 的那 1 个补取
+    expect(seq[seq.length - 1].count).toBe(42);
+  });
+});

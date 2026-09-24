@@ -18,7 +18,12 @@
  *   imgview   图片被访问
  *   pageview  托管页面被访问
  *   protoview 原型 HTML 被访问
- *   upload    上传成功（图片 / 原型都算）
+ *   upload    图片上传成功（原型上传未计入，见下）
+ *
+ * 已知缺口：原型上传（src/proto/upload.js）目前不累加 upload。
+ * 原型的上传链路是分批 + finalize 的，一个原型会产生多次请求，
+ * 「上传次数」的口径需要先定义清楚（算一次原型还是算每批）再决定接在哪。
+ * 在定义清楚之前先不接，避免指标含义含糊。
  *
  * TTL 400 天：够画一年趋势，也不会无限占用存储。
  */
@@ -47,14 +52,26 @@ export async function bumpDaily(stats, metric, delta = 1) {
   try {
     const key = dailyKey(metric);
     const cur = parseInt((await stats.get(key)) ?? '0', 10);
-    await stats.put(key, String(cur + delta), { expirationTtl: TTL_DAYS * 86400 });
+    const next = cur + delta;
+    // 计数同时写进 metadata：读取时 list() 会带上 metadata，
+    // 因此一次 list 就能拿到整段区间的计数，不必逐 key get。
+    // 这不是锦上添花 —— 90 天 × 4 指标若逐 key 取，会是 360+ 次绑定调用，
+    // 远超 Workers 免费版单请求 50 次子请求的上限，接口会直接失败。
+    await stats.put(key, String(next), {
+      metadata: { count: next },
+      expirationTtl: TTL_DAYS * 86400,
+    });
   } catch { /* 静默忽略，不影响主业务 */ }
 }
 
 /**
  * 读取最近 N 天的计数序列（含没有数据的日子，补 0）。
  *
- * 一次 D1 范围查询取回整段，而不是逐 key get —— 30 天只要 1 次查询。
+ * 只做 1 次 list：计数冗余在 key 的 metadata 上，list 会一并返回，
+ * 所以无论 days 多大，子请求数恒为 1。
+ *
+ * 兼容：早期写入的 key 没有 metadata（或 count 非数字）时，退回逐 key 取值。
+ * 那种情况只会出现在升级前的历史数据上，且量很小。
  *
  * @param {KVNamespace} stats env.STATS
  * @param {string} metric     见 DAILY_METRICS
@@ -72,17 +89,23 @@ export async function readDailyRange(stats, metric, days = 30) {
 
   // D1 适配器支持 list()；单次最多 1000 个 key，一年 365 个足够
   const res = await stats.list({ prefix, limit: 1000 });
-  const found = new Map();
+  const byDay = new Map();
+  const needFetch = [];
+
   for (const k of res?.keys ?? []) {
     const day = k.name.slice(prefix.length);
-    if (day >= from && day <= today) found.set(day, k.name);
+    if (day < from || day > today) continue;
+    const c = k.metadata?.count;
+    if (typeof c === 'number' && Number.isFinite(c)) byDay.set(day, c);
+    else needFetch.push([day, k.name]);   // 老数据没有 metadata，单独取
   }
 
-  // 只对落在区间内的 key 取值（通常就是 n 个）
-  const values = await Promise.all(
-    [...found.entries()].map(async ([day, name]) => [day, parseInt((await stats.get(name)) ?? '0', 10)]),
-  );
-  const byDay = new Map(values);
+  if (needFetch.length) {
+    const fetched = await Promise.all(
+      needFetch.map(async ([day, name]) => [day, parseInt((await stats.get(name)) ?? '0', 10)]),
+    );
+    for (const [day, count] of fetched) byDay.set(day, count);
+  }
 
   const out = [];
   for (let i = n - 1; i >= 0; i--) {

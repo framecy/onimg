@@ -1322,11 +1322,19 @@ export function renderAdminPage() {
     'proto.create': '上传原型', 'proto.update': '更新原型', 'proto.delete': '删除原型',
     'config.update': '修改配置',
   };
-  let auditLoaded = false;
   let lastAuditAll = [];
 
   function auditLabel(action) {
     return AUDIT_ACTION_LABEL[action] || action || '—';
+  }
+
+  // HTML 属性上下文专用的转义：esc() 只处理 &<>，不含引号，
+  // 直接用在 title="..." 这类属性里时，值中出现双引号会突破属性边界。
+  // 注意：不要拿它去替换 onclick 里的 esc() —— 那些是「HTML 属性 + JS 字符串」
+  // 双重上下文，转成 &quot; 后 JS 拿到的就不是引号了，会导致参数值出错。
+  function escAttr(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   function auditRowHtml(e) {
@@ -1339,7 +1347,7 @@ export function renderAdminPage() {
       <td class="whitespace-nowrap px-4 py-2.5 font-mono text-[.76rem] text-tx-2">\${esc(t)}</td>
       <td class="whitespace-nowrap px-4 py-2.5 text-[.8rem] text-tx">\${esc(auditLabel(e.action))}<span class="ml-1.5 font-mono text-[.68rem] text-tx-3">\${esc(e.action || '')}</span></td>
       <td class="whitespace-nowrap px-4 py-2.5 text-[.8rem] text-tx-2">\${esc(e.actor || '—')}</td>
-      <td class="max-w-[240px] truncate px-4 py-2.5 font-mono text-[.74rem] text-tx-3" title="\${esc(e.target || '')}">\${esc(e.target || '—')}</td>
+      <td class="max-w-[240px] truncate px-4 py-2.5 font-mono text-[.74rem] text-tx-3" title="\${escAttr(e.target || '')}">\${esc(e.target || '—')}</td>
       <td class="whitespace-nowrap px-4 py-2.5">\${badge}</td>
       <td class="whitespace-nowrap px-4 py-2.5 font-mono text-[.74rem] text-tx-3">\${esc(e.ip || '—')}</td>
     </tr>\`;
@@ -1356,7 +1364,6 @@ export function renderAdminPage() {
         return;
       }
       const data = await r.json();
-      auditLoaded = true;
       const all = Array.isArray(data.entries) ? data.entries : [];
       lastAuditAll = all;
 
