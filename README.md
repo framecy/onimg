@@ -1,8 +1,8 @@
 # Onimg
 
-基于 Cloudflare Workers + R2 + KV 的个人图床与静态原型托管服务，运行于免费版额度之内。
+基于 Cloudflare Workers + R2 + D1 的个人图床与静态原型托管服务，运行于免费版额度之内。
 
-线上：<https://img.diswant.space>　　📖 [CLI 使用手册](docs/cli-usage.md)　　🗺 [版本规划](docs/ROADMAP.md)
+线上：<https://img.diswant.space>　　📖 [CLI 使用手册](docs/cli-usage.md)　　🎨 [设计系统](docs/design-system.md)
 
 ---
 
@@ -98,7 +98,8 @@ onimg
 
 - **Cloudflare Workers** — 无服务运行时（路由 + API + 内联前端）
 - **R2** — 对象存储（图片 / 原型文件 / 增量上传 manifest），无出口流量费
-- **KV** — 元数据、用户、统计、配额
+- **D1** — SQLite，承载全部元数据（用户、图片索引、页面、统计、配额、审计）
+- **KV** — 保留绑定作为回滚路径；运行时读写已全部走 D1（见 `src/kv-d1.js`）
 - **Cron Triggers** — 每日 03:00 UTC 清理过期回收站内容
 
 ---
@@ -110,7 +111,7 @@ onimg
 ```bash
 npm install
 npm run dev        # 本地 wrangler dev
-npm test           # vitest 单元测试（85 项）
+npm test           # vitest 单元测试（204 项）
 npx wrangler deploy --dry-run   # 构建校验
 ```
 
@@ -126,11 +127,40 @@ TOKEN_SECRET   = at-least-32-bytes-secret
 
 ## 部署
 
+**1. 准备配置**（`wrangler.toml` 含个人账号的资源 ID，不入仓库）
+
+```bash
+cp wrangler.toml.example wrangler.toml
+# 按文件内注释填入 account_id / KV namespace id / D1 database id / 域名
+```
+
+创建资源并回填 ID：
+
+```bash
+npx wrangler whoami                        # 拿 account_id
+npx wrangler kv namespace create STATS     # 拿 KV namespace id
+npx wrangler d1 create onimg-stats         # 拿 D1 database id
+npx wrangler r2 bucket create onimg-images
+npx wrangler d1 execute onimg-stats --remote --file=docs/d1-schema.sql   # 建表
+```
+
+**2. 配置密钥**（`ADMIN_USERNAME` / `ADMIN_PASSWORD` / `TOKEN_SECRET`）
+
+```bash
+npx wrangler secret put ADMIN_USERNAME
+npx wrangler secret put ADMIN_PASSWORD
+npx wrangler secret put TOKEN_SECRET       # ≥ 32 字节
+```
+
+**3. 部署**
+
 ```bash
 npm run deploy     # wrangler deploy
 ```
 
-生产环境密钥用 `wrangler secret put` 配置（`ADMIN_USERNAME` / `ADMIN_PASSWORD` / `TOKEN_SECRET`）。
+> 走 GitHub Actions 的话，需要在仓库 Settings → Secrets 里配置
+> `CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`，以及 `WRANGLER_TOML`
+> （内容就是本地 `wrangler.toml` 的全文，CI 会据此还原配置文件）。
 
 ---
 
@@ -156,22 +186,30 @@ scripts/
   typora-upload.sh  Typora 上传脚本（浏览器设备授权 / token 缓存 / 自动重试）
   onimg             CLI 入口包装（exec python3）
   install.sh        一键安装脚本（自托管于 /install.sh 路由）
+  wrap-css.mjs      Tailwind 构建产物包装（build:css 调用）
 
 test/               vitest 单元测试
 ```
 
-### KV 键空间
+> `scripts/` 里的 CLI 脚本同时以字符串常量内联在 `src/index.js` 中（避免运行时读文件），
+> 改动后需要同步过去。`install.sh` 由 Worker 动态生成，源文件仅供维护参考。
+
+### 元数据键空间（存于 D1 的 `kv_store` 表）
 
 | 前缀 | 内容 |
 |---|---|
 | `imgmeta:` | 图片元数据（isPublic / owner / deletedAt / tags） |
-| `userimgs:` | 用户图片列表（含软删除标记） |
+| `userimg:` | 单图索引（「该用户拥有这张图」的权威来源，清单丢失时据此自愈） |
+| `userimgs:` | 用户图片列表（读优化缓存，含软删除标记） |
 | `user:` | 用户记录（passwordHash / permissions / tokenTtlDays / lastLoginAt） |
 | `admin:lastLoginAt` | 管理员最近登录时间 |
 | `ucount:` | 用户上传计数（总量 / 每日） |
+| `page:` / `userpages:` | 页面内容 / 用户页面索引 |
+| `proj:` / `grp:` | 项目 / 分组 |
 | `proto:` | 原型元数据 |
 | `proto:vfiles:` | 原型版本文件清单 |
-| `prstats:` | 原型访问统计 |
+| `stats:` / `pstats:` / `prstats:` | 图片 / 页面 / 原型访问统计 |
+| `audit:` | 操作审计日志 |
 | `gstats:` | 全局统计缓存 |
 
 R2 前缀：图片对象（根）、`proto/`、`manifests/`。
@@ -183,5 +221,4 @@ R2 前缀：图片对象（根）、`proto/`、`manifests/`。
 - 免费版单请求 ≤ 50 subrequest（分片上传、批量删除据此设计）
 - KV 单值 25 MB / metadata 1 KB（大原型文件清单存 R2）
 - R2 边缘图片缩放为付费功能，故缩略图 / WebP 暂未实现
-
-详见 `docs/roadmap.md`。
+- 访问统计写入 D1（按行计费，免费版 10 万行写/天），避免 KV 1000 写/天的额度瓶颈
