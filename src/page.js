@@ -1614,7 +1614,7 @@ export function renderPage(env = {}) {
     bar.style.display = 'flex';
     const TAG_FILTER_CLS = 'tag-filter rounded-xl border border-bd bg-bg-3 px-[11px] py-[3px] font-sans text-[.72rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:text-tx [&.active]:border-bd-focus [&.active]:bg-white/10 [&.active]:text-tx';
     bar.innerHTML = '<span class="mr-0.5 text-[.68rem] font-bold uppercase tracking-[.1em] text-tx-3">标签</span>' +
-      tags.map(t => \`<button class="\${TAG_FILTER_CLS}\${mineTagFilter.has(t)?' active':''}" onclick="toggleTagFilter('\${esc(t)}')">\${esc(t)}</button>\`).join('') +
+      tags.map(t => \`<button class="\${TAG_FILTER_CLS}\${mineTagFilter.has(t)?' active':''}" onclick="toggleTagFilter(\${jsStr(t)})">\${esc(t)}</button>\`).join('') +
       (mineTagFilter.size ? \`<button class="\${TAG_FILTER_CLS} !text-red" onclick="clearTagFilter()">清除</button>\` : '');
   }
   window.toggleTagFilter = function(tag) {
@@ -1854,8 +1854,8 @@ export function renderPage(env = {}) {
         return '<div class="gitem relative overflow-hidden rounded-lg border border-transparent bg-bg-3 shadow-[0_0_0_1px_var(--color-bd)] transition hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_var(--color-bd-2),0_12px_32px_rgba(0,0,0,.35)]"><img class="block h-auto w-full aspect-square cursor-pointer bg-bg-2 object-cover" src="' + url + '" loading="lazy" onload="this.classList.add(\\'loaded\\')">' +
           '<div class="px-[11px] py-[9px]"><div class="truncate font-mono text-[.72rem] font-medium text-tx-2">' + esc(it.key) + '</div>' +
           '<div class="text-[.66rem] text-tx-3 mt-[3px]">' + trashDaysLeft(it.deletedAt, retentionDays) + '</div>' +
-          '<div class="mt-1.5 flex gap-1"><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="restoreTrash(\\'image\\',\\'' + encodeURIComponent(it.key) + '\\')">恢复</button>' +
-          '<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-[3px]" onclick="purgeTrash(\\'image\\',\\'' + encodeURIComponent(it.key) + '\\')">彻底删除</button></div></div></div>';
+          '<div class="mt-1.5 flex gap-1"><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="restoreTrash(\\'image\\',\' + jsStr(encodeURIComponent(it.key)) + '\\')">恢复</button>' +
+          '<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-[3px]" onclick="purgeTrash(\\'image\\',\' + jsStr(encodeURIComponent(it.key)) + '\\')">彻底删除</button></div></div></div>';
       }).join('') + '</div>';
     }
     if (protos.length) {
@@ -1863,8 +1863,8 @@ export function renderPage(env = {}) {
       html += '<div class="flex flex-col gap-2">' + protos.map(p =>
         '<div class="flex items-center gap-[14px] rounded-lg border border-bd bg-bg-3 px-4 py-[14px] transition hover:border-bd-2 hover:bg-bg-4"><div class="min-w-0 flex-1"><div class="text-[.92rem] font-semibold text-tx">' + esc(p.title || p.protoId) + '</div>' +
         '<div class="mt-[3px] text-[.72rem] font-medium text-tx-3">' + (p.fileCount ?? '—') + ' 文件 · ' + fmtSize(p.totalSize || 0) + ' · ' + trashDaysLeft(p.deletedAt, retentionDays) + '</div></div>' +
-        '<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="restoreTrash(\\'proto\\',\\'' + esc(p.protoId) + '\\')">恢复</button>' +
-        '<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r" onclick="purgeTrash(\\'proto\\',\\'' + esc(p.protoId) + '\\')">彻底删除</button></div>'
+        '<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="restoreTrash(\\'proto\\',\' + jsStr(p.protoId) + '\\')">恢复</button>' +
+        '<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r" onclick="purgeTrash(\\'proto\\',\' + jsStr(p.protoId) + '\\')">彻底删除</button></div>'
       ).join('') + '</div>';
     }
     body.innerHTML = html;
@@ -2010,9 +2010,9 @@ export function renderPage(env = {}) {
           <span class="project-name flex-1 text-[.88rem] font-semibold text-tx">\${esc(proj.name)}</span>
           <span class="count-badge rounded-xs bg-bg-5 px-[7px] py-0.5 text-[.66rem] font-semibold text-tx-3">\${total}</span>
           <span class="proj-actions ml-1.5 flex gap-[3px]">
-            <button class="proj-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();editProject('\${esc(proj.id)}')" title="编辑项目">编辑</button>
-            <button class="proj-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();createGroupInProject('\${esc(proj.id)}')" title="新建分组">+ 分组</button>
-            <button class="proj-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx !text-red" onclick="event.stopPropagation();deleteProject('\${esc(proj.id)}')" title="删除项目">删除</button>
+            <button class="proj-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();editProject(\${jsStr(proj.id)})" title="编辑项目">编辑</button>
+            <button class="proj-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();createGroupInProject(\${jsStr(proj.id)})" title="新建分组">+ 分组</button>
+            <button class="proj-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx !text-red" onclick="event.stopPropagation();deleteProject(\${jsStr(proj.id)})" title="删除项目">删除</button>
           </span>
         </div>
         <div class="page-project-body border-t border-bd">\`;
@@ -2025,8 +2025,8 @@ export function renderPage(env = {}) {
             <span class="group-name flex-1 text-[.88rem] font-semibold text-tx">\${esc(grp.name)}</span>
             <span class="count-badge rounded-xs bg-bg-5 px-[7px] py-0.5 text-[.66rem] font-semibold text-tx-3">\${grpPages.length}</span>
             <span class="grp-actions ml-1.5 flex gap-[3px]">
-              <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();editGroup('\${esc(grp.id)}')" title="编辑分组">编辑</button>
-              <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx !text-red" onclick="event.stopPropagation();deleteGroup('\${esc(grp.id)}')" title="删除分组">删除</button>
+              <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();editGroup(\${jsStr(grp.id)})" title="编辑分组">编辑</button>
+              <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx !text-red" onclick="event.stopPropagation();deleteGroup(\${jsStr(grp.id)})" title="删除分组">删除</button>
             </span>
           </div>
           <div class="page-group-body page-tree-docs page-drop-zone ml-[18px] border-l-2 border-bd [&.drag-over-zone]:outline [&.drag-over-zone]:outline-1 [&.drag-over-zone]:outline-dashed [&.drag-over-zone]:outline-accent [&.drag-over-zone]:-outline-offset-2 [&.drag-over-zone]:bg-accent-muted [&.drag-over-zone]:min-h-[28px]" data-drop-scope="group" data-project-id="\${escAttr(proj.id)}" data-group-id="\${escAttr(grp.id)}">\`;
@@ -2051,8 +2051,8 @@ export function renderPage(env = {}) {
               <span class="group-name flex-1 text-[.88rem] font-semibold text-tx">\${esc(grp.name)}</span>
               <span class="count-badge rounded-xs bg-bg-5 px-[7px] py-0.5 text-[.66rem] font-semibold text-tx-3">\${grpPages.length}</span>
               <span class="grp-actions ml-1.5 flex gap-[3px]">
-                <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();editGroup('\${esc(grp.id)}')" title="编辑分组">编辑</button>
-                <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx !text-red" onclick="event.stopPropagation();deleteGroup('\${esc(grp.id)}')" title="删除分组">删除</button>
+                <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();editGroup(\${jsStr(grp.id)})" title="编辑分组">编辑</button>
+                <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx !text-red" onclick="event.stopPropagation();deleteGroup(\${jsStr(grp.id)})" title="删除分组">删除</button>
               </span>
             </div>
             <div class="page-group-body page-tree-docs page-drop-zone ml-[18px] border-l-2 border-bd [&.drag-over-zone]:outline [&.drag-over-zone]:outline-1 [&.drag-over-zone]:outline-dashed [&.drag-over-zone]:outline-accent [&.drag-over-zone]:-outline-offset-2 [&.drag-over-zone]:bg-accent-muted [&.drag-over-zone]:min-h-[28px]" data-drop-scope="group" data-project-id="" data-group-id="\${escAttr(grp.id)}">\`;
@@ -2080,11 +2080,11 @@ export function renderPage(env = {}) {
   function renderDocItem(p) {
     const sel = pageSelected.has(p.slug);
     const check = pageSelectMode
-      ? \`<input type="checkbox" class="page-check h-[15px] w-[15px] shrink-0 cursor-pointer accent-accent" data-slug="\${escAttr(p.slug)}" \${sel?'checked':''} onclick="event.stopPropagation();togglePageSel('\${esc(p.slug)}')">\`
+      ? \`<input type="checkbox" class="page-check h-[15px] w-[15px] shrink-0 cursor-pointer accent-accent" data-slug="\${escAttr(p.slug)}" \${sel?'checked':''} onclick="event.stopPropagation();togglePageSel(\${jsStr(p.slug)})">\`
       : '';
     const drag = pageSelectMode ? 'false' : 'true';
     const cls = 'page-tree-item relative flex items-center gap-[10px] my-0.5 rounded-md border border-transparent bg-bg-2 px-[14px] py-[10px] transition hover:border-bd hover:bg-bg-3 [&.dragging]:opacity-30 [&.dragging]:border-dashed [&.dragging]:border-bd-2 [&.drag-over-top]:border-t-2 [&.drag-over-top]:border-t-accent [&.drag-over-top]:-mt-0.5 [&.drag-over-bot]:border-b-2 [&.drag-over-bot]:border-b-accent [&.drag-over-bot]:-mb-0.5 [&.selecting]:cursor-pointer [&.selected]:border-accent [&.selected]:bg-accent-muted' + (pageSelectMode ? ' selecting' : '') + (sel ? ' selected' : '');
-    const clickAttr = pageSelectMode ? \`onclick="togglePageSel('\${esc(p.slug)}')"\` : '';
+    const clickAttr = pageSelectMode ? \`onclick="togglePageSel(\${jsStr(p.slug)})"\` : '';
     const status = p.isPublic
       ? '公开'
       : (p.accessPassword ? '加密' : '私密');
@@ -2097,9 +2097,9 @@ export function renderPage(env = {}) {
         <div class="page-meta text-[.72rem] font-medium text-tx-3">\${status} · /p/\${esc(p.slug)}</div>
       </div>
       <a class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.72rem]" href="\${esc(previewHref)}" target="_blank" onclick="event.stopPropagation()">预览</a>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.72rem]" onclick="event.stopPropagation();cpPageAddr('\${esc(p.slug)}',this)">复制</button>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.72rem]" onclick="event.stopPropagation();editPageBySlug('\${esc(p.slug)}')">编辑</button>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !text-[.72rem]" onclick="event.stopPropagation();deletePage('\${esc(p.slug)}')">删除</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.72rem]" onclick="event.stopPropagation();cpPageAddr(\${jsStr(p.slug)},this)">复制</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.72rem]" onclick="event.stopPropagation();editPageBySlug(\${jsStr(p.slug)})">编辑</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !text-[.72rem]" onclick="event.stopPropagation();deletePage(\${jsStr(p.slug)})">删除</button>
     </div>\`;
   }
 
@@ -3120,10 +3120,10 @@ export function renderPage(env = {}) {
           <a href="\${previewUrl}" target="_blank" class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx">预览</a>
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="cpProto(userProtos[\${idx}]._copyText,this)">复制</button>
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="upvmOpen(\${idx})">版本</button>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="openProtoTagEditor('\${esc(p.protoId)}')">标签</button>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="openProtoEdit('\${esc(p.protoId)}')">编辑</button>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="openProtoUpdate('\${esc(p.protoId)}')">更新</button>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r" onclick="deleteProto('\${esc(p.protoId)}')">删除</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="openProtoTagEditor(\${jsStr(p.protoId)})">标签</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="openProtoEdit(\${jsStr(p.protoId)})">编辑</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="openProtoUpdate(\${jsStr(p.protoId)})">更新</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r" onclick="deleteProto(\${jsStr(p.protoId)})">删除</button>
         </td>
       </tr>\`;
     }).join('');
@@ -3606,6 +3606,38 @@ export function renderPage(env = {}) {
     return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;')
       .replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
+
+  // ── 双重上下文转义（HTML 属性 + JS 字符串字面量）─────────────────────────────
+  // onclick="fn(\u0024{...})" 这类写法有两层解析：HTML 先解析属性，再把内容当 JS 执行。
+  // 单用 esc()（只转 &<>）会让含引号的值突破属性；单用 escAttr()（转成 &quot;）
+  // 又会让 JS 收到的不是引号 —— 两层都要处理，且顺序不能反：
+  //   1) jsStr 先把值变成合法的 JS 单引号字符串字面量（转义 \ ' 换行等）
+  //   2) escAttr 再把整个字面量作为属性值转义（& " < >）
+  // 用法：onclick="fn(<jsStr 的返回值>)"  —— jsStr 自带引号，不要再手写 ''
+  function jsStr(v) {
+    // 把值转成可安全嵌入 onclick 的 JS 单引号字符串字面量。
+    //
+    // ⚠ 实现刻意不使用任何反斜杠字面量 —— 本文件整体是 Node 端的模板字符串，
+    // 里面的反斜杠会被解析掉，导致浏览器端拿到的正则损坏（踩过三次）。
+    // 这里用 String.fromCharCode(92) 表示反斜杠，用码点判断控制字符，
+    // 源码里一个反斜杠都不出现，就不会再被模板字符串吃掉。
+    var BS = String.fromCharCode(92);
+    var SQ = String.fromCharCode(39);
+    var s = String(v == null ? '' : v);
+    var out = '';
+    for (var i = 0; i < s.length; i++) {
+      var c = s[i], code = s.charCodeAt(i);
+      if (c === BS) out += BS + BS;                    // 反斜杠自身要加倍
+      else if (c === SQ) out += BS + SQ;               // 单引号要转义
+      else if (code === 13) out += BS + 'r';           // CR
+      else if (code === 10) out += BS + 'n';           // LF
+      else if (code === 0x2028) out += BS + 'u2028';   // 行分隔符（会截断字面量）
+      else if (code === 0x2029) out += BS + 'u2029';   // 段分隔符
+      else out += c;
+    }
+    return escAttr(SQ + out + SQ);
+  }}
+
   document.addEventListener('keydown', e => {
     const lb = document.getElementById('lightbox');
     if (e.key === 'Escape') {

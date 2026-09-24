@@ -1337,6 +1337,38 @@ export function renderAdminPage() {
       .replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
+  // ── 双重上下文转义（HTML 属性 + JS 字符串字面量）─────────────────────────────
+  // onclick="fn(\u0024{...})" 这类写法有两层解析：HTML 先解析属性，再把内容当 JS 执行。
+  // 单用 esc()（只转 &<>）会让含引号的值突破属性；单用 escAttr()（转成 &quot;）
+  // 又会让 JS 收到的不是引号 —— 两层都要处理，且顺序不能反：
+  //   1) jsStr 先把值变成合法的 JS 单引号字符串字面量（转义 \ ' 换行等）
+  //   2) escAttr 再把整个字面量作为属性值转义（& " < >）
+  // 用法：onclick="fn(<jsStr 的返回值>)"  —— jsStr 自带引号，不要再手写 ''
+  function jsStr(v) {
+    // 把值转成可安全嵌入 onclick 的 JS 单引号字符串字面量。
+    //
+    // ⚠ 实现刻意不使用任何反斜杠字面量 —— 本文件整体是 Node 端的模板字符串，
+    // 里面的反斜杠会被解析掉，导致浏览器端拿到的正则损坏（踩过三次）。
+    // 这里用 String.fromCharCode(92) 表示反斜杠，用码点判断控制字符，
+    // 源码里一个反斜杠都不出现，就不会再被模板字符串吃掉。
+    var BS = String.fromCharCode(92);
+    var SQ = String.fromCharCode(39);
+    var s = String(v == null ? '' : v);
+    var out = '';
+    for (var i = 0; i < s.length; i++) {
+      var c = s[i], code = s.charCodeAt(i);
+      if (c === BS) out += BS + BS;                    // 反斜杠自身要加倍
+      else if (c === SQ) out += BS + SQ;               // 单引号要转义
+      else if (code === 13) out += BS + 'r';           // CR
+      else if (code === 10) out += BS + 'n';           // LF
+      else if (code === 0x2028) out += BS + 'u2028';   // 行分隔符（会截断字面量）
+      else if (code === 0x2029) out += BS + 'u2029';   // 段分隔符
+      else out += c;
+    }
+    return escAttr(SQ + out + SQ);
+  }}
+
+
   function auditRowHtml(e) {
     const t = e.ts ? new Date(e.ts).toLocaleString('zh-CN', { hour12: false }) : '—';
     const ok = (e.status ?? 'ok') === 'ok';
@@ -1575,7 +1607,7 @@ export function renderAdminPage() {
           <td>\${TYPE_IMG}</td>
           <td class="font-mono text-[.82rem] font-bold text-tx">\${(s.count??0).toLocaleString()}</td>
           <td class="text-[.79rem] text-tx-2">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
-          <td><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.73rem]" onclick="openStatsModal('\${esc(k)}')">详情</button></td>
+          <td><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.73rem]" onclick="openStatsModal(\${jsStr(k)})">详情</button></td>
         </tr>\`).join('')
       : '<tr><td colspan="6" class="text-center text-tx-3 p-8">暂无访问记录</td></tr>';
 
@@ -1595,7 +1627,7 @@ export function renderAdminPage() {
             <td>\${TYPE_PG}</td>
             <td class="font-mono text-[.82rem] font-bold text-tx">\${(s.count??0).toLocaleString()}</td>
             <td class="text-[.79rem] text-tx-2">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
-            <td><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.73rem]" data-title="\${escAttr(pm.title)}" onclick="openPageStatsModal('\${esc(slug)}',this.dataset.title)">详情</button></td>
+            <td><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.73rem]" data-title="\${escAttr(pm.title)}" onclick="openPageStatsModal(\${jsStr(slug)},this.dataset.title)">详情</button></td>
           </tr>\`;
         }).join('')
       : '<tr><td colspan="5" class="text-center text-tx-3 p-8">暂无访问记录</td></tr>';
@@ -1622,7 +1654,7 @@ export function renderAdminPage() {
       return \`<div class="flex gap-1 flex-wrap">
         <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.73rem]" data-url="\${url}"\${pwdAttr} onclick="copyProtoAddr(this)">复制地址</button>
         <a href="\${previewUrl}" target="_blank" class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.73rem] no-underline">预览</a>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.73rem]" data-title="\${escAttr(pm.title||id)}" onclick="openProtoStatsModal('\${esc(id)}',this.dataset.title)">统计数据</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.73rem]" data-title="\${escAttr(pm.title||id)}" onclick="openProtoStatsModal(\${jsStr(id)},this.dataset.title)">统计数据</button>
       </div>\`;
     };
     const prRows = sortedPr.length
@@ -2530,12 +2562,12 @@ export function renderAdminPage() {
     const grpActions = document.getElementById('adminGrpActions');
     if (projActions) {
       projActions.innerHTML = (projFilter !== 'all' && projFilter !== '_none_')
-        ? \`<button class="\${ORG_ACTION_BTN}" title="编辑项目" onclick="adminEditProject('\${esc(projFilter)}')">\${ICON_EDIT}</button><button class="\${ORG_ACTION_BTN_DANGER}" title="删除项目" onclick="adminDeleteProject('\${esc(projFilter)}')">\${ICON_TRASH}</button>\`
+        ? \`<button class="\${ORG_ACTION_BTN}" title="编辑项目" onclick="adminEditProject(\${jsStr(projFilter)})">\${ICON_EDIT}</button><button class="\${ORG_ACTION_BTN_DANGER}" title="删除项目" onclick="adminDeleteProject(\${jsStr(projFilter)})">\${ICON_TRASH}</button>\`
         : '';
     }
     if (grpActions) {
       grpActions.innerHTML = (grpFilter !== 'all' && grpFilter !== '_none_')
-        ? \`<button class="\${ORG_ACTION_BTN}" title="编辑分组" onclick="adminEditGroup('\${esc(grpFilter)}')">\${ICON_EDIT}</button><button class="\${ORG_ACTION_BTN_DANGER}" title="删除分组" onclick="adminDeleteGroup('\${esc(grpFilter)}')">\${ICON_TRASH}</button>\`
+        ? \`<button class="\${ORG_ACTION_BTN}" title="编辑分组" onclick="adminEditGroup(\${jsStr(grpFilter)})">\${ICON_EDIT}</button><button class="\${ORG_ACTION_BTN_DANGER}" title="删除分组" onclick="adminDeleteGroup(\${jsStr(grpFilter)})">\${ICON_TRASH}</button>\`
         : '';
     }
   }
@@ -2581,7 +2613,7 @@ export function renderAdminPage() {
     document.getElementById('adminPagesBody').innerHTML = sorted.length
       ? sorted.map(p => \`<tr data-slug="\${escAttr(p.slug)}" draggable="true" class="pg-drag-row" data-project-id="\${escAttr(p.projectId||'')}" data-group-id="\${escAttr(p.groupId||'')}">
           <td class="\${dragCol} cursor-grab select-none text-tx-3 active:cursor-grabbing pointer-events-none">⠿</td>
-          <td class="\${checkCol}"><input type="checkbox" class="h-[15px] w-[15px] cursor-pointer accent-tx-2" data-slug="\${escAttr(p.slug)}" \${adminPageSelected.has(p.slug)?'checked':''} onchange="adminPageToggleSel('\${esc(p.slug)}',this.checked)"></td>
+          <td class="\${checkCol}"><input type="checkbox" class="h-[15px] w-[15px] cursor-pointer accent-tx-2" data-slug="\${escAttr(p.slug)}" \${adminPageSelected.has(p.slug)?'checked':''} onchange="adminPageToggleSel(\${jsStr(p.slug)},this.checked)"></td>
           <td>
             <div class="font-medium text-[.84rem]">\${esc(p.title)}</div>
             <div class="font-mono text-[.7rem] text-tx-3">/p/\${p.slug}</div>
@@ -3226,7 +3258,7 @@ export function renderAdminPage() {
           <td class="text-[.79rem] text-tx-2 whitespace-nowrap">\${timeAgo(p.updatedAt || p.createdAt)}</td>
           <td class="whitespace-nowrap">
             <a href="\${previewUrl}" target="_blank" class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.75rem] no-underline">预览</a>
-            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-1 !text-[.75rem]" onclick="adminDeleteProto('\${esc(p.protoId)}')">删除</button>
+            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-1 !text-[.75rem]" onclick="adminDeleteProto(\${jsStr(p.protoId)})">删除</button>
           </td>
         </tr>\`;
       }).join('');
