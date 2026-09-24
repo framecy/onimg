@@ -86,6 +86,22 @@ node -e "import('./src/page.js').then(m=>console.log(m.renderPage({}).length))"
 
 `test/features/render-smoke.test.js` 已覆盖这一点，改完这两个文件务必确认它通过。
 
+#### 还有一类同族坑：浏览器端语法错误（Node 端完全无感）
+
+上面那类是「Node 端误求值」。但产物里嵌的 JS 是**交给浏览器执行的**，只要它有任何
+语法错误（哪怕只是大括号多写一个 `}`），浏览器就会**静默丢弃整段 `<script>`**：
+
+- `renderPage` 正常返回、页面照常打开、HTTP 200、所有单元测试全绿
+- 但**所有 `onclick` / `addEventListener` 都不会注册**
+- 用户表现就是「点了没反应」—— 看起来像登录坏了、按钮坏了，其实是整段脚本没了
+
+真实发生过一次：`jsStr()` 定义末尾多写一个 `}}`，**253 项测试全绿、CI 部署 success**，
+线上前台后台的按钮（含登录）**全部点不动**。定位方法是 curl 线上页面、抓出所有
+`<script>` 块、逐个 `node --check`，一步就指到了那一行。
+
+`render-smoke.test.js` 现在会把产物里每个内联脚本块真实交给 V8 解析（用例名带
+「浏览器端语法」），这类错误在提交前就会被拦住，不用等到线上才发现。
+
 ### 转义函数的选用（三种上下文）
 
 | 上下文 | 用哪个 | 说明 |
@@ -118,15 +134,22 @@ node -e "import('./src/page.js').then(m=>console.log(m.renderPage({}).length))"
 ## 提交与验证
 
 - 推 `main` 会自动触发 CI 部署（`.github/workflows/deploy.yml`）
-- 提交前跑 `npx vitest run`（当前 253 项 / 21 个文件）
+- 提交前跑 `npx vitest run`（当前 256 项 / 21 个文件）
 - CI 顺序要求 `build:css` 在 `npm test` 之前：`src/ui/aperture.generated.js` 是
   Tailwind 生成物且被 gitignore，而 `d1-integration` 测试会 import `src/index.js`，
   顺着 `index → page` 链条要求该文件存在
 
 ### 改动 `page.js` / `admin-page.js` 后的必查项
 
-1. `node --check src/page.js`（语法）
-2. `npx vitest run test/features/render-smoke.test.js`（**真实渲染**，抓 Node 端误求值）
+1. `node --check src/page.js`（语法，只覆盖 Node 端）
+2. `npx vitest run test/features/render-smoke.test.js`（**真实渲染 + 浏览器端脚本解析**，
+   一个文件同时抓两类坑：Node 端误求值、浏览器端脚本语法错误）
 3. 起本地服务看首页与管理端是否 200（最终确认）
 
-第 2 步不能省 —— 这是唯一能抓住「模板字符串里漏写反斜杠」的测试。
+第 2 步**不能省**，而且它是唯一能同时抓住两类坑的测试：
+
+- 「模板字符串里漏写反斜杠」→ Node 端误求值，线上 500
+- 「浏览器端脚本有多余的 `}`」→ 整段 `<script>` 被静默丢弃，页面 200 但所有按钮点不动
+
+两者在源码里都不报错、`node --check` 也查不出来（第二类甚至能蒙混过关），
+只有真实渲染产物再交给 V8 解析才能发现。历史上 253 项全绿、CI success，线上登录却点不动。
