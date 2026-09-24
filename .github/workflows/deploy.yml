@@ -33,13 +33,18 @@ jobs:
 
       # wrangler.toml 不进仓库（含个人账号的资源 ID），CI 从 secret 还原一份。
       # 在仓库 Settings → Secrets and variables → Actions 里添加 WRANGLER_TOML，
-      # 内容就是本地 wrangler.toml 的全文。未配置时退回 example（dry-run 仍能跑通，
-      # 只是资源 ID 是占位符）。
+      # 内容就是本地 wrangler.toml 的全文。
+      #
+      # 注意：必须用 env 传值，不能写成 "${{ secrets.WRANGLER_TOML }}" —— 后者会被
+      # Actions 直接文本插值进脚本，而配置文件里含管道符 |、中文与换行，插值后会
+      # 破坏 shell 语法（曾因此报 syntax error near unexpected token `|'）。
       - name: Restore wrangler.toml
+        env:
+          WRANGLER_TOML: ${{ secrets.WRANGLER_TOML }}
         run: |
-          if [ -n "${{ secrets.WRANGLER_TOML }}" ]; then
-            printf '%s\n' "${{ secrets.WRANGLER_TOML }}" > wrangler.toml
-            echo "已从 secret 还原 wrangler.toml"
+          if [ -n "$WRANGLER_TOML" ]; then
+            printf '%s\n' "$WRANGLER_TOML" > wrangler.toml
+            echo "已从 secret 还原 wrangler.toml（$(wc -l < wrangler.toml) 行）"
           else
             cp wrangler.toml.example wrangler.toml
             echo "::warning::未配置 WRANGLER_TOML secret，使用 example 占位配置"
@@ -80,9 +85,11 @@ jobs:
         run: npm ci
 
       - name: Restore wrangler.toml
+        env:
+          WRANGLER_TOML: ${{ secrets.WRANGLER_TOML }}
         run: |
-          if [ -n "${{ secrets.WRANGLER_TOML }}" ]; then
-            printf '%s\n' "${{ secrets.WRANGLER_TOML }}" > wrangler.toml
+          if [ -n "$WRANGLER_TOML" ]; then
+            printf '%s\n' "$WRANGLER_TOML" > wrangler.toml
           else
             echo "::error::未配置 WRANGLER_TOML secret，无法确定部署目标"
             exit 1
