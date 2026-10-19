@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { trackImage, handleUpload } from '../../src/upload.js';
 import { handleList, handleToggleVisibility } from '../../src/list.js';
+import { handleTrashList } from '../../src/trash.js';
 import { handleDelete } from '../../src/delete.js';
 import { handleTrashPurge, purgeImage } from '../../src/trash.js';
 import {
@@ -103,8 +104,11 @@ describe('repairUserManifest 用单图索引回补清单', () => {
     expect(manifest).toHaveLength(3);
     expect(new Set(manifest.map(e => e.key))).toEqual(new Set(['a.png','b.png','c.png']));
 
+    // 清单只存最小种子（名字/标签的唯一来源是单图记录），因此回补的条目不带 name；
+    // 返回值已由 normalizeEntry 还原成长字段名
     const b = manifest.find(e => e.key === 'b.png');
-    expect(b).toMatchObject({ size: 11, uploadedAt: 110, isPublic: false, name: 'b', basename: 'b' });
+    expect(b).toMatchObject({ size: 11, uploadedAt: 110, isPublic: false });
+    expect(b.name).toBeUndefined();
     expect(manifest.find(e => e.key === 'a.png')).toMatchObject({ size: 10 }); // 原有条目未被覆盖
 
     // 写回 KV，且按上传时间倒序（最新在前）
@@ -139,12 +143,18 @@ describe('repairUserManifest 用单图索引回补清单', () => {
   });
 
   test('回收站中的图补回后仍带 deletedAt，不会重新出现在可见列表', async () => {
+    await createTestUser(env, 'alice', 'pass', { canUpload: true });
+    const token = await createToken({ type: 'user', username: 'alice' }, 3600_000, env.TOKEN_SECRET);
     await env.STATS.put(userImgRecordKey('alice', 't.png'), JSON.stringify({
       uploadedAt: 5, size: 5, isPublic: false, deletedAt: 42,
     }));
     const { manifest } = await repairUserManifest(env, 'alice');
     expect(manifest).toHaveLength(1);
-    expect(manifest[0].deletedAt).toBe(42);
+    expect(manifest[0].key).toBe('t.png');
+    // /list 会从单图记录补全 deletedAt 并过滤掉（清单本身只存最小种子）
+    const res = await handleList(authedRequest('GET', 'http://localhost/list', token), env);
+    const body = await res.json();
+    expect(body.items).toHaveLength(0);
   });
 });
 
@@ -275,8 +285,12 @@ describe('删除路径同步单图索引', () => {
     await handleDelete(authedRequest('DELETE', 'http://localhost/api/image/t.png', token), env, 't.png', NOOP_CTX);
     const rec = await env.STATS.get(userImgRecordKey('alice', 't.png'), 'json');
     expect(rec.deletedAt).toBeGreaterThan(0);
-    // 清单项也带标
-    expect((await env.STATS.get('userimgs:alice', 'json')).find(e => e.key === 't.png').deletedAt).toBeGreaterThan(0);
+    // 清单只存最小种子；/list 会从单图记录补全 deletedAt，被过滤后不出现在可见列表
+    const visible = await (await handleList(authedRequest('GET', 'http://localhost/list', token), env)).json();
+    expect(visible.items.find(e => e.key === 't.png')).toBeUndefined();
+    // 回收站列表（imgmeta metadata 为源）仍能看到它
+    const trashed = await (await handleTrashList(authedRequest('GET', 'http://localhost/api/trash', token), env)).json();
+    expect(trashed.images.find(e => e.key === 't.png')?.deletedAt).toBeGreaterThan(0);
   });
 
   test('deleteImageRecords 幂等（重复调用不报错）', async () => {

@@ -133,7 +133,7 @@ export async function handleUpload(request, env, ctx) {
   }
 
   const ext = file.type.split('/')[1].replace('jpeg','jpg').replace('svg+xml','svg');
-  const key = `${Date.now()}-${randomId()}.${ext}`;
+  const key = await newImageKey(env, ext);
   const body = typeof file.stream === 'function' ? file.stream() : await file.arrayBuffer();
 
   await env.BUCKET.put(key, body, {
@@ -142,11 +142,11 @@ export async function handleUpload(request, env, ctx) {
     customMetadata: { uploadedBy: actor.username, ...(originalName ? { name: originalName } : {}) },
   });
 
-  // 流式路径下 Content-Length 只是声明值，以 R2 落盘结果为准（head 多一次读，
-  // 开销可忽略）。用 || 兜底：R2 返回 0 仅可能是空文件，mock 环境对流返回 0。
-  const storedSize = rawBody
-    ? ((await env.BUCKET.head(key))?.size || size)
-    : size;
+  // 流式路径下 Content-Length 只是声明值，以 R2 落盘结果为准。
+  // 用 ?? 而不是 ||：旧写法在「R2 返回 0」时回落到声明值，会把一张 0 字节
+  // 的对象在索引里记成几十 KB，列表能看到、点开是空图。
+  const head = rawBody ? await env.BUCKET.head(key) : null;
+  const storedSize = head && Number.isFinite(head.size) ? head.size : size;
 
   // R2 Class A 操作追踪（best-effort，不阻塞响应）
   ctx?.waitUntil(cfBump(env.STATS, 'cf:r2a:' + cfMonth(), 1, true));
@@ -170,8 +170,7 @@ export async function handleUpload(request, env, ctx) {
   }, { status: 201 });
 }
 
-export async function trackImage(env, username, key, size, isPublic, name) {
-  const uploadedAt = Date.now();
+export async function trackImage(env, username, key, size, isPublic, name, uploadedAt = Date.now()) {
   // 原名为可选：老图片 / 未声明名的客户端上传时不写入，读侧用 key 兜底
   const withName = n => (n ? { name: n, basename: baseName(n) } : {});
   const value = { uploadedAt, size, ...withName(name) };
@@ -180,7 +179,12 @@ export async function trackImage(env, username, key, size, isPublic, name) {
   await putImageRecords(env, key, value, { isPublic, owner: username });
   // userimgs 清单：读优化缓存（一次 get 拿全表）。合并 + 读后校验 + 重试；
   // 返回 false 时数据并未丢失，下次 /list 的 repairUserManifest 会补进来。
-  await mergeUserImgEntry(env, username, key, { size, uploadedAt, isPublic, ...withName(name) }, { ensure: true });
+  //
+  // 只写「最小种子」：name / basename / tags 的唯一来源是上面的单图记录。
+  // 清单是单个 KV 值（硬上限 25 MB），把名字等一并复制进去会让它在约一万张图
+  // 处写不进去 —— 之后每张新图都 201 却不进图库，表现为「图片缺失」。详见
+  // imglist.js 顶部「条目形态」一节。
+  await mergeUserImgEntry(env, username, key, { size, uploadedAt, isPublic }, { ensure: true });
 }
 
 async function resolveActor(request, env) {
@@ -190,6 +194,40 @@ async function resolveActor(request, env) {
   return null;
 }
 
-function randomId() {
-  return Array.from(crypto.getRandomValues(new Uint8Array(6))).map(b => b.toString(16).padStart(2, '0')).join('');
+function randomId(bytes = 6) {
+  return Array.from(crypto.getRandomValues(new Uint8Array(bytes))).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ── 图片 key ────────────────────────────────────────────────────────────────
+//
+// `{ms}-{hex}.{ext}` 的形态（时间戳 + 随机串 + 扩展名）被 CLI 与已分享的直链
+// 依赖，保持不变；随机段从 48 位扩到 64 位，并加了存在性探测，解决
+// 「批量上传后出现重复图 / 缺图」：
+//
+// 1. 随机段 48 位 → 64 位（8 字节）。48 位随机在 20 张同毫秒并发时碰撞概率
+//    就已不可忽略（生日悖论），多标签页 + 多用户一起传时更高。碰撞的两张图
+//    共用同一个 key，后写者覆盖前一张的对象与索引 —— 表现为「两张图同一个
+//    URL（重复）」或「前一张变空/变成另一张（缺失）」。
+//
+// 2. 生成后探测 `imgmeta:` 是否已存在，撞了就换一个（最多 5 次）。这样唯一性
+//    不再依赖概率，而是由「探测 + 重抽」保证；探测是一次本地 KV/D1 点查，
+//    开销可忽略，正常路径每次都只查 1 下。
+//
+// 注意不能反过来「先 R2 put 再查重后改名」：改名要重传整个文件，且中途失败
+// 会留下孤儿对象。这里先定 key 再落盘，顺序最简单也最安全。
+export async function newImageKey(env, ext) {
+  const now = Date.now();
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const key = `${now}-${randomId(8)}.${ext}`;
+    let taken = false;
+    try {
+      taken = (await env.STATS.get('imgmeta:' + key)) != null;
+    } catch {
+      // 探测失败（存储层抖动）不阻断上传：唯一性由 64 位随机兜底
+      return key;
+    }
+    if (!taken) return key;
+  }
+  // 5 次都撞（几乎只可能是 RNG 被强灌固定值）：退化成「时间戳 + 32 位随机 + 序号」
+  return `${Date.now()}-${randomId(16)}-${Math.floor(Math.random() * 1e6)}.${ext}`;
 }

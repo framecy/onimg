@@ -1,14 +1,17 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { handleUpload, trackImage, sanitizeOriginalName, baseName, MAX_NAME_LEN } from '../../src/upload.js';
 import { handleGet } from '../../src/get.js';
+import { handleList } from '../../src/list.js';
+import { userImgRecordKey } from '../../src/imglist.js';
 import { createToken } from '../../src/admin/auth.js';
-import { createEnv, createTestUser } from '../helpers/mock-env.js';
+import { createEnv, createTestUser, authedRequest } from '../helpers/mock-env.js';
 
 // ── 原始文件名保留 ────────────────────────────────────────────────────────────
 //
 // 背景：此前 key 由「时间戳-随机串.扩展名」生成，原始文件名在进入 R2 前就被丢弃。
 // 现在 key 保持不变（不派生自文件名，避免破坏已分享直链 / 同名覆盖 / URL 编码），
-// 原名存入 imgmeta value + userimgs 条目 + R2 自定义元数据，并在响应与列表里返回。
+// 原名存入 imgmeta value + 单图记录 + R2 自定义元数据，并在响应与列表里返回。
+// （userimgs 清单只存 { key, size, uploadedAt, isPublic } 最小种子，体积与图库大小解耦）
 
 const NOOP_CTX = { waitUntil: () => {} };
 
@@ -57,9 +60,9 @@ describe('Original filename is preserved', () => {
 
     expect(body.name).toBe('截图 2024-01-02.png');
     expect(body.basename).toBe('截图 2024-01-02.png');
-    // key 仍是随机串，不派生自文件名
+    // key 仍是随机串，不派生自文件名（随机段 12→16 位 hex，见 upload.js newImageKey）
     expect(body.key).not.toContain('截图');
-    expect(body.key).toMatch(/^\d+-[0-9a-f]{12}\.png$/);
+    expect(body.key).toMatch(/^\d+-[0-9a-f]{16}\.png$/);
 
     // KV imgmeta value
     const meta = JSON.parse(await env.STATS.get('imgmeta:' + body.key));
@@ -75,8 +78,16 @@ describe('Original filename is preserved', () => {
     const body = await (await handleUpload(multipartRequest(token, '封面.png'), env, NOOP_CTX)).json();
     const list = await env.STATS.get('userimgs:alice', 'json');
     const entry = list.find(e => e.key === body.key);
-    expect(entry.name).toBe('封面.png');
-    expect(entry.basename).toBe('封面.png');
+    // 清单只存最小种子（体积与图库大小解耦），名字的唯一来源是单图记录；
+    // /list 会按需补全，用户拿到的仍是带名字的条目
+    expect(entry.key).toBe(body.key);
+    const rec = await env.STATS.get(userImgRecordKey('alice', body.key), 'json');
+    expect(rec.name).toBe('封面.png');
+    expect(rec.basename).toBe('封面.png');
+    const shown = (await (await handleList(authedRequest('GET', 'http://localhost/list', token), env)).json()).items;
+    const item = shown.find(i => i.key === body.key);
+    expect(item.name).toBe('封面.png');
+    expect(item.basename).toBe('封面.png');
   });
 
   test('raw body: X-File-Name header (URL-encoded Chinese) is decoded and stored', async () => {

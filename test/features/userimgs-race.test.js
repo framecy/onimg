@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { trackImage, handleUpload } from '../../src/upload.js';
-import { handleToggleVisibility } from '../../src/list.js';
-import { mergeUserImgEntry } from '../../src/imglist.js';
+import { handleToggleVisibility, handleList } from '../../src/list.js';
+import { mergeUserImgEntry, userImgRecordKey } from '../../src/imglist.js';
 import { createToken } from '../../src/admin/auth.js';
 import { createEnv, createTestImage, authedRequest, createTestUser } from '../helpers/mock-env.js';
 
@@ -77,14 +77,26 @@ describe('userimgs concurrent merge (mergeUserImgEntry)', () => {
   });
 
   test('merge with null patch value removes the field (restore path)', async () => {
+    // 软删除时 imgmeta / 单图记录由 delete 路径写入 deletedAt，清单只记一个种子；
+    // 恢复时 mergeUserImgEntry({ deletedAt: null }) 清掉清单层的标记
     await trackImage(env, 'alice', 'x.png', 10, false);
+    const rec = await env.STATS.get(userImgRecordKey('alice', 'x.png'), 'json');
+    expect(rec.size).toBe(10);
     await mergeUserImgEntry(env, 'alice', 'x.png', { deletedAt: 12345 });
-    let list = await env.STATS.get('userimgs:alice', 'json');
-    expect(list[0].deletedAt).toBe(12345);
+    let entry = (await env.STATS.get('userimgs:alice', 'json')).find(e => e.key === 'x.png');
+    // 最小种子形态：清单条目只带 key / size / uploadedAt / isPublic
+    expect(Object.keys(entry).sort()).toEqual(['isPublic', 'key', 'size', 'uploadedAt']);
     await mergeUserImgEntry(env, 'alice', 'x.png', { deletedAt: null });
-    list = await env.STATS.get('userimgs:alice', 'json');
-    expect(list[0].deletedAt).toBeUndefined();
-    expect(list[0].size).toBe(10); // 其余字段保留
+    entry = (await env.STATS.get('userimgs:alice', 'json')).find(e => e.key === 'x.png');
+    expect(entry.deletedAt).toBeUndefined();
+    expect(entry.size).toBe(10); // 其余字段保留
+    // 用户可见层不受影响：图片仍在「我的图库」里
+    await createTestUser(env, 'alice', 'pass', { canUpload: true });
+    const tok = await createToken({ type: 'user', username: 'alice' }, 3600_000, env.TOKEN_SECRET);
+    const listed = await (await handleList(authedRequest('GET', 'http://localhost/list', tok), env)).json();
+    const shown = listed.items.find(i => i.key === 'x.png');
+    expect(shown).toBeTruthy();
+    expect(shown.size).toBe(10);
   });
 
   test('remove option deletes the entry (purge path)', async () => {

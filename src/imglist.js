@@ -21,11 +21,84 @@
 //
 // patch 语义：值为 null/undefined 的字段会被从条目上删除（用于恢复时清
 // deletedAt）；ensure=true 且条目不存在时以 patch 新建最小条目。
+//
+// ── 条目形态（批量上传「丢图」的第二个根因）─────────────────────────────────
+// 单图记录 / imgmeta 里每张图只需 6 个多字节字符（key + 2×4 字节中文名约 40 字节），
+// 清单把 size / uploadedAt / isPublic / name / basename / tags 全都复制一份，
+// 一张图约 100 字节。清单是单个 KV 值（**硬上限 25 MB，D1 单值同样受此限制**），
+// 于是「我的图库」在约 20 万字节（≈ 一万张）处突然写不进去：之后每张新图上传
+// 都 201，但清单永远停在同一批 —— 用户看到的就是「一批一批地缺图」。
+//
+// 现在上传只往清单里写 `{ key, size, uploadedAt, isPublic }`（最小种子），
+// 名字 / 标签等其余字段的唯一来源是单图记录。两种形态并存：
+//   · 最小条目（上传写入、repair 回补）
+//   · 完整条目（visibility / tags / restore 的 patch 合并进来，老数据本来就有）
+// 读侧不在这里展开 —— 由 list.js 的 handleList 在「有最小条目」时按需补全，
+// 从而把清单大小与库大小解耦（每张图在清单里只剩约 100 字节，且与文件名长度无关）。
 
 export const IMG_INDEX_PREFIX = 'userimg:';
 
 export function userImgRecordKey(owner, key) {
   return IMG_INDEX_PREFIX + owner + ':' + key;
+}
+
+// 上传时写入清单的「最小种子」字段。其余字段（name / basename / tags / deletedAt …）
+// 只存在单图记录里，读时按需补全 —— 清单体积因此与图库大小解耦。
+const MINIMAL_FIELDS = ['key', 'size', 'uploadedAt', 'isPublic'];
+
+/** 只保留最小种子字段的清单条目 */
+export function minimalEntry(e) {
+  const out = { key: e.key };
+  for (const f of MINIMAL_FIELDS.slice(1)) if (e[f] !== undefined) out[f] = e[f];
+  return out;
+}
+
+// 上传时写入清单的种子字段（size / uploadedAt / isPublic 恒有值）。
+// 读侧据此判断「这条种子的名字与标签需要从单图记录取」—— 只要缺了任一必填字段，
+// 就说明它是重新上传时被 patch 合并出来的残条，同样要走补全。
+const SEED_REQUIRED = ['size', 'uploadedAt', 'isPublic'];
+
+// 兼容曾经试写过的短字段名（s / t / p，体积更小但可读性差，最终未采用）。
+// 只在读到这种形态时才还原一次，其它情况原样返回（不复制对象，避免热路径分配）。
+const SHORT_TO_LONG = { s: 'size', t: 'uploadedAt', p: 'isPublic' };
+
+/** 短字段名 → 长字段名（幂等：已经是长名则原样返回） */
+export function normalizeEntry(e) {
+  if (!e) return e;
+  let out = e;
+  for (const [short, long] of Object.entries(SHORT_TO_LONG)) {
+    if (short in e) {
+      if (out === e) out = { ...e };
+      if (out[long] === undefined) out[long] = e[short];
+      delete out[short];
+    }
+  }
+  return out;
+}
+
+/**
+ * 判断条目是否「只有最小种子字段」—— 即 name/tags/deletedAt 等需要从单图记录读取。
+ * 老数据与经过可见性/标签/恢复操作的条目都是完整形态，不会触发逐项读取。
+ */
+export function isMinimalEntry(e) {
+  if (!e) return false;
+  if (!SEED_REQUIRED.every(k => e[k] !== undefined)) return true;   // 残条：需要补全
+  return Object.keys(e).every(k => MINIMAL_FIELDS.includes(k));
+}
+
+/**
+ * 用单图记录补全清单条目。单图记录缺失（被彻底删除）时原样返回，
+ * 由调用方决定是否丢弃 —— 这里不替调用方删数据。
+ *
+ * @param {object} entry  清单条目（最小形态）
+ * @param {object|null} rec  单图记录（userimg:{owner}:{key} 的值）
+ */
+export function mergeEntryWithRecord(entry, rec) {
+  const seed = normalizeEntry(entry) ?? {};
+  const out = { ...(rec ?? {}) };
+  // 种子里值为 undefined 的字段不能盖掉单图记录里的真实值（否则名字会时有时无）
+  for (const [k, v] of Object.entries(seed)) if (v !== undefined) out[k] = v;
+  return out;
 }
 
 /**
@@ -80,41 +153,59 @@ export async function listUserImgRecordKeys(env, owner) {
 const REPAIR_FETCH_BUDGET = 40;
 
 /**
- * 用单图索引回补缺失的清单条目，并把清单写回。
+ * 用单图索引回补缺失的清单条目，并顺带把「胖条目」瘦回最小形态。
  *
- * 只在清单确实缺条目时才写（正常情况是 1 次 get + 1 次 list，无写入、无逐项读取）。
- * 只补不删：升级前的老图没有单图记录，但已在清单中，保持不动。
+ * 写入只在下面任一情况发生（正常情况是 1 次 get + 1 次 list，无写入、无逐项读取）：
+ *   · 清单缺条目 → 用单图记录回补
+ *   · 清单里还有带 name / basename / tags / deletedAt 等冗余字段的条目
+ *     → 就地瘦身成 { key, size, uploadedAt, isPublic }（信息在单图记录里有）
+ * 第二条是给老数据的自动瘦身：升级前清单把文件名 / 标签也复制了一份（每张约
+ * 200 字节，且中文名越长约占越多），瘦身后约 100 字节且与名字长度无关 ——
+ * 已经逼近 KV 25 MB 单值上限的图库，靠一次 /list 就能自动回落到安全体积。
  *
- * @returns {Promise<{repaired: number, manifest: object[]}>}
+ * 只补不删：升级前的老图没有单图记录，但已在清单中，保持不动（只是瘦身）。
+ *
+ * @returns {Promise<{repaired: number, compacted: number, manifest: object[]}>}
  */
 export async function repairUserManifest(env, owner) {
   const imgsKv = 'userimgs:' + owner;
   const manifest = (await env.STATS.get(imgsKv, 'json')) ?? [];
   const have = new Set(manifest.map(e => e.key));
+  const compacted = manifest.filter(e => e && !isMinimalEntry(e)).length;
 
   const recordKeys = await listUserImgRecordKeys(env, owner);
   const missing = recordKeys.filter(k => !have.has(k));
-  if (!missing.length) return { repaired: 0, manifest };
 
-  const gap = missing.slice(0, REPAIR_FETCH_BUDGET);
-  const filled = (await Promise.all(gap.map(async key => {
-    const rec = (await env.STATS.get(userImgRecordKey(owner, key), 'json')) ?? {};
-    const entry = { key, size: rec.size ?? 0, uploadedAt: rec.uploadedAt ?? 0, isPublic: !!rec.isPublic };
-    if (rec.deletedAt) entry.deletedAt = rec.deletedAt;
-    if (rec.name) { entry.name = rec.name; if (rec.basename) entry.basename = rec.basename; }
-    if (Array.isArray(rec.tags) && rec.tags.length) entry.tags = rec.tags;
-    return entry;
-  }))).filter(Boolean);
+  let filled = [];
+  if (missing.length) {
+    const gap = missing.slice(0, REPAIR_FETCH_BUDGET);
+    filled = (await Promise.all(gap.map(async key => {
+      const rec = (await env.STATS.get(userImgRecordKey(owner, key), 'json')) ?? {};
+      // 只写最小种子：名字 / 标签等由 /list 从单图记录补全
+      return minimalEntry({
+        key,
+        size: rec.size ?? 0,
+        uploadedAt: rec.uploadedAt ?? 0,
+        isPublic: !!rec.isPublic,
+      });
+    })));
+  }
 
-  if (!filled.length) return { repaired: 0, manifest };
+  if (!filled.length && !compacted) return { repaired: 0, compacted: 0, manifest };
 
-  // 防御性去重 + 按上传时间倒序（清单约定：最新在前）
+  // 防御性去重 + 原有条目瘦身 + 按上传时间倒序（清单约定：最新在前）
   const seen = new Set();
   const next = manifest.concat(filled)
-    .filter(e => (e.key && seen.has(e.key)) ? false : (seen.add(e.key), true));
-  next.sort((a, b) => (b.uploadedAt ?? 0) - (a.uploadedAt ?? 0));
+    .filter(e => (e && e.key && seen.has(e.key)) ? false : (seen.add(e.key), true))
+    .map(minimalEntry);
+  next.sort((a, b) => (b.t ?? b.uploadedAt ?? 0) - (a.t ?? a.uploadedAt ?? 0));
   await env.STATS.put(imgsKv, JSON.stringify(next));
-  return { repaired: filled.length, manifest: next };
+  return { repaired: filled.length, compacted, manifest: next };
+}
+
+// 清单读取入口：原始值可能带历史短字段名（s/t/p），统一还原成长名后再用
+function unpackManifest(raw) {
+  return (raw ?? []).map(normalizeEntry);
 }
 
 /**
@@ -144,7 +235,7 @@ export async function mergeUserImgEntry(env, username, key, patch = {}, opts = {
   };
 
   for (let attempt = 0; attempt < tries; attempt++) {
-    const list = await env.STATS.get(imgsKv, 'json') ?? [];
+    const list = unpackManifest(await env.STATS.get(imgsKv, 'json'));
 
     let next;
     if (remove) {
@@ -172,10 +263,11 @@ export async function mergeUserImgEntry(env, username, key, patch = {}, opts = {
       next = next.filter(e => (seen.has(e.key) ? false : (seen.add(e.key), true)));
     }
 
-    await env.STATS.put(imgsKv, JSON.stringify(next));
+    // 写回统一压成最小种子，清单体积与图库大小解耦
+    await env.STATS.put(imgsKv, JSON.stringify(next.map(minimalEntry)));
 
     // 写后校验：确认本次 patch 在最新状态上生效；未生效则用最新状态重试
-    const after = await env.STATS.get(imgsKv, 'json') ?? [];
+    const after = unpackManifest(await env.STATS.get(imgsKv, 'json'));
     const mine = after.find(e => e.key === key);
     if (remove ? !mine : matchesPatch(mine)) return true;
 

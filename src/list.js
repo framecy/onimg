@@ -1,6 +1,9 @@
 import { verifyAdminToken } from './admin/auth.js';
 import { verifyUserToken } from './user-auth.js';
-import { mergeUserImgEntry, putImageRecords, repairUserManifest } from './imglist.js';
+import {
+  mergeUserImgEntry, putImageRecords, repairUserManifest,
+  isMinimalEntry, mergeEntryWithRecord, userImgRecordKey,
+} from './imglist.js';
 
 export async function handleList(request, env) {
   const isAdmin = await verifyAdminToken(request, env);
@@ -53,8 +56,48 @@ export async function handleList(request, env) {
   // 保证「上传成功 → 图库可见」不会因为清单写入失败而静默消失。
   // 正常情况只多一次 list 调用（不带逐项读取），清单已完整时无写入。
   const { manifest } = await repairUserManifest(env, user.username);
-  // 排除回收站中（软删除）的图片
-  return Response.json({ items: manifest.filter(e => !e.deletedAt), cursor: null, truncated: false });
+
+  // 清单里的条目分两种形态（见 imglist.js 的「条目形态」注释）：
+  //   · 完整条目：name / basename / tags 都在，直接用
+  //   · 最小种子：只有 key/size/uploadedAt/isPublic，名字与标签要读单图记录
+  // 这里把最小种子按需补全。用并发池限流，避免一次请求打出上百个子请求
+  // （免费版单请求 KV 子请求上限 50）。
+  const items = await expandEntries(env, user.username, manifest);
+
+  // 排除已软删除（回收站）的图片
+  return Response.json({ items: items.filter(e => !e.deletedAt), cursor: null, truncated: false });
+}
+
+// 单次 /list 最多补全多少条「最小种子」条目。超出预算的条目原样返回 ——
+// 少了名字，但 key / 大小 / 时间 / 可见性都在，图库仍然完整可见。
+// 绝不能为了省子请求直接丢条目，那正是「图片缺失」的老毛病。
+const EXPAND_LIMIT = 200;
+const EXPAND_CONCURRENCY = 10;
+
+/**
+ * 把清单里的「最小种子」按单图记录补全（名字 / 标签 / deletedAt）。
+ * 完整条目直接用，不占读取名额。
+ *
+ * 预算只与**需要读取的条数**挂钩，所以图库 ≤ 200 张时一定能完整显示；
+ * 更大的图库按时间倒序补前 200 张，其余条目仍完整列出（只是暂缺名字）。
+ */
+async function expandEntries(env, owner, manifest) {
+  const out = new Array(manifest.length);
+  let reads = 0;
+  let i = 0;
+  async function worker() {
+    while (i < manifest.length) {
+      const idx = i++;
+      const e = manifest[idx];
+      if (!e) continue;
+      if (!isMinimalEntry(e) || reads >= EXPAND_LIMIT) { out[idx] = e; continue; }
+      reads++;
+      const rec = await env.STATS.get(userImgRecordKey(owner, e.key), 'json');
+      out[idx] = mergeEntryWithRecord(e, rec);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(EXPAND_CONCURRENCY, manifest.length) }, worker));
+  return out;
 }
 
 // 标签规范化：去重、trim、去空、长度上限，最多 10 个，每个 ≤ 24 字符。
