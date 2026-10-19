@@ -132,7 +132,7 @@ onimg
 cp wrangler.toml.example wrangler.toml   # 本地开发保留占位符即可，不必填真实 ID
 npm install
 npm run dev        # 本地 wrangler dev
-npm test           # vitest 单元测试（253 项）
+npm test           # vitest 单元测试（262 项）
 npx wrangler deploy --dry-run   # 构建校验（只校验构建产物，见下）
 ```
 
