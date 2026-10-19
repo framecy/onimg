@@ -273,6 +273,17 @@ export function renderPage(env = {}) {
       <div class="progress hidden my-[10px] h-[3px] overflow-hidden rounded-full bg-bg-3 [&.show]:block" id="progress"><div class="progress-bar h-full w-0 bg-accent transition-[width] duration-[.25s]" id="progressBar"></div></div>
       <div class="progress-info hidden items-center gap-[10px] -mt-1 mb-1.5 text-[.76rem] text-tx-2 [&.show]:flex" id="imgProgressInfo"><span class="min-w-[34px] font-mono font-bold text-tx" id="imgProgressPct">0%</span><span class="font-mono text-tx-3" id="imgProgressBytes"></span><span class="font-mono text-tx-3" id="imgProgressCount"></span></div>
       <div class="mt-2 text-[.8rem] text-red" id="uploadErr"></div>
+      <!-- 上传结果：批量选择 / 全选 / 一键复制（链接 / MD / BBCode） -->
+      <div class="batch-bar hidden flex-wrap items-center gap-2.5 mb-3 rounded-[9px] border border-bd-2 bg-bg-3 px-3.5 py-2.5 [&.show]:flex" id="resultsBar">
+        <span class="text-[.82rem] font-semibold text-tx" id="resultsSummary"></span>
+        <button class="border-none bg-transparent px-1 text-[1rem] leading-none text-tx-3 cursor-pointer transition hover:text-tx" id="resultsClear" title="收起本次结果" aria-label="收起本次结果">×</button>
+        <label class="flex cursor-pointer items-center gap-1.5 select-none text-[.82rem] text-tx-2"><input type="checkbox" class="accent-accent" id="resultsSelectAll"> 全选</label>
+        <span class="font-mono text-[.8rem] text-tx-3" id="resultsSelCount">未选择</span>
+        <div class="flex-1"></div>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2.5 !py-[3px] disabled:cursor-not-allowed disabled:opacity-45" id="resultsCopyUrl" disabled>复制链接</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2.5 !py-[3px] disabled:cursor-not-allowed disabled:opacity-45" id="resultsCopyMd" disabled>复制 MD</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2.5 !py-[3px] disabled:cursor-not-allowed disabled:opacity-45" id="resultsCopyBb" disabled>复制 BBCode</button>
+      </div>
       <div class="mt-3.5 flex flex-col gap-2" id="resultList"></div>
     </div>
 
@@ -549,17 +560,17 @@ export function renderPage(env = {}) {
 
 <!-- Page Editor Modal -->
 <div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="pageModal">
-  <div class="flex w-full max-w-[860px]! max-h-[100dvh] md:max-h-[96vh]! md:h-[min(92vh,900px)]! flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-w-[960px]! md:rounded-xl">
+  <div class="flex h-[min(92dvh,900px)] max-h-[calc(100dvh-3rem)] w-full max-w-[960px]! flex-col overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow">
     <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
       <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]" id="pageModalTitle">新建页面</h3>
       <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="pageModalClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-hidden! p-[18px] max-h-[calc(100dvh-140px)] md:max-h-none md:py-[18px] md:px-5">
+    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overflow-x-hidden overscroll-contain px-[18px] py-[18px] md:px-5">
       <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">标题</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="pmTitle" placeholder="My Page"></div>
       <div class="flex flex-col gap-[5px] mb-3.5">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">自定义后缀（URL）</label>
         <input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="pmSlug" placeholder="my-blog-post  或  docs/intro">
-        <span class="text-[.72rem] text-tx-3 mt-1">访问地址：<span class="text-accent" id="pmSlugPreview"></span></span>
+        <span class="text-[.72rem] text-tx-3 mt-1">访问地址：<span class="text-accent" id="pmSlugPreview"></span> <span class="text-tx-3">（必填，可用 / 分级，如 docs/intro）</span></span>
       </div>
       <div class="flex flex-col gap-[5px] mb-3.5">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">类型</label>
@@ -594,10 +605,10 @@ export function renderPage(env = {}) {
         </div>
         <span class="text-[.7rem] text-tx-3 mt-1 block">设置后访客可通过密码访问；复制地址时会附带密码</span>
       </div>
-      <div class="flex flex-col gap-[5px] mb-3.5 flex-1 min-h-0">
+      <div class="flex flex-col gap-[5px] mb-0">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3" id="pmContentLabel">内容</label>
         <div id="pmVditor" style="display:none"></div>
-        <textarea class="w-full flex-1 min-h-[360px] resize-y rounded-md border border-bd-2 bg-bg-2 px-[14px] py-3 font-mono text-[.84rem] leading-[1.7] text-tx" id="pmContent" rows="14" placeholder="# Hello World\n\n写点什么…"></textarea>
+        <textarea class="w-full min-h-[240px] resize-y rounded-md border border-bd-2 bg-bg-2 px-[14px] py-3 font-mono text-[.84rem] leading-[1.7] text-tx" id="pmContent" rows="10" placeholder="# Hello World\n\n写点什么…"></textarea>
       </div>
     </div>
     <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
@@ -964,17 +975,25 @@ export function renderPage(env = {}) {
     document.getElementById('pmContent').style.display = 'none';
 
     const finalContent = seed();
-    // Fill remaining modal height; fallback if layout not ready
+    // 编辑器高度 = 模态框中部区域减去其余字段占用的高度。
+    //
+    // 这里取的是 scrollHeight（内容总高）而不是 clientHeight（可视区高）：
+    // 中部区域现在是可滚动的，clientHeight 只反映滚动视口，用它算会让编辑器
+    // 挤成一条；scrollHeight 才代表「所有字段 + 编辑器」需要的高度，减掉其它
+    // 字段后剩下的空间给编辑器，整体就不会把标题 / 自定义后缀顶出可视区。
     const modalBody = box.closest('.modal-body');
     let editorH = 420;
+    const vh = window.innerHeight;
     if (modalBody) {
       const used = Array.from(modalBody.children).reduce((sum, el) => {
         if (el === box.parentElement) return sum;
         return sum + el.getBoundingClientRect().height + 12;
       }, 0);
-      editorH = Math.max(320, Math.min(640, modalBody.clientHeight - used - 28));
+      const avail = modalBody.scrollHeight - used - 28;
+      // 下限 240：小屏上宁可让中部整体滚动，也不要把编辑器压到无法输入
+      editorH = Math.max(240, Math.min(560, avail, vh - 320));
     } else {
-      editorH = Math.min(560, Math.max(360, window.innerHeight - 320));
+      editorH = Math.min(560, Math.max(240, vh - 320));
     }
 
     vditorInst = new Vditor('pmVditor', {
@@ -1106,6 +1125,7 @@ export function renderPage(env = {}) {
   async function loadUploadLimits() {
     try {
       const r = await fetch('/auth/upload-limits', { headers: { Authorization: 'Bearer ' + token } });
+      if (!(await guardAuth(r))) return;
       if (r.ok) uploadLimits = await r.json();
     } catch {}
   }
@@ -1460,23 +1480,164 @@ export function renderPage(env = {}) {
       xhr.addEventListener('load', async () => {
         let data = {};
         try { data = JSON.parse(xhr.responseText); } catch {}
+        if (xhr.status === 401) { resolve({ ok: false, name: file.name, error: '登录已过期，请重新登录', file, auth: true }); return; }
         if (xhr.status >= 400) { resolve({ ok: false, name: file.name, error: data.error || '上传失败', file }); return; }
-        resolve({ ok: true, url: data.url, key: data.key, name: data.name || file.name });
+        // size 用于「传上去是 0 字节」的空文件检测（服务端落盘后以实际大小回填）
+        resolve({ ok: true, url: data.url, key: data.key, name: data.name || file.name, size: Number(data.size) || 0 });
       });
       xhr.addEventListener('error', () => resolve({ ok: false, name: file.name, error: '网络错误', file }));
       xhr.send(fd);
     });
   }
 
+  // ── 登录态失效的统一处理 ────────────────────────────────────────────────────
+  //
+  // 背景：服务端 token 是无状态 HMAC（不落库，见 admin/auth.js）。只要 TOKEN_SECRET
+  // 变了（本地重启换了 secret、线上轮换了密钥）、或 token 过了 7/30 天有效期，
+  // 本地存着的 token 就变成「格式合法但服务端一律拒绝」的状态：所有接口 401。
+  //
+  // 此前前端只在 loadMineGallery 里处理 401，其它地方（上传 / 用量 / 删除 / 标签…）
+  // 都只弹一句英文错误。结果就是用户看到「侧栏明明显示已登录 admin，批量上传却
+  // 20 张全是 Unauthorized」—— 界面上没有任何线索指向「需要重新登录」。
+  //
+  // 现在所有请求失败都过这里：401 一律清理本地登录态、提示重新登录，并自动弹出
+  // 登录框。注意不能直接复用 logout()—— 那是「用户主动退出」，带 confirm()。
+  let sessionExpiredShown = false;
+  function handleAuthFailure() {
+    const wasLoggedIn = !!token;
+    token = null; perms = null; username = null; isAdminUser = false;
+    localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(PERM_KEY);
+    localStorage.removeItem(USER_KEY); localStorage.removeItem(ADMIN_KEY);
+    try { updateUserArea(); } catch {}
+    if (!wasLoggedIn || sessionExpiredShown) return;
+    sessionExpiredShown = true;
+    toast('登录已过期（或服务重启过），请重新登录', 'error');
+    setTimeout(() => { try { openLoginOverlay(); } catch {} }, 300);
+    // 给用户读完提示的时间，之后允许再次提示（下次真的再过期时还要提示）
+    setTimeout(() => { sessionExpiredShown = false; }, 5000);
+  }
+
+  // 通用：检查响应是否 401，是则走登录失效流程
+  async function guardAuth(res) {
+    if (res && res.status === 401) { handleAuthFailure(); return false; }
+    return true;
+  }
+
+  // ── 本次上传的结果 ──────────────────────────────────────────────────────────
+  // 每轮上传重新开始一份；"上传完成"之后的选择/复制都基于它。
+  // 清单里只放上传成功的条目 —— 失败项有自己的重试按钮，混进批量复制没意义。
+  let uploadResults = [];          // [{ key, url, name }]
+  const resultsSelected = new Set();  // 选中的 key
+
+  // 结果条目上可复制的格式。与图库批量栏、灯箱保持一致（链接 / MD / BBCode）。
+  function resultFormats() {
+    return {
+      url: { label: '链接', text: it => it.url },
+      md:  { label: 'MD',   text: it => imgMd(it.url, it.name) },
+      bb:  { label: 'BB',   text: it => imgBb(it.url) },
+    };
+  }
+
+  function selectableResults() {
+    return uploadResults.map(it => it.key);
+  }
+
+  function updateResultsBar() {
+    const bar = document.getElementById('resultsBar');
+    if (!bar) return;
+    const n = uploadResults.length;
+    bar.classList.toggle('show', n > 0);
+    if (!n) {
+      resultsSelected.clear();
+      return;
+    }
+    // 选中集合里剔除已经不存在的 key（重复上传、刷新结果时）
+    const alive = new Set(selectableResults());
+    [...resultsSelected].forEach(k => { if (!alive.has(k)) resultsSelected.delete(k); });
+
+    const summary = document.getElementById('resultsSummary');
+    const failed = uploadResults._failed || 0;
+    // 标题只讲「这次传了什么」；选中数量单独一栏，避免两个数字挨在一起看不出区别
+    summary.textContent = failed
+      ? \`上传完成：成功 \${n} 张，失败 \${failed} 张\`
+      : \`上传完成：\${n} 张\`;
+    const selCount = document.getElementById('resultsSelCount');
+    selCount.textContent = resultsSelected.size ? \`已选 \${resultsSelected.size} / \${n}\` : \`未选择\`;
+
+    const all = document.getElementById('resultsSelectAll');
+    if (all) {
+      all.checked = n > 0 && resultsSelected.size === n;
+      all.indeterminate = resultsSelected.size > 0 && resultsSelected.size < n;
+    }
+    for (const id of ['resultsCopyUrl', 'resultsCopyMd', 'resultsCopyBb']) {
+      const b = document.getElementById(id);
+      if (b) b.disabled = resultsSelected.size === 0;
+    }
+    // 逐项复选框与卡片高亮同步（避免整表重绘导致复制按钮的对钩状态丢失）
+    document.querySelectorAll('#resultList .result-item[data-key]').forEach(el => {
+      const on = resultsSelected.has(el.dataset.key);
+      el.classList.toggle('selected', on);
+      const cb = el.querySelector('.result-sel');
+      if (cb && cb.checked !== on) cb.checked = on;
+    });
+  }
+
+  function toggleResultSel(key) {
+    if (resultsSelected.has(key)) resultsSelected.delete(key);
+    else resultsSelected.add(key);
+    updateResultsBar();
+  }
+  window.toggleResultSel = toggleResultSel;
+
+  function copySelectedResults(fmt) {
+    const format = resultFormats()[fmt];
+    if (!format) return;
+    // 按展示顺序取，和用户看到的顺序一致
+    const chosen = uploadResults.filter(it => resultsSelected.has(it.key));
+    if (!chosen.length) { toast('先勾选要复制的图片'); return; }
+    // 双反斜杠：模板字符串会吃掉一层，产物里才是浏览器端的换行符
+    const text = chosen.map(it => format.text(it)).join('\\n');
+    cp(text, document.getElementById(fmt === 'url' ? 'resultsCopyUrl' : fmt === 'md' ? 'resultsCopyMd' : 'resultsCopyBb'));
+    toast('已复制 ' + chosen.length + ' 条 ' + format.label, 'success');
+  }
+
   function resultItemHtml(r) {
     if (r.ok) {
-      return \`<div class="result-item flex items-center gap-3 rounded-lg border border-bd bg-bg-3 px-[14px] py-[10px]"><img class="h-11 w-11 rounded-xs border border-bd object-cover" src="\${escAttr(r.url)}" loading="lazy"><div class="min-w-0 flex-1"><div class="text-[.8rem] font-medium text-tx">\${esc(r.name)}</div><div class="mt-1 flex gap-[5px]"><input class="min-w-0 flex-1 rounded-xs border border-bd bg-bg-2 px-2 py-[3px] font-mono text-xs text-tx outline-none" value="\${escAttr(r.url)}" readonly onclick="this.select()"><button class="copy-btn inline-flex min-h-8 min-w-[46px] shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1.5 text-[.78rem] font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${escAttr(r.url)}">复制</button><button class="copy-btn inline-flex min-h-8 min-w-[46px] shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1.5 text-[.78rem] font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${escAttr(imgMd(r.url, r.name))}">MD</button><button class="copy-btn inline-flex min-h-8 min-w-[46px] shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1.5 text-[.78rem] font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${escAttr(imgBb(r.url))}">BB</button></div></div></div>\`;
+      const sel = resultsSelected.has(r.key);
+      // 每条结果可选；不进入「选择模式」也能直接勾选 —— 上传完的那一刻就是
+      // 用户最想批量拿链接的时候，多一步「进入选择模式」纯属负担。
+      return \`<div class="result-item\${sel?' selected':''} flex items-center gap-3 rounded-lg border border-bd bg-bg-3 px-[14px] py-[10px] transition [&.selected]:border-tx-2 [&.selected]:bg-bg-4" data-key="\${escAttr(r.key)}"><input type="checkbox" class="result-sel h-[18px] w-[18px] shrink-0 cursor-pointer accent-accent" \${sel?'checked':''} onchange="toggleResultSel(\${jsStr(r.key)})" title="选中后可批量复制"><img class="h-11 w-11 rounded-xs border border-bd object-cover" src="\${escAttr(r.url)}" loading="lazy"><div class="min-w-0 flex-1"><div class="text-[.8rem] font-medium text-tx">\${esc(r.name)}</div><div class="mt-1 flex gap-[5px]"><input class="min-w-0 flex-1 rounded-xs border border-bd bg-bg-2 px-2 py-[3px] font-mono text-xs text-tx outline-none" value="\${escAttr(r.url)}" readonly onclick="this.select()"><button class="copy-btn inline-flex min-h-8 min-w-[46px] shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1.5 text-[.78rem] font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${escAttr(r.url)}">复制</button><button class="copy-btn inline-flex min-h-8 min-w-[46px] shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1.5 text-[.78rem] font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${escAttr(imgMd(r.url, r.name))}">MD</button><button class="copy-btn inline-flex min-h-8 min-w-[46px] shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1.5 text-[.78rem] font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${escAttr(imgBb(r.url))}">BB</button></div></div></div>\`;
     }
     const fid = 'f' + (++uploadFidSeq);
     if (r.file) uploadFailMap.set(fid, r.file);
     const retryBtn = r.file ? \`<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-[10px] !py-[3px] shrink-0" onclick="retryUpload('\${fid}', this)">重试</button>\` : '';
     return \`<div class="result-item flex items-center gap-3 rounded-lg border border-bd bg-bg-3 px-[14px] py-[10px]" data-fid="\${fid}"><div class="min-w-0 flex-1"><div class="flex items-center gap-1.5 text-[.8rem] font-medium text-red"><svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>\${esc(r.name)}: \${esc(r.error)}</div></div>\${retryBtn}</div>\`;
   }
+
+  // 把一批上传结果渲染到结果区，并同步批量栏状态。
+  // 只在「整批上传结束」或「重试成功」时调用。
+  function renderResults(results, failedCount) {
+    uploadResults = results.filter(r => r && r.ok).map(r => ({ key: r.key, url: r.url, name: r.name }));
+    uploadResults._failed = failedCount ?? results.filter(r => r && !r.ok).length;
+    document.getElementById('resultList').innerHTML = results.filter(Boolean).map(resultItemHtml).join('');
+    updateResultsBar();
+  }
+
+  document.getElementById('resultsSelectAll')?.addEventListener('change', e => {
+    if (e.target.checked) selectableResults().forEach(k => resultsSelected.add(k));
+    else resultsSelected.clear();
+    updateResultsBar();
+  });
+  document.getElementById('resultsClear')?.addEventListener('click', () => {
+    uploadResults = []; resultsSelected.clear();
+    document.getElementById('resultList').innerHTML = '';
+    document.getElementById('uploadErr').textContent = '';
+    updateResultsBar();
+  });
+  document.getElementById('resultsCopyUrl')?.addEventListener('click', () => copySelectedResults('url'));
+  document.getElementById('resultsCopyMd')?.addEventListener('click', () => copySelectedResults('md'));
+  document.getElementById('resultsCopyBb')?.addEventListener('click', () => copySelectedResults('bb'));
+
   window.retryUpload = async function (fid, btn) {
     const file = uploadFailMap.get(fid); if (!file) return;
     btn.disabled = true; btn.textContent = '重试中…';
@@ -1486,6 +1647,10 @@ export function renderPage(env = {}) {
     if (r.ok) {
       uploadFailMap.delete(fid);
       if (item) item.outerHTML = resultItemHtml(r);
+      // 重试成功的图也要进批量选区（否则「全选」会漏掉它）
+      uploadResults.push({ key: r.key, url: r.url, name: r.name });
+      uploadResults._failed = Math.max(0, (uploadResults._failed || 0) - 1);
+      updateResultsBar();
       loadQuota();
       toast('重试成功', 'success');
     } else {
@@ -1500,6 +1665,7 @@ export function renderPage(env = {}) {
     uploadBusy = true;
     document.getElementById('uploadBtn').disabled = true;
     document.getElementById('resultList').innerHTML = '';
+    uploadResults = []; resultsSelected.clear(); updateResultsBar();
     document.getElementById('uploadErr').textContent = '';
     const prog    = document.getElementById('progress');        prog.classList.add('show');
     const bar     = document.getElementById('progressBar');     bar.style.width = '0%';
@@ -1525,14 +1691,18 @@ export function renderPage(env = {}) {
     const paintCount = () => { cntEl.textContent = doneCount + ' / ' + total + ' 张'; };
     paintCount();
 
+    // 撞到 401 就不再继续发：token 无效时每一张都会失败，硬跑完 20 张既费时
+    // 又刷出一屏错误（用户看到的就是「20 张全部 Unauthorized」）。
+    let authFailed = false;
     async function uploadWorker() {
-      while (nextIdx < total) {
+      while (nextIdx < total && !authFailed) {
         const i = nextIdx++;
         const file = queue[i];
         const result = await uploadOne(file, makePublic, (loaded) => {
           loadedMap[i] = loaded;
           paintBytes();
         });
+        if (result.auth) { authFailed = true; results[i] = result; break; }
         loadedMap[i] = file.size || 0;
         results[i] = result;
         doneCount++;
@@ -1546,8 +1716,23 @@ export function renderPage(env = {}) {
     setTimeout(() => { prog.classList.remove('show'); bar.style.width = '0%'; info.classList.remove('show'); }, 700);
     uploadBusy = false;
     clearFiles();
+    if (authFailed) {
+      // 登录态失效：清掉本地 token、提示并弹出登录框；未上传的文件放回队列，
+      // 用户重新登录后直接点「上传」即可，不用重新选一遍。
+      handleAuthFailure();
+      pendingFiles = queue.slice();
+      renderUploadQueue();
+      document.getElementById('uploadErr').textContent = '登录已过期，本次上传已中止。重新登录后再点「上传」即可继续（文件仍在队列里）。';
+      document.getElementById('resultList').innerHTML = '';
+      uploadResults = []; resultsSelected.clear(); updateResultsBar();
+      return;
+    }
     loadQuota();
-    document.getElementById('resultList').innerHTML = results.map(resultItemHtml).join('');
+    // 失败项按「有 file 才可重试」处理；注意 results 里可能有 undefined（理论上的空槽）
+    const fails = results.filter(r => r && !r.ok).length;
+    renderResults(results.filter(Boolean), fails);
+    const short = results.map((r, i) => ({ r, i })).filter(({ r }) => r && r.ok && r.size === 0);
+    if (short.length) document.getElementById('uploadErr').textContent = '有 ' + short.length + ' 张图片上传后为空文件（0 字节），请重试该文件';
 
     // 上传完成后刷新图库：此前这里只刷了结果列表，导致「勾选公开上传后，
     // 公开图库里看不到刚传的图」，必须手动切标签或点刷新才出现。
@@ -1563,14 +1748,21 @@ export function renderPage(env = {}) {
     document.getElementById('quotaBar').style.display = 'flex';
     try {
       const r = await fetch('/auth/quota', { headers: { Authorization: 'Bearer ' + token } });
+      if (!(await guardAuth(r))) return;
       if (!r.ok) return;
       const { total, daily } = await r.json();
       document.getElementById('qDaily').textContent = daily;
       document.getElementById('qTotal').textContent = total;
+      // perms 可能为空（例如只写入了 token、没写权限缓存，或老版本留下的缓存），
+      // 此时不能拿 undefined 去判断 !== -1 —— 会渲染成「每日限undefined张」。
+      // 拿不到就整段不显示，已经显示的今日/总计照常。
       const limits = [];
-      if (perms?.dailyUploadLimit !== -1) limits.push(\`每日限\${perms?.dailyUploadLimit}张\`);
-      if (perms?.maxTotalUploads   !== -1) limits.push(\`总限\${perms?.maxTotalUploads}张\`);
-      document.getElementById('qLimits').textContent = limits.join(' · ');
+      if (perms) {
+        if (perms.dailyUploadLimit != null && perms.dailyUploadLimit !== -1) limits.push(\`每日限\${perms.dailyUploadLimit}张\`);
+        if (perms.maxTotalUploads  != null && perms.maxTotalUploads  !== -1) limits.push(\`总限\${perms.maxTotalUploads}张\`);
+      }
+      const el = document.getElementById('qLimits');
+      if (el) el.textContent = limits.join(' · ');
     } catch {}
   }
 
@@ -1584,7 +1776,7 @@ export function renderPage(env = {}) {
     } catch {
       toast('图库加载失败，请重试', 'error'); return;
     }
-    if (res.status === 401) { logout(); return; }
+    if (res.status === 401) { handleAuthFailure(); return; }
     // 非 2xx 时不能把 mineItems 置空 —— 否则界面变成「一张都没有」，
     // 让人以为图片丢了（数据其实还在）。
     if (!res.ok) { toast('图库加载失败（' + res.status + '），请重试', 'error'); return; }
@@ -1833,6 +2025,7 @@ export function renderPage(env = {}) {
     body.innerHTML = '<div class="p-12 text-center text-[.88rem] font-medium text-tx-3">加载中…</div>';
     try {
       const res = await fetch('/api/trash', { headers: { Authorization: 'Bearer ' + token } });
+      if (!(await guardAuth(res))) { body.innerHTML = '<div class="p-12 text-center text-[.88rem] font-medium text-tx-3">请先登录</div>'; return; }
       if (!res.ok) { body.innerHTML = '<div class="p-12 text-center text-[.88rem] font-medium text-tx-3">加载失败</div>'; return; }
       trashData = await res.json();
       renderTrash();
@@ -2166,6 +2359,7 @@ export function renderPage(env = {}) {
     if (!token) return;
     if (!userPages.length) document.getElementById('pagesTree').innerHTML = '';
     const res = await fetch('/api/pages', { headers: { Authorization: 'Bearer ' + token } });
+    if (!(await guardAuth(res))) return;
     if (!res.ok) return;
     const data = await res.json();
     userPages = data.pages || [];
@@ -2200,8 +2394,8 @@ export function renderPage(env = {}) {
       prev.textContent = reason;
     } else {
       el.style.borderColor = '';
-      prev.style.color = 'var(--accent)';
-      prev.textContent = s ? location.origin + '/p/' + s : '';
+      prev.style.color = s ? 'var(--accent)' : 'var(--tx-3)';
+      prev.textContent = s ? location.origin + '/p/' + s : location.origin + '/p/你的后缀';
     }
     setSlugSaveState(!!reason);
   });
@@ -2209,6 +2403,18 @@ export function renderPage(env = {}) {
   document.getElementById('pmType').addEventListener('change', () => {
     switchEditorToType(document.getElementById('pmType').value, getContent());
   });
+
+  // 弹窗中部是可滚动的；Vditor 初始化完会 focus 编辑器（便于打开即输入），
+  // 浏览器随即把最近的滚动容器 .modal-body 滚到编辑器处 —— 表现为「一打开就
+  // 看不到标题和自定义后缀」。这里在几个时间点上把视图复位到顶部，
+  // 同时保留焦点，不牺牲「打开即可打字」。
+  function resetPageModalScroll() {
+    const body = document.querySelector('#pageModal .modal-body');
+    if (body && body.scrollTop) body.scrollTop = 0;
+  }
+  function scheduleModalScrollReset() {
+    [0, 120, 300, 600, 1000].forEach(ms => setTimeout(resetPageModalScroll, ms));
+  }
 
   document.getElementById('newPageBtn').addEventListener('click', () => {
     editingSlug = null;
@@ -2221,8 +2427,9 @@ export function renderPage(env = {}) {
     slugEl.style.opacity = '';
     slugEl.style.borderColor = '';
     const prevEl = document.getElementById('pmSlugPreview');
-    prevEl.style.color = 'var(--accent)';
-    prevEl.textContent = '';
+    prevEl.style.color = 'var(--tx-3)';
+    // 新建页必须填后缀，空着时先给个示例，比一片空白更容易理解要填什么
+    prevEl.textContent = location.origin + '/p/你的后缀';
     setSlugSaveState(false);
     document.getElementById('pmType').value = 'markdown';
     document.getElementById('pmContent').value = '';
@@ -2233,6 +2440,7 @@ export function renderPage(env = {}) {
     updatePageGroupSelect(document.getElementById('pmGroup'), '', '');
     document.getElementById('pageModalSave').textContent = '创建';
     document.getElementById('pageModal').classList.add('show');
+    scheduleModalScrollReset();
     setTimeout(() => initVditor(''), 50);
   });
 
@@ -2278,6 +2486,7 @@ export function renderPage(env = {}) {
     updatePageGroupSelect(document.getElementById('pmGroup'), p.projectId || '', p.groupId || '');
     document.getElementById('pageModalSave').textContent = '保存';
     document.getElementById('pageModal').classList.add('show');
+    scheduleModalScrollReset();
     setTimeout(() => switchEditorToType(p.type, content), 50);
   }
 
@@ -3063,6 +3272,7 @@ export function renderPage(env = {}) {
     if (!silent) document.getElementById('protoTableBody').innerHTML = '<tr><td class="text-center text-tx-3 p-8" colspan="10">加载中…</td></tr>';
     try {
       const res = await fetch('/api/protos', { headers: { Authorization: 'Bearer ' + token } });
+      if (!(await guardAuth(res))) return;
       if (!res.ok) return;
       const { protos } = await res.json();
       userProtos = protos || [];
