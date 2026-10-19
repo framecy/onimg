@@ -748,12 +748,12 @@ export function renderAdminPage() {
 
 <!-- Admin Page Editor Modal -->
 <div class="fixed inset-0 z-50 hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="adminPageModal">
-  <div class="flex w-full max-w-[520px] max-h-[90vh] flex-col overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow !max-w-[960px] !h-[min(92vh,900px)] !max-h-[96vh]">
+  <div class="flex w-full max-w-[520px] max-h-[90vh] flex-col overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow !max-w-[960px] !h-[min(92dvh,900px)] !max-h-[calc(100dvh-3rem)]">
     <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
       <h3 class="flex-1 text-[.93rem] font-semibold text-tx">页面编辑</h3>
       <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-2 hover:text-tx" id="apmClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body flex-1 overflow-y-auto px-[18px] py-4 flex flex-col gap-3 min-h-0 !overflow-hidden">
+    <div class="modal-body flex-1 px-[18px] py-4 flex flex-col gap-3 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
       <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">标题</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="apmTitle" placeholder="My Page"></div>
       <div class="flex flex-col gap-[5px] mb-3.5">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">Slug（URL 后缀）</label>
@@ -776,10 +776,10 @@ export function renderAdminPage() {
         </div>
         <span class="text-[.7rem] text-tx-3 mt-1 block">6位字母+数字，访客凭密码访问私密页面</span>
       </div>
-      <div class="flex flex-col gap-[5px] mb-3.5 flex-1 min-h-0">
+      <div class="flex flex-col gap-[5px]">
         <label id="apmContentLabel">内容</label>
         <div class="hidden" id="apmVditor"></div>
-        <textarea class="w-full flex-1 min-h-[360px] resize-y rounded-md border border-bd-2 bg-bg-2 px-[14px] py-3 font-mono text-[.84rem] leading-[1.7] text-tx" id="apmContent" rows="14" placeholder="# Hello World\n\n写点什么…"></textarea>
+        <textarea class="w-full min-h-[240px] resize-y rounded-md border border-bd-2 bg-bg-2 px-[14px] py-3 font-mono text-[.84rem] leading-[1.7] text-tx" id="apmContent" rows="10" placeholder="# Hello World\n\n写点什么…"></textarea>
       </div>
     </div>
     <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
@@ -2398,16 +2398,20 @@ export function renderAdminPage() {
     document.getElementById('apmContent').style.display = 'none';
 
     const finalContent = seed();
+    // 与前台同一套算法：中部区域可滚动，用 scrollHeight（内容总高）而非
+    // clientHeight（可视区）来分配编辑器高度，见 page.js initVditor 的注释。
     const modalBody = box.closest('.modal-body');
     let editorH = 420;
+    const vh = window.innerHeight;
     if (modalBody) {
       const used = Array.from(modalBody.children).reduce((sum, el) => {
         if (el === box.parentElement) return sum;
         return sum + el.getBoundingClientRect().height + 12;
       }, 0);
-      editorH = Math.max(320, Math.min(640, modalBody.clientHeight - used - 28));
+      const avail = modalBody.scrollHeight - used - 28;
+      editorH = Math.max(240, Math.min(560, avail, vh - 320));
     } else {
-      editorH = Math.min(560, Math.max(360, window.innerHeight - 320));
+      editorH = Math.min(560, Math.max(240, vh - 320));
     }
 
     apmVditorInst = new Vditor('apmVditor', {
@@ -3142,6 +3146,16 @@ export function renderAdminPage() {
       grps.map(g => '<option value="'+esc(g.id)+'"'+(g.id===selectedGroupId?' selected':'')+'>'+esc(g.name)+'</option>').join('');
   }
 
+  // 同前台：中部区域可滚动，Vditor 初始化的 focus 会把 .modal-body 滚到编辑器处，
+  // 表现为「一打开就看不到标题和 Slug」。多个时间点复位，保留焦点。
+  function adminResetPageModalScroll() {
+    const body = document.querySelector('#adminPageModal .modal-body');
+    if (body && body.scrollTop) body.scrollTop = 0;
+  }
+  function adminScheduleScrollReset() {
+    [0, 120, 300, 600, 1000].forEach(ms => setTimeout(adminResetPageModalScroll, ms));
+  }
+
   function adminOpenPageModal(page) {
     adminEditingSlug = page?.slug ?? null;
     const modal = document.getElementById('adminPageModal');
@@ -3167,8 +3181,9 @@ export function renderAdminPage() {
     adminUpdateProjectSelect(page?.projectId || '');
     adminUpdateGroupSelect(page?.projectId || '', page?.groupId || '');
     document.getElementById('apmSave').textContent = page ? '保存' : '创建';
-    document.getElementById('apmSlugPreview').textContent = page ? location.origin + '/p/' + page.slug : '';
+    document.getElementById('apmSlugPreview').textContent = page ? location.origin + '/p/' + page.slug : location.origin + '/p/你的后缀';
     modal.classList.add('show');
+    adminScheduleScrollReset();
     switchApmEditorToType(type, page?.content ?? '');
   }
 
