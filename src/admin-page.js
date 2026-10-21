@@ -419,6 +419,8 @@ export function renderAdminPage() {
               <span class="inline-block align-top">行读取 / 行写入为 D1 官方计费口径。配置了 <code class="bg-bg px-1 rounded font-mono text-[.63rem] text-tx-2">CF_API_TOKEN</code> 与 <code class="bg-bg px-1 rounded font-mono text-[.63rem] text-tx-2">CF_D1_DB_ID</code> 时取 CF Analytics 的精确日用量，否则显示本站自追踪的同一口径计数；两者都按 UTC 归日（北京时间 08:00 换日）。</span>
             </div>
           </div>
+        </div>
+
         <!-- hidden R2 DOM nodes kept for JS compatibility -->
         <div style="display:none">
           <span id="r2Storage"></span><span id="r2Objects"></span><span id="r2Writes"></span>
@@ -469,7 +471,7 @@ export function renderAdminPage() {
           <div class="dash-tab-pane hidden [&.active]:block" id="dashTabProtos">
             <div class="table-wrap overflow-x-auto rounded-lg border border-bd bg-bg-3 !rounded-none !border-none">
               <table class="data-table w-full table-fixed border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
-                <thead><tr><th>名称</th><th class="w-[88px]">类型</th><th class="w-[120px]">作者</th><th class="w-[96px]">总访问</th><th class="w-[120px]">最后访问</th><th class="w-[200px]">操作</th></tr></thead>
+                <thead><tr><th>名称</th><th class="w-[88px]">类型</th><th class="w-[120px]">作者</th><th class="w-[96px]">总访问</th><th class="w-[120px]">最后访问</th><th class="w-[216px]">操作</th></tr></thead>
                 <tbody id="topProtosBody"><tr><td colspan="6" class="text-center text-tx-3 p-8">加载中…</td></tr></tbody>
               </table>
             </div>

@@ -86,6 +86,49 @@ describe('renderAdminPage 能成功渲染（不抛异常）', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 静态标记的嵌套结构
+//
+// 模板字符串里的 HTML 少写一个 `</div>` 不会报错、渲染也照样 200，浏览器会把
+// 后续节点**自动吞进**前面没闭合的元素里。真实发生过：D1 面板替换 KV 面板时
+// 漏了「Cloudflare 免费额度」卡片的收尾标签，于是整块 Top 10（图片 / 页面 /
+// 原型）被渲染进了额度卡片内部，视觉上像多了一层边框。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('管理端静态标记的嵌套结构', () => {
+  /** 只保留静态 HTML：内联脚本里也有 `<div` 字面量，注释里也可能出现，会干扰配平 */
+  const markup = () => renderAdminPage()
+    .replace(/<script[\s\S]*?<\/script>/g, '')
+    .replace(/<!--[\s\S]*?-->/g, '');
+
+  /** 指定 id 所在位置的 <div> 嵌套深度（从文档开头算） */
+  const depthAt = (src, marker) => {
+    const i = src.indexOf(marker);
+    expect(i).toBeGreaterThan(-1);
+    const before = src.slice(0, i);
+    return (before.match(/<div\b/g) || []).length - (before.match(/<\/div>/g) || []).length;
+  };
+
+  test('<div> 开闭配平', () => {
+    const m = markup();
+    expect((m.match(/<div\b/g) || []).length).toBe((m.match(/<\/div>/g) || []).length);
+  });
+
+  test('Top 10 面板是概览页的直接子块，不在「Cloudflare 免费额度」卡片里', () => {
+    const m = markup();
+    // 以面板容器（dash-tabs-panel）为准：它应当是概览页那一层的直接子块。
+    // 漏闭合时它会再深一层（被吞进额度卡片），这里就会失败。
+    expect(depthAt(m, 'class="dash-tabs-panel')).toBe(depthAt(m, 'id="section-dashboard"') + 1);
+  });
+
+  test('各功能分区与概览页同级', () => {
+    const m = markup();
+    const d = depthAt(m, 'id="section-dashboard"');
+    for (const id of ['section-images', 'section-users', 'section-pages', 'section-settings']) {
+      expect(depthAt(m, `id="${id}"`)).toBe(d);
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 内联 <script> 的浏览器端语法校验
 //
 // 为什么需要：上面的测试只保证「渲染不抛异常」，但那只覆盖 Node 端。产物里的
