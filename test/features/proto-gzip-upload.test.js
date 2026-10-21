@@ -73,7 +73,7 @@ describe('原型上行 gzip 压缩', () => {
       body: { protoId, filePaths: ['index.html', 'css/site.css'] },
     }), env, OWNER);
 
-    const res = await serveProto(env, protoId, 'css/site.css', new Request('http://localhost/proto/x/css/site.css'));
+    const res = await serveProto(env, protoId, 'css/site.css', new Request('http://localhost/proto/x/css/site.css', { headers: { 'Accept-Encoding': 'gzip' } }));
     expect(res.headers.get('Content-Encoding')).toBe('gzip');
     const body = Buffer.from(await res.arrayBuffer());
     expect(gunzipSync(body).toString()).toBe(src.toString());
@@ -120,7 +120,7 @@ describe('原型上行 gzip 压缩', () => {
       body: { protoId, filePaths: ['index.html', 'legacy.js'] },
     }), env, OWNER);
 
-    const res = await serveProto(env, protoId, 'legacy.js', new Request('http://localhost/proto/x/legacy.js'));
+    const res = await serveProto(env, protoId, 'legacy.js', new Request('http://localhost/proto/x/legacy.js', { headers: { 'Accept-Encoding': 'gzip' } }));
     expect(res.headers.get('Content-Encoding')).toBe('gzip');
     expect(gunzipSync(Buffer.from(await res.arrayBuffer())).toString()).toBe(src.toString());
   });
@@ -135,7 +135,7 @@ describe('原型上行 gzip 压缩', () => {
       body: { protoId, filePaths: ['index.html', 'only-ce.css'] },
     }), env, OWNER);
 
-    const res = await serveProto(env, protoId, 'only-ce.css', new Request('http://localhost/proto/x/only-ce.css'));
+    const res = await serveProto(env, protoId, 'only-ce.css', new Request('http://localhost/proto/x/only-ce.css', { headers: { 'Accept-Encoding': 'gzip' } }));
     expect(res.headers.get('Content-Encoding')).toBe('gzip');
   });
 
@@ -148,5 +148,21 @@ describe('原型上行 gzip 压缩', () => {
     }), env, OWNER);
     const res = await serveProto(env, protoId, 'pic.png', new Request('http://localhost/proto/x/pic.png'));
     expect(res.headers.get('Content-Encoding')).toBeNull();
+  });
+  test('客户端不声明 Accept-Encoding: gzip 时就地解压回明文', async () => {
+    // Cloudflare 会把没有协商 gzip 的响应的 Content-Encoding 头剥掉，
+    // body 却仍是压缩字节 —— 那类客户端（CLI / 抓取工具）会读到乱码。
+    const protoId = await startSession(env);
+    const src = Buffer.from('var b=2;\n'.repeat(120));
+    await env.BUCKET.put(`proto/${protoId}/plain.js`, gzipSync(src), {
+      httpMetadata: { contentType: 'application/javascript', contentEncoding: 'gzip' },
+    });
+    await handleProtoFinalize(createRequest('POST', 'http://localhost/upload/proto/finalize', {
+      body: { protoId, filePaths: ['index.html', 'plain.js'] },
+    }), env, OWNER);
+
+    const res = await serveProto(env, protoId, 'plain.js', new Request('http://localhost/proto/x/plain.js'));
+    expect(res.headers.get('Content-Encoding')).toBeNull();
+    expect(await res.text()).toBe(src.toString());
   });
 });

@@ -182,8 +182,9 @@ export async function serveProto(env, protoId, filePath, request) {
   // Inject prototype title into HTML files (AxureRP exports default to "Untitled Document")
   if (isHtml && meta.title) {
     const safeTitle = meta.title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    // HTML 需要改文本，压缩过就得先解（回给浏览器的是明文，不再带 Content-Encoding）
-    const buf = await obj.arrayBuffer();
+    // 必须走 gz.body：嗅探已经把 R2 的流读过一块了，再 obj.arrayBuffer() 会抛
+    // 「Body has already been used」。gz.body 是已经把那一块拼回去的可读流。
+    const buf = await new Response(gz.body).arrayBuffer();
     let html;
     if (gz.gzip) {
       html = await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
@@ -193,13 +194,28 @@ export async function serveProto(env, protoId, filePath, request) {
     if (/<title>/i.test(html)) {
       html = html.replace(/<title>[^<]*<\/title>/i, `<title>${safeTitle}</title>`);
     } else {
-      html = html.replace(/<head>/i, `<head><title>${safeTitle}</title>`);
+      html = html.replace(/<head>/i, `<head><title>${safeTitle}</title></head>`);
     }
     return new Response(html, { headers });
   }
 
-  if (gz.gzip) headers.set('Content-Encoding', 'gzip');
+  if (!gz.gzip) return new Response(gz.body, { headers });
+
+  // 只有客户端声明支持 gzip 时才直接回压缩字节。否则 Cloudflare 会把
+  // Content-Encoding 头剥掉、body 仍留压缩字节（实测 curl 不带
+  // Accept-Encoding 就是这个结果），客户端会把 gzip 当明文读。
+  // 浏览器一定会带这个头，所以这只是给 CLI / 抓取工具兜底。
+  if (!acceptsGzip(request)) {
+    // gz.body 可能是 R2 的流，也可能是本地适配器直接给的字节，统一成流再解
+    const src = typeof gz.body?.pipeThrough === 'function' ? gz.body : new Blob([gz.body]).stream();
+    return new Response(src.pipeThrough(new DecompressionStream('gzip')), { headers });
+  }
+  headers.set('Content-Encoding', 'gzip');
   return new Response(gz.body, { headers });
+}
+
+function acceptsGzip(request) {
+  return /(^|,)\s*gzip\s*(;|,|$)/i.test(request.headers.get('Accept-Encoding') || '');
 }
 
 // 判断一个原型对象是不是以 gzip 字节存储的；返回可安全回放的 body。
