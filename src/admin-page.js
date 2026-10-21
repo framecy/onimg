@@ -1944,7 +1944,15 @@ export function renderAdminPage() {
     const TYPE_IMG = '<span class="rounded-xs border border-[rgba(52,211,153,.2)] bg-[rgba(52,211,153,.1)] px-1.5 py-px text-[.62rem] font-semibold text-[#34d399]">图片</span>';
     const TYPE_PROTO = '<span class="rounded-xs border border-[rgba(200,200,200,.15)] bg-[rgba(200,200,200,.08)] px-1.5 py-px text-[.62rem] font-semibold text-tx-a">原型</span>';
 
-    let html = '';
+    // 表头：行内各列是定宽的，标题对齐要靠同一组宽度
+    let html = '<div class="flex items-center gap-3 border-b border-bd-2 bg-bg-2 px-3 py-1.5 text-[.62rem] font-bold uppercase tracking-[.1em] text-tx-3">'
+      + '<span class="w-10 shrink-0"></span>'
+      + '<span class="min-w-0 flex-1">文件名 / 标题</span>'
+      + '<span class="w-[56px] shrink-0">类型</span>'
+      + '<span class="w-[100px] shrink-0">删除时间</span>'
+      + '<span class="w-[86px] shrink-0">剩余</span>'
+      + '<span class="w-[116px] shrink-0">操作</span>'
+      + '</div>';
     for (const entry of [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0], 'zh'))) {
       const owner = entry[0], g = entry[1];
       const parts = [];
