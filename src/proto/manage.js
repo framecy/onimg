@@ -1,15 +1,28 @@
 import { cfBump, cfMonth } from '../admin/cfCounters.js';
 import { normalizeTags } from '../list.js';
 
+// proto: 前缀下混着两类辅助 key：版本文件清单 proto:vfiles:… 与上传暂存
+// proto:staging:…（init 写入、finalize 删除、TTL 1h）。两者都没有 protoId，
+// 被当成正式原型返回时前端会渲染出一行「预览」指向 /proto/undefined/ ——
+// 打开就是 Prototype Not Found；而且它会占住标题，让同名重传被
+// 「已存在同名原型」挡住。上传被中断（关标签页 / 网关超时 / 批次重试耗尽）
+// 时暂存记录会留到 TTL 过期，这期间列表里就会出现这种幽灵行。
+const PROTO_AUX_PREFIXES = ['proto:vfiles:', 'proto:staging:'];
+
+/** proto: 前缀下是否为正式原型元数据 key（辅助 key 一律排除） */
+export function isProtoKey(name) {
+  return !PROTO_AUX_PREFIXES.some(p => name.startsWith(p));
+}
+
 export async function listProtos(env, ownerFilter, includePasswords = false) {
   const list = await env.STATS.list({ prefix: 'proto:' });
   const protos = await Promise.all(
     list.keys
-      // Exclude auxiliary keys like proto:vfiles:… that share the same prefix
-      .filter(k => !k.name.startsWith('proto:vfiles:'))
+      .filter(k => isProtoKey(k.name))
       .map(async k => {
       const p = await env.STATS.get(k.name, 'json');
-      if (!p) return null;
+      // 兜底：没有 protoId 的记录不是可访问的原型（历史残留 / 半成品元数据）
+      if (!p || !p.protoId) return null;
       const obj = {
         protoId:         p.protoId,
         title:           p.title,

@@ -3,7 +3,7 @@ import { verifyAdminToken } from './admin/auth.js';
 import { verifyUserToken } from './user-auth.js';
 import { cfBump, cfMonth } from './admin/cfCounters.js';
 import { bumpGlobalStats } from './admin/gstats.js';
-import { purgeProto } from './proto/manage.js';
+import { purgeProto, isProtoKey } from './proto/manage.js';
 import { readImageNames } from './admin/image-index.js';
 
 export const TRASH_RETENTION_MS = 30 * 86400 * 1000; // 30 天保留期
@@ -30,13 +30,13 @@ export async function handleTrashList(request, env) {
     images.push({ key: k.name.slice(8), owner: md.owner, isPublic: !!md.isPublic, deletedAt: md.deletedAt });
   }
 
-  // 原型：扫描 proto:（排除 vfiles），取带 deletedAt 的
+  // 原型：扫描 proto:（排除 vfiles / staging），取带 deletedAt 的
   const protoList = await env.STATS.list({ prefix: 'proto:' });
   const protos = [];
   for (const k of protoList.keys) {
-    if (k.name.startsWith('proto:vfiles:')) continue;
+    if (!isProtoKey(k.name)) continue;
     const p = await env.STATS.get(k.name, 'json');
-    if (!p?.deletedAt) continue;
+    if (!p?.protoId || !p.deletedAt) continue;
     if (!actor.isAdmin && p.owner !== actor.username) continue;
     protos.push({
       protoId: p.protoId, title: p.title, owner: p.owner,
@@ -168,9 +168,9 @@ export async function purgeExpiredTrash(env) {
   do {
     const r = await env.STATS.list({ prefix: 'proto:', cursor });
     for (const k of r.keys) {
-      if (k.name.startsWith('proto:vfiles:')) continue;
+      if (!isProtoKey(k.name)) continue;
       const p = await env.STATS.get(k.name, 'json');
-      if (p?.deletedAt && p.deletedAt < cutoff) {
+      if (p?.protoId && p.deletedAt && p.deletedAt < cutoff) {
         try { await purgeProto(env, p.protoId); protosPurged++; } catch {}
       }
     }

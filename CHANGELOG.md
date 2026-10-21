@@ -64,6 +64,7 @@
 - **D1 面板用量两处口径不一致**：`/admin/d1-stats` 只返回自追踪计数器，且后于额度接口渲染，会把 CF Analytics 的精确值覆盖掉 —— 线上表现为额度卡片 6.9 万行、趋势图 4.6 千行，标签还写着「本站自追踪」。现在 `d1-stats` 也优先取 CF Analytics（`d1AnalyticsAdaptiveGroups` 逐日序列），查不到才退回自追踪，并用 `usageSource` 标注来源；前端只允许 self → cf-api 升级，不再降级覆盖
 - **概览页 Top 10 表格列宽失控**：`max-width` / `text-overflow` 写在 `<td>` 上在 Chrome 里不生效（auto 布局的表格单元格不是块级容器），文件名一长就把「类型 / 总访问 / 最后访问 / 详情」往右挤，实测文件名列摊到 620px、缩略图列 166px。改为 `table-fixed` + 窄列定宽（图片 64 / 类型 88 / 总访问 96 / 最后访问 120 / 操作 88），文件名在列内用 `.truncate` 截断并 `title` 显示全名，三个 Tab（图片 / 页面 / 原型）统一；操作列补上表头
 - **概览页 Top 10 面板被吞进「Cloudflare 免费额度」卡片**：D1 面板替换 KV 面板时漏了这张卡片的收尾 `</div>`，浏览器把后面的访问统计面板自动闭合进卡片内部 —— 视觉上整块 Top 10 被多套了一层边框。补回闭合标签，并在 `render-smoke.test.js` 增加结构断言（`<div>` 配平、面板嵌套深度、各分区同级），负向验证过能抓住这类漏闭合
+- **原型列表出现「预览 → `/proto/undefined/`」的幽灵行**：上传被中断（关标签页 / 网关超时 / 批次重试耗尽）时，`proto:staging:…` 暂存记录要留到 1 小时 TTL 才消失，而列表扫描 `proto:` 前缀时只排除了 `proto:vfiles:`，暂存记录被当成正式原型读出来 —— `protoId` 为空，行内「预览」就指向 `/proto/undefined/`，打开是 `Prototype Not Found`；它还会占住标题，让同名重传被「已存在同名原型」挡住。现在列表 / 回收站 / 定时清理统一用 `isProtoKey()` 排除 vfiles 与 staging，并跳过缺 `protoId` 的残缺记录（`test/features/proto-staging-leak.test.js`）
 
 ---
 
