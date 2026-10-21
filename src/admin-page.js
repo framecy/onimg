@@ -443,28 +443,33 @@ export function renderAdminPage() {
             <span class="dash-tab-hint ml-auto self-center pr-1 text-[.68rem] font-medium text-tx-2">Top 10 · 按访问量排序</span>
           </div>
 
+          <!-- 列宽必须用 table-fixed 定：auto 布局下 Chrome 会忽略 <td> 上的
+               max-width / overflow / text-overflow（单元格不是块级容器），文件名一长
+               就把「类型 / 总访问 / 最后访问 / 详情」一路往右挤，看着像错位。
+               table-fixed 之后只有「文件名 / 标题 / 名称」那一列吃剩余宽度，
+               其余列按下面 th 上写死的宽度紧凑排列。文件名在列内用 .truncate 截断。 -->
           <div class="dash-tab-pane active hidden [&.active]:block" id="dashTabImages">
-            <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3 !rounded-none !border-none">
-              <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
-                <thead><tr><th>图片</th><th>文件名</th><th>类型</th><th>总访问</th><th>最后访问</th><th></th></tr></thead>
+            <div class="table-wrap overflow-x-auto rounded-lg border border-bd bg-bg-3 !rounded-none !border-none">
+              <table class="data-table w-full table-fixed border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
+                <thead><tr><th class="w-[64px]">图片</th><th>文件名</th><th class="w-[88px]">类型</th><th class="w-[96px]">总访问</th><th class="w-[120px]">最后访问</th><th class="w-[88px]">操作</th></tr></thead>
                 <tbody id="topImagesBody"><tr><td colspan="6" class="text-center text-tx-3 p-8">加载中…</td></tr></tbody>
               </table>
             </div>
           </div>
 
           <div class="dash-tab-pane hidden [&.active]:block" id="dashTabPages">
-            <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3 !rounded-none !border-none">
-              <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
-                <thead><tr><th>标题 / Slug</th><th>类型</th><th>总访问</th><th>最后访问</th><th></th></tr></thead>
+            <div class="table-wrap overflow-x-auto rounded-lg border border-bd bg-bg-3 !rounded-none !border-none">
+              <table class="data-table w-full table-fixed border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
+                <thead><tr><th>标题 / Slug</th><th class="w-[88px]">类型</th><th class="w-[96px]">总访问</th><th class="w-[120px]">最后访问</th><th class="w-[88px]">操作</th></tr></thead>
                 <tbody id="topPagesBody"><tr><td colspan="5" class="text-center text-tx-3 p-8">加载中…</td></tr></tbody>
               </table>
             </div>
           </div>
 
           <div class="dash-tab-pane hidden [&.active]:block" id="dashTabProtos">
-            <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3 !rounded-none !border-none">
-              <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
-                <thead><tr><th>名称</th><th>类型</th><th>作者</th><th>总访问</th><th>最后访问</th><th></th></tr></thead>
+            <div class="table-wrap overflow-x-auto rounded-lg border border-bd bg-bg-3 !rounded-none !border-none">
+              <table class="data-table w-full table-fixed border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
+                <thead><tr><th>名称</th><th class="w-[88px]">类型</th><th class="w-[120px]">作者</th><th class="w-[96px]">总访问</th><th class="w-[120px]">最后访问</th><th class="w-[200px]">操作</th></tr></thead>
                 <tbody id="topProtosBody"><tr><td colspan="6" class="text-center text-tx-3 p-8">加载中…</td></tr></tbody>
               </table>
             </div>
@@ -1652,7 +1657,7 @@ export function renderAdminPage() {
     document.getElementById('topImagesBody').innerHTML = sortedImg.length
       ? sortedImg.map(([k,s]) => \`<tr>
           <td><img class="h-8 w-8 cursor-pointer rounded-xs border border-bd-2 object-cover" src="\${origin}/\${k}" loading="lazy" onclick="openLightbox('\${k}')"></td>
-          <td class="font-mono text-[.77rem] text-tx-3 max-w-[220px] overflow-hidden text-ellipsis whitespace-nowrap">\${esc(k)}</td>
+          <td class="font-mono text-[.77rem] text-tx-3"><div class="truncate" title="\${escAttr(k)}">\${esc(k)}</div></td>
           <td>\${TYPE_IMG}</td>
           <td class="font-mono text-[.82rem] font-bold text-tx">\${(s.count??0).toLocaleString()}</td>
           <td class="text-[.79rem] text-tx-2">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
@@ -1670,8 +1675,8 @@ export function renderAdminPage() {
           const pm = pageMap[slug] || { title: slug, type: '' };
           return \`<tr>
             <td>
-              <div class="font-medium text-[.84rem] text-tx">\${esc(pm.title)}</div>
-              <div class="font-mono text-[.7rem] text-tx-3 mt-0.5">/p/\${esc(slug)}</div>
+              <div class="truncate font-medium text-[.84rem] text-tx" title="\${escAttr(pm.title)}">\${esc(pm.title)}</div>
+              <div class="truncate font-mono text-[.7rem] text-tx-3 mt-0.5">/p/\${esc(slug)}</div>
             </td>
             <td>\${TYPE_PG}</td>
             <td class="font-mono text-[.82rem] font-bold text-tx">\${(s.count??0).toLocaleString()}</td>
@@ -1693,8 +1698,10 @@ export function renderAdminPage() {
         ? \` <span class="font-mono text-[.66rem] font-semibold px-[5px] py-px rounded-[3px] bg-white/[.06] text-tx-2 border border-bd">v\${pm.version ?? 1}</span>\`
         : '';
       return \`
-        <div class="font-medium text-[.84rem] text-tx flex items-center gap-0.5 flex-wrap">\${esc(title)}\${lock}\${ver}</div>
-        <div class="font-mono text-[.7rem] text-tx-3 mt-0.5">/proto/\${esc(id)}/</div>\`;
+        <div class="flex min-w-0 items-center gap-0.5">
+          <span class="truncate font-medium text-[.84rem] text-tx" title="\${escAttr(title)}">\${esc(title)}</span>\${lock}\${ver}
+        </div>
+        <div class="truncate font-mono text-[.7rem] text-tx-3 mt-0.5">/proto/\${esc(id)}/</div>\`;
     };
     const protoActions = (id, pm) => {
       const url = location.origin + '/proto/' + id + '/';
@@ -1712,7 +1719,7 @@ export function renderAdminPage() {
           return \`<tr>
             <td>\${protoTitleCell(id, pm)}</td>
             <td>\${TYPE_PT}</td>
-            <td class="text-[.79rem] text-tx-2">\${esc(pm.owner||'—')}</td>
+            <td class="text-[.79rem] text-tx-2"><div class="truncate" title="\${escAttr(pm.owner||'—')}">\${esc(pm.owner||'—')}</div></td>
             <td class="font-mono text-[.82rem] font-bold text-tx">\${(s.count??0).toLocaleString()}</td>
             <td class="text-[.79rem] text-tx-2">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
             <td>\${protoActions(id, pm)}</td>
@@ -1721,7 +1728,7 @@ export function renderAdminPage() {
       : protos.slice(0,10).map(pm => \`<tr>
           <td>\${protoTitleCell(pm.protoId, pm)}</td>
           <td>\${TYPE_PT}</td>
-          <td class="text-[.79rem] text-tx-2">\${esc(pm.owner||'—')}</td>
+          <td class="text-[.79rem] text-tx-2"><div class="truncate" title="\${escAttr(pm.owner||'—')}">\${esc(pm.owner||'—')}</div></td>
           <td class="font-mono text-[.82rem] font-bold text-tx">0</td>
           <td class="text-[.79rem] text-tx-2">—</td>
           <td>\${protoActions(pm.protoId, pm)}</td>
