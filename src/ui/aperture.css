@@ -68,10 +68,10 @@
 
   /* ── 圆角 ── */
   --radius-xs: 4px;
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
   /* 裸名 rounded 的默认值，对齐设计系统 --r: 12px */
   --radius: 12px;
 
@@ -82,19 +82,25 @@
   /* ── 间距基础单位（v4 据此派生 p-1=4px p-4=16px p-8=32px…，取代 --sp-1..8） ── */
   --spacing: 0.25rem;
 
-  /* ── 字号 + 行高成对 ── */
-  --text-2xs: 0.6875rem;
-  --text-2xs--line-height: 1.25;
-  --text-xs:  0.75rem;
-  --text-xs--line-height:  1.5;
-  --text-sm:  0.8125rem;
-  --text-sm--line-height:  1.5;
-  --text-base-sm: 0.9375rem;          /* 介于 base 与 sm 之间的 md 档 */
-  --text-base-sm--line-height: 1.5;
-  --text-lg-sm: 1.0625rem;
-  --text-lg-sm--line-height: 1.25;
-  --text-xl-sm: 1.375rem;
-  --text-xl-sm--line-height: 1.25;
+  /* ── 字号 + 行高成对（v4：11/12/13/14/16/18/22/24/32，行高 16/16/20/20/24/24/28/32/40） ── */
+  --text-2xs: 0.6875rem;              /* 11px */
+  --text-2xs--line-height: 1rem;      /* 16px */
+  --text-xs:  0.75rem;                /* 12px */
+  --text-xs--line-height:  1rem;      /* 16px */
+  --text-sm:  0.8125rem;              /* 13px */
+  --text-sm--line-height:  1.25rem;   /* 20px */
+  --text-md:  0.875rem;               /* 14px */
+  --text-md--line-height:  1.25rem;   /* 20px */
+  --text-lg:  1rem;                   /* 16px */
+  --text-lg--line-height:  1.5rem;    /* 24px */
+  --text-xl:  1.125rem;               /* 18px */
+  --text-xl--line-height:  1.5rem;    /* 24px */
+  --text-2xl: 1.375rem;               /* 22px */
+  --text-2xl--line-height: 1.75rem;   /* 28px */
+  --text-3xl: 1.5rem;                 /* 24px */
+  --text-3xl--line-height: 2rem;      /* 32px */
+  --text-4xl: 2rem;                   /* 32px */
+  --text-4xl--line-height: 2.5rem;    /* 40px */
   /* 行高别名（用于 leading-* 工具类） */
   --leading-tight: 1.25;
   --leading-normal: 1.5;
@@ -178,20 +184,6 @@
   --r-xl: var(--radius-xl);
   --r:    var(--radius);
 
-  --fs-2xs: var(--text-2xs);
-  --fs-xs:  var(--text-xs);
-  --fs-sm:  var(--text-sm);
-  --fs-md:  var(--text-base-sm);
-  --fs-lg:  var(--text-lg-sm);
-  --fs-xl:  var(--text-xl-sm);
-  --lh-tight: var(--leading-tight);
-  --lh:      var(--leading-normal);
-  --lh-loose: var(--leading-loose);
-
-  /* --sp-1..8 被 v4 的 --spacing 派生体系取代；这里保留常用别名
-     仅为阶段过渡期手写类引用，阶段3 清理。 */
-  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
-  --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
 
   /* --shadow 系列已由 @theme 的 --shadow-xs/--shadow-sm/--shadow/--shadow-lg 提供，此处无需重复 */
 

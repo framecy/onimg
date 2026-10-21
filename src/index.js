@@ -739,20 +739,20 @@ ${apertureCss}
 </style>
 </head>
 <body class="flex min-h-screen items-center justify-center bg-bg p-6 font-sans text-tx antialiased">
-<div class="login-card relative w-full max-w-[380px] overflow-hidden rounded-xl border border-bd bg-bg-3 py-9 px-7 shadow md:py-11 md:px-10 [&.shake]:animate-[loginShake_.35s_ease]">
-  <div class="mb-8 flex items-center gap-2.5">
-    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-[.75rem] font-extrabold text-tx-inv">OI</span>
+<div class="login-card relative w-full max-w-[380px] overflow-hidden rounded-lg border border-bd bg-bg-3 p-6 shadow md:p-10 [&.shake]:animate-[loginShake_.35s_ease]">
+  <div class="mb-8 flex items-center gap-2">
+    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-accent text-xs font-extrabold text-tx-inv">OI</span>
     <div>
-      <div class="text-[1.05rem] font-extrabold leading-[1.15] tracking-[-.01em] text-tx">设备授权</div>
+      <div class="text-xl font-extrabold leading-[1.15] tracking-[-.01em] text-tx">设备授权</div>
       <div class="mt-px text-xs text-tx-3">登录后令牌将自动返回给调用方（仅限本机）</div>
     </div>
   </div>
-  <div class="flex flex-col gap-2 mb-5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">用户名</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3.5 py-[11px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[var(--focus-ring)]" type="text" id="u" autocomplete="username" placeholder="username"></div>
-  <div class="flex flex-col gap-2 mb-6"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">密码</label><div class="relative"><input class="w-full rounded-md border border-bd bg-bg-2 px-3.5 py-[11px] pr-10 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[var(--focus-ring)]" type="password" id="p" autocomplete="current-password" placeholder="••••••••"><button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center border-none bg-transparent p-0 text-tx-3 cursor-pointer transition hover:text-tx" id="pToggle" title="显示/隐藏密码"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg></button></div></div>
-  <button class="w-full rounded-md border-none bg-accent px-3 py-3 font-sans text-base-sm font-bold text-tx-inv transition hover:-translate-y-px hover:bg-accent-hover disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 [&.loading]:pointer-events-none [&.loading]:before:content-[''] [&.loading]:before:inline-block [&.loading]:before:mr-2 [&.loading]:before:h-[14px] [&.loading]:before:w-[14px] [&.loading]:before:align-middle [&.loading]:before:rounded-full [&.loading]:before:border-2 [&.loading]:before:border-[var(--tx-inv)] [&.loading]:before:border-t-transparent [&.loading]:before:animate-[loginSpin_.6s_linear_infinite]" id="btn">登录并授权</button>
-  <div class="mt-3 min-h-[18px] text-center text-xs text-red" id="err"></div>
-  <div class="mt-3 hidden rounded-md border border-green-r bg-green-g p-3 text-center text-[.85rem] font-semibold text-green" id="ok">授权成功！可以关闭此窗口。</div>
-  <p class="mt-[18px] text-center text-[.7rem] leading-[1.5] text-tx-3">令牌仅发送至 localhost，不经过任何第三方</p>
+  <div class="flex flex-col gap-2 mb-5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">用户名</label><input class="h-9 w-full rounded-sm border border-bd bg-bg-2 px-3 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[var(--focus-ring)]" type="text" id="u" autocomplete="username" placeholder="username"></div>
+  <div class="flex flex-col gap-2 mb-6"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">密码</label><div class="relative"><input class="h-9 w-full rounded-sm border border-bd bg-bg-2 px-3 pr-10 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[var(--focus-ring)]" type="password" id="p" autocomplete="current-password" placeholder="••••••••"><button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center border-none bg-transparent p-0 text-tx-3 cursor-pointer transition hover:text-tx" id="pToggle" title="显示/隐藏密码"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg></button></div></div>
+  <button class="w-full rounded-sm border-none bg-accent h-9 px-4 font-sans text-md font-bold text-tx-inv transition  hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 [&.loading]:pointer-events-none [&.loading]:before:content-[''] [&.loading]:before:inline-block [&.loading]:before:mr-2 [&.loading]:before:h-4 [&.loading]:before:w-4 [&.loading]:before:align-middle [&.loading]:before:rounded-full [&.loading]:before:border-2 [&.loading]:before:border-[var(--tx-inv)] [&.loading]:before:border-t-transparent [&.loading]:before:animate-[loginSpin_.6s_linear_infinite]" id="btn">登录并授权</button>
+  <div class="mt-3 min-h-5 text-center text-xs text-red" id="err"></div>
+  <div class="mt-3 hidden rounded-md border border-green-r bg-green-g p-3 text-center text-md font-semibold text-green" id="ok">授权成功！可以关闭此窗口。</div>
+  <p class="mt-4 text-center text-xs leading-[1.5] text-tx-3">令牌仅发送至 localhost，不经过任何第三方</p>
 </div>
 <script>
 const CB = ${JSON.stringify(cb)};
@@ -943,7 +943,7 @@ def browser_login(base_url):
             tok = params.get('token', [''])[0]
             ok_html = ('<html><body style="font-family:system-ui;text-align:center;'
                        'padding:60px;background:#0a0a0a;color:#f5f5f5">'
-                       '<h2 style="color:#34d399">授权成功</h2>'
+                       '<h2 style="color:#3fb950">授权成功</h2>'
                        '<p style="color:#b5b5b5">可以关闭此窗口，返回终端继续操作。</p>'
                        '</body></html>').encode()
             self.send_response(200)
@@ -1361,7 +1361,7 @@ class H(http.server.BaseHTTPRequestHandler):
             params = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             token = params.get('token', [''])[0]
             body = ('<html><body style="font-family:system-ui;text-align:center;padding:60px;background:#0a0a0a;color:#f5f5f5">'
-                    '<h2 style="color:#34d399">授权成功</h2><p style="color:#b5b5b5">可以关闭此窗口，返回继续操作。</p>'
+                    '<h2 style="color:#3fb950">授权成功</h2><p style="color:#b5b5b5">可以关闭此窗口，返回继续操作。</p>'
                     '</body></html>').encode()
             self.send_response(200)
             self.send_header('Content-Type', 'text/html; charset=utf-8')

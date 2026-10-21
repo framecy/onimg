@@ -22,8 +22,8 @@
 
 export const CLIENT_SHARED_JS = `
   // ── shared/client ── 由 src/ui/client/shared.js 注入，前后台共用，改这里两边一起变
-  var TOAST_BASE = 'fixed bottom-6 left-1/2 z-[300] -translate-x-1/2 translate-y-20 whitespace-nowrap rounded-md border border-bd-2 bg-bg-3 px-[18px] py-[9px] font-sans text-sm font-medium text-tx shadow-sm transition-transform duration-300 ease-[cubic-bezier(.34,1.56,.64,1)] [&.show]:translate-y-0 [&.t-success]:border-green-r [&.t-success]:bg-green-g [&.t-success]:text-green [&.t-warn]:border-amber-r [&.t-warn]:bg-amber-g [&.t-warn]:text-amber [&.t-error]:border-red-r [&.t-error]:bg-red-g [&.t-error]:text-red';
-  var COPY_MARK = '<svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>';
+  var TOAST_BASE = 'fixed bottom-20 md:bottom-6 left-1/2 z-[70] -translate-x-1/2 translate-y-20 w-max max-w-[calc(100vw-32px)] whitespace-normal break-words text-center rounded-sm border border-bd-2 bg-bg-3 px-4 py-2 font-sans text-sm font-medium text-tx shadow-sm transition-transform duration-300 ease-[cubic-bezier(.34,1.56,.64,1)] [&.show]:translate-y-0 [&.t-success]:border-green-r [&.t-success]:text-green [&.t-warn]:border-amber-r [&.t-warn]:text-amber [&.t-error]:border-red-r [&.t-error]:text-red';
+  var COPY_MARK = '<svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>';
 
   // ── 转义三件套 ────────────────────────────────────────────────────────────
   // 文本节点：只转 & < >

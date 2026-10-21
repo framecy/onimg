@@ -10,7 +10,7 @@ function footerNotes(env) {
   const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const notes = String(env?.SITE_NOTES ?? SITE_NOTES_DEFAULT).split('|').map(s => s.trim()).filter(Boolean);
   return notes.map((n, i) => i === 0
-    ? `<span class="text-[#f97316] font-bold">${esc(n)}</span>`
+    ? `<span class="text-tx font-bold">${esc(n)}</span>`
     : `<span>${esc(n)}</span>`).join('\n    <span class="text-bd-2">·</span>\n    ');
 }
 
@@ -24,8 +24,8 @@ export function renderPage(env = {}) {
   <title>Onimg</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-  <noscript><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"></noscript>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"></noscript>
   <!-- Vditor CSS/JS 改为编辑器打开时按需注入（见 ensureVditor），避免每次访问加载 ~0.5MB 编辑器 -->
   <style>
     /* Aperture token（@theme）+ 别名桥 + Tailwind 工具类，由 build:css 生成 */
@@ -33,7 +33,6 @@ export function renderPage(env = {}) {
 
 
     @media (max-width: 768px) {
-      main { padding: 20px 18px 56px; }
       .page-batch-bar, .batch-bar { gap: 8px; padding: 12px; margin-bottom: 16px; }
     }
 
@@ -41,7 +40,7 @@ export function renderPage(env = {}) {
     @keyframes loginSpin { to { transform: rotate(360deg); } }
     @keyframes loginShake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
 
-    main { flex: 1; padding: var(--sp-6) var(--sp-6) var(--sp-7); max-width: 1600px; margin: 0 auto; width: 100%; }
+    main { flex: 1; }
     /* Tag editor modal */
 
 
@@ -127,9 +126,7 @@ export function renderPage(env = {}) {
     .copy-btn.copied .cp-mark { display: flex; }
 
     /* Responsive */
-    @media (max-width: 600px) {
-      main { padding: 16px 16px 28px; }
-    }
+
     /* Phones — denser 3-up gallery */
     @media (max-width: 480px) {
       .pub-grid { grid-template-columns: repeat(3, 1fr); gap: 7px; }
@@ -140,398 +137,400 @@ export function renderPage(env = {}) {
   </style>
 </head>
 <body class="min-h-screen max-w-full overflow-x-hidden bg-bg font-sans font-[450] text-tx antialiased">
-<div class="mob-header fixed inset-x-0 top-0 z-20 flex h-[50px] items-center gap-[14px] border-b border-bd bg-bg-2 px-4 md:hidden">
-  <div class="text-[.92rem] font-bold text-tx">Onimg</div>
+<div class="mob-header fixed inset-x-0 top-0 z-20 flex h-12 items-center gap-3 border-b border-bd bg-bg-2 px-4 md:hidden">
+  <div class="text-lg font-bold text-tx">Onimg</div>
   <div class="flex-1"></div>
   <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-transparent text-tx-2 cursor-pointer transition hover:border-bd-2 hover:text-tx" id="mobHamburger" aria-label="账号"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5.3" r="3"/><path d="M2 14.2c0-3.2 2.7-5.4 6-5.4s6 2.2 6 5.4"/></svg></button>
 </div>
 <div class="sidebar-mask fixed inset-0 z-[9] hidden bg-black/60 [&.show]:block" id="sidebarMask"></div>
 <div class="flex min-h-screen">
-  <aside class="fixed left-0 top-[50px] bottom-auto md:top-0 md:bottom-0 z-10 flex w-60 max-h-[calc(100vh-50px)] md:max-h-none shrink-0 -translate-x-60 flex-col overflow-y-auto rounded-br-xl md:rounded-none border-r border-b md:border-b-0 border-bd bg-bg-2 shadow-lg md:shadow-none transition-transform duration-[.22s] ease-in-out md:translate-x-0 [&.open]:translate-x-0 [&.open]:z-[25]" id="sidebar">
-    <div class="flex items-center gap-2.5 border-b border-bd px-4 pt-[18px] pb-3.5">
-      <div class="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-sm border border-brand/30 bg-gradient-to-br from-[#242836] to-[#14161d] text-[.78rem] font-extrabold tracking-[-.01em] text-white shadow-[0_3px_10px_rgba(0,0,0,.45)]">O</div>
+  <aside class="fixed left-0 top-12 bottom-auto md:top-0 md:bottom-0 z-10 flex w-60 max-h-[calc(100vh-3rem)] md:max-h-none shrink-0 -translate-x-60 flex-col overflow-y-auto rounded-br-xl md:rounded-none border-r border-b md:border-b-0 border-bd bg-bg-2 shadow-lg md:shadow-none transition-transform duration-[.22s] ease-in-out md:translate-x-0 [&.open]:translate-x-0 [&.open]:z-[25]" id="sidebar">
+    <div class="flex items-center gap-2 border-b border-bd px-4 pt-4 pb-4">
+      <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border border-brand/30 bg-gradient-to-br from-[#242836] to-[#14161d] text-sm font-extrabold tracking-[-.01em] text-white shadow-[0_3px_10px_rgba(0,0,0,.45)]">O</div>
       <div class="flex flex-col gap-px">
-        <span class="text-[.92rem] font-bold text-tx tracking-[-.015em]">Onimg</span>
-        <span class="text-[.58rem] font-semibold uppercase tracking-[.12em] text-tx-3">IMAGE HOST</span>
+        <span class="text-lg font-bold text-tx tracking-[-.015em]">Onimg</span>
+        <span class="text-2xs font-semibold uppercase tracking-[.12em] text-tx-3">IMAGE HOST</span>
       </div>
     </div>
-    <div class="max-md:hidden px-4 pt-[14px] pb-[5px] text-2xs font-bold uppercase tracking-[.12em] text-tx-3">导航</div>
+    <div class="max-md:hidden px-4 pt-4 pb-1 text-2xs font-bold uppercase tracking-[.12em] text-tx-3">导航</div>
     <nav class="max-md:hidden flex flex-1 flex-col gap-px overflow-y-auto px-2 pt-1 pb-2">
-      <button class="tab active relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] max-md:min-h-[44px]" data-tab="gallery-pub"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><ellipse cx="8" cy="8" rx="2.8" ry="6.5"/><line x1="1.5" y1="8" x2="14.5" y2="8"/></svg></span><span>公开图库</span></button>
-      <button class="tab relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] max-md:min-h-[44px]" data-tab="upload"        id="tabUpload"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="14" x2="8" y2="3"/><polyline points="3.5,7.5 8,3 12.5,7.5"/></svg></span><span>上传</span></button>
-      <button class="tab relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] max-md:min-h-[44px]" data-tab="gallery-mine"  id="tabMine"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2.5" width="14" height="11" rx="1.5"/><circle cx="5.2" cy="6.3" r="1.3"/><path d="M1.5 11l4-4 2.5 2.5 2-2 4.5 4.5"/></svg></span><span>我的图库</span></button>
-      <button class="tab relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] max-md:min-h-[44px]" data-tab="pages"         id="tabPages"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 1h7l4 4v10H3V1z"/><polyline points="10,1 10,5 14,5"/><line x1="4" y1="8" x2="12" y2="8"/><line x1="4" y1="11" x2="9" y2="11"/></svg></span><span>我的页面</span></button>
-      <button class="tab relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left font-sans text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-brand-muted [&.active]:text-tx [&.active]:font-bold [&.active]:shadow-[inset_3px_0_0_var(--color-brand)] max-md:min-h-[44px]" data-tab="protos"        id="tabProtos"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v5l-8 8H2V2z"/><line x1="5" y1="2" x2="5" y2="5"/><line x1="8" y1="2" x2="8" y2="4"/><line x1="11" y1="2" x2="11" y2="5"/></svg></span><span>我的原型</span></button>
+      <button class="tab active relative flex min-h-10 w-full items-center gap-2 overflow-hidden rounded-sm border-none bg-transparent px-3 py-2 text-left font-sans text-md font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold max-md:min-h-[44px]" data-tab="gallery-pub"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-4 [&_svg]:w-4"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><ellipse cx="8" cy="8" rx="2.8" ry="6.5"/><line x1="1.5" y1="8" x2="14.5" y2="8"/></svg></span><span>公开图库</span></button>
+      <button class="tab relative flex min-h-10 w-full items-center gap-2 overflow-hidden rounded-sm border-none bg-transparent px-3 py-2 text-left font-sans text-md font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold max-md:min-h-[44px]" data-tab="upload"        id="tabUpload"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-4 [&_svg]:w-4"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="14" x2="8" y2="3"/><polyline points="3.5,7.5 8,3 12.5,7.5"/></svg></span><span>上传</span></button>
+      <button class="tab relative flex min-h-10 w-full items-center gap-2 overflow-hidden rounded-sm border-none bg-transparent px-3 py-2 text-left font-sans text-md font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold max-md:min-h-[44px]" data-tab="gallery-mine"  id="tabMine"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-4 [&_svg]:w-4"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2.5" width="14" height="11" rx="1.5"/><circle cx="5.2" cy="6.3" r="1.3"/><path d="M1.5 11l4-4 2.5 2.5 2-2 4.5 4.5"/></svg></span><span>我的图库</span></button>
+      <button class="tab relative flex min-h-10 w-full items-center gap-2 overflow-hidden rounded-sm border-none bg-transparent px-3 py-2 text-left font-sans text-md font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold max-md:min-h-[44px]" data-tab="pages"         id="tabPages"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-4 [&_svg]:w-4"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 1h7l4 4v10H3V1z"/><polyline points="10,1 10,5 14,5"/><line x1="4" y1="8" x2="12" y2="8"/><line x1="4" y1="11" x2="9" y2="11"/></svg></span><span>我的页面</span></button>
+      <button class="tab relative flex min-h-10 w-full items-center gap-2 overflow-hidden rounded-sm border-none bg-transparent px-3 py-2 text-left font-sans text-md font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold max-md:min-h-[44px]" data-tab="protos"        id="tabProtos"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-4 [&_svg]:w-4"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v5l-8 8H2V2z"/><line x1="5" y1="2" x2="5" y2="5"/><line x1="8" y1="2" x2="8" y2="4"/><line x1="11" y1="2" x2="11" y2="5"/></svg></span><span>我的原型</span></button>
     </nav>
-    <div class="border-t border-bd px-2 pt-1 pb-1.5">
+    <div class="border-t border-bd px-2 pt-1 pb-2">
       <span id="footerAdmin"></span>
     </div>
-    <div class="relative border-t border-bd px-2 pt-[10px] pb-3">
+    <div class="relative border-t border-bd px-2 pt-2 pb-3">
       <div id="userArea">
-        <button class="w-full rounded-md border border-bd-2 bg-bg-3 px-3 py-[9px] text-center text-[.85rem] font-semibold text-tx transition hover:border-bd-focus hover:bg-bg-4" id="loginTrigger">登录</button>
+        <button class="w-full rounded-sm border border-bd-2 bg-bg-3 px-3 py-2 text-center text-md font-semibold text-tx transition hover:border-bd-focus hover:bg-bg-4" id="loginTrigger">登录</button>
       </div>
     </div>
-    <div class="border-t border-bd px-2 pt-[10px] pb-3">
-      <div class="theme-switch flex w-full items-stretch gap-0.5 rounded-md border border-bd-2 bg-bg-2 p-0.5">
-        <button class="theme-opt flex flex-1 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent py-[7px] text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="system" title="跟随系统"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="13" height="9" rx="1"/><line x1="5.5" y1="13.5" x2="10.5" y2="13.5"/><line x1="8" y1="11.5" x2="8" y2="13.5"/></svg></button>
-        <button class="theme-opt flex flex-1 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent py-[7px] text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="light" title="浅色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><line x1="8" y1="1" x2="8" y2="2.3"/><line x1="8" y1="13.7" x2="8" y2="15"/><line x1="1" y1="8" x2="2.3" y2="8"/><line x1="13.7" y1="8" x2="15" y2="8"/><line x1="3.05" y1="3.05" x2="3.96" y2="3.96"/><line x1="12.04" y1="12.04" x2="12.95" y2="12.95"/><line x1="3.05" y1="12.95" x2="3.96" y2="12.04"/><line x1="12.04" y1="3.96" x2="12.95" y2="3.05"/></svg></button>
-        <button class="theme-opt flex flex-1 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent py-[7px] text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="dark" title="暗色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7z"/></svg></button>
+    <div class="border-t border-bd px-2 pt-2 pb-3">
+      <div class="theme-switch flex w-full items-stretch gap-1 rounded-sm border border-bd-2 bg-bg-2 p-1">
+        <button class="theme-opt flex flex-1 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent py-2 text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="system" title="跟随系统"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="13" height="9" rx="1"/><line x1="5.5" y1="13.5" x2="10.5" y2="13.5"/><line x1="8" y1="11.5" x2="8" y2="13.5"/></svg></button>
+        <button class="theme-opt flex flex-1 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent py-2 text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="light" title="浅色"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><line x1="8" y1="1" x2="8" y2="2.3"/><line x1="8" y1="13.7" x2="8" y2="15"/><line x1="1" y1="8" x2="2.3" y2="8"/><line x1="13.7" y1="8" x2="15" y2="8"/><line x1="3.05" y1="3.05" x2="3.96" y2="3.96"/><line x1="12.04" y1="12.04" x2="12.95" y2="12.95"/><line x1="3.05" y1="12.95" x2="3.96" y2="12.04"/><line x1="12.04" y1="3.96" x2="12.95" y2="3.05"/></svg></button>
+        <button class="theme-opt flex flex-1 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent py-2 text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="dark" title="暗色"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7z"/></svg></button>
       </div>
     </div>
   </aside>
 
-  <nav class="mob-tabbar fixed inset-x-0 bottom-0 z-20 flex items-stretch border-t border-bd bg-bg-2/95 backdrop-blur-md md:hidden" id="mobTabbar">
-    <button class="tab active relative flex flex-1 flex-col items-center justify-center gap-1 overflow-hidden border-none bg-transparent pt-2 text-tx-3 transition active:scale-95 [&.active]:text-brand" style="padding-bottom:calc(.5rem + env(safe-area-inset-bottom))" data-tab="gallery-pub">
-      <span class="flex h-5 w-5 items-center justify-center [&_svg]:h-[19px] [&_svg]:w-[19px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><ellipse cx="8" cy="8" rx="2.8" ry="6.5"/><line x1="1.5" y1="8" x2="14.5" y2="8"/></svg></span>
-      <span class="text-[10px] font-semibold leading-none">公开</span>
+  <nav class="mob-tabbar fixed inset-x-0 bottom-0 z-20 flex min-h-16 items-stretch border-t border-bd bg-bg-2/95 backdrop-blur-md md:hidden" id="mobTabbar">
+    <button class="tab active relative flex flex-1 flex-col items-center justify-center gap-2 overflow-hidden border-none bg-transparent pt-2 text-tx-3 transition active:scale-95 [&.active]:text-brand" style="padding-bottom:calc(.5rem + env(safe-area-inset-bottom))" data-tab="gallery-pub">
+      <span class="flex h-5 w-5 items-center justify-center [&_svg]:h-5 [&_svg]:w-5"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><ellipse cx="8" cy="8" rx="2.8" ry="6.5"/><line x1="1.5" y1="8" x2="14.5" y2="8"/></svg></span>
+      <span class="text-2xs font-semibold leading-none">公开</span>
     </button>
-    <button class="tab relative flex flex-1 flex-col items-center justify-center gap-1 overflow-hidden border-none bg-transparent pt-2 text-tx-3 transition active:scale-95 [&.active]:text-brand" style="padding-bottom:calc(.5rem + env(safe-area-inset-bottom))" data-tab="upload">
-      <span class="flex h-5 w-5 items-center justify-center [&_svg]:h-[19px] [&_svg]:w-[19px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="14" x2="8" y2="3"/><polyline points="3.5,7.5 8,3 12.5,7.5"/></svg></span>
-      <span class="text-[10px] font-semibold leading-none">上传</span>
+    <button class="tab relative flex flex-1 flex-col items-center justify-center gap-2 overflow-hidden border-none bg-transparent pt-2 text-tx-3 transition active:scale-95 [&.active]:text-brand" style="padding-bottom:calc(.5rem + env(safe-area-inset-bottom))" data-tab="upload">
+      <span class="flex h-5 w-5 items-center justify-center [&_svg]:h-5 [&_svg]:w-5"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="14" x2="8" y2="3"/><polyline points="3.5,7.5 8,3 12.5,7.5"/></svg></span>
+      <span class="text-2xs font-semibold leading-none">上传</span>
     </button>
-    <button class="tab relative flex flex-1 flex-col items-center justify-center gap-1 overflow-hidden border-none bg-transparent pt-2 text-tx-3 transition active:scale-95 [&.active]:text-brand" style="padding-bottom:calc(.5rem + env(safe-area-inset-bottom))" data-tab="gallery-mine">
-      <span class="flex h-5 w-5 items-center justify-center [&_svg]:h-[19px] [&_svg]:w-[19px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2.5" width="14" height="11" rx="1.5"/><circle cx="5.2" cy="6.3" r="1.3"/><path d="M1.5 11l4-4 2.5 2.5 2-2 4.5 4.5"/></svg></span>
-      <span class="text-[10px] font-semibold leading-none">我的</span>
+    <button class="tab relative flex flex-1 flex-col items-center justify-center gap-2 overflow-hidden border-none bg-transparent pt-2 text-tx-3 transition active:scale-95 [&.active]:text-brand" style="padding-bottom:calc(.5rem + env(safe-area-inset-bottom))" data-tab="gallery-mine">
+      <span class="flex h-5 w-5 items-center justify-center [&_svg]:h-5 [&_svg]:w-5"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2.5" width="14" height="11" rx="1.5"/><circle cx="5.2" cy="6.3" r="1.3"/><path d="M1.5 11l4-4 2.5 2.5 2-2 4.5 4.5"/></svg></span>
+      <span class="text-2xs font-semibold leading-none">我的</span>
     </button>
-    <button class="tab relative flex flex-1 flex-col items-center justify-center gap-1 overflow-hidden border-none bg-transparent pt-2 text-tx-3 transition active:scale-95 [&.active]:text-brand" style="padding-bottom:calc(.5rem + env(safe-area-inset-bottom))" data-tab="pages">
-      <span class="flex h-5 w-5 items-center justify-center [&_svg]:h-[19px] [&_svg]:w-[19px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 1h7l4 4v10H3V1z"/><polyline points="10,1 10,5 14,5"/><line x1="4" y1="8" x2="12" y2="8"/><line x1="4" y1="11" x2="9" y2="11"/></svg></span>
-      <span class="text-[10px] font-semibold leading-none">页面</span>
+    <button class="tab relative flex flex-1 flex-col items-center justify-center gap-2 overflow-hidden border-none bg-transparent pt-2 text-tx-3 transition active:scale-95 [&.active]:text-brand" style="padding-bottom:calc(.5rem + env(safe-area-inset-bottom))" data-tab="pages">
+      <span class="flex h-5 w-5 items-center justify-center [&_svg]:h-5 [&_svg]:w-5"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 1h7l4 4v10H3V1z"/><polyline points="10,1 10,5 14,5"/><line x1="4" y1="8" x2="12" y2="8"/><line x1="4" y1="11" x2="9" y2="11"/></svg></span>
+      <span class="text-2xs font-semibold leading-none">页面</span>
     </button>
-    <button class="tab relative flex flex-1 flex-col items-center justify-center gap-1 overflow-hidden border-none bg-transparent pt-2 text-tx-3 transition active:scale-95 [&.active]:text-brand" style="padding-bottom:calc(.5rem + env(safe-area-inset-bottom))" data-tab="protos">
-      <span class="flex h-5 w-5 items-center justify-center [&_svg]:h-[19px] [&_svg]:w-[19px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v5l-8 8H2V2z"/><line x1="5" y1="2" x2="5" y2="5"/><line x1="8" y1="2" x2="8" y2="4"/><line x1="11" y1="2" x2="11" y2="5"/></svg></span>
-      <span class="text-[10px] font-semibold leading-none">原型</span>
+    <button class="tab relative flex flex-1 flex-col items-center justify-center gap-2 overflow-hidden border-none bg-transparent pt-2 text-tx-3 transition active:scale-95 [&.active]:text-brand" style="padding-bottom:calc(.5rem + env(safe-area-inset-bottom))" data-tab="protos">
+      <span class="flex h-5 w-5 items-center justify-center [&_svg]:h-5 [&_svg]:w-5"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v5l-8 8H2V2z"/><line x1="5" y1="2" x2="5" y2="5"/><line x1="8" y1="2" x2="8" y2="4"/><line x1="11" y1="2" x2="11" y2="5"/></svg></span>
+      <span class="text-2xs font-semibold leading-none">原型</span>
     </button>
   </nav>
 
-  <div class="flex min-w-0 flex-1 flex-col min-h-screen bg-bg pt-[52px] pb-[64px] md:ml-60 md:pt-0 md:pb-0">
+  <div class="flex min-w-0 flex-1 flex-col min-h-screen bg-bg pt-12 pb-16 md:ml-60 md:pt-0 md:pb-0">
 
   <!-- Login overlay -->
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-6 backdrop-blur-[6px]" id="loginOverlay" style="display:none">
-    <div class="login-card relative w-full max-w-[380px] overflow-hidden rounded-xl border border-bd bg-bg-3 py-9 px-7 shadow md:py-11 md:px-10 [&.shake]:animate-[loginShake_.35s_ease]">
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6" id="loginOverlay" style="display:none">
+    <div class="login-card relative w-full max-w-[380px] overflow-hidden rounded-lg border border-bd bg-bg-3 p-6 shadow md:p-10 [&.shake]:animate-[loginShake_.35s_ease]">
       <div class="mb-8 flex items-start justify-between">
-        <div class="flex items-center gap-2.5">
-          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[linear-gradient(135deg,var(--color-brand)_0%,var(--color-brand-d)_100%)] text-[.75rem] font-extrabold text-white shadow-[0_6px_16px_rgba(124,92,255,.3)]">OI</span>
+        <div class="flex items-center gap-2">
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-accent text-xs font-extrabold text-tx-inv">OI</span>
           <div>
-            <div class="text-[1.05rem] font-extrabold leading-[1.15] tracking-[-.01em] text-tx">登录 Onimg</div>
+            <div class="text-xl font-extrabold leading-[1.15] tracking-[-.01em] text-tx">登录 Onimg</div>
             <div class="mt-px text-xs text-tx-3">登录后即可上传与管理图片</div>
           </div>
         </div>
-        <button class="border-none bg-transparent p-1 text-[1.2rem] leading-none text-tx-3 cursor-pointer" id="loginOverlayClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+        <button class="border-none bg-transparent p-1 text-2xl leading-none text-tx-3 cursor-pointer" id="loginOverlayClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
       </div>
-      <div class="flex flex-col gap-2 mb-5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">用户名</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3.5 py-[11px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="lu" autocomplete="username" placeholder="username"></div>
-      <div class="flex flex-col gap-2 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">密码</label><div class="relative"><input class="w-full rounded-md border border-bd bg-bg-2 px-3.5 py-[11px] pr-10 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="password" id="lp" autocomplete="current-password" placeholder="••••••••"><button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center border-none bg-transparent p-0 text-tx-3 cursor-pointer transition hover:text-tx" id="lpToggle" title="显示/隐藏密码"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg></button></div></div>
-      <label class="mb-6 flex items-center gap-2 cursor-pointer select-none text-[.8rem] text-tx-2"><input class="h-3.5 w-3.5 cursor-pointer accent-brand" type="checkbox" id="loginRemember">记住我 30 天</label>
-      <button class="btn-full w-full rounded-md border-none bg-brand px-3 py-3 font-sans text-base-sm font-bold text-white shadow-[0_4px_14px_rgba(124,92,255,.3)] transition hover:-translate-y-px hover:bg-brand-hover hover:shadow-[0_8px_22px_rgba(124,92,255,.4)] disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none [&.loading]:pointer-events-none [&.loading]:before:content-[''] [&.loading]:before:inline-block [&.loading]:before:mr-2 [&.loading]:before:h-[14px] [&.loading]:before:w-[14px] [&.loading]:before:align-middle [&.loading]:before:rounded-full [&.loading]:before:border-2 [&.loading]:before:border-white/30 [&.loading]:before:border-t-white [&.loading]:before:animate-[loginSpin_.6s_linear_infinite]" id="doLogin">登录</button>
-      <div class="login-err mt-3 min-h-[18px] text-center text-xs text-red" id="loginErr"></div>
+      <div class="flex flex-col gap-2 mb-5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">用户名</label><input class="h-9 w-full rounded-sm border border-bd bg-bg-2 px-3 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="lu" autocomplete="username" placeholder="username"></div>
+      <div class="flex flex-col gap-2 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">密码</label><div class="relative"><input class="h-9 w-full rounded-sm border border-bd bg-bg-2 px-3 pr-10 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="password" id="lp" autocomplete="current-password" placeholder="••••••••"><button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center border-none bg-transparent p-0 text-tx-3 cursor-pointer transition hover:text-tx" id="lpToggle" title="显示/隐藏密码"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg></button></div></div>
+      <label class="mb-6 flex items-center gap-2 cursor-pointer select-none text-sm text-tx-2"><input class="h-4 w-4 cursor-pointer accent-brand" type="checkbox" id="loginRemember">记住我 30 天</label>
+      <button class="btn-full w-full rounded-sm border-none bg-accent h-9 px-4 font-sans text-md font-bold text-tx-inv transition  hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none [&.loading]:pointer-events-none [&.loading]:before:content-[''] [&.loading]:before:inline-block [&.loading]:before:mr-2 [&.loading]:before:h-4 [&.loading]:before:w-4 [&.loading]:before:align-middle [&.loading]:before:rounded-full [&.loading]:before:border-2 [&.loading]:before:border-[var(--tx-inv)] [&.loading]:before:border-t-transparent [&.loading]:before:animate-[loginSpin_.6s_linear_infinite]" id="doLogin">登录</button>
+      <div class="login-err mt-3 min-h-5 text-center text-xs text-red" id="loginErr"></div>
     </div>
   </div>
 
-  <main>
+  <main class="mx-auto w-full max-w-[1600px] px-4 pt-4 pb-12 sm:px-5 md:px-6 md:pt-8 lg:px-8">
     <!-- Public Gallery -->
     <div class="panel active hidden [&.active]:block" id="panel-gallery-pub">
-      <div class="page-header flex flex-wrap items-end gap-3 border-b border-bd mb-6 pb-[18px] md:mb-8 md:gap-4 md:pb-6">
+      <div class="page-header flex flex-wrap items-end gap-3 border-b border-bd mb-6 gap-4 pb-4 md:mb-8 md:pb-6">
         <div class="min-w-0 flex-1">
-          <div class="page-title mb-1.5 text-[1.15rem] font-extrabold tracking-[-.03em] text-tx mob:text-[1.2rem] md:text-[1.375rem]">公开图库</div>
+          <div class="page-title mb-2 text-xl font-extrabold tracking-[-.03em] text-tx md:text-2xl">公开图库</div>
           <div class="text-sm font-medium tracking-[.01em] text-tx-3">所有用户公开分享的图片</div>
         </div>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx max-md:flex-1" id="refreshPub">刷新</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx max-md:flex-1" id="refreshPub">刷新</button>
       </div>
-      <div class="pub-grid grid grid-cols-3 gap-[7px] xs:grid-cols-[repeat(auto-fill,minmax(150px,1fr))] xs:gap-3 mob:grid-cols-[repeat(auto-fill,minmax(210px,1fr))] mob:gap-[14px]" id="pubGrid"></div>
-      <div class="p-12 text-center text-[.88rem] font-medium text-tx-3" id="pubEmpty" style="display:none">暂无公开图片</div>
+      <div class="pub-grid grid grid-cols-3 gap-2 xs:grid-cols-[repeat(auto-fill,minmax(150px,1fr))] xs:gap-3 mob:grid-cols-[repeat(auto-fill,minmax(210px,1fr))] mob:gap-3" id="pubGrid"></div>
+      <div class="p-12 text-center text-md font-medium text-tx-3" id="pubEmpty" style="display:none">暂无公开图片</div>
     </div>
 
     <!-- Upload -->
     <div class="panel hidden [&.active]:block" id="panel-upload">
-      <div class="page-header flex flex-wrap items-end gap-3 border-b border-bd mb-6 pb-[18px] md:mb-8 md:gap-4 md:pb-6">
+      <div class="page-header flex flex-wrap items-end gap-3 border-b border-bd mb-6 gap-4 pb-4 md:mb-8 md:pb-6">
         <div class="min-w-0 flex-1">
-          <div class="page-title mb-1.5 text-[1.15rem] font-extrabold tracking-[-.03em] text-tx mob:text-[1.2rem] md:text-[1.375rem]">上传图片</div>
+          <div class="page-title mb-2 text-xl font-extrabold tracking-[-.03em] text-tx md:text-2xl">上传图片</div>
           <div class="text-sm font-medium tracking-[.01em] text-tx-3">支持 JPG / PNG / GIF / WebP / SVG，单文件 10 MB 内</div>
         </div>
       </div>
-      <div class="quota-bar mb-4 flex gap-5 rounded-lg border border-bd bg-bg-3 px-4 py-3 text-sm shadow-none" id="quotaBar" style="display:none">
+      <div class="quota-bar mb-4 flex gap-5 rounded-md border border-bd bg-bg-3 px-4 py-3 text-sm shadow-none" id="quotaBar" style="display:none">
         <span class="font-medium text-tx-2">今日 <strong class="font-mono font-bold text-tx" id="qDaily">—</strong></span>
         <span class="font-medium text-tx-2">总计 <strong class="font-mono font-bold text-tx" id="qTotal">—</strong></span>
         <span class="text-tx-3" id="qLimits"></span>
       </div>
-      <div class="drop-zone group mb-[18px] cursor-pointer border border-dashed border-bd-2 bg-transparent px-5 py-9 text-center text-tx-3 transition hover:border-tx-2 hover:bg-white/[.03] hover:text-tx [&.over]:border-tx-2 [&.over]:bg-white/[.03] [&.over]:text-tx mob:px-5 mob:py-10 md:mb-4 md:px-9 md:py-16 rounded-xl" id="dropZone">
+      <div class="drop-zone group mb-4 cursor-pointer border border-dashed border-bd-2 bg-transparent px-5 py-9 text-center text-tx-3 transition hover:border-tx-2 hover:bg-white/[.03] hover:text-tx [&.over]:border-tx-2 [&.over]:bg-white/[.03] [&.over]:text-tx mob:px-5 mob:py-10 md:mb-4 md:px-9 md:py-16 rounded-md" id="dropZone">
         <input class="hidden" type="file" id="fileInput" accept="image/*" multiple>
-        <svg class="dz-icon mx-auto mb-4 block h-[42px] w-[42px] text-tx-3 transition-colors duration-200 group-hover:text-tx group-[.over]:text-tx" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="dz-icon mx-auto mb-4 block h-10 w-10 text-tx-3 transition-colors duration-200 group-hover:text-tx group-[.over]:text-tx" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="16 16 12 12 8 16"></polyline>
           <line x1="12" y1="12" x2="12" y2="21"></line>
           <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
         </svg>
-        <p class="text-[.9rem] font-medium text-inherit" id="dropZoneHint">点击或拖拽图片上传</p>
-        <small class="block mt-2 text-[.76rem]">JPG · PNG · GIF · WebP · SVG · 可多次添加</small>
+        <p class="text-lg font-medium text-inherit" id="dropZoneHint">点击或拖拽图片上传</p>
+        <small class="block mt-2 text-sm">JPG · PNG · GIF · WebP · SVG · 可多次添加</small>
       </div>
-      <div class="upload-queue hidden flex-col gap-1.5 mb-[10px] [&.show]:flex" id="uploadQueue"></div>
-      <div class="flex items-center gap-2 mb-[10px] text-[.82rem] text-tx-3">
-        <label class="flex items-center gap-1.5 cursor-pointer select-none">
+      <div class="upload-queue hidden flex-col gap-2 mb-2 [&.show]:flex" id="uploadQueue"></div>
+      <div class="flex items-center gap-2 mb-2 text-sm text-tx-3">
+        <label class="flex items-center gap-2 cursor-pointer select-none">
           <input class="accent-accent" type="checkbox" id="uploadPublic">
           <span>上传后加入公开图库</span>
         </label>
       </div>
-      <button class="w-full rounded-md bg-accent px-3 py-[11px] text-base-sm font-bold text-tx-inv transition hover:-translate-y-px hover:bg-accent-hover hover:shadow-[0_8px_24px_rgba(255,255,255,.07)] disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="uploadBtn" disabled>上传</button>
-      <div class="progress hidden my-[10px] h-[3px] overflow-hidden rounded-full bg-bg-3 [&.show]:block" id="progress"><div class="progress-bar h-full w-0 bg-accent transition-[width] duration-[.25s]" id="progressBar"></div></div>
-      <div class="progress-info hidden items-center gap-[10px] -mt-1 mb-1.5 text-[.76rem] text-tx-2 [&.show]:flex" id="imgProgressInfo"><span class="min-w-[34px] font-mono font-bold text-tx" id="imgProgressPct">0%</span><span class="font-mono text-tx-3" id="imgProgressBytes"></span><span class="font-mono text-tx-3" id="imgProgressCount"></span></div>
-      <div class="mt-2 text-[.8rem] text-red" id="uploadErr"></div>
+      <button class="w-full rounded-sm bg-accent h-9 px-4 text-md font-bold text-tx-inv transition  hover:bg-accent-hover   disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="uploadBtn" disabled>上传</button>
+      <div class="progress hidden my-2 h-1 overflow-hidden rounded-full bg-bg-3 [&.show]:block" id="progress"><div class="progress-bar h-full w-0 bg-accent transition-[width] duration-[.25s]" id="progressBar"></div></div>
+      <div class="progress-info hidden items-center gap-2 -mt-1 mb-2 text-sm text-tx-2 [&.show]:flex" id="imgProgressInfo"><span class="min-w-9 font-mono font-bold text-tx" id="imgProgressPct">0%</span><span class="font-mono text-tx-3" id="imgProgressBytes"></span><span class="font-mono text-tx-3" id="imgProgressCount"></span></div>
+      <div class="mt-2 text-sm text-red" id="uploadErr"></div>
       <!-- 上传结果：批量选择 / 全选 / 一键复制（链接 / MD / BBCode） -->
-      <div class="batch-bar hidden flex-wrap items-center gap-2.5 mb-3 rounded-[9px] border border-bd-2 bg-bg-3 px-3.5 py-2.5 [&.show]:flex" id="resultsBar">
-        <span class="text-[.82rem] font-semibold text-tx" id="resultsSummary"></span>
-        <button class="border-none bg-transparent px-1 text-[1rem] leading-none text-tx-3 cursor-pointer transition hover:text-tx" id="resultsClear" title="收起本次结果" aria-label="收起本次结果">×</button>
-        <label class="flex cursor-pointer items-center gap-1.5 select-none text-[.82rem] text-tx-2"><input type="checkbox" class="accent-accent" id="resultsSelectAll"> 全选</label>
-        <span class="font-mono text-[.8rem] text-tx-3" id="resultsSelCount">未选择</span>
+      <div class="batch-bar hidden flex-wrap items-center gap-2 mb-3 rounded-md border border-bd-2 bg-bg-3 px-4 py-2 [&.show]:flex" id="resultsBar">
+        <span class="text-sm font-semibold text-tx" id="resultsSummary"></span>
+        <button class="border-none bg-transparent px-1 text-lg leading-none text-tx-3 cursor-pointer transition hover:text-tx" id="resultsClear" title="收起本次结果" aria-label="收起本次结果">×</button>
+        <label class="flex cursor-pointer items-center gap-2 select-none text-sm text-tx-2"><input type="checkbox" class="accent-accent" id="resultsSelectAll"> 全选</label>
+        <span class="font-mono text-sm text-tx-3" id="resultsSelCount">未选择</span>
         <div class="flex-1"></div>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2.5 !py-[3px] disabled:cursor-not-allowed disabled:opacity-45" id="resultsCopyUrl" disabled>复制链接</button>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2.5 !py-[3px] disabled:cursor-not-allowed disabled:opacity-45" id="resultsCopyMd" disabled>复制 MD</button>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2.5 !py-[3px] disabled:cursor-not-allowed disabled:opacity-45" id="resultsCopyBb" disabled>复制 BBCode</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-3 !py-1 disabled:cursor-not-allowed disabled:opacity-45" id="resultsCopyUrl" disabled>复制链接</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-3 !py-1 disabled:cursor-not-allowed disabled:opacity-45" id="resultsCopyMd" disabled>复制 MD</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-3 !py-1 disabled:cursor-not-allowed disabled:opacity-45" id="resultsCopyBb" disabled>复制 BBCode</button>
       </div>
-      <div class="mt-3.5 flex flex-col gap-2" id="resultList"></div>
+      <div class="mt-4 flex flex-col gap-2" id="resultList"></div>
     </div>
 
     <!-- My Gallery -->
     <div class="panel hidden [&.active]:block" id="panel-gallery-mine">
-      <div class="page-header flex flex-wrap items-end gap-3 border-b border-bd mb-6 pb-[18px] md:mb-8 md:gap-4 md:pb-6">
+      <div class="page-header flex flex-wrap items-end gap-3 border-b border-bd mb-6 gap-4 pb-4 md:mb-8 md:pb-6">
         <div class="min-w-0 flex-1">
-          <div class="page-title mb-1.5 text-[1.15rem] font-extrabold tracking-[-.03em] text-tx mob:text-[1.2rem] md:text-[1.375rem]">我的图库</div>
+          <div class="page-title mb-2 text-xl font-extrabold tracking-[-.03em] text-tx md:text-2xl">我的图库</div>
           <div class="text-sm font-medium tracking-[.01em] text-tx-3">管理你上传的所有图片</div>
         </div>
       </div>
-      <div class="toolbar flex flex-col items-stretch gap-3 mb-5 md:flex-row md:items-center md:gap-[10px] md:mb-6">
-        <input class="search-input w-full max-w-[260px] rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-[.84rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)] mob:max-w-none md:w-[220px]" id="mineSearch" type="text" placeholder="搜索文件名或标签…">
-        <select class="search-input w-full max-w-[260px] rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-[.84rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)] mob:max-w-none md:w-[220px] !w-auto cursor-pointer" id="mineVisFilter">
+      <div class="toolbar flex flex-col items-stretch gap-3 mb-5 md:flex-row md:items-center md:gap-2 md:mb-6">
+        <input class="search-input w-full rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-ring)] md:w-60" id="mineSearch" type="text" placeholder="搜索文件名或标签…">
+        <select class="search-input w-full rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-ring)] md:w-60 !w-auto cursor-pointer" id="mineVisFilter">
           <option value="all">全部</option>
           <option value="public">仅公开</option>
           <option value="private">仅私密</option>
         </select>
-        <select class="search-input w-full max-w-[260px] rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-[.84rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)] mob:max-w-none md:w-[220px] !w-auto cursor-pointer" id="mineSort">
+        <select class="search-input w-full rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-ring)] md:w-60 !w-auto cursor-pointer" id="mineSort">
           <option value="new">最新优先</option>
           <option value="old">最早优先</option>
           <option value="big">体积降序</option>
           <option value="name">名称排序</option>
         </select>
         <div class="flex-1"></div>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="mineSelectToggle">选择</button>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="trashBtn"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4h11M6 4V2.5h4V4M4 4l.7 9.5a1 1 0 0 0 1 .9h4.6a1 1 0 0 0 1-.9L12 4"/></svg>回收站</button>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="refreshMine">刷新</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="mineSelectToggle">选择</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="trashBtn"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4h11M6 4V2.5h4V4M4 4l.7 9.5a1 1 0 0 0 1 .9h4.6a1 1 0 0 0 1-.9L12 4"/></svg>回收站</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="refreshMine">刷新</button>
       </div>
-      <div class="batch-bar flex flex-wrap items-center gap-[10px] mb-3.5 rounded-[9px] border border-bd-2 bg-bg-3 px-[14px] py-[9px]" id="mineBatchBar" style="display:none">
-        <label class="flex cursor-pointer items-center gap-1.5 select-none text-[.82rem] text-tx-2"><input type="checkbox" id="mineSelectAll"> 全选</label>
-        <span class="font-mono text-[.8rem] text-tx-3" id="mineSelCount">已选 0</span>
+      <div class="batch-bar flex flex-wrap items-center gap-2 mb-4 rounded-md border border-bd-2 bg-bg-3 px-3 py-2" id="mineBatchBar" style="display:none">
+        <label class="flex cursor-pointer items-center gap-2 select-none text-sm text-tx-2"><input type="checkbox" id="mineSelectAll"> 全选</label>
+        <span class="font-mono text-sm text-tx-3" id="mineSelCount">已选 0</span>
         <div class="flex-1"></div>
-        <select class="search-input w-full max-w-[260px] rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-[.84rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)] mob:max-w-none md:w-[220px] !w-auto cursor-pointer" id="batchCopyFmt">
+        <select class="search-input w-full rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-ring)] md:w-60 !w-auto cursor-pointer" id="batchCopyFmt">
           <option value="url">复制链接</option>
           <option value="md">复制 MD</option>
           <option value="bb">复制 BBCode</option>
         </select>
-        <button class="copy-btn inline-flex min-h-8 w-[64px] shrink-0 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx disabled:cursor-not-allowed disabled:opacity-45" id="batchCopy" disabled>复制</button>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="batchPublic">设为公开</button>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="batchPrivate">设为私密</button>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r" id="batchDelete">删除选中</button>
+        <button class="copy-btn inline-flex min-h-8 w-[64px] shrink-0 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx disabled:cursor-not-allowed disabled:opacity-45" id="batchCopy" disabled>复制</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="batchPublic">设为公开</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="batchPrivate">设为私密</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-red-r bg-red-g px-3 py-2 text-sm font-semibold leading-tight text-red transition hover:bg-red-r" id="batchDelete">删除选中</button>
       </div>
-      <div class="flex flex-wrap items-center gap-1.5 mb-3.5" id="mineTagFilter" style="display:none"></div>
-      <div class="gallery-grid group/grid grid grid-cols-2 gap-3 md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] md:gap-[18px]" id="mineGrid"></div>
-      <div class="p-12 text-center text-[.88rem] font-medium text-tx-3" id="mineEmpty" style="display:none">暂无图片，去上传吧</div>
+      <div class="flex flex-wrap items-center gap-2 mb-4" id="mineTagFilter" style="display:none"></div>
+      <div class="gallery-grid group/grid grid grid-cols-2 gap-3 md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] md:gap-5" id="mineGrid"></div>
+      <div class="p-12 text-center text-md font-medium text-tx-3" id="mineEmpty" style="display:none">暂无图片，去上传吧</div>
     </div>
 
     <!-- Pages -->
     <div class="panel hidden [&.active]:block" id="panel-pages">
-      <div class="page-header flex flex-wrap items-end gap-3 border-b border-bd mb-6 pb-[18px] md:mb-8 md:gap-4 md:pb-6">
+      <div class="page-header flex flex-wrap items-end gap-3 border-b border-bd mb-6 gap-4 pb-4 md:mb-8 md:pb-6">
         <div class="min-w-0 flex-1">
-          <div class="page-title mb-1.5 text-[1.15rem] font-extrabold tracking-[-.03em] text-tx mob:text-[1.2rem] md:text-[1.375rem]">我的页面</div>
+          <div class="page-title mb-2 text-xl font-extrabold tracking-[-.03em] text-tx md:text-2xl">我的页面</div>
           <div class="text-sm font-medium tracking-[.01em] text-tx-3">托管的 Markdown / HTML 文档</div>
         </div>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx max-md:flex-1 !px-[10px] !py-[7px] !text-[.78rem]" id="newProjectBtn">+ 项目</button>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx max-md:flex-1 !px-[10px] !py-[7px] !text-[.78rem]" id="newGroupBtn">+ 分组</button>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx max-md:flex-1 !px-[10px] !py-[7px] !text-[.78rem]" id="importPageBtn">导入</button>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none max-md:flex-1 !px-[14px] !py-[7px] !text-[.82rem]" id="newPageBtn">+ 新建页面</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx max-md:flex-1 !px-3 !py-2 !text-sm" id="newProjectBtn">+ 项目</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx max-md:flex-1 !px-3 !py-2 !text-sm" id="newGroupBtn">+ 分组</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx max-md:flex-1 !px-3 !py-2 !text-sm" id="importPageBtn">导入</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none max-md:flex-1 !px-3 !py-2 !text-sm" id="newPageBtn">+ 新建页面</button>
       </div>
-      <div class="toolbar flex flex-col items-stretch gap-3 mb-5 md:flex-row md:items-center md:gap-[10px] md:mb-6">
-        <input class="search-input w-full max-w-[260px] rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-[.84rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)] mob:max-w-none md:w-[220px]" id="pageSearch" type="text" placeholder="搜索标题或 slug…">
-        <select class="search-input w-full max-w-[260px] rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-[.84rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)] mob:max-w-none md:w-[220px] !w-auto cursor-pointer" id="pageProjectFilter">
+      <div class="toolbar flex flex-col items-stretch gap-3 mb-5 md:flex-row md:items-center md:gap-2 md:mb-6">
+        <input class="search-input w-full rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-ring)] md:w-60" id="pageSearch" type="text" placeholder="搜索标题或 slug…">
+        <select class="search-input w-full rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-ring)] md:w-60 !w-auto cursor-pointer" id="pageProjectFilter">
           <option value="all">全部项目</option>
         </select>
-        <select class="search-input w-full max-w-[260px] rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-[.84rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)] mob:max-w-none md:w-[220px] !w-auto cursor-pointer" id="pageTypeFilter">
+        <select class="search-input w-full rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-ring)] md:w-60 !w-auto cursor-pointer" id="pageTypeFilter">
           <option value="all">全部类型</option>
           <option value="markdown">Markdown</option>
           <option value="html">HTML</option>
         </select>
         <div class="flex-1"></div>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.78rem]" id="pageSelectToggle">选择</button>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.78rem]" id="refreshPages">刷新</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-sm" id="pageSelectToggle">选择</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-sm" id="refreshPages">刷新</button>
       </div>
-      <div class="page-batch-bar hidden flex-wrap items-center gap-[10px] mb-3 rounded-md border border-bd-2 bg-bg-3 px-[13px] py-[9px] text-[.82rem] text-tx-2 [&.show]:flex" id="pageBatchBar">
-        <label class="flex items-center gap-1.5 cursor-pointer select-none"><input type="checkbox" id="pageSelectAll"> 全选</label>
+      <div class="page-batch-bar hidden flex-wrap items-center gap-2 mb-3 rounded-md border border-bd-2 bg-bg-3 px-3 py-2 text-sm text-tx-2 [&.show]:flex" id="pageBatchBar">
+        <label class="flex items-center gap-2 cursor-pointer select-none"><input type="checkbox" id="pageSelectAll"> 全选</label>
         <span id="pageSelCount">已选 0</span>
         <div class="flex-1"></div>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.78rem]" id="pageBatchMove">移动</button>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.78rem]" id="pageBatchPublic">设为公开</button>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.78rem]" id="pageBatchPrivate">设为私密</button>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !text-[.78rem]" id="pageBatchDelete">删除</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-sm" id="pageBatchMove">移动</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-sm" id="pageBatchPublic">设为公开</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-sm" id="pageBatchPrivate">设为私密</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-red-r bg-red-g px-3 py-2 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !text-sm" id="pageBatchDelete">删除</button>
       </div>
-      <div class="pages-tree flex flex-col gap-[14px]" id="pagesTree"></div>
-      <div class="p-12 text-center text-[.88rem] font-medium text-tx-3" id="pagesEmpty" style="display:none">暂无页面</div>
+      <div class="pages-tree flex flex-col gap-3" id="pagesTree"></div>
+      <div class="p-12 text-center text-md font-medium text-tx-3" id="pagesEmpty" style="display:none">暂无页面</div>
     </div>
 
     <!-- Protos -->
     <div class="panel hidden [&.active]:block" id="panel-protos">
-      <div class="page-header flex flex-wrap items-end gap-3 border-b border-bd mb-6 pb-[18px] md:mb-8 md:gap-4 md:pb-6">
+      <div class="page-header flex flex-wrap items-end gap-3 border-b border-bd mb-6 gap-4 pb-4 md:mb-8 md:pb-6">
         <div class="min-w-0 flex-1">
-          <div class="page-title mb-1.5 text-[1.15rem] font-extrabold tracking-[-.03em] text-tx mob:text-[1.2rem] md:text-[1.375rem]">我的原型</div>
+          <div class="page-title mb-2 text-xl font-extrabold tracking-[-.03em] text-tx md:text-2xl">我的原型</div>
           <div class="text-sm font-medium tracking-[.01em] text-tx-3">AxureRP 等静态原型托管 · 支持版本管理与密码保护</div>
         </div>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx max-md:flex-1 !text-[.8rem]" id="refreshProtos">刷新</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx max-md:flex-1 !text-sm" id="refreshProtos">刷新</button>
       </div>
       <!-- Upload section (collapsible) -->
-      <div class="mb-5 overflow-hidden rounded-xl border border-bd bg-bg-3">
-        <div class="flex cursor-pointer select-none items-center gap-2 px-4 py-[13px]" id="protoUploadToggle">
-          <h3 class="flex-1 text-[.9rem] font-bold text-tx tracking-[-.01em]">上传原型</h3>
-          <span class="toggle-icon open text-[.65rem] text-tx-3 transition-transform duration-200 [&.open]:rotate-180" id="protoUploadIcon">▾</span>
+      <div class="mb-5 overflow-hidden rounded-md border border-bd bg-bg-3">
+        <div class="flex cursor-pointer select-none items-center gap-2 px-4 py-3" id="protoUploadToggle">
+          <h3 class="flex-1 text-lg font-bold text-tx tracking-[-.01em]">上传原型</h3>
+          <span class="toggle-icon open text-2xs text-tx-3 transition-transform duration-200 [&.open]:rotate-180" id="protoUploadIcon">▾</span>
         </div>
         <div class="border-t border-bd p-4" id="protoUploadBody">
-          <div class="proto-upload-box mb-3.5 cursor-pointer rounded-xl border-[1.5px] border-dashed border-bd-2 bg-white/[.012] px-4 py-7 text-center text-tx-3 transition hover:border-tx-2 hover:bg-white/[.03] hover:text-tx [&.over]:border-tx-2 [&.over]:bg-white/[.03] [&.over]:text-tx" id="protoDropZone">
+          <div class="proto-upload-box mb-4 cursor-pointer rounded-md border-2 border-dashed border-bd-2 bg-white/[.012] px-4 py-7 text-center text-tx-3 transition hover:border-tx-2 hover:bg-white/[.03] hover:text-tx [&.over]:border-tx-2 [&.over]:bg-white/[.03] [&.over]:text-tx" id="protoDropZone">
             <input class="hidden" type="file" id="protoFileInput" accept=".zip,application/zip,application/x-zip-compressed">
             <input class="hidden" type="file" id="protoFolderInput" webkitdirectory multiple>
-            <p class="text-tx text-[.9rem] font-medium">点击选择 <strong>ZIP 文件</strong>，或拖拽文件夹到此处</p>
-            <small class="block mt-2 text-tx-3 text-[.76rem]">支持 AxureRP 导出目录（自动打包）或 ZIP 文件，最大 50 MB</small>
+            <p class="text-tx text-lg font-medium">点击选择 <strong>ZIP 文件</strong>，或拖拽文件夹到此处</p>
+            <small class="block mt-2 text-tx-3 text-sm">支持 AxureRP 导出目录（自动打包）或 ZIP 文件，最大 50 MB</small>
             <div class="flex gap-2 justify-center mt-3">
-              <button class="rounded-md border border-bd-2 bg-bg-3 px-[14px] py-1.5 font-sans text-[.78rem] font-medium text-tx-2 cursor-pointer" type="button" onclick="event.stopPropagation();document.getElementById('protoFileInput').click()">选择 ZIP</button>
-              <button class="rounded-md border border-bd-2 bg-bg-3 px-[14px] py-1.5 font-sans text-[.78rem] font-medium text-tx-2 cursor-pointer" type="button" onclick="event.stopPropagation();document.getElementById('protoFolderInput').click()">选择文件夹</button>
+              <button class="rounded-sm border border-bd-2 bg-bg-3 px-3 py-2 font-sans text-sm font-medium text-tx-2 cursor-pointer" type="button" onclick="event.stopPropagation();document.getElementById('protoFileInput').click()">选择 ZIP</button>
+              <button class="rounded-sm border border-bd-2 bg-bg-3 px-3 py-2 font-sans text-sm font-medium text-tx-2 cursor-pointer" type="button" onclick="event.stopPropagation();document.getElementById('protoFolderInput').click()">选择文件夹</button>
             </div>
           </div>
-          <div class="flex gap-2.5 mb-2.5">
-            <div class="flex flex-1 flex-col gap-[5px]"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">原型名称 <span class="text-tx-3 font-normal normal-case tracking-normal">（可选）</span></label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="protoTitle" placeholder="留空自动命名" maxlength="100"></div>
-            <div class="flex w-40 shrink-0 grow-0 flex-col gap-[5px]"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">访问密码（可选）</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="protoPassword" placeholder="最多 6 位字母数字" maxlength="6" autocomplete="off"></div>
+          <div class="flex gap-2 mb-2">
+            <div class="flex flex-1 flex-col gap-1"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">原型名称 <span class="text-tx-3 font-normal normal-case tracking-normal">（可选）</span></label><input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="protoTitle" placeholder="留空自动命名" maxlength="100"></div>
+            <div class="flex w-40 shrink-0 grow-0 flex-col gap-1"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">访问密码（可选）</label><input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="protoPassword" placeholder="最多 6 位字母数字" maxlength="6" autocomplete="off"></div>
           </div>
-          <button class="w-full rounded-md bg-accent px-3 py-[11px] text-base-sm font-bold text-tx-inv transition hover:-translate-y-px hover:bg-accent-hover hover:shadow-[0_8px_24px_rgba(255,255,255,.07)] disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="protoUploadBtn" disabled>上传原型</button>
-          <div class="progress hidden my-[10px] h-[3px] overflow-hidden rounded-full bg-bg-3 [&.show]:block" id="protoProgress"><div class="progress-bar h-full w-0 bg-accent transition-[width] duration-[.25s]" id="protoProgressBar"></div></div>
-          <div class="progress-info hidden items-center gap-[10px] -mt-1 mb-1.5 text-[.76rem] text-tx-2 [&.show]:flex" id="protoProgressInfo"><span class="min-w-[34px] font-mono font-bold text-tx" id="protoProgressPct">0%</span></div>
-          <div class="hidden text-[.78rem] text-tx-2 mt-0.5 mb-1 min-h-[1.2em]" id="protoStatusText"></div>
-          <div class="mt-2 text-[.8rem] text-red" id="protoErr"></div>
+          <button class="w-full rounded-sm bg-accent h-9 px-4 text-md font-bold text-tx-inv transition  hover:bg-accent-hover   disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="protoUploadBtn" disabled>上传原型</button>
+          <div class="progress hidden my-2 h-1 overflow-hidden rounded-full bg-bg-3 [&.show]:block" id="protoProgress"><div class="progress-bar h-full w-0 bg-accent transition-[width] duration-[.25s]" id="protoProgressBar"></div></div>
+          <div class="progress-info hidden items-center gap-2 -mt-1 mb-2 text-sm text-tx-2 [&.show]:flex" id="protoProgressInfo"><span class="min-w-9 font-mono font-bold text-tx" id="protoProgressPct">0%</span></div>
+          <div class="hidden text-sm text-tx-2 mt-1 mb-1 min-h-[1.2em]" id="protoStatusText"></div>
+          <div class="mt-2 text-sm text-red" id="protoErr"></div>
         </div>
       </div>
 
-      <div class="bg-bg-3 border border-bd rounded-[10px] overflow-hidden">
-        <table class="w-full border-collapse text-[.83rem] [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tr:hover_td]:bg-bg-hover">
+      <div class="bg-bg-3 border border-bd rounded-md overflow-x-auto">
+        <table class="w-full border-collapse text-sm [&_td]:border-b [&_td]:border-bd [&_td]:px-3 [&_td]:py-2 [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tr:hover_td]:bg-bg-hover">
           <thead><tr>
-            <th class="whitespace-nowrap border-b border-bd-2 bg-bg-2 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2 w-9 !text-tx-3">#</th><th class="whitespace-nowrap border-b border-bd-2 bg-bg-2 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">名称</th><th class="whitespace-nowrap border-b border-bd-2 bg-bg-2 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">文件数</th><th class="whitespace-nowrap border-b border-bd-2 bg-bg-2 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">大小</th><th class="whitespace-nowrap border-b border-bd-2 bg-bg-2 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">密码</th><th class="whitespace-nowrap border-b border-bd-2 bg-bg-2 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">版本</th><th class="whitespace-nowrap border-b border-bd-2 bg-bg-2 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">访问</th><th class="whitespace-nowrap border-b border-bd-2 bg-bg-2 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">上传时间</th><th class="whitespace-nowrap border-b border-bd-2 bg-bg-2 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2">更新时间</th><th class="whitespace-nowrap border-b border-bd-2 bg-bg-2 px-[13px] py-[10px] text-left text-[.66rem] font-bold uppercase tracking-[.11em] text-tx-2"></th>
+            <th class="h-10 whitespace-nowrap border-b border-bd-2 bg-bg-2 px-3 py-2 text-left text-2xs font-bold uppercase tracking-[.11em] text-tx-2 w-9 !text-tx-3">#</th><th class="h-10 whitespace-nowrap border-b border-bd-2 bg-bg-2 px-3 py-2 text-left text-2xs font-bold uppercase tracking-[.11em] text-tx-2">名称</th><th class="h-10 whitespace-nowrap border-b border-bd-2 bg-bg-2 px-3 py-2 text-left text-2xs font-bold uppercase tracking-[.11em] text-tx-2">文件数</th><th class="h-10 whitespace-nowrap border-b border-bd-2 bg-bg-2 px-3 py-2 text-left text-2xs font-bold uppercase tracking-[.11em] text-tx-2">大小</th><th class="h-10 whitespace-nowrap border-b border-bd-2 bg-bg-2 px-3 py-2 text-left text-2xs font-bold uppercase tracking-[.11em] text-tx-2">密码</th><th class="h-10 whitespace-nowrap border-b border-bd-2 bg-bg-2 px-3 py-2 text-left text-2xs font-bold uppercase tracking-[.11em] text-tx-2">版本</th><th class="h-10 whitespace-nowrap border-b border-bd-2 bg-bg-2 px-3 py-2 text-left text-2xs font-bold uppercase tracking-[.11em] text-tx-2">访问</th><th class="h-10 whitespace-nowrap border-b border-bd-2 bg-bg-2 px-3 py-2 text-left text-2xs font-bold uppercase tracking-[.11em] text-tx-2">上传时间</th><th class="h-10 whitespace-nowrap border-b border-bd-2 bg-bg-2 px-3 py-2 text-left text-2xs font-bold uppercase tracking-[.11em] text-tx-2">更新时间</th><th class="h-10 whitespace-nowrap border-b border-bd-2 bg-bg-2 px-3 py-2 text-left text-2xs font-bold uppercase tracking-[.11em] text-tx-2"></th>
           </tr></thead>
           <tbody id="protoTableBody"><tr><td class="text-center text-tx-3 p-8" colspan="10">加载中…</td></tr></tbody>
         </table>
       </div>
-      <div class="p-12 text-center text-[.88rem] font-medium text-tx-3 mt-3" id="protoEmpty" style="display:none">暂无原型，请上传 ZIP 文件</div>
+      <div class="p-12 text-center text-md font-medium text-tx-3 mt-3" id="protoEmpty" style="display:none">暂无原型，请上传 ZIP 文件</div>
     </div>
   </main>
-  <footer class="border-t border-bd px-[30px] py-[14px] flex items-center gap-[10px] text-[.75rem] text-tx-3 flex-wrap font-medium">
-    <span>图片存储于</span>
-    ${footerNotes(env)}
+  <footer class="border-t border-bd">
+    <div class="mx-auto flex w-full max-w-[1600px] flex-wrap items-center gap-3 px-4 py-4 text-xs font-medium text-tx-3 sm:px-5 md:px-6 lg:px-8">
+      <span>图片存储于</span>
+      ${footerNotes(env)}
+    </div>
   </footer>
   </div>
 </div>
 
 <!-- Proto Edit Modal -->
-<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="protoEditModal">
-  <div class="flex w-full max-w-[860px] max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:rounded-xl !max-w-[480px]">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
-      <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]" id="protoEditTitle">编辑原型</h3>
-      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="protoEditClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+<div class="fixed inset-0 z-50 hidden items-end justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6 [&.show]:flex" id="protoEditModal">
+  <div class="flex w-full max-w-full max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:max-w-[480px] md:rounded-lg">
+    <div class="flex shrink-0 items-center border-b border-bd px-5 py-4">
+      <h3 class="flex-1 text-lg font-bold text-tx tracking-[-.01em]" id="protoEditTitle">编辑原型</h3>
+      <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-md text-tx-2 transition hover:border-bd-focus hover:text-tx" id="protoEditClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-[18px] max-h-[calc(100dvh-140px)] md:max-h-none md:py-[18px] md:px-5">
-      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">名称</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="peTitle" maxlength="100"></div>
-      <div class="flex flex-col gap-[5px] mb-3.5">
+    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-5 max-h-[calc(100dvh-140px)] md:max-h-none md:py-4 md:px-5">
+      <div class="flex flex-col gap-1 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">名称</label><input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="peTitle" maxlength="100"></div>
+      <div class="flex flex-col gap-1 mb-4">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">访问密码（留空表示删除密码）</label>
-        <input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="pePassword" placeholder="最多 6 位字母数字" maxlength="6" autocomplete="off">
+        <input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="pePassword" placeholder="最多 6 位字母数字" maxlength="6" autocomplete="off">
       </div>
-      <div class="flex flex-col gap-[5px] mb-3.5" id="peExpiryField">
+      <div class="flex flex-col gap-1 mb-4" id="peExpiryField">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">密码有效期</label>
-        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="peExpiry">
+        <select class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="peExpiry">
           <option value="14">14 天</option>
           <option value="30">30 天</option>
           <option value="90">90 天</option>
           <option value="0">永久</option>
         </select>
       </div>
-      <div class="flex flex-col gap-[5px] mb-3.5">
+      <div class="flex flex-col gap-1 mb-4">
         <label class="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" id="pePrivate"> 设为私有（禁止公开访问）
         </label>
       </div>
-      <div class="mt-2 text-[.8rem] text-red" id="peErr"></div>
+      <div class="mt-2 text-sm text-red" id="peErr"></div>
     </div>
-    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="protoEditCancel">取消</button>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="protoEditSave">保存</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-5 py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="protoEditCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="protoEditSave">保存</button>
     </div>
   </div>
 </div>
 
 <!-- Proto content update modal -->
-<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="protoUpdateModal">
-  <div class="flex w-full max-w-[860px] max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:rounded-xl !max-w-[520px]">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
-      <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]">更新原型内容</h3>
-      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="protoUpdateClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+<div class="fixed inset-0 z-50 hidden items-end justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6 [&.show]:flex" id="protoUpdateModal">
+  <div class="flex w-full max-w-full max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:max-w-[520px] md:rounded-lg">
+    <div class="flex shrink-0 items-center border-b border-bd px-5 py-4">
+      <h3 class="flex-1 text-lg font-bold text-tx tracking-[-.01em]">更新原型内容</h3>
+      <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-md text-tx-2 transition hover:border-bd-focus hover:text-tx" id="protoUpdateClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-[18px] max-h-[calc(100dvh-140px)] md:max-h-none md:py-[18px] md:px-5">
-      <p class="text-[.82rem] text-tx-3 mb-3.5">上传新版本将替换现有内容，URL 保持不变，版本号自动递增。</p>
-      <div class="proto-upload-box mb-3.5 cursor-pointer rounded-xl border-[1.5px] border-dashed border-bd-2 bg-white/[.012] text-center text-tx-3 transition hover:border-tx-2 hover:bg-white/[.03] hover:text-tx [&.over]:border-tx-2 [&.over]:bg-white/[.03] [&.over]:text-tx p-5" id="puDropZone">
+    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-5 max-h-[calc(100dvh-140px)] md:max-h-none md:py-4 md:px-5">
+      <p class="text-sm text-tx-3 mb-4">上传新版本将替换现有内容，URL 保持不变，版本号自动递增。</p>
+      <div class="proto-upload-box mb-4 cursor-pointer rounded-md border-2 border-dashed border-bd-2 bg-white/[.012] text-center text-tx-3 transition hover:border-tx-2 hover:bg-white/[.03] hover:text-tx [&.over]:border-tx-2 [&.over]:bg-white/[.03] [&.over]:text-tx p-5" id="puDropZone">
         <input class="hidden" type="file" id="puFileInput" accept=".zip,application/zip,application/x-zip-compressed">
         <input class="hidden" type="file" id="puFolderInput" webkitdirectory multiple>
         <p id="puFileName">选择 ZIP 或文件夹</p>
-        <div class="flex gap-2 justify-center mt-[10px]">
-          <button class="rounded-md border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-[5px] text-[.78rem] text-[#888] cursor-pointer" type="button" onclick="event.stopPropagation();document.getElementById('puFileInput').click()">选择 ZIP</button>
-          <button class="rounded-md border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-[5px] text-[.78rem] text-[#888] cursor-pointer" type="button" onclick="event.stopPropagation();document.getElementById('puFolderInput').click()">选择文件夹</button>
+        <div class="flex gap-2 justify-center mt-2">
+          <button class="rounded-sm border border-bd-2 bg-bg-3 px-3 py-1 text-sm text-tx-3 cursor-pointer" type="button" onclick="event.stopPropagation();document.getElementById('puFileInput').click()">选择 ZIP</button>
+          <button class="rounded-sm border border-bd-2 bg-bg-3 px-3 py-1 text-sm text-tx-3 cursor-pointer" type="button" onclick="event.stopPropagation();document.getElementById('puFolderInput').click()">选择文件夹</button>
         </div>
       </div>
-      <div class="progress hidden my-[10px] h-[3px] overflow-hidden rounded-full bg-bg-3 [&.show]:block" id="puProgress"><div class="progress-bar h-full w-0 bg-accent transition-[width] duration-[.25s]" id="puProgressBar"></div></div>
-      <div class="progress-info hidden items-center gap-[10px] -mt-1 mb-1.5 text-[.76rem] text-tx-2 [&.show]:flex" id="puProgressInfo"><span class="min-w-[34px] font-mono font-bold text-tx" id="puProgressPct">0%</span></div>
-      <div class="hidden text-[.78rem] text-tx-2 mt-0.5 mb-1 min-h-[1.2em]" id="puStatusText"></div>
-      <div class="mt-2 text-[.8rem] text-red" id="puErr"></div>
+      <div class="progress hidden my-2 h-1 overflow-hidden rounded-full bg-bg-3 [&.show]:block" id="puProgress"><div class="progress-bar h-full w-0 bg-accent transition-[width] duration-[.25s]" id="puProgressBar"></div></div>
+      <div class="progress-info hidden items-center gap-2 -mt-1 mb-2 text-sm text-tx-2 [&.show]:flex" id="puProgressInfo"><span class="min-w-9 font-mono font-bold text-tx" id="puProgressPct">0%</span></div>
+      <div class="hidden text-sm text-tx-2 mt-1 mb-1 min-h-[1.2em]" id="puStatusText"></div>
+      <div class="mt-2 text-sm text-red" id="puErr"></div>
     </div>
-    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="protoUpdateCancel">取消</button>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="protoUpdateUpload" disabled>上传新版本</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-5 py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="protoUpdateCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="protoUpdateUpload" disabled>上传新版本</button>
     </div>
   </div>
 </div>
 
 <!-- Change Password Modal -->
-<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="changePwdModal">
-  <div class="flex w-full max-w-[860px] max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:rounded-xl !max-w-[380px]">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
-      <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]">修改密码</h3>
-      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="changePwdClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+<div class="fixed inset-0 z-50 hidden items-end justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6 [&.show]:flex" id="changePwdModal">
+  <div class="flex w-full max-w-full max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:max-w-[380px] md:rounded-lg">
+    <div class="flex shrink-0 items-center border-b border-bd px-5 py-4">
+      <h3 class="flex-1 text-lg font-bold text-tx tracking-[-.01em]">修改密码</h3>
+      <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-md text-tx-2 transition hover:border-bd-focus hover:text-tx" id="changePwdClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-[18px] max-h-[calc(100dvh-140px)] md:max-h-none md:py-[18px] md:px-5">
-      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">当前密码</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="password" id="cpCurrent" placeholder="当前密码" autocomplete="current-password"></div>
-      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">新密码</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="password" id="cpNew" placeholder="至少 6 位" autocomplete="new-password"></div>
-      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">确认新密码</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="password" id="cpConfirm" placeholder="再次输入新密码" autocomplete="new-password"></div>
-      <div class="text-[#ef4444] text-[.78rem] min-h-4" id="cpErr"></div>
+    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-5 max-h-[calc(100dvh-140px)] md:max-h-none md:py-4 md:px-5">
+      <div class="flex flex-col gap-1 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">当前密码</label><input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="password" id="cpCurrent" placeholder="当前密码" autocomplete="current-password"></div>
+      <div class="flex flex-col gap-1 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">新密码</label><input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="password" id="cpNew" placeholder="至少 6 位" autocomplete="new-password"></div>
+      <div class="flex flex-col gap-1 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">确认新密码</label><input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="password" id="cpConfirm" placeholder="再次输入新密码" autocomplete="new-password"></div>
+      <div class="text-red text-sm min-h-4" id="cpErr"></div>
     </div>
-    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="changePwdCancel">取消</button>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="changePwdSave">确认修改</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-5 py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="changePwdCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="changePwdSave">确认修改</button>
     </div>
   </div>
 </div>
 
 <!-- Proto Version History & Diff Modal (user) -->
-<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="userProtoVersionModal">
-  <div class="flex w-full max-w-[860px] max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:rounded-xl !max-w-[860px] !w-[95vw] !max-h-[85vh] !h-[85vh]">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
-      <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]">版本历史 <span class="text-[.72rem] text-tx-3 font-normal" id="upvmTitle"></span></h3>
-      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="upvmClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+<div class="fixed inset-0 z-50 hidden items-end justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6 [&.show]:flex" id="userProtoVersionModal">
+  <div class="flex h-[100dvh] w-full max-w-full flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:h-[85vh] md:max-h-[85vh] md:max-w-[860px] md:rounded-lg">
+    <div class="flex shrink-0 items-center border-b border-bd px-5 py-4">
+      <h3 class="flex-1 text-lg font-bold text-tx tracking-[-.01em]">版本历史 <span class="text-xs text-tx-3 font-normal" id="upvmTitle"></span></h3>
+      <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-md text-tx-2 transition hover:border-bd-focus hover:text-tx" id="upvmClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
     <div class="flex flex-1 min-h-0">
-      <div class="w-[200px] shrink-0 border-r border-[#1a1a1a] overflow-y-auto p-[12px_10px] flex flex-col gap-1.5" id="upvmVersionList"></div>
+      <div class="w-[200px] shrink-0 border-r border-bd overflow-y-auto p-3 flex flex-col gap-2" id="upvmVersionList"></div>
       <div class="flex-1 flex flex-col min-w-0">
-        <div class="px-[14px] py-[10px] border-b border-[#1a1a1a] flex items-center gap-2 shrink-0 flex-wrap">
-          <span class="text-[.78rem] text-tx-3" id="upvmMode">点击版本号查看文件列表，勾选两个版本进行对比</span>
+        <div class="px-3 py-2 border-b border-bd flex items-center gap-2 shrink-0 flex-wrap">
+          <span class="text-sm text-tx-3" id="upvmMode">点击版本号查看文件列表，勾选两个版本进行对比</span>
           <div class="flex-1"></div>
-          <input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)] !w-[160px] !px-2 !py-1 !bg-[#111] !border-[#222] !text-[#ccc] !text-[.78rem]" type="text" id="upvmSearch" placeholder="搜索文件…">
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx hidden !px-[10px] !py-1 !text-[.78rem]" id="upvmDiffBtn">对比选中版本</button>
+          <input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)] !w-[160px] !px-2 !py-1 !bg-bg !border-bd !text-tx-2 !text-sm" type="text" id="upvmSearch" placeholder="搜索文件…">
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx hidden !px-3 !py-1 !text-sm" id="upvmDiffBtn">对比选中版本</button>
         </div>
-        <div class="flex-1 overflow-y-auto px-4 py-[14px]" id="upvmContent">
-          <div class="text-tx-3 text-center py-[60px] text-[.85rem]"><svg class="inline-block h-4 w-4 -mt-0.5 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="13" y1="8" x2="3" y2="8"/><polyline points="7,4 3,8 7,12"/></svg>点击左侧版本号查看文件列表</div>
+        <div class="flex-1 overflow-y-auto px-4 py-3" id="upvmContent">
+          <div class="text-tx-3 text-center py-16 text-md"><svg class="inline-block h-4 w-4 -mt-1 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="13" y1="8" x2="3" y2="8"/><polyline points="7,4 3,8 7,12"/></svg>点击左侧版本号查看文件列表</div>
         </div>
       </div>
     </div>
@@ -539,225 +538,225 @@ export function renderPage(env = {}) {
 </div>
 
 <!-- Lightbox -->
-<div class="lightbox fixed inset-0 z-[100] hidden items-center justify-center bg-overlay md:p-6 [&.show]:flex" id="lightbox">
-  <button class="absolute right-[14px] top-[14px] z-[102] flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="lbClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
-  <button class="absolute left-[14px] top-1/2 z-[101] flex h-[60px] w-10 -translate-y-1/2 items-center justify-center rounded-md border border-bd-2 bg-black/60 text-[1.6rem] text-tx transition hover:border-bd-focus hover:bg-bg-hover max-md:hidden" id="lbPrev">‹</button>
-  <button class="absolute right-[14px] top-1/2 z-[101] flex h-[60px] w-10 -translate-y-1/2 items-center justify-center rounded-md border border-bd-2 bg-black/60 text-[1.6rem] text-tx transition hover:border-bd-focus hover:bg-bg-hover max-md:hidden" id="lbNext">›</button>
-  <div class="w-full max-w-[760px] overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow max-md:h-full max-md:max-w-none max-md:flex max-md:flex-col max-md:rounded-none max-md:border-none" id="lbCard">
+<div class="lightbox fixed inset-0 z-[60] hidden items-center justify-center bg-overlay md:p-6 [&.show]:flex" id="lightbox">
+  <button class="absolute right-[14px] top-3 z-[102] flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 text-md text-tx-2 transition hover:border-bd-focus hover:text-tx" id="lbClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+  <button class="absolute left-[14px] top-1/2 z-[101] flex h-16 w-10 -translate-y-1/2 items-center justify-center rounded-sm border border-bd-2 bg-black/60 text-3xl text-tx transition hover:border-bd-focus hover:bg-bg-hover max-md:hidden" id="lbPrev">‹</button>
+  <button class="absolute right-[14px] top-1/2 z-[101] flex h-16 w-10 -translate-y-1/2 items-center justify-center rounded-sm border border-bd-2 bg-black/60 text-3xl text-tx transition hover:border-bd-focus hover:bg-bg-hover max-md:hidden" id="lbNext">›</button>
+  <div class="w-full max-w-[760px] overflow-hidden rounded-lg border border-bd-2 bg-bg-4 shadow max-md:h-full max-md:max-w-none max-md:flex max-md:flex-col max-md:rounded-none max-md:border-none" id="lbCard">
     <div class="flex min-h-[280px] max-h-[55vh] items-center justify-center bg-bg-2 max-md:h-0 max-md:max-h-none max-md:min-h-0 max-md:flex-1 max-md:touch-none" id="lbImgWrap"><img class="max-h-[55vh] max-w-full object-contain max-md:h-full max-md:max-h-full" id="lbImg" src="" alt=""></div>
-    <div class="px-[18px] py-[14px]">
-      <div class="truncate text-[.8rem] font-medium text-tx-2" id="lbName" style="display:none"></div>
-      <div class="break-all font-mono text-[.85rem] text-tx" id="lbKey"></div>
-      <div class="mt-3 flex gap-[7px]">
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbCopy">复制链接</button>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbMd">复制 MD</button>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbBbcode">复制 BBCode</button>
+    <div class="px-4 py-3">
+      <div class="truncate text-sm font-medium text-tx-2" id="lbName" style="display:none"></div>
+      <div class="break-all font-mono text-md text-tx" id="lbKey"></div>
+      <div class="mt-3 flex gap-2">
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbCopy">复制链接</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbMd">复制 MD</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbBbcode">复制 BBCode</button>
         <div class="flex-1"></div>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r" id="lbDelete" style="display:none">删除</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-red-r bg-red-g px-3 py-2 text-sm font-semibold leading-tight text-red transition hover:bg-red-r" id="lbDelete" style="display:none">删除</button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- Page Editor Modal -->
-<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="pageModal">
-  <div class="flex h-[min(92dvh,900px)] max-h-[calc(100dvh-3rem)] w-full max-w-[960px]! flex-col overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
-      <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]" id="pageModalTitle">新建页面</h3>
-      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="pageModalClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+<div class="fixed inset-0 z-50 hidden items-end justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6 [&.show]:flex" id="pageModal">
+  <div class="flex h-[100dvh] max-h-[100dvh] w-full max-w-full flex-col overflow-hidden border-0 border-bd-2 bg-bg-4 shadow md:h-[min(92dvh,900px)] md:max-h-[calc(100dvh-3rem)] md:max-w-[960px] md:rounded-lg md:border">
+    <div class="flex shrink-0 items-center border-b border-bd px-5 py-4">
+      <h3 class="flex-1 text-lg font-bold text-tx tracking-[-.01em]" id="pageModalTitle">新建页面</h3>
+      <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-md text-tx-2 transition hover:border-bd-focus hover:text-tx" id="pageModalClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overflow-x-hidden overscroll-contain px-[18px] py-[18px] md:px-5">
-      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">标题</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="pmTitle" placeholder="My Page"></div>
-      <div class="flex flex-col gap-[5px] mb-3.5">
+    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 md:px-5">
+      <div class="flex flex-col gap-1 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">标题</label><input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="pmTitle" placeholder="My Page"></div>
+      <div class="flex flex-col gap-1 mb-4">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">自定义后缀（URL）</label>
-        <input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="pmSlug" placeholder="my-blog-post  或  docs/intro">
-        <span class="text-[.72rem] text-tx-3 mt-1">访问地址：<span class="text-accent" id="pmSlugPreview"></span> <span class="text-tx-3">（必填，可用 / 分级，如 docs/intro）</span></span>
+        <input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="pmSlug" placeholder="my-blog-post  或  docs/intro">
+        <span class="text-xs text-tx-3 mt-1">访问地址：<span class="text-accent" id="pmSlugPreview"></span> <span class="text-tx-3">（必填，可用 / 分级，如 docs/intro）</span></span>
       </div>
-      <div class="flex flex-col gap-[5px] mb-3.5">
+      <div class="flex flex-col gap-1 mb-4">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">类型</label>
-        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="pmType">
+        <select class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="pmType">
           <option value="markdown">Markdown</option>
           <option value="html">HTML</option>
         </select>
       </div>
-      <div class="flex flex-col gap-[5px] mb-3.5">
+      <div class="flex flex-col gap-1 mb-4">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属项目</label>
-        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="pmProject">
+        <select class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="pmProject">
           <option value="">-- 无 --</option>
         </select>
       </div>
-      <div class="flex flex-col gap-[5px] mb-3.5">
+      <div class="flex flex-col gap-1 mb-4">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属分组</label>
-        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="pmGroup">
+        <select class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="pmGroup">
           <option value="">-- 无 --</option>
         </select>
       </div>
-      <div class="flex flex-col gap-[5px] mb-3.5">
+      <div class="flex flex-col gap-1 mb-4">
         <label class="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" id="pmPublic" checked> 公开访问
         </label>
       </div>
-      <div class="flex flex-col gap-[5px] mb-3.5" id="pmPwdSection">
+      <div class="flex flex-col gap-1 mb-4" id="pmPwdSection">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">访问密码 <span class="text-tx-3 font-normal normal-case tracking-normal">（可选，6 位字母数字）</span></label>
         <div class="flex gap-2 items-center">
-          <input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)] !w-[140px] !px-[10px] !py-2 !border-bd-2 font-mono tracking-[.14em] !text-[.92rem]" type="text" id="pmPassword" maxlength="6" autocomplete="off" spellcheck="false"
+          <input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)] !w-[140px] !px-3 !py-2 !border-bd-2 font-mono tracking-[.14em] !text-lg" type="text" id="pmPassword" maxlength="6" autocomplete="off" spellcheck="false"
             placeholder="留空则仅登录可见">
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx whitespace-nowrap shrink-0" type="button" id="pmPwdGen">生成</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx whitespace-nowrap shrink-0" type="button" id="pmPwdGen">生成</button>
         </div>
-        <span class="text-[.7rem] text-tx-3 mt-1 block">设置后访客可通过密码访问；复制地址时会附带密码</span>
+        <span class="text-xs text-tx-3 mt-1 block">设置后访客可通过密码访问；复制地址时会附带密码</span>
       </div>
-      <div class="flex flex-col gap-[5px] mb-0">
+      <div class="flex flex-col gap-1 mb-0">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3" id="pmContentLabel">内容</label>
         <div id="pmVditor" style="display:none"></div>
-        <textarea class="w-full min-h-[240px] resize-y rounded-md border border-bd-2 bg-bg-2 px-[14px] py-3 font-mono text-[.84rem] leading-[1.7] text-tx" id="pmContent" rows="10" placeholder="# Hello World\n\n写点什么…"></textarea>
+        <textarea class="w-full min-h-[240px] resize-y rounded-sm border border-bd-2 bg-bg-2 px-3 py-3 font-mono text-sm leading-[1.7] text-tx" id="pmContent" rows="10" placeholder="# Hello World\n\n写点什么…"></textarea>
       </div>
     </div>
-    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="pageModalCancel">取消</button>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="pageModalSave">创建</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-5 py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="pageModalCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="pageModalSave">创建</button>
     </div>
   </div>
 </div>
 
 <!-- Project Modal -->
-<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="projectModal">
-  <div class="flex w-full max-w-[860px] max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:rounded-xl !max-w-[420px]">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
-      <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]" id="projModalTitle">新建项目</h3>
-      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="projModalClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+<div class="fixed inset-0 z-50 hidden items-end justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6 [&.show]:flex" id="projectModal">
+  <div class="flex w-full max-w-full max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:max-w-[420px] md:rounded-lg">
+    <div class="flex shrink-0 items-center border-b border-bd px-5 py-4">
+      <h3 class="flex-1 text-lg font-bold text-tx tracking-[-.01em]" id="projModalTitle">新建项目</h3>
+      <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-md text-tx-2 transition hover:border-bd-focus hover:text-tx" id="projModalClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-[18px] max-h-[calc(100dvh-140px)] md:max-h-none md:py-[18px] md:px-5">
-      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">项目名称</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="projName" placeholder="我的知识库" maxlength="64"></div>
+    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-5 max-h-[calc(100dvh-140px)] md:max-h-none md:py-4 md:px-5">
+      <div class="flex flex-col gap-1 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">项目名称</label><input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="projName" placeholder="我的知识库" maxlength="64"></div>
     </div>
-    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="projModalCancel">取消</button>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="projModalSave">创建</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-5 py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="projModalCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="projModalSave">创建</button>
     </div>
   </div>
 </div>
 
 <!-- Group Modal -->
-<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="groupModal">
-  <div class="flex w-full max-w-[860px] max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:rounded-xl !max-w-[420px]">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
-      <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]" id="grpModalTitle">新建分组</h3>
-      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="grpModalClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+<div class="fixed inset-0 z-50 hidden items-end justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6 [&.show]:flex" id="groupModal">
+  <div class="flex w-full max-w-full max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:max-w-[420px] md:rounded-lg">
+    <div class="flex shrink-0 items-center border-b border-bd px-5 py-4">
+      <h3 class="flex-1 text-lg font-bold text-tx tracking-[-.01em]" id="grpModalTitle">新建分组</h3>
+      <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-md text-tx-2 transition hover:border-bd-focus hover:text-tx" id="grpModalClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-[18px] max-h-[calc(100dvh-140px)] md:max-h-none md:py-[18px] md:px-5">
-      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">分组名称</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="grpName" placeholder="入门指南" maxlength="64"></div>
-      <div class="flex flex-col gap-[5px] mb-3.5">
+    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-5 max-h-[calc(100dvh-140px)] md:max-h-none md:py-4 md:px-5">
+      <div class="flex flex-col gap-1 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">分组名称</label><input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="grpName" placeholder="入门指南" maxlength="64"></div>
+      <div class="flex flex-col gap-1 mb-4">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属项目 <span class="text-tx-3 font-normal normal-case">（可选，不选则为独立分组）</span></label>
-        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="grpProjectId"><option value="">-- 独立分组 --</option></select>
+        <select class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="grpProjectId"><option value="">-- 独立分组 --</option></select>
       </div>
     </div>
-    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="grpModalCancel">取消</button>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="grpModalSave">创建</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-5 py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="grpModalCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="grpModalSave">创建</button>
     </div>
   </div>
 </div>
 
 <!-- Page batch move modal -->
-<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="pageMoveModal">
-  <div class="flex w-full max-w-[860px] max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:rounded-xl !max-w-[420px]">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
-      <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]">批量移动</h3>
-      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="pageMoveModalClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+<div class="fixed inset-0 z-50 hidden items-end justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6 [&.show]:flex" id="pageMoveModal">
+  <div class="flex w-full max-w-full max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:max-w-[420px] md:rounded-lg">
+    <div class="flex shrink-0 items-center border-b border-bd px-5 py-4">
+      <h3 class="flex-1 text-lg font-bold text-tx tracking-[-.01em]">批量移动</h3>
+      <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-md text-tx-2 transition hover:border-bd-focus hover:text-tx" id="pageMoveModalClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-[18px] max-h-[calc(100dvh-140px)] md:max-h-none md:py-[18px] md:px-5">
-      <div class="flex flex-col gap-[5px] mb-3.5">
+    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-5 max-h-[calc(100dvh-140px)] md:max-h-none md:py-4 md:px-5">
+      <div class="flex flex-col gap-1 mb-4">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">目标项目</label>
-        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="pageMoveProject"><option value="">-- 无 / 未分类 --</option></select>
+        <select class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="pageMoveProject"><option value="">-- 无 / 未分类 --</option></select>
       </div>
-      <div class="flex flex-col gap-[5px] mb-3.5">
+      <div class="flex flex-col gap-1 mb-4">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">目标分组</label>
-        <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="pageMoveGroup"><option value="">-- 无 --</option></select>
+        <select class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="pageMoveGroup"><option value="">-- 无 --</option></select>
       </div>
     </div>
-    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="pageMoveModalCancel">取消</button>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="pageMoveModalSave">移动</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-5 py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="pageMoveModalCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="pageMoveModalSave">移动</button>
     </div>
   </div>
 </div>
 
 <!-- Import Markdown / HTML Modal -->
-<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="importModal">
-  <div class="flex w-full max-w-[860px] max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:rounded-xl !max-w-[520px]">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
-      <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]">导入页面</h3>
-      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="importModalClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+<div class="fixed inset-0 z-50 hidden items-end justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6 [&.show]:flex" id="importModal">
+  <div class="flex w-full max-w-full max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:max-w-[520px] md:rounded-lg">
+    <div class="flex shrink-0 items-center border-b border-bd px-5 py-4">
+      <h3 class="flex-1 text-lg font-bold text-tx tracking-[-.01em]">导入页面</h3>
+      <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-md text-tx-2 transition hover:border-bd-focus hover:text-tx" id="importModalClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-[18px] max-h-[calc(100dvh-140px)] md:max-h-none md:py-[18px] md:px-5">
-      <div class="text-tx-3 transition hover:text-tx p-7 text-center border-2 border-dashed border-bd-2 rounded-[10px] cursor-pointer" id="importDropZone">
+    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-5 max-h-[calc(100dvh-140px)] md:max-h-none md:py-4 md:px-5">
+      <div class="text-tx-3 transition hover:text-tx p-7 text-center border-2 border-dashed border-bd-2 rounded-md cursor-pointer" id="importDropZone">
         <input class="hidden" type="file" id="importFileInput" accept=".md,.markdown,.html,.htm,text/markdown,text/html">
         <div class="mb-2"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6V2z"/><path d="M15 2v5h5"/></svg></div>
-        <div class="text-tx-2 text-[.84rem]">点击或拖拽 .md / .html 文件到此处</div>
-        <div class="text-tx-3 text-[.72rem] mt-1">支持 YAML frontmatter (title, slug, projectId, groupId, type, isPublic)</div>
+        <div class="text-tx-2 text-sm">点击或拖拽 .md / .html 文件到此处</div>
+        <div class="text-tx-3 text-xs mt-1">支持 YAML frontmatter (title, slug, projectId, groupId, type, isPublic)</div>
       </div>
       <div id="importPreview" style="display:none">
-        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">标题</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="importTitle"></div>
-        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">Slug</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="importSlug"></div>
-        <div class="flex flex-col gap-[5px] mb-3.5">
+        <div class="flex flex-col gap-1 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">标题</label><input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="importTitle"></div>
+        <div class="flex flex-col gap-1 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">Slug</label><input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="importSlug"></div>
+        <div class="flex flex-col gap-1 mb-4">
           <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">类型</label>
-          <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="importType"><option value="markdown">Markdown</option><option value="html">HTML</option></select>
+          <select class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="importType"><option value="markdown">Markdown</option><option value="html">HTML</option></select>
         </div>
-        <div class="flex flex-col gap-[5px] mb-3.5">
+        <div class="flex flex-col gap-1 mb-4">
           <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属项目</label>
-          <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="importProject"><option value="">-- 无 --</option></select>
+          <select class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="importProject"><option value="">-- 无 --</option></select>
         </div>
-        <div class="flex flex-col gap-[5px] mb-3.5">
+        <div class="flex flex-col gap-1 mb-4">
           <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属分组</label>
-          <select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" id="importGroup"><option value="">-- 无 --</option></select>
+          <select class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="importGroup"><option value="">-- 无 --</option></select>
         </div>
-        <div class="flex flex-col gap-[5px] mb-3.5">
+        <div class="flex flex-col gap-1 mb-4">
           <label class="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" id="importPublic" checked> 公开访问
           </label>
         </div>
       </div>
     </div>
-    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="importModalCancel">取消</button>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="importModalSave" disabled>导入</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-5 py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="importModalCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="importModalSave" disabled>导入</button>
     </div>
   </div>
 </div>
 
 <!-- Tag Editor Modal -->
-<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="tagModal">
-  <div class="flex w-full max-w-[860px] max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:rounded-xl !max-w-[420px]">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
-      <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]">编辑标签 <span class="text-[.72rem] text-tx-3 font-normal" id="tagModalTarget"></span></h3>
-      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="tagModalClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+<div class="fixed inset-0 z-50 hidden items-end justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6 [&.show]:flex" id="tagModal">
+  <div class="flex w-full max-w-full max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:max-w-[420px] md:rounded-lg">
+    <div class="flex shrink-0 items-center border-b border-bd px-5 py-4">
+      <h3 class="flex-1 text-lg font-bold text-tx tracking-[-.01em]">编辑标签 <span class="text-xs text-tx-3 font-normal" id="tagModalTarget"></span></h3>
+      <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-md text-tx-2 transition hover:border-bd-focus hover:text-tx" id="tagModalClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-[18px] max-h-[calc(100dvh-140px)] md:max-h-none md:py-[18px] md:px-5">
-      <div class="flex flex-wrap gap-1.5 mb-[10px] min-h-[28px]" id="tagEditList"></div>
-      <div class="flex flex-col gap-[5px] mb-3.5">
+    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-5 max-h-[calc(100dvh-140px)] md:max-h-none md:py-4 md:px-5">
+      <div class="flex flex-wrap gap-2 mb-2 min-h-[28px]" id="tagEditList"></div>
+      <div class="flex flex-col gap-1 mb-4">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">添加标签（回车确认，最多 10 个）</label>
-        <input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="tagInput" placeholder="输入标签后按回车" maxlength="24" autocomplete="off">
+        <input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="text" id="tagInput" placeholder="输入标签后按回车" maxlength="24" autocomplete="off">
       </div>
-      <div class="mt-2 text-[.8rem] text-red" id="tagErr"></div>
+      <div class="mt-2 text-sm text-red" id="tagErr"></div>
     </div>
-    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="tagModalCancel">取消</button>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="tagModalSave">保存</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-5 py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="tagModalCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="tagModalSave">保存</button>
     </div>
   </div>
 </div>
 
 <!-- Trash / Recycle Bin Modal -->
-<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="trashModal">
-  <div class="flex w-full max-w-[860px] max-h-[100dvh] flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:max-h-[96vh] md:rounded-xl !max-w-[760px] !w-[92vw] !max-h-[86vh]">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
-      <h3 class="flex-1 text-[.98rem] font-bold text-tx tracking-[-.01em]">回收站 <span class="text-[.72rem] text-tx-3 font-normal">删除项保留 30 天，到期自动清除</span></h3>
-      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="trashClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+<div class="fixed inset-0 z-50 hidden items-end justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6 [&.show]:flex" id="trashModal">
+  <div class="flex h-[100dvh] w-full max-w-full flex-col overflow-hidden rounded-t-xl rounded-b-none border border-bd-2 bg-bg-4 shadow md:h-[86vh] md:max-h-[86vh] md:max-w-[760px] md:rounded-lg">
+    <div class="flex shrink-0 items-center border-b border-bd px-5 py-4">
+      <h3 class="flex-1 text-lg font-bold text-tx tracking-[-.01em]">回收站 <span class="text-xs text-tx-3 font-normal">删除项保留 30 天，到期自动清除</span></h3>
+      <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-md text-tx-2 transition hover:border-bd-focus hover:text-tx" id="trashClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-[18px] max-h-[calc(100dvh-140px)] md:max-h-none md:py-[18px] md:px-5 !min-h-[200px]" id="trashBody"><div class="p-12 text-center text-[.88rem] font-medium text-tx-3">加载中…</div></div>
+    <div class="modal-body flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-5 max-h-[calc(100dvh-140px)] md:max-h-none md:py-4 md:px-5 !min-h-[200px]" id="trashBody"><div class="p-12 text-center text-md font-medium text-tx-3">加载中…</div></div>
   </div>
 </div>
 
-<div class="toast fixed bottom-6 left-1/2 z-[300] -translate-x-1/2 translate-y-20 whitespace-nowrap rounded-md border border-bd-2 bg-bg-3 px-[18px] py-[9px] font-sans text-sm font-medium text-tx shadow-sm transition-transform duration-300 ease-[cubic-bezier(.34,1.56,.64,1)] [&.show]:translate-y-0 [&.t-success]:border-green-r [&.t-success]:bg-green-g [&.t-success]:text-green [&.t-warn]:border-amber-r [&.t-warn]:bg-amber-g [&.t-warn]:text-amber [&.t-error]:border-red-r [&.t-error]:bg-red-g [&.t-error]:text-red" id="toast"></div>
+<div class="toast fixed bottom-20 md:bottom-6 left-1/2 z-[70] -translate-x-1/2 translate-y-20 w-max max-w-[calc(100vw-32px)] whitespace-normal break-words text-center rounded-sm border border-bd-2 bg-bg-3 px-4 py-2 font-sans text-sm font-medium text-tx shadow-sm transition-transform duration-300 ease-[cubic-bezier(.34,1.56,.64,1)] [&.show]:translate-y-0 [&.t-success]:border-green-r [&.t-success]:text-green [&.t-warn]:border-amber-r [&.t-warn]:text-amber [&.t-error]:border-red-r [&.t-error]:text-red" id="toast"></div>
 
 <script>
   ${PROTO_ENGINE_JS}
@@ -765,18 +764,18 @@ export function renderPage(env = {}) {
   // Tailwind utility-class constants for elements whose className is fully
   // reassigned at runtime (className=, not classList.add) — declared once
   // here so they survive every reassignment site.
-  const UD_PERM_BASE = 'rounded-xs px-[7px] py-0.5 text-[.66rem] font-semibold';
+  const UD_PERM_BASE = 'rounded-xs px-2 py-1 text-2xs font-semibold';
   const UD_PERM_ON = UD_PERM_BASE + ' border border-green-r bg-green-g text-green';
   const UD_PERM_OFF = UD_PERM_BASE + ' border border-bd bg-[rgba(255,255,255,.04)] text-tx-3';
   const UD_PERM_ADMIN = UD_PERM_BASE + ' border border-brand-ring bg-brand-muted text-tx-a';
-  const UD_ACTION = 'flex w-full items-center gap-2 border-none bg-transparent px-[14px] py-[10px] text-left font-sans text-[.82rem] font-medium text-tx-2 transition hover:bg-bg-hover hover:text-tx';
-  const UD_ACTION_DANGER = 'flex w-full items-center gap-2 border-none bg-transparent px-[14px] py-[10px] text-left font-sans text-[.82rem] font-medium text-tx-2 transition hover:bg-red-g hover:text-red';
-  const BTN_PUBLIC = 'rounded-full border border-green-r bg-green-g px-[9px] py-[3px] text-xs font-semibold text-green cursor-pointer min-h-0';
-  const BTN_PRIVATE = 'rounded-full border border-bd bg-brand-muted px-[9px] py-[3px] text-xs font-semibold text-tx-3 cursor-pointer min-h-0';
+  const UD_ACTION = 'flex w-full items-center gap-2 border-none bg-transparent px-3 py-2 text-left font-sans text-sm font-medium text-tx-2 transition hover:bg-bg-hover hover:text-tx';
+  const UD_ACTION_DANGER = 'flex w-full items-center gap-2 border-none bg-transparent px-3 py-2 text-left font-sans text-sm font-medium text-tx-2 transition hover:bg-red-g hover:text-red';
+  const BTN_PUBLIC = 'rounded-full border border-green-r bg-green-g px-2 py-1 text-xs font-semibold text-green cursor-pointer min-h-0';
+  const BTN_PRIVATE = 'rounded-full border border-bd bg-brand-muted px-2 py-1 text-xs font-semibold text-tx-3 cursor-pointer min-h-0';
   // Ghost/primary button pairs for buttons whose whole className is swapped at runtime
   // (classList.toggle('btn-primary', ...) no longer has CSS behind it — swap the full string instead).
-  const BTN_GHOST_TOGGLE = 'inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx';
-  const BTN_PRIMARY_TOGGLE = 'inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none';
+  const BTN_GHOST_TOGGLE = 'inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx';
+  const BTN_PRIMARY_TOGGLE = 'inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none';
   const ICON_EYE = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg>';
   const ICON_EYE_OFF = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l12 12"/><path d="M6.6 3.4C7 3.3 7.5 3 8 3c4.5 0 7 5 7 5a13 13 0 0 1-2.3 3M4.2 4.2A13 13 0 0 0 1 8s2.5 5 7 5c1 0 1.9-.2 2.7-.6M6.2 6.2a2 2 0 0 0 2.6 2.6"/></svg>';
 
@@ -800,7 +799,7 @@ export function renderPage(env = {}) {
 
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'flex w-full min-w-0 items-center justify-between gap-2 rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-[.84rem] text-tx outline-none transition cursor-pointer hover:border-bd-2 hover:bg-bg-hover focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)] [&.open]:border-bd-focus';
+    btn.className = 'flex w-full min-w-0 items-center justify-between gap-2 rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-sm text-tx outline-none transition cursor-pointer hover:border-bd-2 hover:bg-bg-hover focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-ring)] [&.open]:border-bd-focus';
     const label = document.createElement('span');
     label.className = 'truncate min-w-0';
     const chevron = document.createElement('span');
@@ -810,7 +809,7 @@ export function renderPage(env = {}) {
     wrap.appendChild(btn);
 
     const list = document.createElement('div');
-    list.className = 'cs-list absolute left-0 top-[calc(100%+4px)] z-30 hidden min-w-full w-max max-w-[280px] overflow-y-auto rounded-md border border-bd-2 bg-bg-4 py-1.5 shadow-lg max-h-[280px]';
+    list.className = 'cs-list absolute left-0 top-[calc(100%+4px)] z-30 hidden min-w-full w-max max-w-[280px] overflow-y-auto rounded-md border border-bd-2 bg-bg-4 py-2 shadow-lg max-h-[280px]';
     wrap.appendChild(list);
 
     function buildOptions() {
@@ -819,7 +818,7 @@ export function renderPage(env = {}) {
         const row = document.createElement('button');
         row.type = 'button';
         const active = opt.value === select.value;
-        row.className = 'flex w-full items-center px-3.5 py-2.5 text-left text-[.84rem] transition cursor-pointer hover:bg-bg-hover' +
+        row.className = 'flex w-full items-center px-4 py-2 text-left text-sm transition cursor-pointer hover:bg-bg-hover' +
           (active ? ' bg-brand-muted text-tx font-semibold' : ' text-tx-2 hover:text-tx');
         row.textContent = opt.textContent;
         row.addEventListener('click', () => {
@@ -1157,17 +1156,17 @@ export function renderPage(env = {}) {
     const el = document.getElementById('userArea');
     if (token) {
       el.innerHTML = \`
-        <div class="user-chip flex cursor-pointer select-none items-center gap-[9px] rounded-md border border-bd bg-bg-3 px-[10px] py-2 transition hover:border-bd-2 hover:bg-bg-4" id="userChip">
-          <div class="h-[7px] w-[7px] shrink-0 rounded-full bg-green shadow-[0_0_6px_rgba(52,211,153,.5)]"></div>
-          <span class="flex-1 min-w-0 truncate text-[.82rem] font-semibold text-tx">\${username}</span>
-          <span class="shrink-0 text-[.65rem] text-tx-3 transition-transform duration-150 [.user-chip.open_&]:rotate-180">▾</span>
+        <div class="user-chip flex cursor-pointer select-none items-center gap-2 rounded-md border border-bd bg-bg-3 px-3 py-2 transition hover:border-bd-2 hover:bg-bg-4" id="userChip">
+          <div class="h-2 w-2 shrink-0 rounded-full bg-green shadow-[0_0_6px_rgba(52,211,153,.5)]"></div>
+          <span class="flex-1 min-w-0 truncate text-sm font-semibold text-tx">\${username}</span>
+          <span class="shrink-0 text-2xs text-tx-3 transition-transform duration-150 [.user-chip.open_&]:rotate-180">▾</span>
         </div>
-        <div class="user-dropdown absolute inset-x-2 bottom-[calc(100%+6px)] z-[100] hidden overflow-hidden rounded-lg border border-bd-2 bg-bg-3 shadow-sm [&.show]:block" id="userDropdown">
-          <div class="border-b border-bd px-[14px] pt-3 pb-[10px]">
-            <div class="text-[.88rem] font-bold text-tx">\${username}</div>
-            <div class="mt-0.5 text-[.7rem] font-medium text-tx-2">\${isAdminUser ? '管理员' : '普通用户'}</div>
+        <div class="user-dropdown absolute inset-x-2 bottom-[calc(100%+6px)] z-[100] hidden overflow-hidden rounded-md border border-bd-2 bg-bg-3 shadow-sm [&.show]:block" id="userDropdown">
+          <div class="border-b border-bd px-3 pt-3 pb-2">
+            <div class="text-md font-bold text-tx">\${username}</div>
+            <div class="mt-1 text-xs font-medium text-tx-2">\${isAdminUser ? '管理员' : '普通用户'}</div>
           </div>
-          <div class="flex flex-wrap gap-[5px] border-b border-bd px-[14px] py-[10px]">\${buildPermBadges()}</div>
+          <div class="flex flex-wrap gap-1 border-b border-bd px-3 py-2">\${buildPermBadges()}</div>
           \${!isAdminUser ? \`<button class="\${UD_ACTION}" id="changePwdBtn"><svg class="h-4 w-4 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="5" r="3.2"/><path d="M7.2 7.2 14 14M11 11l1.5-1.5M13 13l1.5-1.5"/></svg>修改密码</button>\` : ''}
           <button class="\${UD_ACTION_DANGER}" id="logoutBtn">退出登录</button>
         </div>\`;
@@ -1186,12 +1185,12 @@ export function renderPage(env = {}) {
       }
       document.getElementById('uploadBtn').disabled = !(perms?.canUpload ?? true);
     } else {
-      el.innerHTML = \`<button class="w-full rounded-md border border-bd-2 bg-bg-3 px-3 py-[9px] text-center text-[.85rem] font-semibold text-tx transition hover:border-bd-focus hover:bg-bg-4" id="loginTrigger">登录</button>\`;
+      el.innerHTML = \`<button class="w-full rounded-sm border border-bd-2 bg-bg-3 px-3 py-2 text-center text-md font-semibold text-tx transition hover:border-bd-focus hover:bg-bg-4" id="loginTrigger">登录</button>\`;
       document.getElementById('loginTrigger').addEventListener('click', openLoginOverlay);
       document.getElementById('uploadBtn').disabled = true;
     }
     document.getElementById('footerAdmin').innerHTML = isAdminUser
-      ? \`<a href="/admin" class="flex items-center gap-[9px] rounded-sm px-[10px] py-2 text-[.82rem] font-medium text-tx-2 no-underline transition hover:bg-bg-hover hover:text-tx max-md:min-h-[44px]"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M12.95 3.05l-1.41 1.41M4.46 11.54l-1.41 1.41"/></svg></span><span>Admin Panel</span><span class="ml-auto text-tx-3"><svg class="h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="12" y2="4"/><polyline points="5,4 12,4 12,11"/></svg></span></a>\`
+      ? \`<a href="/admin" class="flex items-center gap-2 rounded-sm px-3 py-2 text-sm font-medium text-tx-2 no-underline transition hover:bg-bg-hover hover:text-tx max-md:min-h-[44px]"><span class="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-4 [&_svg]:w-4"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M12.95 3.05l-1.41 1.41M4.46 11.54l-1.41 1.41"/></svg></span><span>Admin Panel</span><span class="ml-auto text-tx-3"><svg class="h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="12" y2="4"/><polyline points="5,4 12,4 12,11"/></svg></span></a>\`
       : '';
   }
 
@@ -1302,7 +1301,7 @@ export function renderPage(env = {}) {
     t.addEventListener('click', (e) => {
       // Ripple effect
       const r = document.createElement('span');
-      r.className = 'absolute h-[60px] w-[60px] rounded-full bg-white/[.08] pointer-events-none [transform:translate(-50%,-50%)_scale(0)] animate-[navRipple_.55s_ease-out_forwards]';
+      r.className = 'absolute h-16 w-[60px] rounded-full bg-white/[.08] pointer-events-none [transform:translate(-50%,-50%)_scale(0)] animate-[navRipple_.55s_ease-out_forwards]';
       const rect = t.getBoundingClientRect();
       r.style.left = (e.clientX - rect.left) + 'px';
       r.style.top  = (e.clientY - rect.top)  + 'px';
@@ -1349,9 +1348,9 @@ export function renderPage(env = {}) {
     const { items } = await res.json();
     document.getElementById('pubEmpty').style.display = items.length ? 'none' : 'block';
     document.getElementById('pubGrid').innerHTML = items.map(item =>
-      \`<div class="pub-item cursor-pointer overflow-hidden rounded-lg border border-bd bg-bg-3 transition hover:-translate-y-0.5 hover:border-bd-2 hover:shadow-[0_6px_24px_rgba(0,0,0,.5)]" onclick="openLb('\${item.key}', false, 'pub')">
+      \`<div class="pub-item cursor-pointer overflow-hidden rounded-md border border-bd bg-bg-3 transition hover:border-bd-2 hover:shadow-sm" onclick="openLb('\${item.key}', false, 'pub')">
         <img class="block h-auto w-full aspect-square bg-bg-2 object-cover" src="\${location.origin}/\${item.key}" loading="lazy" onload="this.classList.add('loaded')">
-        <div class="pub-item-info px-3 py-2 font-mono text-[.74rem] font-medium text-tx-2">@\${item.owner || '—'}</div>
+        <div class="pub-item-info px-3 py-2 font-mono text-xs font-medium text-tx-2">@\${item.owner || '—'}</div>
       </div>\`
     ).join('');
   }
@@ -1397,9 +1396,9 @@ export function renderPage(env = {}) {
     if (hint) hint.textContent = '已选 ' + pendingFiles.length + ' 张，可继续添加';
     q.classList.add('show');
     q.innerHTML = pendingFiles.map((f, i) =>
-      '<div class="flex items-center gap-2 rounded-sm border border-bd bg-bg-3 px-[10px] py-[7px] text-[.78rem] text-tx-2"><span class="uq-name min-w-0 flex-1 truncate" title="' + esc(f.name) + '">' + esc(f.name) +
+      '<div class="flex items-center gap-2 rounded-sm border border-bd bg-bg-3 px-3 py-2 text-sm text-tx-2"><span class="uq-name min-w-0 flex-1 truncate" title="' + esc(f.name) + '">' + esc(f.name) +
       '</span><span class="shrink-0 text-tx-3">' + fmtShortSize(f.size) +
-      '</span><button type="button" class="uq-rm border-none bg-transparent px-1 text-[.9rem] leading-none text-tx-3 cursor-pointer hover:text-red" data-idx="' + i + '" title="移除">×</button></div>'
+      '</span><button type="button" class="uq-rm border-none bg-transparent px-1 text-lg leading-none text-tx-3 cursor-pointer hover:text-red" data-idx="' + i + '" title="移除">×</button></div>'
     ).join('');
     q.querySelectorAll('.uq-rm').forEach(btn => {
       btn.addEventListener('click', e => {
@@ -1607,12 +1606,12 @@ export function renderPage(env = {}) {
       const sel = resultsSelected.has(r.key);
       // 每条结果可选；不进入「选择模式」也能直接勾选 —— 上传完的那一刻就是
       // 用户最想批量拿链接的时候，多一步「进入选择模式」纯属负担。
-      return \`<div class="result-item\${sel?' selected':''} flex items-center gap-3 rounded-lg border border-bd bg-bg-3 px-[14px] py-[10px] transition [&.selected]:border-tx-2 [&.selected]:bg-bg-4" data-key="\${escAttr(r.key)}"><input type="checkbox" class="result-sel h-[18px] w-[18px] shrink-0 cursor-pointer accent-accent" \${sel?'checked':''} onchange="toggleResultSel(\${jsStr(r.key)})" title="选中后可批量复制"><img class="h-11 w-11 rounded-xs border border-bd object-cover" src="\${escAttr(r.url)}" loading="lazy"><div class="min-w-0 flex-1"><div class="text-[.8rem] font-medium text-tx">\${esc(r.name)}</div><div class="mt-1 flex gap-[5px]"><input class="min-w-0 flex-1 rounded-xs border border-bd bg-bg-2 px-2 py-[3px] font-mono text-xs text-tx outline-none" value="\${escAttr(r.url)}" readonly onclick="this.select()"><button class="copy-btn inline-flex min-h-8 min-w-[46px] shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1.5 text-[.78rem] font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${escAttr(r.url)}">复制</button><button class="copy-btn inline-flex min-h-8 min-w-[46px] shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1.5 text-[.78rem] font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${escAttr(imgMd(r.url, r.name))}">MD</button><button class="copy-btn inline-flex min-h-8 min-w-[46px] shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1.5 text-[.78rem] font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${escAttr(imgBb(r.url))}">BB</button></div></div></div>\`;
+      return \`<div class="result-item\${sel?' selected':''} flex items-center gap-3 rounded-md border border-bd bg-bg-3 px-3 py-2 transition [&.selected]:border-tx-2 [&.selected]:bg-bg-4" data-key="\${escAttr(r.key)}"><input type="checkbox" class="result-sel h-5 w-5 shrink-0 cursor-pointer accent-accent" \${sel?'checked':''} onchange="toggleResultSel(\${jsStr(r.key)})" title="选中后可批量复制"><img class="h-11 w-11 rounded-xs border border-bd object-cover" src="\${escAttr(r.url)}" loading="lazy"><div class="min-w-0 flex-1"><div class="text-sm font-medium text-tx">\${esc(r.name)}</div><div class="mt-1 flex gap-1"><input class="min-w-0 flex-1 rounded-xs border border-bd bg-bg-2 px-2 py-1 font-mono text-xs text-tx outline-none" value="\${escAttr(r.url)}" readonly onclick="this.select()"><button class="copy-btn inline-flex min-h-8 min-w-12 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-2 text-sm font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${escAttr(r.url)}">复制</button><button class="copy-btn inline-flex min-h-8 min-w-12 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-2 text-sm font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${escAttr(imgMd(r.url, r.name))}">MD</button><button class="copy-btn inline-flex min-h-8 min-w-12 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-2 text-sm font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${escAttr(imgBb(r.url))}">BB</button></div></div></div>\`;
     }
     const fid = 'f' + (++uploadFidSeq);
     if (r.file) uploadFailMap.set(fid, r.file);
-    const retryBtn = r.file ? \`<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-[10px] !py-[3px] shrink-0" onclick="retryUpload('\${fid}', this)">重试</button>\` : '';
-    return \`<div class="result-item flex items-center gap-3 rounded-lg border border-bd bg-bg-3 px-[14px] py-[10px]" data-fid="\${fid}"><div class="min-w-0 flex-1"><div class="flex items-center gap-1.5 text-[.8rem] font-medium text-red"><svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>\${esc(r.name)}: \${esc(r.error)}</div></div>\${retryBtn}</div>\`;
+    const retryBtn = r.file ? \`<button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-3 !py-1 shrink-0" onclick="retryUpload('\${fid}', this)">重试</button>\` : '';
+    return \`<div class="result-item flex items-center gap-3 rounded-md border border-bd bg-bg-3 px-3 py-2" data-fid="\${fid}"><div class="min-w-0 flex-1"><div class="flex items-center gap-2 text-sm font-medium text-red"><svg class="h-4 w-4 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>\${esc(r.name)}: \${esc(r.error)}</div></div>\${retryBtn}</div>\`;
   }
 
   // 把一批上传结果渲染到结果区，并同步批量栏状态。
@@ -1805,8 +1804,8 @@ export function renderPage(env = {}) {
     [...mineTagFilter].forEach(t => { if (!tags.includes(t)) mineTagFilter.delete(t); });
     if (!tags.length) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
     bar.style.display = 'flex';
-    const TAG_FILTER_CLS = 'tag-filter rounded-xl border border-bd bg-bg-3 px-[11px] py-[3px] font-sans text-[.72rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:text-tx [&.active]:border-bd-focus [&.active]:bg-white/10 [&.active]:text-tx';
-    bar.innerHTML = '<span class="mr-0.5 text-[.68rem] font-bold uppercase tracking-[.1em] text-tx-3">标签</span>' +
+    const TAG_FILTER_CLS = 'tag-filter rounded-xs border border-bd bg-bg-3 px-3 py-1 font-sans text-xs font-semibold text-tx-2 transition hover:border-bd-2 hover:text-tx [&.active]:border-bd-focus [&.active]:bg-white/10 [&.active]:text-tx';
+    bar.innerHTML = '<span class="mr-1 text-2xs font-bold uppercase tracking-[.1em] text-tx-3">标签</span>' +
       tags.map(t => \`<button class="\${TAG_FILTER_CLS}\${mineTagFilter.has(t)?' active':''}" onclick="toggleTagFilter(\${jsStr(t)})">\${esc(t)}</button>\`).join('') +
       (mineTagFilter.size ? \`<button class="\${TAG_FILTER_CLS} !text-red" onclick="clearTagFilter()">清除</button>\` : '');
   }
@@ -1851,21 +1850,21 @@ export function renderPage(env = {}) {
       const sel = mineSelected.has(item.key);
       const clickAttr = mineSelectMode ? \`onclick="toggleSel('\${item.key}')"\` : \`onclick="openLb('\${item.key}', true, 'mine')"\`;
       const tags = item.tags || [];
-      const tagsHtml = tags.length ? \`<div class="mt-1.5 flex flex-wrap gap-1">\${tags.map(t => \`<span class="whitespace-nowrap rounded-lg border border-bd bg-white/5 px-[7px] py-px text-[.64rem] font-semibold text-tx-2">\${esc(t)}</span>\`).join('')}</div>\` : '';
-      return \`<div class="gitem\${sel?' selected':''} relative overflow-hidden rounded-lg border border-transparent bg-bg-3 shadow-[0_0_0_1px_var(--color-bd)] transition hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_var(--color-bd-2),0_12px_32px_rgba(0,0,0,.35)] [&.selected]:border-tx-2 [&.selected]:shadow-[0_0_0_2px_var(--color-tx-2)_inset]" data-key="\${item.key}">
+      const tagsHtml = tags.length ? \`<div class="mt-2 flex flex-wrap gap-1">\${tags.map(t => \`<span class="whitespace-nowrap rounded-xs border border-bd bg-white/5 px-2 py-1 text-2xs font-semibold text-tx-2">\${esc(t)}</span>\`).join('')}</div>\` : '';
+      return \`<div class="gitem\${sel?' selected':''} relative overflow-hidden rounded-md border border-transparent bg-bg-3 shadow-[0_0_0_1px_var(--color-bd)] transition hover:border-bd-2 hover:shadow-sm [&.selected]:border-tx-2 [&.selected]:shadow-[0_0_0_2px_var(--color-tx-2)_inset]" data-key="\${item.key}">
         <input type="checkbox" class="gitem-sel absolute left-2 top-2 z-[3] hidden h-5 w-5 cursor-pointer accent-accent group-[.selecting]/grid:block" \${sel?'checked':''} onchange="toggleSel('\${item.key}')">
         <img class="block h-auto w-full aspect-square cursor-pointer bg-bg-2 object-cover" src="\${url}" loading="lazy" onload="this.classList.add('loaded')" \${clickAttr}>
-        <div class="px-[11px] py-[9px]">
-          <div class="truncate font-mono text-[.72rem] font-medium text-tx-2" title="\${escAttr(item.name || item.key)}">\${esc(item.basename || item.key)}</div>
+        <div class="px-3 py-2">
+          <div class="truncate font-mono text-xs font-medium text-tx-2" title="\${escAttr(item.name || item.key)}">\${esc(item.basename || item.key)}</div>
           \${tagsHtml}
-          <div class="mt-[5px] flex items-center justify-between">
+          <div class="mt-1 flex items-center justify-between">
             <button class="\${item.isPublic?BTN_PUBLIC:BTN_PRIVATE}" id="vis-\${item.key}" onclick="toggleVis('\${item.key}', this)">\${item.isPublic?'公开':'私密'}</button>
-            <span class="text-[.68rem] text-tx-3">\${fmtSize(item.size)}</span>
+            <span class="text-2xs text-tx-3">\${fmtSize(item.size)}</span>
           </div>
-          <div class="mt-1.5 flex gap-1">
-            <button class="copy-btn inline-flex min-h-8 min-w-[46px] shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1.5 text-[.78rem] font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${escAttr(url)}">复制</button>
-            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="openTagEditor('\${item.key}')">标签</button>
-            \${perms?.canDelete?\`<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-[3px]" onclick="delMine('\${item.key}')">删除</button>\`:''}
+          <div class="mt-2 flex gap-1">
+            <button class="copy-btn inline-flex min-h-8 min-w-12 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-2 text-sm font-semibold leading-tight whitespace-nowrap text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-copy="\${escAttr(url)}">复制</button>
+            <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1" onclick="openTagEditor('\${item.key}')">标签</button>
+            \${perms?.canDelete?\`<button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-red-r bg-red-g px-3 py-2 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-1" onclick="delMine('\${item.key}')">删除</button>\`:''}
           </div>
         </div>
       </div>\`;
@@ -2023,14 +2022,14 @@ export function renderPage(env = {}) {
   }
   async function loadTrash() {
     const body = document.getElementById('trashBody');
-    body.innerHTML = '<div class="p-12 text-center text-[.88rem] font-medium text-tx-3">加载中…</div>';
+    body.innerHTML = '<div class="p-12 text-center text-md font-medium text-tx-3">加载中…</div>';
     try {
       const res = await fetch('/api/trash', { headers: { Authorization: 'Bearer ' + token } });
-      if (!(await guardAuth(res))) { body.innerHTML = '<div class="p-12 text-center text-[.88rem] font-medium text-tx-3">请先登录</div>'; return; }
-      if (!res.ok) { body.innerHTML = '<div class="p-12 text-center text-[.88rem] font-medium text-tx-3">加载失败</div>'; return; }
+      if (!(await guardAuth(res))) { body.innerHTML = '<div class="p-12 text-center text-md font-medium text-tx-3">请先登录</div>'; return; }
+      if (!res.ok) { body.innerHTML = '<div class="p-12 text-center text-md font-medium text-tx-3">加载失败</div>'; return; }
       trashData = await res.json();
       renderTrash();
-    } catch { body.innerHTML = '<div class="p-12 text-center text-[.88rem] font-medium text-tx-3">加载失败</div>'; }
+    } catch { body.innerHTML = '<div class="p-12 text-center text-md font-medium text-tx-3">加载失败</div>'; }
   }
   function trashDaysLeft(deletedAt, days) {
     const left = Math.ceil((deletedAt + days * 86400000 - Date.now()) / 86400000);
@@ -2039,26 +2038,26 @@ export function renderPage(env = {}) {
   function renderTrash() {
     const body = document.getElementById('trashBody');
     const { images = [], protos = [], retentionDays = 30 } = trashData || {};
-    if (!images.length && !protos.length) { body.innerHTML = '<div class="p-12 text-center text-[.88rem] font-medium text-tx-3">回收站为空</div>'; return; }
+    if (!images.length && !protos.length) { body.innerHTML = '<div class="p-12 text-center text-md font-medium text-tx-3">回收站为空</div>'; return; }
     let html = '';
     if (images.length) {
-      html += '<div class="text-[.72rem] font-bold text-tx-2 uppercase tracking-[.1em] mt-1 mb-[10px]">图片 (' + images.length + ')</div>';
-      html += '<div class="grid grid-cols-2 gap-3 md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] md:gap-[18px] mb-[18px]">' + images.map(it => {
+      html += '<div class="text-xs font-bold text-tx-2 uppercase tracking-[.1em] mt-1 mb-2">图片 (' + images.length + ')</div>';
+      html += '<div class="grid grid-cols-2 gap-3 md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] md:gap-5 mb-4">' + images.map(it => {
         const url = location.origin + '/' + it.key;
-        return '<div class="gitem relative overflow-hidden rounded-lg border border-transparent bg-bg-3 shadow-[0_0_0_1px_var(--color-bd)] transition hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_var(--color-bd-2),0_12px_32px_rgba(0,0,0,.35)]"><img class="block h-auto w-full aspect-square cursor-pointer bg-bg-2 object-cover" src="' + url + '" loading="lazy" onload="this.classList.add(\\'loaded\\')">' +
-          '<div class="px-[11px] py-[9px]"><div class="truncate font-mono text-[.72rem] font-medium text-tx-2">' + esc(it.key) + '</div>' +
-          '<div class="text-[.66rem] text-tx-3 mt-[3px]">' + trashDaysLeft(it.deletedAt, retentionDays) + '</div>' +
-          '<div class="mt-1.5 flex gap-1"><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px]" onclick="restoreTrash(\\'image\\',\' + jsStr(encodeURIComponent(it.key)) + '\\')">恢复</button>' +
-          '<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-[3px]" onclick="purgeTrash(\\'image\\',\' + jsStr(encodeURIComponent(it.key)) + '\\')">彻底删除</button></div></div></div>';
+        return '<div class="gitem relative overflow-hidden rounded-md border border-transparent bg-bg-3 shadow-[0_0_0_1px_var(--color-bd)] transition hover:border-bd-2 hover:shadow-sm"><img class="block h-auto w-full aspect-square cursor-pointer bg-bg-2 object-cover" src="' + url + '" loading="lazy" onload="this.classList.add(\\'loaded\\')">' +
+          '<div class="px-3 py-2"><div class="truncate font-mono text-xs font-medium text-tx-2">' + esc(it.key) + '</div>' +
+          '<div class="text-2xs text-tx-3 mt-1">' + trashDaysLeft(it.deletedAt, retentionDays) + '</div>' +
+          '<div class="mt-2 flex gap-1"><button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1" onclick="restoreTrash(\\'image\\',\' + jsStr(encodeURIComponent(it.key)) + '\\')">恢复</button>' +
+          '<button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-red-r bg-red-g px-3 py-2 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-1" onclick="purgeTrash(\\'image\\',\' + jsStr(encodeURIComponent(it.key)) + '\\')">彻底删除</button></div></div></div>';
       }).join('') + '</div>';
     }
     if (protos.length) {
-      html += '<div class="text-[.72rem] font-bold text-tx-2 uppercase tracking-[.1em] mt-1 mb-[10px]">原型 (' + protos.length + ')</div>';
+      html += '<div class="text-xs font-bold text-tx-2 uppercase tracking-[.1em] mt-1 mb-2">原型 (' + protos.length + ')</div>';
       html += '<div class="flex flex-col gap-2">' + protos.map(p =>
-        '<div class="flex items-center gap-[14px] rounded-lg border border-bd bg-bg-3 px-4 py-[14px] transition hover:border-bd-2 hover:bg-bg-4"><div class="min-w-0 flex-1"><div class="text-[.92rem] font-semibold text-tx">' + esc(p.title || p.protoId) + '</div>' +
-        '<div class="mt-[3px] text-[.72rem] font-medium text-tx-3">' + (p.fileCount ?? '—') + ' 文件 · ' + fmtSize(p.totalSize || 0) + ' · ' + trashDaysLeft(p.deletedAt, retentionDays) + '</div></div>' +
-        '<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="restoreTrash(\\'proto\\',\' + jsStr(p.protoId) + '\\')">恢复</button>' +
-        '<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r" onclick="purgeTrash(\\'proto\\',\' + jsStr(p.protoId) + '\\')">彻底删除</button></div>'
+        '<div class="flex items-center gap-3 rounded-md border border-bd bg-bg-3 px-4 py-3 transition hover:border-bd-2 hover:bg-bg-4"><div class="min-w-0 flex-1"><div class="text-lg font-semibold text-tx">' + esc(p.title || p.protoId) + '</div>' +
+        '<div class="mt-1 text-xs font-medium text-tx-3">' + (p.fileCount ?? '—') + ' 文件 · ' + fmtSize(p.totalSize || 0) + ' · ' + trashDaysLeft(p.deletedAt, retentionDays) + '</div></div>' +
+        '<button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="restoreTrash(\\'proto\\',\' + jsStr(p.protoId) + '\\')">恢复</button>' +
+        '<button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-red-r bg-red-g px-3 py-2 text-sm font-semibold leading-tight text-red transition hover:bg-red-r" onclick="purgeTrash(\\'proto\\',\' + jsStr(p.protoId) + '\\')">彻底删除</button></div>'
       ).join('') + '</div>';
     }
     body.innerHTML = html;
@@ -2088,8 +2087,8 @@ export function renderPage(env = {}) {
   let tagDraft = [];
   function renderTagEditList() {
     document.getElementById('tagEditList').innerHTML = tagDraft.length
-      ? tagDraft.map((t, i) => \`<span class="inline-flex items-center gap-[5px] rounded-xl border border-bd-2 bg-white/[.06] py-[3px] pr-1.5 pl-[10px] text-[.76rem] font-semibold text-tx">\${esc(t)}<button class="border-none bg-transparent p-0 text-[.9rem] leading-none text-tx-3 cursor-pointer hover:text-red" onclick="removeTagDraft(\${i})" title="移除">×</button></span>\`).join('')
-      : '<span class="text-tx-3 text-[.76rem]">暂无标签</span>';
+      ? tagDraft.map((t, i) => \`<span class="inline-flex items-center gap-1 rounded-xs border border-bd-2 bg-white/[.06] py-1 pr-2 pl-3 text-sm font-semibold text-tx">\${esc(t)}<button class="border-none bg-transparent p-0 text-lg leading-none text-tx-3 cursor-pointer hover:text-red" onclick="removeTagDraft(\${i})" title="移除">×</button></span>\`).join('')
+      : '<span class="text-tx-3 text-sm">暂无标签</span>';
   }
   window.removeTagDraft = function(i) { tagDraft.splice(i, 1); renderTagEditList(); };
   function addTagDraft(raw) {
@@ -2198,32 +2197,32 @@ export function renderPage(env = {}) {
       const projGroups = groups.filter(g => g.projectId === proj.id);
       const projPages = pages.filter(p => p.projectId === proj.id && !p.groupId).sort((a,b) => (a.sort??0) - (b.sort??0));
       const total = pages.filter(p => p.projectId === proj.id).length;
-      html += \`<div class="page-project overflow-hidden rounded-lg border border-bd bg-bg-3 [&.drag-over-proj]:border-accent" data-drag-type="project" data-drag-id="\${escAttr(proj.id)}">
-        <div class="page-project-header flex cursor-pointer select-none items-center gap-[10px] px-4 py-[14px] hover:bg-bg-4" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.expand-icon').classList.toggle('open')">
-          <span class="expand-icon open w-[14px] shrink-0 text-center text-[.6rem] text-tx-3 transition-transform duration-150 [&.open]:rotate-90">▶</span>
-          <span class="project-name flex-1 text-[.88rem] font-semibold text-tx">\${esc(proj.name)}</span>
-          <span class="count-badge rounded-xs bg-bg-5 px-[7px] py-0.5 text-[.66rem] font-semibold text-tx-3">\${total}</span>
-          <span class="proj-actions ml-1.5 flex gap-[3px]">
-            <button class="proj-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();editProject(\${jsStr(proj.id)})" title="编辑项目">编辑</button>
-            <button class="proj-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();createGroupInProject(\${jsStr(proj.id)})" title="新建分组">+ 分组</button>
-            <button class="proj-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx !text-red" onclick="event.stopPropagation();deleteProject(\${jsStr(proj.id)})" title="删除项目">删除</button>
+      html += \`<div class="page-project overflow-hidden rounded-md border border-bd bg-bg-3 [&.drag-over-proj]:border-accent" data-drag-type="project" data-drag-id="\${escAttr(proj.id)}">
+        <div class="page-project-header flex cursor-pointer select-none items-center gap-2 px-4 py-3 hover:bg-bg-4" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.expand-icon').classList.toggle('open')">
+          <span class="expand-icon open w-4 shrink-0 text-center text-2xs text-tx-3 transition-transform duration-150 [&.open]:rotate-90">▶</span>
+          <span class="project-name flex-1 text-md font-semibold text-tx">\${esc(proj.name)}</span>
+          <span class="count-badge rounded-xs bg-bg-5 px-2 py-1 text-2xs font-semibold text-tx-3">\${total}</span>
+          <span class="proj-actions ml-2 flex gap-1">
+            <button class="proj-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-1 text-xs text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();editProject(\${jsStr(proj.id)})" title="编辑项目">编辑</button>
+            <button class="proj-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-1 text-xs text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();createGroupInProject(\${jsStr(proj.id)})" title="新建分组">+ 分组</button>
+            <button class="proj-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-1 text-xs text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx !text-red" onclick="event.stopPropagation();deleteProject(\${jsStr(proj.id)})" title="删除项目">删除</button>
           </span>
         </div>
         <div class="page-project-body border-t border-bd">\`;
       // groups
       for (const grp of projGroups) {
         const grpPages = pages.filter(p => p.groupId === grp.id).sort((a,b) => (a.sort??0) - (b.sort??0));
-        html += \`<div class="page-group ml-[18px] border-l-2 border-bd" data-drag-type="group" data-drag-id="\${escAttr(grp.id)}" data-project-id="\${escAttr(proj.id)}">
-          <div class="page-group-header flex cursor-pointer select-none items-center gap-[7px] px-3 py-2 [&.drag-over-grp]:bg-bg-5 hover:bg-bg-4" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.expand-icon').classList.toggle('open')">
-            <span class="expand-icon open w-[14px] shrink-0 text-center !text-[.55rem] text-tx-3 transition-transform duration-150 [&.open]:rotate-90">▶</span>
-            <span class="group-name flex-1 text-[.88rem] font-semibold text-tx">\${esc(grp.name)}</span>
-            <span class="count-badge rounded-xs bg-bg-5 px-[7px] py-0.5 text-[.66rem] font-semibold text-tx-3">\${grpPages.length}</span>
-            <span class="grp-actions ml-1.5 flex gap-[3px]">
-              <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();editGroup(\${jsStr(grp.id)})" title="编辑分组">编辑</button>
-              <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx !text-red" onclick="event.stopPropagation();deleteGroup(\${jsStr(grp.id)})" title="删除分组">删除</button>
+        html += \`<div class="page-group ml-4 border-l-2 border-bd" data-drag-type="group" data-drag-id="\${escAttr(grp.id)}" data-project-id="\${escAttr(proj.id)}">
+          <div class="page-group-header flex cursor-pointer select-none items-center gap-2 px-3 py-2 [&.drag-over-grp]:bg-bg-5 hover:bg-bg-4" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.expand-icon').classList.toggle('open')">
+            <span class="expand-icon open w-4 shrink-0 text-center !text-2xs text-tx-3 transition-transform duration-150 [&.open]:rotate-90">▶</span>
+            <span class="group-name flex-1 text-md font-semibold text-tx">\${esc(grp.name)}</span>
+            <span class="count-badge rounded-xs bg-bg-5 px-2 py-1 text-2xs font-semibold text-tx-3">\${grpPages.length}</span>
+            <span class="grp-actions ml-2 flex gap-1">
+              <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-1 text-xs text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();editGroup(\${jsStr(grp.id)})" title="编辑分组">编辑</button>
+              <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-1 text-xs text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx !text-red" onclick="event.stopPropagation();deleteGroup(\${jsStr(grp.id)})" title="删除分组">删除</button>
             </span>
           </div>
-          <div class="page-group-body page-tree-docs page-drop-zone ml-[18px] border-l-2 border-bd [&.drag-over-zone]:outline [&.drag-over-zone]:outline-1 [&.drag-over-zone]:outline-dashed [&.drag-over-zone]:outline-accent [&.drag-over-zone]:-outline-offset-2 [&.drag-over-zone]:bg-accent-muted [&.drag-over-zone]:min-h-[28px]" data-drop-scope="group" data-project-id="\${escAttr(proj.id)}" data-group-id="\${escAttr(grp.id)}">\`;
+          <div class="page-group-body page-tree-docs page-drop-zone ml-4 border-l-2 border-bd [&.drag-over-zone]:outline [&.drag-over-zone]:outline-1 [&.drag-over-zone]:outline-dashed [&.drag-over-zone]:outline-accent [&.drag-over-zone]:-outline-offset-2 [&.drag-over-zone]:bg-accent-muted [&.drag-over-zone]:min-h-[28px]" data-drop-scope="group" data-project-id="\${escAttr(proj.id)}" data-group-id="\${escAttr(grp.id)}">\`;
         for (const p of grpPages) html += renderDocItem(p);
         html += \`</div></div>\`;
       }
@@ -2236,20 +2235,20 @@ export function renderPage(env = {}) {
     // independent groups (no project)
     if (projFilter === 'all' || projFilter === '_none_') {
       if (independentGroups.length) {
-        html += \`<div class="pages-independent mt-2"><div class="indep-label mt-[10px] mb-1.5 ml-0.5 text-[.72rem] font-bold uppercase tracking-[.06em] text-tx-3">独立分组</div>\`;
+        html += \`<div class="pages-independent mt-2"><div class="indep-label mt-2 mb-2 ml-1 text-xs font-bold uppercase tracking-[.06em] text-tx-3">独立分组</div>\`;
         for (const grp of independentGroups) {
           const grpPages = pages.filter(p => p.groupId === grp.id).sort((a,b) => (a.sort??0) - (b.sort??0));
-          html += \`<div class="page-group ml-[18px] border-l-2 border-bd" data-drag-type="group" data-drag-id="\${escAttr(grp.id)}" data-project-id="">
-            <div class="page-group-header flex cursor-pointer select-none items-center gap-[7px] px-3 py-2 [&.drag-over-grp]:bg-bg-5 hover:bg-bg-4" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.expand-icon').classList.toggle('open')">
-              <span class="expand-icon open w-[14px] shrink-0 text-center !text-[.55rem] text-tx-3 transition-transform duration-150 [&.open]:rotate-90">▶</span>
-              <span class="group-name flex-1 text-[.88rem] font-semibold text-tx">\${esc(grp.name)}</span>
-              <span class="count-badge rounded-xs bg-bg-5 px-[7px] py-0.5 text-[.66rem] font-semibold text-tx-3">\${grpPages.length}</span>
-              <span class="grp-actions ml-1.5 flex gap-[3px]">
-                <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();editGroup(\${jsStr(grp.id)})" title="编辑分组">编辑</button>
-                <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-[3px] text-[.74rem] text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx !text-red" onclick="event.stopPropagation();deleteGroup(\${jsStr(grp.id)})" title="删除分组">删除</button>
+          html += \`<div class="page-group ml-4 border-l-2 border-bd" data-drag-type="group" data-drag-id="\${escAttr(grp.id)}" data-project-id="">
+            <div class="page-group-header flex cursor-pointer select-none items-center gap-2 px-3 py-2 [&.drag-over-grp]:bg-bg-5 hover:bg-bg-4" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.expand-icon').classList.toggle('open')">
+              <span class="expand-icon open w-4 shrink-0 text-center !text-2xs text-tx-3 transition-transform duration-150 [&.open]:rotate-90">▶</span>
+              <span class="group-name flex-1 text-md font-semibold text-tx">\${esc(grp.name)}</span>
+              <span class="count-badge rounded-xs bg-bg-5 px-2 py-1 text-2xs font-semibold text-tx-3">\${grpPages.length}</span>
+              <span class="grp-actions ml-2 flex gap-1">
+                <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-1 text-xs text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx" onclick="event.stopPropagation();editGroup(\${jsStr(grp.id)})" title="编辑分组">编辑</button>
+                <button class="grp-act-btn cursor-pointer rounded-xs border border-transparent bg-transparent px-2 py-1 text-xs text-tx-3 transition hover:border-bd hover:bg-bg-5 hover:text-tx !text-red" onclick="event.stopPropagation();deleteGroup(\${jsStr(grp.id)})" title="删除分组">删除</button>
               </span>
             </div>
-            <div class="page-group-body page-tree-docs page-drop-zone ml-[18px] border-l-2 border-bd [&.drag-over-zone]:outline [&.drag-over-zone]:outline-1 [&.drag-over-zone]:outline-dashed [&.drag-over-zone]:outline-accent [&.drag-over-zone]:-outline-offset-2 [&.drag-over-zone]:bg-accent-muted [&.drag-over-zone]:min-h-[28px]" data-drop-scope="group" data-project-id="" data-group-id="\${escAttr(grp.id)}">\`;
+            <div class="page-group-body page-tree-docs page-drop-zone ml-4 border-l-2 border-bd [&.drag-over-zone]:outline [&.drag-over-zone]:outline-1 [&.drag-over-zone]:outline-dashed [&.drag-over-zone]:outline-accent [&.drag-over-zone]:-outline-offset-2 [&.drag-over-zone]:bg-accent-muted [&.drag-over-zone]:min-h-[28px]" data-drop-scope="group" data-project-id="" data-group-id="\${escAttr(grp.id)}">\`;
           for (const p of grpPages) html += renderDocItem(p);
           html += \`</div></div>\`;
         }
@@ -2259,7 +2258,7 @@ export function renderPage(env = {}) {
       // uncategorized pages (no project, no group)
       const uncat = pages.filter(p => !p.projectId && !p.groupId).sort((a,b) => (a.sort??0) - (b.sort??0));
       if (uncat.length || projFilter === '_none_') {
-        html += \`<div class="pages-uncategorized page-drop-zone border-t border-dashed border-bd-2 pt-[10px] mt-1.5 [&.drag-over-zone]:outline [&.drag-over-zone]:outline-1 [&.drag-over-zone]:outline-dashed [&.drag-over-zone]:outline-accent [&.drag-over-zone]:-outline-offset-2 [&.drag-over-zone]:bg-accent-muted [&.drag-over-zone]:min-h-[28px]" data-drop-scope="uncat" data-project-id="" data-group-id=""><div class="uncat-label mt-[10px] mb-1.5 ml-0.5 text-[.72rem] font-bold uppercase tracking-[.06em] text-tx-3">未分类</div>\`;
+        html += \`<div class="pages-uncategorized page-drop-zone border-t border-dashed border-bd-2 pt-2 mt-2 [&.drag-over-zone]:outline [&.drag-over-zone]:outline-1 [&.drag-over-zone]:outline-dashed [&.drag-over-zone]:outline-accent [&.drag-over-zone]:-outline-offset-2 [&.drag-over-zone]:bg-accent-muted [&.drag-over-zone]:min-h-[28px]" data-drop-scope="uncat" data-project-id="" data-group-id=""><div class="uncat-label mt-2 mb-2 ml-1 text-xs font-bold uppercase tracking-[.06em] text-tx-3">未分类</div>\`;
         for (const p of uncat) html += renderDocItem(p);
         html += \`</div>\`;
       }
@@ -2274,10 +2273,10 @@ export function renderPage(env = {}) {
   function renderDocItem(p) {
     const sel = pageSelected.has(p.slug);
     const check = pageSelectMode
-      ? \`<input type="checkbox" class="page-check h-[15px] w-[15px] shrink-0 cursor-pointer accent-accent" data-slug="\${escAttr(p.slug)}" \${sel?'checked':''} onclick="event.stopPropagation();togglePageSel(\${jsStr(p.slug)})">\`
+      ? \`<input type="checkbox" class="page-check h-4 w-4 shrink-0 cursor-pointer accent-accent" data-slug="\${escAttr(p.slug)}" \${sel?'checked':''} onclick="event.stopPropagation();togglePageSel(\${jsStr(p.slug)})">\`
       : '';
     const drag = pageSelectMode ? 'false' : 'true';
-    const cls = 'page-tree-item relative flex items-center gap-[10px] my-0.5 rounded-md border border-transparent bg-bg-2 px-[14px] py-[10px] transition hover:border-bd hover:bg-bg-3 [&.dragging]:opacity-30 [&.dragging]:border-dashed [&.dragging]:border-bd-2 [&.drag-over-top]:border-t-2 [&.drag-over-top]:border-t-accent [&.drag-over-top]:-mt-0.5 [&.drag-over-bot]:border-b-2 [&.drag-over-bot]:border-b-accent [&.drag-over-bot]:-mb-0.5 [&.selecting]:cursor-pointer [&.selected]:border-accent [&.selected]:bg-accent-muted' + (pageSelectMode ? ' selecting' : '') + (sel ? ' selected' : '');
+    const cls = 'page-tree-item relative flex items-center gap-2 my-1 rounded-md border border-transparent bg-bg-2 px-3 py-2 transition hover:border-bd hover:bg-bg-3 [&.dragging]:opacity-30 [&.dragging]:border-dashed [&.dragging]:border-bd-2 [&.drag-over-top]:border-t-2 [&.drag-over-top]:border-t-accent [&.drag-over-top]:-mt-1 [&.drag-over-bot]:border-b-2 [&.drag-over-bot]:border-b-accent [&.drag-over-bot]:-mb-1 [&.selecting]:cursor-pointer [&.selected]:border-accent [&.selected]:bg-accent-muted' + (pageSelectMode ? ' selecting' : '') + (sel ? ' selected' : '');
     const clickAttr = pageSelectMode ? \`onclick="togglePageSel(\${jsStr(p.slug)})"\` : '';
     const status = p.isPublic
       ? '公开'
@@ -2285,15 +2284,15 @@ export function renderPage(env = {}) {
     const previewHref = pagePreviewUrl(p);
     return \`<div class="\${cls}" draggable="\${drag}" data-drag-type="page" data-drag-id="\${escAttr(p.slug)}" data-project-id="\${escAttr(p.projectId||'')}" data-group-id="\${escAttr(p.groupId||'')}" \${clickAttr}>
       \${check}
-      <span class="drag-handle cursor-grab px-0.5 text-[.78rem] text-tx-3 active:cursor-grabbing" title="拖拽排序">⠿</span>
+      <span class="drag-handle cursor-grab px-1 text-sm text-tx-3 active:cursor-grabbing" title="拖拽排序">⠿</span>
       <div class="page-item-info flex-1 min-w-0">
-        <div class="page-title text-[.92rem] font-semibold text-tx">\${esc(p.title)} <span class="type-badge type-\${p.type==='markdown'?'md':'html'} inline-block rounded-xs px-[7px] py-0.5 text-[.66rem] font-bold [&.type-md]:border [&.type-md]:border-bd-2 [&.type-md]:bg-white/[.07] [&.type-md]:text-tx [&.type-html]:border [&.type-html]:border-amber-r [&.type-html]:bg-amber-g [&.type-html]:text-amber">\${p.type}</span></div>
-        <div class="page-meta text-[.72rem] font-medium text-tx-3">\${status} · /p/\${esc(p.slug)}</div>
+        <div class="page-title text-lg font-semibold text-tx">\${esc(p.title)} <span class="type-badge type-\${p.type==='markdown'?'md':'html'} inline-block rounded-xs px-2 py-1 text-2xs font-bold [&.type-md]:border [&.type-md]:border-bd-2 [&.type-md]:bg-white/[.07] [&.type-md]:text-tx [&.type-html]:border [&.type-html]:border-amber-r [&.type-html]:bg-amber-g [&.type-html]:text-amber">\${p.type}</span></div>
+        <div class="page-meta text-xs font-medium text-tx-3">\${status} · /p/\${esc(p.slug)}</div>
       </div>
-      <a class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.72rem]" href="\${esc(previewHref)}" target="_blank" onclick="event.stopPropagation()">预览</a>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.72rem]" onclick="event.stopPropagation();cpPageAddr(\${jsStr(p.slug)},this)">复制</button>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.72rem]" onclick="event.stopPropagation();editPageBySlug(\${jsStr(p.slug)})">编辑</button>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !text-[.72rem]" onclick="event.stopPropagation();deletePage(\${jsStr(p.slug)})">删除</button>
+      <a class="inline-flex min-h-8 items-center justify-center gap-1 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-xs" href="\${esc(previewHref)}" target="_blank" onclick="event.stopPropagation()">预览</a>
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-xs" onclick="event.stopPropagation();cpPageAddr(\${jsStr(p.slug)},this)">复制</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-xs" onclick="event.stopPropagation();editPageBySlug(\${jsStr(p.slug)})">编辑</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-red-r bg-red-g px-3 py-2 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !text-xs" onclick="event.stopPropagation();deletePage(\${jsStr(p.slug)})">删除</button>
     </div>\`;
   }
 
@@ -3212,8 +3211,8 @@ export function renderPage(env = {}) {
 
     function setStatus(msg, pct) {
       const icon = pct === 100
-        ? '<svg class="inline-block h-3.5 w-3.5 -mt-0.5 mr-1 text-green" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>'
-        : '<svg class="inline-block h-3.5 w-3.5 -mt-0.5 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="5.5" stroke-dasharray="26" stroke-dashoffset="8"/></svg>';
+        ? '<svg class="inline-block h-4 w-4 -mt-1 mr-1 text-green" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>'
+        : '<svg class="inline-block h-4 w-4 -mt-1 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="5.5" stroke-dasharray="26" stroke-dashoffset="8"/></svg>';
       statusEl.style.display = '';
       statusEl.innerHTML = icon + msg;
       if (pct !== undefined) { bar.style.width = pct + '%'; pctEl.textContent = pct + '%'; }
@@ -3303,34 +3302,34 @@ export function renderPage(env = {}) {
     tbody.innerHTML = userProtos.map((p, idx) => {
       const url        = location.origin + '/proto/' + p.protoId + '/';
       const previewUrl = url + (p.accessPassword ? '?pwd=' + encodeURIComponent(p.accessPassword) : '');
-      const lock       = p.hasPassword ? \`<span class="inline-flex items-center gap-1 rounded-xs border border-amber-r bg-amber-g px-1.5 py-px text-[.68rem] font-semibold text-amber"><svg class="h-2.5 w-2.5 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V4.5a3 3 0 0 1 6 0V7"/></svg>密码</span>\` : '';
-      const priv       = p.isPrivate   ? \`<span class="rounded-xs border border-red-r bg-red-g px-1.5 py-px text-[.68rem] font-semibold text-red">私有</span>\` : '';
-      const pwdInfo    = p.hasPassword ? \`<div class="text-[.65rem] text-tx-3 mt-0.5">有效期：\${formatExpiry(p.passwordExpiry)}</div>\` : '<span class="text-[.79rem] text-tx-2">无</span>';
+      const lock       = p.hasPassword ? \`<span class="inline-flex items-center gap-1 rounded-xs border border-amber-r bg-amber-g px-2 py-px text-2xs font-semibold text-amber"><svg class="h-3 w-3 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V4.5a3 3 0 0 1 6 0V7"/></svg>密码</span>\` : '';
+      const priv       = p.isPrivate   ? \`<span class="rounded-xs border border-red-r bg-red-g px-2 py-px text-2xs font-semibold text-red">私有</span>\` : '';
+      const pwdInfo    = p.hasPassword ? \`<div class="text-2xs text-tx-3 mt-1">有效期：\${formatExpiry(p.passwordExpiry)}</div>\` : '<span class="text-sm text-tx-2">无</span>';
       const verCount   = (p.versions ?? []).length;
-      const verBadge   = \`<span class="inline-flex items-center gap-0.5 rounded-xs border border-bd-2 bg-white/[.06] px-1.5 py-px font-mono text-[.66rem] font-bold text-tx cursor-pointer underline" onclick="upvmOpen(\${idx})">v\${p.version||1}\${verCount>1?' ('+verCount+')':''} <svg class="h-2.5 w-2.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="12" y2="4"/><polyline points="5,4 12,4 12,11"/></svg></span>\`;
+      const verBadge   = \`<span class="inline-flex items-center gap-1 rounded-xs border border-bd-2 bg-white/[.06] px-2 py-px font-mono text-2xs font-bold text-tx cursor-pointer underline" onclick="upvmOpen(\${idx})">v\${p.version||1}\${verCount>1?' ('+verCount+')':''} <svg class="h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="12" y2="4"/><polyline points="5,4 12,4 12,11"/></svg></span>\`;
       const visits = p.visitCount ?? 0;
       return \`<tr>
-        <td class="text-[.79rem] text-tx-2 !text-[.75rem] text-center">\${idx+1}</td>
+        <td class="text-sm text-tx-2 !text-xs text-center">\${idx+1}</td>
         <td class="max-w-[280px]">
-          <div class="truncate text-[.88rem] font-semibold text-tx">\${esc(p.title || p.protoId)}</div>
-          <div class="flex gap-1 mt-[3px] flex-wrap">\${lock}\${priv}\${(p.tags||[]).map(t=>\`<span class="whitespace-nowrap rounded-lg border border-bd bg-white/5 px-[7px] py-px text-[.64rem] font-semibold text-tx-2">\${esc(t)}</span>\`).join('')}</div>
-          <div class="mt-0.5 truncate font-mono text-[.66rem] text-tx-3">\${p.protoId}</div>
+          <div class="truncate text-md font-semibold text-tx">\${esc(p.title || p.protoId)}</div>
+          <div class="flex gap-1 mt-1 flex-wrap">\${lock}\${priv}\${(p.tags||[]).map(t=>\`<span class="whitespace-nowrap rounded-xs border border-bd bg-white/5 px-2 py-1 text-2xs font-semibold text-tx-2">\${esc(t)}</span>\`).join('')}</div>
+          <div class="mt-1 truncate font-mono text-2xs text-tx-3">\${p.protoId}</div>
         </td>
-        <td class="text-[.79rem] text-tx-2">\${p.fileCount ?? '—'}</td>
-        <td class="text-[.79rem] text-tx-2">\${fmtSize(p.totalSize || 0)}</td>
+        <td class="text-sm text-tx-2">\${p.fileCount ?? '—'}</td>
+        <td class="text-sm text-tx-2">\${fmtSize(p.totalSize || 0)}</td>
         <td>\${pwdInfo}</td>
         <td>\${verBadge}</td>
-        <td class="text-[.79rem] text-tx-2">\${visits > 0 ? visits.toLocaleString() : '—'}</td>
-        <td class="text-[.79rem] text-tx-2 whitespace-nowrap">\${fmtDate(p.createdAt)}</td>
-        <td class="text-[.79rem] text-tx-2 whitespace-nowrap">\${timeAgo(p.updatedAt || p.createdAt)}</td>
+        <td class="text-sm text-tx-2">\${visits > 0 ? visits.toLocaleString() : '—'}</td>
+        <td class="text-sm text-tx-2 whitespace-nowrap">\${fmtDate(p.createdAt)}</td>
+        <td class="text-sm text-tx-2 whitespace-nowrap">\${timeAgo(p.updatedAt || p.createdAt)}</td>
         <td class="whitespace-nowrap text-right">
-          <a href="\${previewUrl}" target="_blank" class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx">预览</a>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="cpProto(userProtos[\${idx}]._copyText,this)">复制</button>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="upvmOpen(\${idx})">版本</button>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="openProtoTagEditor(\${jsStr(p.protoId)})">标签</button>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="openProtoEdit(\${jsStr(p.protoId)})">编辑</button>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="openProtoUpdate(\${jsStr(p.protoId)})">更新</button>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r" onclick="deleteProto(\${jsStr(p.protoId)})">删除</button>
+          <a href="\${previewUrl}" target="_blank" class="inline-flex min-h-8 items-center justify-center gap-1 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx">预览</a>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="cpProto(userProtos[\${idx}]._copyText,this)">复制</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="upvmOpen(\${idx})">版本</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="openProtoTagEditor(\${jsStr(p.protoId)})">标签</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="openProtoEdit(\${jsStr(p.protoId)})">编辑</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="openProtoUpdate(\${jsStr(p.protoId)})">更新</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-red-r bg-red-g px-3 py-2 text-sm font-semibold leading-tight text-red transition hover:bg-red-r" onclick="deleteProto(\${jsStr(p.protoId)})">删除</button>
         </td>
       </tr>\`;
     }).join('');
@@ -3374,7 +3373,7 @@ export function renderPage(env = {}) {
     document.getElementById('upvmSearch').value = '';
     document.getElementById('upvmDiffBtn').classList.add('hidden');
     document.getElementById('upvmMode').textContent = '点击版本号查看文件列表，勾选两个版本进行对比';
-    document.getElementById('upvmContent').innerHTML = '<div class="text-tx-3 text-center py-[60px] text-[.85rem]"><svg class="inline-block h-4 w-4 -mt-0.5 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="13" y1="8" x2="3" y2="8"/><polyline points="7,4 3,8 7,12"/></svg>点击左侧版本号查看文件列表</div>';
+    document.getElementById('upvmContent').innerHTML = '<div class="text-tx-3 text-center py-16 text-md"><svg class="inline-block h-4 w-4 -mt-1 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="13" y1="8" x2="3" y2="8"/><polyline points="7,4 3,8 7,12"/></svg>点击左侧版本号查看文件列表</div>';
     upvmRenderList();
     document.getElementById('userProtoVersionModal').classList.add('show');
   }
@@ -3386,19 +3385,19 @@ export function renderPage(env = {}) {
       const isLatest = v.v === maxVer;
       const isActive = upvmActiveVer === v.v;
       const ci       = upvmChecked.indexOf(v.v);
-      const cardBase = 'pvm-ver-card cursor-pointer rounded-md border border-bd bg-bg-2 px-[10px] py-[9px] transition hover:border-bd-2 [&.active]:border-brand [&.active]:bg-brand-muted [&.checked-a]:border-green [&.checked-a]:bg-green-g [&.checked-b]:border-amber [&.checked-b]:bg-amber-g';
+      const cardBase = 'pvm-ver-card cursor-pointer rounded-md border border-bd bg-bg-2 px-3 py-2 transition hover:border-bd-2 [&.active]:border-brand [&.active]:bg-brand-muted [&.checked-a]:border-green [&.checked-a]:bg-green-g [&.checked-b]:border-amber [&.checked-b]:bg-amber-g';
       const cls      = ci===0?cardBase+' checked-a':ci===1?cardBase+' checked-b':isActive?cardBase+' active':cardBase;
       return \`<div class="\${cls}" onclick="upvmSelectVer(\${v.v})">
         <div class="flex items-center gap-1 flex-wrap">
-          <span class="mr-1 rounded-xs border border-bd-2 bg-white/[.08] px-[7px] py-px font-mono text-[.72rem] font-bold text-tx">v\${v.v}</span>
-          \${isLatest?'<span class="rounded-[3px] border border-green-r bg-green-g px-1.5 py-px text-[.65rem] font-bold text-green">最新</span>':''}
-          \${!isLatest?'<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-1.5 !py-px !text-[.62rem] ml-auto" onclick="event.stopPropagation();upvmDeleteVer(\${v.v})">删除</button>':''}
+          <span class="mr-1 rounded-xs border border-bd-2 bg-white/[.08] px-2 py-px font-mono text-xs font-bold text-tx">v\${v.v}</span>
+          \${isLatest?'<span class="rounded-xs border border-green-r bg-green-g px-2 py-px text-2xs font-bold text-green">最新</span>':''}
+          \${!isLatest?'<button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-red-r bg-red-g px-3 py-2 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-px !text-2xs ml-auto" onclick="event.stopPropagation();upvmDeleteVer(\${v.v})">删除</button>':''}
         </div>
-        <div class="mt-1 font-mono text-[.7rem] text-tx-3">\${v.at?new Date(v.at).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}</div>
-        <div class="mt-1 font-mono text-[.7rem] text-tx-3">\${v.files??'?'} 文件 · \${v.size?fmtSize(v.size):'—'}</div>
-        <label class="flex items-center gap-[5px] mt-[5px] text-[.7rem] text-tx-3" onclick="event.stopPropagation()">
+        <div class="mt-1 font-mono text-xs text-tx-3">\${v.at?new Date(v.at).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}</div>
+        <div class="mt-1 font-mono text-xs text-tx-3">\${v.files??'?'} 文件 · \${v.size?fmtSize(v.size):'—'}</div>
+        <label class="flex items-center gap-1 mt-1 text-xs text-tx-3" onclick="event.stopPropagation()">
           <input type="checkbox" \${ci>=0?'checked':''} onchange="upvmToggleCheck(\${v.v},this.checked)">
-          <span style="color:\${ci===0?'#10b981':ci===1?'#f59e0b':'#555'}">\${ci===0?'对比 A':ci===1?'对比 B':'加入对比'}</span>
+          <span style="color:\${ci===0?'var(--color-green)':ci===1?'var(--color-amber)':'var(--color-tx-3)'}">\${ci===0?'对比 A':ci===1?'对比 B':'加入对比'}</span>
         </label>
       </div>\`;
     }).join('');
@@ -3434,9 +3433,9 @@ export function renderPage(env = {}) {
 
   function upvmShowFileList(files, title) {
     const q = document.getElementById('upvmSearch').value.toLowerCase();
-    if (!files) { document.getElementById('upvmContent').innerHTML = '<div class="text-tx-3 text-center py-10 text-[.82rem]">该版本无文件记录（旧版本上传未记录文件列表）</div>'; return; }
+    if (!files) { document.getElementById('upvmContent').innerHTML = '<div class="text-tx-3 text-center py-10 text-sm">该版本无文件记录（旧版本上传未记录文件列表）</div>'; return; }
     const fl = q ? files.filter(f => f.toLowerCase().includes(q)) : files;
-    document.getElementById('upvmContent').innerHTML = \`<div class="text-[.75rem] text-tx-3 mb-[10px] font-medium">\${title}\${q?' — 过滤 "'+q+'"':''}</div><div>\${fl.map(f=>\`<div class="flex items-center rounded-xs px-1.5 py-[3px] font-mono text-[.72rem] mb-px text-tx-2 transition hover:bg-bg-hover hover:text-tx">\${esc(f)}</div>\`).join('')||'<div class="text-tx-3 text-[.82rem] py-5">无匹配文件</div>'}</div>\`;
+    document.getElementById('upvmContent').innerHTML = \`<div class="text-xs text-tx-3 mb-2 font-medium">\${title}\${q?' — 过滤 "'+q+'"':''}</div><div>\${fl.map(f=>\`<div class="flex items-center rounded-xs px-2 py-1 font-mono text-xs mb-px text-tx-2 transition hover:bg-bg-hover hover:text-tx">\${esc(f)}</div>\`).join('')||'<div class="text-tx-3 text-sm py-5">无匹配文件</div>'}</div>\`;
   }
 
   document.getElementById('upvmDiffBtn').addEventListener('click', async () => {
@@ -3444,7 +3443,7 @@ export function renderPage(env = {}) {
     const [a,b] = upvmChecked;
     document.getElementById('upvmContent').innerHTML = '<div class="text-tx-3 text-center py-10">加载中…</div>';
     const [fa,fb] = await Promise.all([upvmFetch(a), upvmFetch(b)]);
-    if (!fa || !fb) { document.getElementById('upvmContent').innerHTML = '<div class="text-tx-3 text-center py-10 text-[.82rem]">版本无文件记录，无法对比</div>'; return; }
+    if (!fa || !fb) { document.getElementById('upvmContent').innerHTML = '<div class="text-tx-3 text-center py-10 text-sm">版本无文件记录，无法对比</div>'; return; }
     upvmRenderDiff(fa, fb, a, b);
   });
 
@@ -3455,14 +3454,14 @@ export function renderPage(env = {}) {
     let removed = fa.filter(f => !sb.has(f));
     let same    = fa.filter(f => sb.has(f));
     if (q) { added=added.filter(f=>f.toLowerCase().includes(q)); removed=removed.filter(f=>f.toLowerCase().includes(q)); same=same.filter(f=>f.toLowerCase().includes(q)); }
-    const DIFF_FILE_BASE = 'flex items-center gap-1.5 rounded-xs px-1.5 py-[3px] font-mono text-[.72rem] mb-px';
-    const mkRows = (files, cls, pfx) => files.map(f=>\`<div class="\${DIFF_FILE_BASE} \${cls}"><span class="w-[14px] shrink-0 font-bold">\${pfx}</span>\${esc(f)}</div>\`).join('');
-    let html = \`<div class="flex gap-3 mb-4 text-[.78rem] flex-wrap"><span>v\${a} → v\${b}</span><span class="text-[#10b981]">+\${added.length} 新增</span><span class="text-[#ef4444]">-\${removed.length} 删除</span><span class="text-tx-3">\${same.length} 不变</span></div>\`;
-    const DIFF_H4_BASE = 'text-[.72rem] font-bold mb-1.5 px-2 py-[5px] rounded-xs uppercase tracking-[.08em]';
+    const DIFF_FILE_BASE = 'flex items-center gap-2 rounded-xs px-2 py-1 font-mono text-xs mb-px';
+    const mkRows = (files, cls, pfx) => files.map(f=>\`<div class="\${DIFF_FILE_BASE} \${cls}"><span class="w-4 shrink-0 font-bold">\${pfx}</span>\${esc(f)}</div>\`).join('');
+    let html = \`<div class="flex gap-3 mb-4 text-sm flex-wrap"><span>v\${a} → v\${b}</span><span class="text-green">+\${added.length} 新增</span><span class="text-red">-\${removed.length} 删除</span><span class="text-tx-3">\${same.length} 不变</span></div>\`;
+    const DIFF_H4_BASE = 'text-xs font-bold mb-2 px-2 py-1 rounded-xs uppercase tracking-[.08em]';
     if (added.length)   html += \`<div class="diff-section mb-4"><h4 class="\${DIFF_H4_BASE} bg-green-g text-green flex items-center gap-1"><svg class="h-3 w-3 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg>新增 \${added.length} 个文件（v\${b} 新增）</h4>\${mkRows(added,'bg-green-g text-green','+')}</div>\`;
     if (removed.length) html += \`<div class="diff-section mb-4"><h4 class="\${DIFF_H4_BASE} bg-red-g text-red flex items-center gap-1"><svg class="h-3 w-3 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="8" x2="13" y2="8"/></svg>删除 \${removed.length} 个文件（v\${b} 移除）</h4>\${mkRows(removed,'bg-red-g text-red','−')}</div>\`;
     if (same.length)    html += \`<div class="diff-section mb-4"><h4 class="\${DIFF_H4_BASE} bg-[rgba(255,255,255,.04)] text-tx-3">· 未变动 \${same.length} 个文件</h4>\${mkRows(same,'','·')}</div>\`;
-    document.getElementById('upvmContent').innerHTML = html || '<div class="text-tx-3 text-center py-10 text-[.82rem]">无匹配文件</div>';
+    document.getElementById('upvmContent').innerHTML = html || '<div class="text-tx-3 text-center py-10 text-sm">无匹配文件</div>';
   }
 
   document.getElementById('upvmSearch').addEventListener('input', () => {
@@ -3481,7 +3480,7 @@ export function renderPage(env = {}) {
     upvmProto.versions = (upvmProto.versions??[]).filter(v=>v.v!==ver);
     delete upvmFileCache[\`v\${ver}\`];
     upvmChecked = upvmChecked.filter(v=>v!==ver);
-    if (upvmActiveVer===ver) { upvmActiveVer=null; document.getElementById('upvmContent').innerHTML='<div class="text-tx-3 text-center py-[60px] text-[.85rem]"><svg class="inline-block h-4 w-4 -mt-0.5 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="13" y1="8" x2="3" y2="8"/><polyline points="7,4 3,8 7,12"/></svg>点击左侧版本号查看文件列表</div>'; }
+    if (upvmActiveVer===ver) { upvmActiveVer=null; document.getElementById('upvmContent').innerHTML='<div class="text-tx-3 text-center py-16 text-md"><svg class="inline-block h-4 w-4 -mt-1 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="13" y1="8" x2="3" y2="8"/><polyline points="7,4 3,8 7,12"/></svg>点击左侧版本号查看文件列表</div>'; }
     const cp = userProtos.find(p=>p.protoId===upvmProto.protoId);
     if (cp) cp.versions = upvmProto.versions;
     upvmRenderList(); toast(\`v\${ver} 已删除\`);
@@ -3665,8 +3664,8 @@ export function renderPage(env = {}) {
 
     function setStatus(msg, pct) {
       const icon = pct === 100
-        ? '<svg class="inline-block h-3.5 w-3.5 -mt-0.5 mr-1 text-green" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>'
-        : '<svg class="inline-block h-3.5 w-3.5 -mt-0.5 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="5.5" stroke-dasharray="26" stroke-dashoffset="8"/></svg>';
+        ? '<svg class="inline-block h-4 w-4 -mt-1 mr-1 text-green" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>'
+        : '<svg class="inline-block h-4 w-4 -mt-1 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="5.5" stroke-dasharray="26" stroke-dashoffset="8"/></svg>';
       statusEl.style.display = '';
       statusEl.innerHTML = icon + msg;
       if (pct !== undefined) { bar.style.width = pct + '%'; pctEl.textContent = pct + '%'; }
@@ -3768,12 +3767,12 @@ export function renderPage(env = {}) {
   function skelCards(el, n) {
     if (!el) return;
     el.innerHTML = Array.from({ length: n }, () =>
-      \`<div class="overflow-hidden rounded-lg border border-bd bg-bg-3"><div class="\${SKEL} w-full aspect-square"></div><div class="flex flex-col gap-[7px] px-[11px] py-[10px]"><div class="\${SKEL} h-[9px] w-4/5"></div><div class="\${SKEL} h-[9px] w-1/2"></div></div></div>\`
+      \`<div class="overflow-hidden rounded-md border border-bd bg-bg-3"><div class="\${SKEL} w-full aspect-square"></div><div class="flex flex-col gap-2 px-3 py-2"><div class="\${SKEL} h-2 w-4/5"></div><div class="\${SKEL} h-2 w-1/2"></div></div></div>\`
     ).join('');
   }
   function skelRows(el, n) {
     if (!el) return;
-    el.innerHTML = Array.from({ length: n }, () => \`<div class="\${SKEL} h-[58px] rounded-[9px] border border-bd mb-[10px]"></div>\`).join('');
+    el.innerHTML = Array.from({ length: n }, () => \`<div class="\${SKEL} h-14 rounded-md border border-bd mb-2"></div>\`).join('');
   }
   // 转义与格式化（esc / escAttr / jsStr / fmtSize / fmtNum / fmtDate / timeAgo）
   // 由上方注入的 shared/client 提供：前后台同一份实现，别在本页重新定义。

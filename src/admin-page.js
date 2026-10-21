@@ -4,7 +4,7 @@ import { CLIENT_SHARED_JS } from './ui/client/shared.js';
 import apertureCss from './ui/aperture.generated.js';
 
 /* 手绘风空状态插画（Notion 风格简笔小人 + 空相框），单色中性，随主题切换 */
-const EMPTY_ILLUS = `<svg class="mx-auto mb-4 block h-[92px] w-auto" viewBox="0 0 220 140" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+const EMPTY_ILLUS = `<svg class="mx-auto mb-4 block h-24 w-auto" viewBox="0 0 220 140" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
   <path d="M120 40 C 140 36, 158 38, 172 42 C 184 45, 189 53, 188 66 C 186 88, 187 108, 186 120 C 185 130, 178 135, 168 133 C 152 131, 136 132, 122 131 C 112 130, 108 124, 109 114 C 111 92, 110 66, 113 52 C 114 45, 114 41, 120 40 Z" stroke="var(--tx-3)" stroke-width="2"/>
   <path d="M150 84 C 156 84, 161 89, 161 95 C 161 101, 156 106, 150 106 C 144 106, 139 101, 139 95 C 139 89, 144 84, 150 84" stroke="var(--tx-3)" stroke-width="1.8"/>
   <path d="M150 76 C 149 71, 151 66, 150 62" stroke="var(--tx-3)" stroke-width="1.6"/>
@@ -110,33 +110,33 @@ export function renderAdminPage() {
 </head>
 <body>
 
-<div class="hidden items-center gap-2 border-b border-amber-r bg-amber-g px-[22px] py-2 text-[.79rem] text-amber [&.show]:flex" id="expiryBanner">
+<div class="hidden items-center gap-2 border-b border-amber-r bg-amber-g px-5 py-2 text-sm text-amber [&.show]:flex" id="expiryBanner">
   <svg class="h-4 w-4 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.5 15 14H1L8 1.5z"/><line x1="8" y1="6" x2="8" y2="9.5"/><circle cx="8" cy="11.5" r=".2" fill="currentColor"/></svg>
   登录状态将在 <strong id="expiryCountdown"></strong> 后过期，建议重新登录以避免中断。
-  <button class="ml-auto px-[10px] py-[3px] bg-none border border-amber-r text-amber rounded-[5px] cursor-pointer text-[.75rem] font-sans" onclick="triggerReLogin()">重新登录</button>
+  <button class="ml-auto px-3 py-1 bg-none border border-amber-r text-amber rounded-xs cursor-pointer text-xs font-sans" onclick="triggerReLogin()">重新登录</button>
 </div>
-<div class="mob-header fixed inset-x-0 top-0 z-20 flex h-[50px] items-center gap-[14px] border-b border-bd bg-bg-2 px-4 md:hidden">
+<div class="mob-header fixed inset-x-0 top-0 z-20 flex h-12 items-center gap-3 border-b border-bd bg-bg-2 px-4 md:hidden">
   <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-transparent text-tx-3 cursor-pointer transition hover:border-bd-2 hover:text-tx" id="sidebarToggle"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/></svg></button>
-  <span class="text-[.88rem] font-bold tracking-[-.01em]">Onimg Admin</span>
+  <span class="text-md font-bold tracking-[-.01em]">Onimg Admin</span>
 </div>
 <div class="sidebar-mask fixed inset-0 z-[9] hidden bg-black/60 [&.show]:block" id="sidebarMask"></div>
 
 <!-- Login -->
 <div class="flex min-h-screen items-center justify-center bg-bg p-4 bg-[radial-gradient(ellipse_80%_50%_at_60%_20%,rgba(255,255,255,.025)_0%,transparent_60%)]" id="loginScreen">
-  <div class="login-card relative w-full max-w-[380px] overflow-hidden rounded-xl border border-bd bg-bg-3 px-10 py-11 shadow before:absolute before:inset-x-0 before:top-0 before:h-px before:content-[''] before:bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,.08)_50%,transparent_100%)] [&.shake]:animate-[loginShake_.35s_ease]">
+  <div class="login-card relative w-full max-w-[380px] overflow-hidden rounded-lg border border-bd bg-bg-3 p-6 shadow md:p-10 before:absolute before:inset-x-0 before:top-0 before:h-px before:content-[''] before:bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,.08)_50%,transparent_100%)] [&.shake]:animate-[loginShake_.35s_ease]">
     <div class="mb-6 flex items-center gap-3">
-      <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-[.85rem] font-extrabold text-tx-inv">OI</span>
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-accent text-md font-extrabold text-tx-inv">OI</span>
       <div>
-        <div class="text-[1.25rem] font-extrabold leading-[1.15] tracking-[-.02em] text-tx">Onimg</div>
+        <div class="text-xl font-extrabold leading-[1.15] tracking-[-.02em] text-tx">Onimg</div>
         <div class="mt-px text-2xs font-bold uppercase tracking-[.1em] text-tx-3">Admin Console</div>
       </div>
     </div>
     <div class="mb-8 text-sm text-tx-3">使用管理员账号登录后台</div>
-    <div class="flex flex-col gap-2 mb-5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">用户名</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3.5 py-[11px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="loginUser" placeholder="admin" autocomplete="username"></div>
-    <div class="flex flex-col gap-2 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">密码</label><div class="relative"><input class="w-full rounded-md border border-bd bg-bg-2 px-3.5 py-[11px] pr-10 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"><button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center border-none bg-transparent p-0 text-tx-3 cursor-pointer transition hover:text-tx-2" id="loginPassToggle" title="显示/隐藏密码"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg></button></div></div>
-    <label class="mb-6 flex items-center gap-2 cursor-pointer select-none text-[.8rem] text-tx-2"><input class="h-3.5 w-3.5 cursor-pointer accent-tx" type="checkbox" id="loginRemember">记住我 30 天</label>
-    <button class="btn-login w-full rounded-md border-none bg-accent px-3 py-3 font-sans text-base-sm font-bold text-tx-inv transition hover:-translate-y-px hover:bg-accent-hover disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none [&.loading]:pointer-events-none [&.loading]:before:content-[''] [&.loading]:before:inline-block [&.loading]:before:mr-2 [&.loading]:before:h-[14px] [&.loading]:before:w-[14px] [&.loading]:before:align-middle [&.loading]:before:rounded-full [&.loading]:before:border-2 [&.loading]:before:border-[var(--tx-inv)] [&.loading]:before:border-t-transparent [&.loading]:before:animate-[loginSpin_.6s_linear_infinite]" id="loginBtn">登录</button>
-    <div class="mt-3 min-h-[18px] text-center text-xs text-red" id="loginErr"></div>
+    <div class="flex flex-col gap-2 mb-5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">用户名</label><input class="h-9 w-full rounded-sm border border-bd bg-bg-2 px-3 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="loginUser" placeholder="admin" autocomplete="username"></div>
+    <div class="flex flex-col gap-2 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">密码</label><div class="relative"><input class="h-9 w-full rounded-sm border border-bd bg-bg-2 px-3 pr-10 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"><button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center border-none bg-transparent p-0 text-tx-3 cursor-pointer transition hover:text-tx-2" id="loginPassToggle" title="显示/隐藏密码"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg></button></div></div>
+    <label class="mb-6 flex items-center gap-2 cursor-pointer select-none text-sm text-tx-2"><input class="h-4 w-4 cursor-pointer accent-tx" type="checkbox" id="loginRemember">记住我 30 天</label>
+    <button class="btn-login w-full rounded-sm border-none bg-accent h-9 px-4 font-sans text-md font-bold text-tx-inv transition  hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none [&.loading]:pointer-events-none [&.loading]:before:content-[''] [&.loading]:before:inline-block [&.loading]:before:mr-2 [&.loading]:before:h-4 [&.loading]:before:w-4 [&.loading]:before:align-middle [&.loading]:before:rounded-full [&.loading]:before:border-2 [&.loading]:before:border-[var(--tx-inv)] [&.loading]:before:border-t-transparent [&.loading]:before:animate-[loginSpin_.6s_linear_infinite]" id="loginBtn">登录</button>
+    <div class="mt-3 min-h-5 text-center text-xs text-red" id="loginErr"></div>
   </div>
 </div>
 
@@ -146,73 +146,73 @@ export function renderAdminPage() {
 
     <!-- Sidebar -->
     <aside class="fixed inset-y-0 left-0 z-10 flex w-60 shrink-0 -translate-x-60 flex-col border-r border-bd bg-bg-2 transition-transform duration-[.22s] ease-in-out md:translate-x-0 [&.open]:translate-x-0 [&.open]:z-[15]">
-      <div class="flex items-center gap-2.5 border-b border-bd px-4 pt-[18px] pb-3.5">
-        <div class="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-sm border border-bd-2 bg-gradient-to-br from-[#242836] to-[#14161d] text-[.78rem] font-extrabold tracking-[-.01em] text-white shadow-[0_3px_10px_rgba(0,0,0,.5)]">OI</div>
+      <div class="flex items-center gap-2 border-b border-bd px-4 pt-4 pb-4">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border border-bd-2 bg-gradient-to-br from-[#242836] to-[#14161d] text-sm font-extrabold tracking-[-.01em] text-white shadow-[0_3px_10px_rgba(0,0,0,.5)]">OI</div>
         <div class="flex flex-col gap-px">
-          <div class="text-[.92rem] font-bold text-tx tracking-[-.015em]">Onimg</div>
-          <div class="text-[.58rem] font-semibold uppercase tracking-[.12em] text-tx-3">Admin Console</div>
+          <div class="text-lg font-bold text-tx tracking-[-.015em]">Onimg</div>
+          <div class="text-2xs font-semibold uppercase tracking-[.12em] text-tx-3">Admin Console</div>
         </div>
       </div>
-      <div class="px-4 pt-[14px] pb-[5px] text-2xs font-bold uppercase tracking-[.12em] text-tx-3">Navigation</div>
+      <div class="px-4 pt-4 pb-1 text-2xs font-bold uppercase tracking-[.12em] text-tx-3">Navigation</div>
       <nav class="flex flex-1 flex-col gap-px overflow-y-auto px-2 pt-1 pb-2">
-        <button class="nav-item active relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="dashboard">
-          <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg></span>
+        <button class="nav-item active relative flex min-h-10 w-full items-center gap-2 overflow-hidden rounded-sm border-none bg-transparent px-3 py-2 text-left text-md font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-11" data-section="dashboard">
+          <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-4 [&_svg]:w-4"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg></span>
           概览
         </button>
-        <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="images">
-          <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="14" height="14" rx="2.5"/><circle cx="5.5" cy="5.5" r="1.5"/><polyline points="1,12 5,8 8,11 11,8 15,12"/></svg></span>
+        <button class="nav-item relative flex min-h-10 w-full items-center gap-2 overflow-hidden rounded-sm border-none bg-transparent px-3 py-2 text-left text-md font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-11" data-section="images">
+          <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-4 [&_svg]:w-4"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="14" height="14" rx="2.5"/><circle cx="5.5" cy="5.5" r="1.5"/><polyline points="1,12 5,8 8,11 11,8 15,12"/></svg></span>
           图库管理
         </button>
-                <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="trash">
-          <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h12"/><path d="M5.5 4V2.5h5V4"/><path d="M3.5 4l.8 10h7.4l.8-10"/><line x1="6.5" y1="7.2" x2="6.5" y2="11.2"/><line x1="9.5" y1="7.2" x2="9.5" y2="11.2"/></svg></span>
+                <button class="nav-item relative flex min-h-10 w-full items-center gap-2 overflow-hidden rounded-sm border-none bg-transparent px-3 py-2 text-left text-md font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-11" data-section="trash">
+          <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-4 [&_svg]:w-4"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h12"/><path d="M5.5 4V2.5h5V4"/><path d="M3.5 4l.8 10h7.4l.8-10"/><line x1="6.5" y1="7.2" x2="6.5" y2="11.2"/><line x1="9.5" y1="7.2" x2="9.5" y2="11.2"/></svg></span>
           回收站
         </button>
-<button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="users">
-          <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5" r="3"/><path d="M1.5 15c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/></svg></span>
+<button class="nav-item relative flex min-h-10 w-full items-center gap-2 overflow-hidden rounded-sm border-none bg-transparent px-3 py-2 text-left text-md font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-11" data-section="users">
+          <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-4 [&_svg]:w-4"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5" r="3"/><path d="M1.5 15c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/></svg></span>
           用户管理
         </button>
-        <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="pages">
-          <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 1h7l4 4v10H3V1z"/><polyline points="10,1 10,5 14,5"/><line x1="4" y1="8" x2="12" y2="8"/><line x1="4" y1="11" x2="9" y2="11"/></svg></span>
+        <button class="nav-item relative flex min-h-10 w-full items-center gap-2 overflow-hidden rounded-sm border-none bg-transparent px-3 py-2 text-left text-md font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-11" data-section="pages">
+          <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-4 [&_svg]:w-4"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 1h7l4 4v10H3V1z"/><polyline points="10,1 10,5 14,5"/><line x1="4" y1="8" x2="12" y2="8"/><line x1="4" y1="11" x2="9" y2="11"/></svg></span>
           页面管理
         </button>
-        <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="protos">
-          <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v5l-8 8H2V2z"/><line x1="5" y1="2" x2="5" y2="5"/><line x1="8" y1="2" x2="8" y2="4"/><line x1="11" y1="2" x2="11" y2="5"/><line x1="2" y1="5" x2="4" y2="5"/><line x1="2" y1="8" x2="3" y2="8"/><line x1="2" y1="11" x2="4" y2="11"/></svg></span>
+        <button class="nav-item relative flex min-h-10 w-full items-center gap-2 overflow-hidden rounded-sm border-none bg-transparent px-3 py-2 text-left text-md font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-11" data-section="protos">
+          <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-4 [&_svg]:w-4"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v5l-8 8H2V2z"/><line x1="5" y1="2" x2="5" y2="5"/><line x1="8" y1="2" x2="8" y2="4"/><line x1="11" y1="2" x2="11" y2="5"/><line x1="2" y1="5" x2="4" y2="5"/><line x1="2" y1="8" x2="3" y2="8"/><line x1="2" y1="11" x2="4" y2="11"/></svg></span>
           原型管理
         </button>
-        <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="members">
-          <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,12 5,7 9,9 13,4"/><polyline points="10,4 13,4 13,7"/></svg></span>
+        <button class="nav-item relative flex min-h-10 w-full items-center gap-2 overflow-hidden rounded-sm border-none bg-transparent px-3 py-2 text-left text-md font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-11" data-section="members">
+          <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-4 [&_svg]:w-4"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,12 5,7 9,9 13,4"/><polyline points="10,4 13,4 13,7"/></svg></span>
           成员统计
         </button>
-        <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="audit">
-          <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 1.5h7l3 3v10H3z"/><path d="M10 1.5v3h3"/><line x1="5.5" y1="8" x2="10.5" y2="8"/><line x1="5.5" y1="10.5" x2="10.5" y2="10.5"/></svg></span>
+        <button class="nav-item relative flex min-h-10 w-full items-center gap-2 overflow-hidden rounded-sm border-none bg-transparent px-3 py-2 text-left text-md font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-11" data-section="audit">
+          <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-4 [&_svg]:w-4"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 1.5h7l3 3v10H3z"/><path d="M10 1.5v3h3"/><line x1="5.5" y1="8" x2="10.5" y2="8"/><line x1="5.5" y1="10.5" x2="10.5" y2="10.5"/></svg></span>
           审计日志
         </button>
-        <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="settings">
-          <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M12.95 3.05l-1.41 1.41M4.46 11.54l-1.41 1.41"/></svg></span>
+        <button class="nav-item relative flex min-h-10 w-full items-center gap-2 overflow-hidden rounded-sm border-none bg-transparent px-3 py-2 text-left text-md font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-11" data-section="settings">
+          <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-4 [&_svg]:w-4"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M12.95 3.05l-1.41 1.41M4.46 11.54l-1.41 1.41"/></svg></span>
           系统设置
         </button>
       </nav>
-      <div class="border-t border-bd px-2 pt-1 pb-1.5">
-        <a class="flex items-center gap-[9px] rounded-sm px-[10px] py-2 text-[.82rem] text-tx-3 no-underline transition hover:bg-bg-hover hover:text-tx-2" href="/">
-          <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="8" x2="2" y2="8"/><polyline points="5,5 2,8 5,11"/><line x1="7" y1="3" x2="14" y2="3"/><line x1="7" y1="13" x2="14" y2="13"/></svg></span>
+      <div class="border-t border-bd px-2 pt-1 pb-2">
+        <a class="flex items-center gap-2 rounded-sm px-3 py-2 text-sm text-tx-3 no-underline transition hover:bg-bg-hover hover:text-tx-2" href="/">
+          <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-4 [&_svg]:w-4"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="8" x2="2" y2="8"/><polyline points="5,5 2,8 5,11"/><line x1="7" y1="3" x2="14" y2="3"/><line x1="7" y1="13" x2="14" y2="13"/></svg></span>
           前台主页
         </a>
       </div>
-      <div class="border-t border-bd px-2 py-[10px]">
-        <div class="flex items-center gap-[9px] rounded-md border border-bd bg-bg-3 px-[10px] py-2">
-          <div class="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-sm border border-bd-2 bg-gradient-to-br from-[#2e2e2e] to-[#1e1e1e] text-[.78rem] font-bold text-white" id="avatarLetter">A</div>
+      <div class="border-t border-bd px-2 py-2">
+        <div class="flex items-center gap-2 rounded-md border border-bd bg-bg-3 px-3 py-2">
+          <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border border-bd-2 bg-gradient-to-br from-[#2e2e2e] to-[#1e1e1e] text-sm font-bold text-white" id="avatarLetter">A</div>
           <div class="min-w-0 flex-1">
-            <div class="truncate text-[.78rem] font-semibold text-tx-2" id="sidebarUsername">admin</div>
-            <div class="mt-px text-[.65rem] text-tx-3">Administrator</div>
+            <div class="truncate text-sm font-semibold text-tx-2" id="sidebarUsername">admin</div>
+            <div class="mt-px text-2xs text-tx-3">Administrator</div>
           </div>
-          <button class="shrink-0 cursor-pointer rounded-xs border border-bd bg-transparent px-2 py-1 font-sans text-[.7rem] text-tx-3 transition hover:border-[rgba(248,113,113,.35)] hover:bg-red-g hover:text-red" id="logoutBtn">退出</button>
+          <button class="shrink-0 cursor-pointer rounded-xs border border-bd bg-transparent px-2 py-1 font-sans text-xs text-tx-3 transition hover:border-[rgba(248,113,113,.35)] hover:bg-red-g hover:text-red" id="logoutBtn">退出</button>
         </div>
       </div>
-      <div class="border-t border-bd px-2 pt-[10px] pb-3">
-        <div class="theme-switch flex w-full items-stretch gap-0.5 rounded-md border border-bd-2 bg-bg-2 p-0.5">
-          <button class="theme-opt flex flex-1 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent py-[7px] text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="system" title="跟随系统"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="13" height="9" rx="1"/><line x1="5.5" y1="13.5" x2="10.5" y2="13.5"/><line x1="8" y1="11.5" x2="8" y2="13.5"/></svg></button>
-          <button class="theme-opt flex flex-1 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent py-[7px] text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="light" title="浅色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><line x1="8" y1="1" x2="8" y2="2.3"/><line x1="8" y1="13.7" x2="8" y2="15"/><line x1="1" y1="8" x2="2.3" y2="8"/><line x1="13.7" y1="8" x2="15" y2="8"/><line x1="3.05" y1="3.05" x2="3.96" y2="3.96"/><line x1="12.04" y1="12.04" x2="12.95" y2="12.95"/><line x1="3.05" y1="12.95" x2="3.96" y2="12.04"/><line x1="12.04" y1="3.96" x2="12.95" y2="3.05"/></svg></button>
-          <button class="theme-opt flex flex-1 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent py-[7px] text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="dark" title="暗色"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7z"/></svg></button>
+      <div class="border-t border-bd px-2 pt-2 pb-3">
+        <div class="theme-switch flex w-full items-stretch gap-1 rounded-sm border border-bd-2 bg-bg-2 p-1">
+          <button class="theme-opt flex flex-1 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent py-2 text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="system" title="跟随系统"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="13" height="9" rx="1"/><line x1="5.5" y1="13.5" x2="10.5" y2="13.5"/><line x1="8" y1="11.5" x2="8" y2="13.5"/></svg></button>
+          <button class="theme-opt flex flex-1 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent py-2 text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="light" title="浅色"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><line x1="8" y1="1" x2="8" y2="2.3"/><line x1="8" y1="13.7" x2="8" y2="15"/><line x1="1" y1="8" x2="2.3" y2="8"/><line x1="13.7" y1="8" x2="15" y2="8"/><line x1="3.05" y1="3.05" x2="3.96" y2="3.96"/><line x1="12.04" y1="12.04" x2="12.95" y2="12.95"/><line x1="3.05" y1="12.95" x2="3.96" y2="12.04"/><line x1="12.04" y1="3.96" x2="12.95" y2="3.05"/></svg></button>
+          <button class="theme-opt flex flex-1 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent py-2 text-tx-3 transition [&.active]:bg-bg-5 [&.active]:text-tx hover:text-tx" data-theme-val="dark" title="暗色"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7z"/></svg></button>
         </div>
       </div>
     </aside>
@@ -220,44 +220,43 @@ export function renderAdminPage() {
     <div class="flex-1 min-w-0 bg-bg ml-0 md:ml-60">
 
       <!-- ── Dashboard ── -->
-      <div class="section active hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-dashboard">
-        <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
-          <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">概览</div>
+      <div class="section active hidden mx-auto w-full max-w-[1600px] px-4 pt-16 pb-12 [&.active]:block sm:px-5 md:px-6 md:pt-8 lg:px-8" id="section-dashboard">
+        <div class="page-header border-b border-bd mb-6 pb-4 md:mb-8 md:pb-6">
+          <div class="text-xl font-extrabold tracking-[-.03em] text-tx mb-2 md:text-2xl">概览</div>
           <div class="text-sm font-medium text-tx-3">存储用量与访问统计</div>
         </div>
         <div class="stats-row grid grid-cols-2 gap-3 mb-6 sm:grid-cols-[repeat(auto-fit,minmax(190px,1fr))]">
-          <div class="stat-card relative overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-none transition py-5 px-[18px] md:pt-6 md:px-[22px] md:pb-5 hover:border-bd-2 hover:bg-bg-4 hover:shadow-[0_1px_0_rgba(255,255,255,.04)_inset,0_4px_16px_rgba(0,0,0,.4)]"><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="10" r="2"/><path d="M2 17l6-6 4 4 3-3 7 7"/></svg><div class="mb-[11px] text-[.64rem] font-bold uppercase tracking-[.12em] text-tx-2">图片总数</div><div class="font-mono text-[2.05rem] font-bold leading-none tracking-[-.04em] text-tx" id="statImages">—</div><div class="mt-[7px] text-[.75rem] font-medium text-tx-2">张</div><div class="stat-spark mt-2.5 flex items-center gap-1.5 h-[18px]" id="statImagesSpark"></div></div>
-          <div class="stat-card relative overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-none transition py-5 px-[18px] md:pt-6 md:px-[22px] md:pb-5 hover:border-bd-2 hover:bg-bg-4 hover:shadow-[0_1px_0_rgba(255,255,255,.04)_inset,0_4px_16px_rgba(0,0,0,.4)]"><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/></svg><div class="mb-[11px] text-[.64rem] font-bold uppercase tracking-[.12em] text-tx-2">存储用量</div><div class="font-mono text-[2.05rem] font-bold leading-none tracking-[-.04em] text-tx" id="statSize">—</div><div class="mt-[7px] text-[.75rem] font-medium text-tx-2" id="statSizeUnit"></div><div class="stat-spark mt-2.5 flex items-center gap-1.5 h-[18px]" id="statSizeSpark"></div></div>
-          <div class="stat-card relative overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-none transition py-5 px-[18px] md:pt-6 md:px-[22px] md:pb-5 hover:border-bd-2 hover:bg-bg-4 hover:shadow-[0_1px_0_rgba(255,255,255,.04)_inset,0_4px_16px_rgba(0,0,0,.4)]"><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 0 1-1-9.9 6 6 0 0 1 11.3-2A5 5 0 0 1 18 18H7z"/></svg><div class="mb-[11px] text-[.64rem] font-bold uppercase tracking-[.12em] text-tx-2">免费额度剩余</div><div class="font-mono text-[2.05rem] font-bold leading-none tracking-[-.04em] text-tx" id="statFree">—</div><div class="mt-[7px] text-[.75rem] font-medium text-tx-2">GB / 10 GB</div><div class="stat-spark mt-2.5 flex items-center gap-1.5 h-[18px]" id="statFreeSpark"></div></div>
-          <div class="stat-card relative overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-none transition py-5 px-[18px] md:pt-6 md:px-[22px] md:pb-5 hover:border-bd-2 hover:bg-bg-4 hover:shadow-[0_1px_0_rgba(255,255,255,.04)_inset,0_4px_16px_rgba(0,0,0,.4)]"><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg><div class="mb-[11px] text-[.64rem] font-bold uppercase tracking-[.12em] text-tx-2">图片访问次数</div><div class="font-mono text-[2.05rem] font-bold leading-none tracking-[-.04em] text-tx" id="statViews">—</div><div class="mt-[7px] text-[.75rem] font-medium text-tx-2">次</div><div class="stat-spark mt-2.5 flex items-center gap-1.5 h-[18px]" id="statViewsSpark"></div></div>
-          <div class="stat-card relative overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-none transition py-5 px-[18px] md:pt-6 md:px-[22px] md:pb-5 hover:border-bd-2 hover:bg-bg-4 hover:shadow-[0_1px_0_rgba(255,255,255,.04)_inset,0_4px_16px_rgba(0,0,0,.4)]"><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6V2z"/><path d="M15 2v5h5"/><line x1="9" y1="13" x2="16" y2="13"/><line x1="9" y1="17" x2="16" y2="17"/></svg><div class="mb-[11px] text-[.64rem] font-bold uppercase tracking-[.12em] text-tx-2">托管页面数</div><div class="font-mono text-[2.05rem] font-bold leading-none tracking-[-.04em] text-tx" id="statPages">—</div><div class="mt-[7px] text-[.75rem] font-medium text-tx-2">个</div><div class="stat-spark mt-2.5 flex items-center gap-1.5 h-[18px]" id="statPagesSpark"></div></div>
-          <div class="stat-card relative overflow-hidden rounded-lg border border-bd bg-bg-3 shadow-none transition py-5 px-[18px] md:pt-6 md:px-[22px] md:pb-5 hover:border-bd-2 hover:bg-bg-4 hover:shadow-[0_1px_0_rgba(255,255,255,.04)_inset,0_4px_16px_rgba(0,0,0,.4)]"><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,18 9,10 13,14 22,4"/><polyline points="16,4 22,4 22,10"/></svg><div class="mb-[11px] text-[.64rem] font-bold uppercase tracking-[.12em] text-tx-2">页面访问次数</div><div class="font-mono text-[2.05rem] font-bold leading-none tracking-[-.04em] text-tx" id="statPageViews">—</div><div class="mt-[7px] text-[.75rem] font-medium text-tx-2">次</div><div class="stat-spark mt-2.5 flex items-center gap-1.5 h-[18px]" id="statPageViewsSpark"></div></div>
+          <div class="stat-card relative overflow-hidden rounded-md border border-bd bg-bg-3 shadow-none transition py-5 px-4 md:pt-6 md:px-5 md:pb-5 hover:border-bd-2 hover:bg-bg-4 "><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="10" r="2"/><path d="M2 17l6-6 4 4 3-3 7 7"/></svg><div class="mb-3 text-2xs font-bold uppercase tracking-[.12em] text-tx-2">图片总数</div><div class="font-mono text-4xl font-bold leading-none tracking-[-.04em] text-tx" id="statImages">—</div><div class="mt-2 text-xs font-medium text-tx-2">张</div><div class="stat-spark mt-2 flex items-center gap-2 h-5" id="statImagesSpark"></div></div>
+          <div class="stat-card relative overflow-hidden rounded-md border border-bd bg-bg-3 shadow-none transition py-5 px-4 md:pt-6 md:px-5 md:pb-5 hover:border-bd-2 hover:bg-bg-4 "><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/></svg><div class="mb-3 text-2xs font-bold uppercase tracking-[.12em] text-tx-2">存储用量</div><div class="font-mono text-4xl font-bold leading-none tracking-[-.04em] text-tx" id="statSize">—</div><div class="mt-2 text-xs font-medium text-tx-2" id="statSizeUnit"></div><div class="stat-spark mt-2 flex items-center gap-2 h-5" id="statSizeSpark"></div></div>
+          <div class="stat-card relative overflow-hidden rounded-md border border-bd bg-bg-3 shadow-none transition py-5 px-4 md:pt-6 md:px-5 md:pb-5 hover:border-bd-2 hover:bg-bg-4 "><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 0 1-1-9.9 6 6 0 0 1 11.3-2A5 5 0 0 1 18 18H7z"/></svg><div class="mb-3 text-2xs font-bold uppercase tracking-[.12em] text-tx-2">免费额度剩余</div><div class="font-mono text-4xl font-bold leading-none tracking-[-.04em] text-tx" id="statFree">—</div><div class="mt-2 text-xs font-medium text-tx-2">GB / 10 GB</div><div class="stat-spark mt-2 flex items-center gap-2 h-5" id="statFreeSpark"></div></div>
+          <div class="stat-card relative overflow-hidden rounded-md border border-bd bg-bg-3 shadow-none transition py-5 px-4 md:pt-6 md:px-5 md:pb-5 hover:border-bd-2 hover:bg-bg-4 "><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg><div class="mb-3 text-2xs font-bold uppercase tracking-[.12em] text-tx-2">图片访问次数</div><div class="font-mono text-4xl font-bold leading-none tracking-[-.04em] text-tx" id="statViews">—</div><div class="mt-2 text-xs font-medium text-tx-2">次</div><div class="stat-spark mt-2 flex items-center gap-2 h-5" id="statViewsSpark"></div></div>
+          <div class="stat-card relative overflow-hidden rounded-md border border-bd bg-bg-3 shadow-none transition py-5 px-4 md:pt-6 md:px-5 md:pb-5 hover:border-bd-2 hover:bg-bg-4 "><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6V2z"/><path d="M15 2v5h5"/><line x1="9" y1="13" x2="16" y2="13"/><line x1="9" y1="17" x2="16" y2="17"/></svg><div class="mb-3 text-2xs font-bold uppercase tracking-[.12em] text-tx-2">托管页面数</div><div class="font-mono text-4xl font-bold leading-none tracking-[-.04em] text-tx" id="statPages">—</div><div class="mt-2 text-xs font-medium text-tx-2">个</div><div class="stat-spark mt-2 flex items-center gap-2 h-5" id="statPagesSpark"></div></div>
+          <div class="stat-card relative overflow-hidden rounded-md border border-bd bg-bg-3 shadow-none transition py-5 px-4 md:pt-6 md:px-5 md:pb-5 hover:border-bd-2 hover:bg-bg-4 "><svg class="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 opacity-[.09] pointer-events-none select-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,18 9,10 13,14 22,4"/><polyline points="16,4 22,4 22,10"/></svg><div class="mb-3 text-2xs font-bold uppercase tracking-[.12em] text-tx-2">页面访问次数</div><div class="font-mono text-4xl font-bold leading-none tracking-[-.04em] text-tx" id="statPageViews">—</div><div class="mt-2 text-xs font-medium text-tx-2">次</div><div class="stat-spark mt-2 flex items-center gap-2 h-5" id="statPageViewsSpark"></div></div>
         </div>
 
         <!-- CF 免费额度 -->
-        <div class="mb-6 overflow-hidden rounded-lg border border-bd bg-bg-3">
-          <div class="flex items-center gap-[10px] border-b border-bd px-4 py-[13px]">
-            <h3 class="m-0 flex items-center gap-1.5 text-[.88rem] font-semibold text-tx"><svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 0 1-1-9.9 6 6 0 0 1 11.3-2A5 5 0 0 1 18 18H7z"/></svg>Cloudflare 免费额度</h3>
-            <span class="rounded-xs border px-2 py-0.5 text-[.63rem] font-semibold font-mono whitespace-nowrap" id="cfSourceBadge">加载中…</span>
-            <div class="flex-1"></div>
-            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-[10px] !py-1 !text-[.74rem]" onclick="loadCfQuota()"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.65 4.35A6 6 0 1 0 14 8"/><polyline points="13.5,1.5 13.5,4.5 10.5,4.5"/></svg>刷新</button>
+        <div class="mb-6 overflow-hidden rounded-md border border-bd bg-bg-3">
+          <div class="flex items-center gap-2 border-b border-bd px-4 py-3">
+            <h3 class="m-0 flex min-w-0 items-center gap-2 truncate text-md font-semibold text-tx"><svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 0 1-1-9.9 6 6 0 0 1 11.3-2A5 5 0 0 1 18 18H7z"/></svg>Cloudflare 免费额度</h3>
+            <span class="max-sm:hidden rounded-xs border px-2 py-1 text-2xs font-semibold font-mono whitespace-nowrap" id="cfSourceBadge">加载中…</span>
+            <button class="ml-auto inline-flex min-h-8 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-3 !py-1 !text-xs" onclick="loadCfQuota()"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.65 4.35A6 6 0 1 0 14 8"/><polyline points="13.5,1.5 13.5,4.5 10.5,4.5"/></svg>刷新</button>
           </div>
 
           <!-- Workers -->
           <div class="border-b border-bd px-4 py-3 last:border-b-0">
-            <div class="mb-[10px] flex items-center gap-1 text-[.59rem] font-bold uppercase tracking-[.12em] text-tx-3"><svg class="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 4,14 11,14 10,22 20,9 13,9 13,2"/></svg>Workers 计算</div>
-            <div class="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-[9px]">
-              <div class="rounded-sm border border-bd bg-bg-2 px-[13px] py-[11px]">
-                <div class="mb-[5px] flex items-start justify-between gap-1.5">
-                  <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">请求次数（今日）</span>
-                  <span class="mt-px shrink-0 whitespace-nowrap rounded-[3px] border border-bd bg-bg-5 px-[5px] py-px font-mono text-[.57rem] text-tx-3" id="cfReqMethod">1% 采样 × 100</span>
+            <div class="mb-2 flex items-center gap-1 text-2xs font-bold uppercase tracking-[.12em] text-tx-3"><svg class="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 4,14 11,14 10,22 20,9 13,9 13,2"/></svg>Workers 计算</div>
+            <div class="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-2">
+              <div class="rounded-sm border border-bd bg-bg-2 px-3 py-3">
+                <div class="mb-1 flex items-start justify-between gap-2">
+                  <span class="text-xs font-medium leading-[1.3] text-tx-2">请求次数（今日）</span>
+                  <span class="mt-px shrink-0 whitespace-nowrap rounded-xs border border-bd bg-bg-5 px-1 py-px font-mono text-2xs text-tx-3" id="cfReqMethod">1% 采样 × 100</span>
                 </div>
-                <div class="mb-[3px] font-mono text-[1.3rem] font-bold leading-none text-tx" id="cfReqVal">—</div>
-                <div class="mb-[5px] text-[.62rem] text-tx-3 [&_strong]:text-tx-2">上限 <strong>10 万次</strong> / 天</div>
-                <div class="h-[3px] rounded-sm bg-bd overflow-hidden"><div class="cf-fill h-[3px] rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red" id="cfReqBar" style="width:0%"></div></div>
-                <div class="flex justify-between mt-[3px]">
-                  <span class="text-[.6rem] text-tx-3" id="cfReqPct">0%</span>
-                  <span class="text-[.6rem] text-tx-3">剩余 <span id="cfReqLeft">—</span></span>
+                <div class="mb-1 font-mono text-3xl font-bold leading-none text-tx" id="cfReqVal">—</div>
+                <div class="mb-1 text-2xs text-tx-3 [&_strong]:text-tx-2">上限 <strong>10 万次</strong> / 天</div>
+                <div class="h-1 rounded-sm bg-bd overflow-hidden"><div class="cf-fill h-1 rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red" id="cfReqBar" style="width:0%"></div></div>
+                <div class="flex justify-between mt-1">
+                  <span class="text-2xs text-tx-3" id="cfReqPct">0%</span>
+                  <span class="text-2xs text-tx-3">剩余 <span id="cfReqLeft">—</span></span>
                 </div>
               </div>
             </div>
@@ -265,45 +264,45 @@ export function renderAdminPage() {
 
           <!-- R2 Storage -->
           <div class="border-b border-bd px-4 py-3 last:border-b-0">
-            <div class="mb-[10px] flex items-center gap-1 text-[.59rem] font-bold uppercase tracking-[.12em] text-tx-3"><svg class="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/></svg>R2 对象存储</div>
-            <div class="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-[9px]">
-              <div class="rounded-sm border border-bd bg-bg-2 px-[13px] py-[11px]">
-                <div class="mb-[5px] flex items-start justify-between gap-1.5">
-                  <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">存储用量</span>
-                  <span class="mt-px shrink-0 whitespace-nowrap rounded-[3px] border border-bd bg-bg-5 px-[5px] py-px font-mono text-[.57rem] text-tx-3">精确实时</span>
+            <div class="mb-2 flex items-center gap-1 text-2xs font-bold uppercase tracking-[.12em] text-tx-3"><svg class="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/></svg>R2 对象存储</div>
+            <div class="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-2">
+              <div class="rounded-sm border border-bd bg-bg-2 px-3 py-3">
+                <div class="mb-1 flex items-start justify-between gap-2">
+                  <span class="text-xs font-medium leading-[1.3] text-tx-2">存储用量</span>
+                  <span class="mt-px shrink-0 whitespace-nowrap rounded-xs border border-bd bg-bg-5 px-1 py-px font-mono text-2xs text-tx-3">精确实时</span>
                 </div>
-                <div class="mb-[3px] font-mono text-[1.3rem] font-bold leading-none text-tx" id="cfStorageVal">—</div>
-                <div class="mb-[5px] text-[.62rem] text-tx-3 [&_strong]:text-tx-2">上限 <strong>10 GB</strong></div>
-                <div class="h-[3px] rounded-sm bg-bd overflow-hidden"><div class="cf-fill h-[3px] rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red" id="cfStorageBar" style="width:0%"></div></div>
-                <div class="flex justify-between mt-[3px]">
-                  <span class="text-[.6rem] text-tx-3" id="cfStoragePct">0%</span>
-                  <span class="text-[.6rem] text-tx-3">剩余 <span id="cfStorageLeft">—</span></span>
-                </div>
-              </div>
-              <div class="rounded-sm border border-bd bg-bg-2 px-[13px] py-[11px]">
-                <div class="mb-[5px] flex items-start justify-between gap-1.5">
-                  <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">A 类操作（本月）</span>
-                  <span class="mt-px shrink-0 whitespace-nowrap rounded-[3px] border border-bd bg-bg-5 px-[5px] py-px font-mono text-[.57rem] text-tx-3">实时追踪</span>
-                </div>
-                <div class="mb-[3px] font-mono text-[1.3rem] font-bold leading-none text-tx" id="cfR2AVal">—</div>
-                <div class="mb-[5px] text-[.62rem] text-tx-3 [&_strong]:text-tx-2">上限 <strong>100 万次</strong> / 月</div>
-                <div class="h-[3px] rounded-sm bg-bd overflow-hidden"><div class="cf-fill h-[3px] rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red" id="cfR2ABar" style="width:0%"></div></div>
-                <div class="flex justify-between mt-[3px]">
-                  <span class="text-[.6rem] text-tx-3" id="cfR2APct">0%</span>
-                  <span class="text-[.6rem] text-tx-3">剩余 <span id="cfR2ALeft">—</span></span>
+                <div class="mb-1 font-mono text-3xl font-bold leading-none text-tx" id="cfStorageVal">—</div>
+                <div class="mb-1 text-2xs text-tx-3 [&_strong]:text-tx-2">上限 <strong>10 GB</strong></div>
+                <div class="h-1 rounded-sm bg-bd overflow-hidden"><div class="cf-fill h-1 rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red" id="cfStorageBar" style="width:0%"></div></div>
+                <div class="flex justify-between mt-1">
+                  <span class="text-2xs text-tx-3" id="cfStoragePct">0%</span>
+                  <span class="text-2xs text-tx-3">剩余 <span id="cfStorageLeft">—</span></span>
                 </div>
               </div>
-              <div class="rounded-sm border border-bd bg-bg-2 px-[13px] py-[11px]">
-                <div class="mb-[5px] flex items-start justify-between gap-1.5">
-                  <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">B 类操作（本月）</span>
-                  <span class="mt-px shrink-0 whitespace-nowrap rounded-[3px] border border-bd bg-bg-5 px-[5px] py-px font-mono text-[.57rem] text-tx-3">部分追踪</span>
+              <div class="rounded-sm border border-bd bg-bg-2 px-3 py-3">
+                <div class="mb-1 flex items-start justify-between gap-2">
+                  <span class="text-xs font-medium leading-[1.3] text-tx-2">A 类操作（本月）</span>
+                  <span class="mt-px shrink-0 whitespace-nowrap rounded-xs border border-bd bg-bg-5 px-1 py-px font-mono text-2xs text-tx-3">实时追踪</span>
                 </div>
-                <div class="mb-[3px] font-mono text-[1.3rem] font-bold leading-none text-tx" id="cfR2BVal">—</div>
-                <div class="mb-[5px] text-[.62rem] text-tx-3 [&_strong]:text-tx-2">上限 <strong>1000 万次</strong> / 月</div>
-                <div class="h-[3px] rounded-sm bg-bd overflow-hidden"><div class="cf-fill h-[3px] rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red" id="cfR2BBar" style="width:0%"></div></div>
-                <div class="flex justify-between mt-[3px]">
-                  <span class="text-[.6rem] text-tx-3" id="cfR2BPct">0%</span>
-                  <span class="text-[.6rem] text-tx-3">剩余 <span id="cfR2BLeft">—</span></span>
+                <div class="mb-1 font-mono text-3xl font-bold leading-none text-tx" id="cfR2AVal">—</div>
+                <div class="mb-1 text-2xs text-tx-3 [&_strong]:text-tx-2">上限 <strong>100 万次</strong> / 月</div>
+                <div class="h-1 rounded-sm bg-bd overflow-hidden"><div class="cf-fill h-1 rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red" id="cfR2ABar" style="width:0%"></div></div>
+                <div class="flex justify-between mt-1">
+                  <span class="text-2xs text-tx-3" id="cfR2APct">0%</span>
+                  <span class="text-2xs text-tx-3">剩余 <span id="cfR2ALeft">—</span></span>
+                </div>
+              </div>
+              <div class="rounded-sm border border-bd bg-bg-2 px-3 py-3">
+                <div class="mb-1 flex items-start justify-between gap-2">
+                  <span class="text-xs font-medium leading-[1.3] text-tx-2">B 类操作（本月）</span>
+                  <span class="mt-px shrink-0 whitespace-nowrap rounded-xs border border-bd bg-bg-5 px-1 py-px font-mono text-2xs text-tx-3">部分追踪</span>
+                </div>
+                <div class="mb-1 font-mono text-3xl font-bold leading-none text-tx" id="cfR2BVal">—</div>
+                <div class="mb-1 text-2xs text-tx-3 [&_strong]:text-tx-2">上限 <strong>1000 万次</strong> / 月</div>
+                <div class="h-1 rounded-sm bg-bd overflow-hidden"><div class="cf-fill h-1 rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red" id="cfR2BBar" style="width:0%"></div></div>
+                <div class="flex justify-between mt-1">
+                  <span class="text-2xs text-tx-3" id="cfR2BPct">0%</span>
+                  <span class="text-2xs text-tx-3">剩余 <span id="cfR2BLeft">—</span></span>
                 </div>
               </div>
             </div>
@@ -311,117 +310,117 @@ export function renderAdminPage() {
 
           <!-- D1（元数据的真实存储与额度） -->
           <div class="border-b border-bd px-4 py-3 last:border-b-0">
-            <div class="mb-[10px] flex items-center gap-1 text-[.59rem] font-bold uppercase tracking-[.12em] text-tx-3">
+            <div class="mb-2 flex items-center gap-1 text-2xs font-bold uppercase tracking-[.12em] text-tx-3">
               <svg class="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>D1 数据库（元数据存储，行读取/写入按天计费）
-              <button class="ml-auto inline-flex cursor-pointer items-center gap-1 rounded-[3px] border border-bd bg-bg-4 px-[7px] py-px font-mono text-[.57rem] font-normal normal-case tracking-normal text-tx-3 transition hover:border-bd-2 hover:text-tx" onclick="loadD1Stats()" title="重新扫描库规模与用量">
-                <svg class="h-2.5 w-2.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.65 4.35A6 6 0 1 0 14 8"/><polyline points="13.5,1.5 13.5,4.5 10.5,4.5"/></svg>重新统计
+              <button class="ml-auto inline-flex cursor-pointer items-center gap-2 rounded-xs border border-bd bg-bg-4 px-2 py-px font-mono text-2xs font-normal normal-case tracking-normal text-tx-3 transition hover:border-bd-2 hover:text-tx" onclick="loadD1Stats()" title="重新扫描库规模与用量">
+                <svg class="h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.65 4.35A6 6 0 1 0 14 8"/><polyline points="13.5,1.5 13.5,4.5 10.5,4.5"/></svg>重新统计
               </button>
             </div>
-            <div class="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-[9px]">
+            <div class="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-2">
               <!-- 行读取 -->
-              <div class="rounded-sm border border-bd bg-bg-2 px-[13px] py-[11px]">
-                <div class="mb-[5px] flex items-start justify-between gap-1.5">
-                  <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">行读取（本日）</span>
-                  <span class="mt-px shrink-0 whitespace-nowrap rounded-[3px] border border-bd bg-bg-5 px-[5px] py-px font-mono text-[.57rem] text-tx-3" id="d1ReadMethod">官方口径</span>
+              <div class="rounded-sm border border-bd bg-bg-2 px-3 py-3">
+                <div class="mb-1 flex items-start justify-between gap-2">
+                  <span class="text-xs font-medium leading-[1.3] text-tx-2">行读取（本日）</span>
+                  <span class="mt-px shrink-0 whitespace-nowrap rounded-xs border border-bd bg-bg-5 px-1 py-px font-mono text-2xs text-tx-3" id="d1ReadMethod">官方口径</span>
                 </div>
-                <div class="mb-[3px] font-mono text-[1.3rem] font-bold leading-none text-tx" id="d1ReadVal">—</div>
-                <div class="mb-[5px] text-[.62rem] text-tx-3 [&_strong]:text-tx-2">日限 <strong>500 万行</strong>　本月 <span class="text-tx-2" id="d1ReadMonth">—</span></div>
-                <div class="h-[3px] rounded-sm bg-bd overflow-hidden"><div class="cf-fill h-[3px] rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red" id="d1ReadBar" style="width:0%"></div></div>
-                <div class="flex justify-between mt-[3px]">
-                  <span class="text-[.6rem] text-tx-3" id="d1ReadPct">0%</span>
-                  <span class="text-[.6rem] text-tx-3">剩余 <span id="d1ReadLeft">—</span></span>
+                <div class="mb-1 font-mono text-3xl font-bold leading-none text-tx" id="d1ReadVal">—</div>
+                <div class="mb-1 text-2xs text-tx-3 [&_strong]:text-tx-2">日限 <strong>500 万行</strong>　本月 <span class="text-tx-2" id="d1ReadMonth">—</span></div>
+                <div class="h-1 rounded-sm bg-bd overflow-hidden"><div class="cf-fill h-1 rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red" id="d1ReadBar" style="width:0%"></div></div>
+                <div class="flex justify-between mt-1">
+                  <span class="text-2xs text-tx-3" id="d1ReadPct">0%</span>
+                  <span class="text-2xs text-tx-3">剩余 <span id="d1ReadLeft">—</span></span>
                 </div>
               </div>
 
               <!-- 行写入 -->
-              <div class="rounded-sm border border-bd bg-bg-2 px-[13px] py-[11px]">
-                <div class="mb-[5px] flex items-start justify-between gap-1.5">
-                  <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">行写入（本日）</span>
-                  <span class="mt-px shrink-0 whitespace-nowrap rounded-[3px] border border-bd bg-bg-5 px-[5px] py-px font-mono text-[.57rem] text-tx-3" id="d1WriteMethod">官方口径</span>
+              <div class="rounded-sm border border-bd bg-bg-2 px-3 py-3">
+                <div class="mb-1 flex items-start justify-between gap-2">
+                  <span class="text-xs font-medium leading-[1.3] text-tx-2">行写入（本日）</span>
+                  <span class="mt-px shrink-0 whitespace-nowrap rounded-xs border border-bd bg-bg-5 px-1 py-px font-mono text-2xs text-tx-3" id="d1WriteMethod">官方口径</span>
                 </div>
-                <div class="mb-[3px] font-mono text-[1.3rem] font-bold leading-none text-tx" id="d1WriteVal">—</div>
-                <div class="mb-[5px] text-[.62rem] text-tx-3 [&_strong]:text-tx-2">日限 <strong>10 万行</strong>　本月 <span class="text-tx-2" id="d1WriteMonth">—</span></div>
-                <div class="h-[3px] rounded-sm bg-bd overflow-hidden"><div class="cf-fill h-[3px] rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red" id="d1WriteBar" style="width:0%"></div></div>
-                <div class="flex justify-between mt-[3px]">
-                  <span class="text-[.6rem] text-tx-3" id="d1WritePct">0%</span>
-                  <span class="text-[.6rem] text-tx-3">剩余 <span id="d1WriteLeft">—</span></span>
+                <div class="mb-1 font-mono text-3xl font-bold leading-none text-tx" id="d1WriteVal">—</div>
+                <div class="mb-1 text-2xs text-tx-3 [&_strong]:text-tx-2">日限 <strong>10 万行</strong>　本月 <span class="text-tx-2" id="d1WriteMonth">—</span></div>
+                <div class="h-1 rounded-sm bg-bd overflow-hidden"><div class="cf-fill h-1 rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red" id="d1WriteBar" style="width:0%"></div></div>
+                <div class="flex justify-between mt-1">
+                  <span class="text-2xs text-tx-3" id="d1WritePct">0%</span>
+                  <span class="text-2xs text-tx-3">剩余 <span id="d1WriteLeft">—</span></span>
                 </div>
               </div>
 
               <!-- 元数据条目 -->
-              <div class="rounded-sm border border-bd bg-bg-2 px-[13px] py-[11px]">
-                <div class="mb-[5px] flex items-start justify-between gap-1.5">
-                  <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">元数据条目</span>
-                  <span class="mt-px shrink-0 whitespace-nowrap rounded-[3px] border border-bd bg-bg-5 px-[5px] py-px font-mono text-[.57rem] text-tx-3" id="d1RowsMethod">实时扫描</span>
+              <div class="rounded-sm border border-bd bg-bg-2 px-3 py-3">
+                <div class="mb-1 flex items-start justify-between gap-2">
+                  <span class="text-xs font-medium leading-[1.3] text-tx-2">元数据条目</span>
+                  <span class="mt-px shrink-0 whitespace-nowrap rounded-xs border border-bd bg-bg-5 px-1 py-px font-mono text-2xs text-tx-3" id="d1RowsMethod">实时扫描</span>
                 </div>
-                <div class="mb-[3px] font-mono text-[1.3rem] font-bold leading-none text-tx" id="d1RowsVal">—</div>
-                <div class="mb-[5px] text-[.62rem] text-tx-3 [&_strong]:text-tx-2">平均每行 <span class="text-tx-2" id="d1RowAvg">—</span></div>
+                <div class="mb-1 font-mono text-3xl font-bold leading-none text-tx" id="d1RowsVal">—</div>
+                <div class="mb-1 text-2xs text-tx-3 [&_strong]:text-tx-2">平均每行 <span class="text-tx-2" id="d1RowAvg">—</span></div>
                 <!-- 条目数没有「上限」这个概念，不画进度条，换成构成说明 -->
-                <div class="h-[3px] rounded-sm bg-bd overflow-hidden" aria-hidden="true"></div>
-                <div class="flex justify-between mt-[3px]">
-                  <span class="text-[.6rem] text-tx-3" id="d1RowsPct">全部元数据行</span>
-                  <span class="text-[.6rem] text-tx-3" id="d1RowsHint">无固定上限</span>
+                <div class="h-1 rounded-sm bg-bd overflow-hidden" aria-hidden="true"></div>
+                <div class="flex justify-between mt-1">
+                  <span class="text-2xs text-tx-3" id="d1RowsPct">全部元数据行</span>
+                  <span class="text-2xs text-tx-3" id="d1RowsHint">无固定上限</span>
                 </div>
               </div>
 
               <!-- 存储占用 -->
-              <div class="rounded-sm border border-bd bg-bg-2 px-[13px] py-[11px]">
-                <div class="mb-[5px] flex items-start justify-between gap-1.5">
-                  <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">存储占用</span>
-                  <span class="mt-px shrink-0 whitespace-nowrap rounded-[3px] border border-bd bg-bg-5 px-[5px] py-px font-mono text-[.57rem] text-tx-3" id="d1SizeMethod">实时扫描</span>
+              <div class="rounded-sm border border-bd bg-bg-2 px-3 py-3">
+                <div class="mb-1 flex items-start justify-between gap-2">
+                  <span class="text-xs font-medium leading-[1.3] text-tx-2">存储占用</span>
+                  <span class="mt-px shrink-0 whitespace-nowrap rounded-xs border border-bd bg-bg-5 px-1 py-px font-mono text-2xs text-tx-3" id="d1SizeMethod">实时扫描</span>
                 </div>
-                <div class="mb-[3px] font-mono text-[1.3rem] font-bold leading-none text-tx" id="d1SizeVal">—</div>
-                <div class="mb-[5px] text-[.62rem] text-tx-3 [&_strong]:text-tx-2">上限 <strong>500 MB</strong>（免费版单库）</div>
-                <div class="h-[3px] rounded-sm bg-bd overflow-hidden"><div class="cf-fill h-[3px] rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red" id="d1SizeBar" style="width:0%"></div></div>
-                <div class="flex justify-between mt-[3px]">
-                  <span class="text-[.6rem] text-tx-3" id="d1SizePct">0%</span>
-                  <span class="text-[.6rem] text-tx-3">剩余 <span id="d1SizeLeft">—</span></span>
+                <div class="mb-1 font-mono text-3xl font-bold leading-none text-tx" id="d1SizeVal">—</div>
+                <div class="mb-1 text-2xs text-tx-3 [&_strong]:text-tx-2">上限 <strong>500 MB</strong>（免费版单库）</div>
+                <div class="h-1 rounded-sm bg-bd overflow-hidden"><div class="cf-fill h-1 rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red" id="d1SizeBar" style="width:0%"></div></div>
+                <div class="flex justify-between mt-1">
+                  <span class="text-2xs text-tx-3" id="d1SizePct">0%</span>
+                  <span class="text-2xs text-tx-3">剩余 <span id="d1SizeLeft">—</span></span>
                 </div>
               </div>
 
             </div>
 
             <!-- 按前缀分布 -->
-            <div class="mt-[10px] rounded-sm border border-bd bg-bg-2 px-[13px] py-[11px]">
-              <div class="mb-[9px] flex items-center gap-1.5">
-                <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">条目构成</span>
-                <span class="mt-px shrink-0 whitespace-nowrap rounded-[3px] border border-bd bg-bg-5 px-[5px] py-px font-mono text-[.57rem] text-tx-3">按数量</span>
-                <span class="ml-auto text-[.63rem] text-tx-3" id="d1DistHint">—</span>
+            <div class="mt-2 rounded-sm border border-bd bg-bg-2 px-3 py-3">
+              <div class="mb-2 flex items-center gap-2">
+                <span class="text-xs font-medium leading-[1.3] text-tx-2">条目构成</span>
+                <span class="mt-px shrink-0 whitespace-nowrap rounded-xs border border-bd bg-bg-5 px-1 py-px font-mono text-2xs text-tx-3">按数量</span>
+                <span class="ml-auto text-2xs text-tx-3" id="d1DistHint">—</span>
               </div>
-              <div class="flex h-[6px] w-full gap-px overflow-hidden rounded-[3px] bg-bd" id="d1DistBar">
+              <div class="flex h-2 w-full gap-px overflow-hidden rounded-xs bg-bd" id="d1DistBar">
                 <div class="h-full bg-tx-3/20" style="width:100%"></div>
               </div>
-              <div class="mt-[9px] flex flex-wrap gap-x-4 gap-y-[6px]" id="d1DistLegend">
-                <span class="text-[.66rem] text-tx-3">加载中…</span>
+              <div class="mt-2 flex flex-wrap gap-x-4 gap-y-2" id="d1DistLegend">
+                <span class="text-2xs text-tx-3">加载中…</span>
               </div>
             </div>
 
             <!-- 30 天用量趋势 -->
-            <div class="mt-[10px] rounded-sm border border-bd bg-bg-2 px-[13px] py-[11px]">
-              <div class="mb-[5px] flex items-center gap-1.5">
-                <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">近 30 天用量</span>
-                <span class="ml-auto inline-flex items-center gap-3 text-[.63rem] text-tx-3">
-                  <span class="inline-flex items-center gap-1.5"><i class="h-[3px] w-3 shrink-0 rounded-[2px] bg-brand"></i>行写入</span>
-                  <span class="inline-flex items-center gap-1.5"><i class="h-0 w-3 shrink-0 border-t border-dashed border-tx-3"></i>行读取</span>
+            <div class="mt-2 rounded-sm border border-bd bg-bg-2 px-3 py-3">
+              <div class="mb-1 flex items-center gap-2">
+                <span class="text-xs font-medium leading-[1.3] text-tx-2">近 30 天用量</span>
+                <span class="ml-auto inline-flex items-center gap-3 text-2xs text-tx-3">
+                  <span class="inline-flex items-center gap-2"><i class="h-1 w-3 shrink-0 rounded-xs bg-brand"></i>行写入</span>
+                  <span class="inline-flex items-center gap-2"><i class="h-0 w-3 shrink-0 border-t border-dashed border-tx-3"></i>行读取</span>
                 </span>
               </div>
-              <div class="h-[86px] w-full" id="d1Trend"></div>
-              <div class="mt-[7px] flex flex-wrap gap-x-4 gap-y-[3px] text-[.62rem] text-tx-3" id="d1TrendFoot">
+              <div class="h-22 w-full" id="d1Trend"></div>
+              <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-2xs text-tx-3" id="d1TrendFoot">
                 <span>数据积累中</span>
               </div>
             </div>
 
             <!-- 活跃度 / 状态 -->
-            <div class="mt-[10px] flex flex-wrap items-center gap-x-4 gap-y-[6px] px-[2px] text-[.65rem] leading-[1.6] text-tx-3" id="d1Foot">
+            <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 px-1 text-2xs leading-[1.6] text-tx-3" id="d1Foot">
               <span>最近写入 <span class="text-tx-2" id="d1LastWrite">—</span></span>
               <span>最早元数据 <span class="text-tx-2" id="d1FirstWrite">—</span></span>
               <span>生成时间 <span class="text-tx-2" id="d1GeneratedAt">—</span></span>
             </div>
 
-            <div class="mt-[10px] px-[13px] py-[10px] bg-amber-g border border-amber-r rounded-[7px] text-[.73rem] text-tx-2 leading-[1.6] hidden" id="d1Notice"></div>
+            <div class="mt-2 px-3 py-2 bg-amber-g border border-amber-r rounded-sm text-xs text-tx-2 leading-[1.6] hidden" id="d1Notice"></div>
 
-            <div class="mt-[10px] text-[.65rem] leading-[1.6] text-tx-3 pt-[10px] border-t border-bd">
-              <span class="inline-block align-top">行读取 / 行写入为 D1 官方计费口径。配置了 <code class="bg-bg px-1 rounded font-mono text-[.63rem] text-tx-2">CF_API_TOKEN</code> 与 <code class="bg-bg px-1 rounded font-mono text-[.63rem] text-tx-2">CF_D1_DB_ID</code> 时取 CF Analytics 的精确日用量，否则显示本站自追踪的同一口径计数；两者都按 UTC 归日（北京时间 08:00 换日）。</span>
+            <div class="mt-2 text-2xs leading-[1.6] text-tx-3 pt-2 border-t border-bd">
+              <span class="inline-block align-top">行读取 / 行写入为 D1 官方计费口径。配置了 <code class="bg-bg px-1 rounded font-mono text-2xs text-tx-2">CF_API_TOKEN</code> 与 <code class="bg-bg px-1 rounded font-mono text-2xs text-tx-2">CF_D1_DB_ID</code> 时取 CF Analytics 的精确日用量，否则显示本站自追踪的同一口径计数；两者都按 UTC 归日（北京时间 08:00 换日）。</span>
             </div>
           </div>
         </div>
@@ -434,20 +433,20 @@ export function renderAdminPage() {
         </div>
 
         <!-- ── 访问统计 Tabs ── -->
-        <div class="dash-tabs-panel mt-6 overflow-hidden rounded-lg border border-bd bg-bg-3">
+        <div class="dash-tabs-panel mt-6 overflow-hidden rounded-md border border-bd bg-bg-3">
           <div class="dash-tabs-hd flex items-stretch border-b border-bd-2 bg-bg-2 px-3">
             <div class="dash-tabs-nav flex items-stretch">
-              <button class="dash-tab active relative flex items-center gap-[7px] whitespace-nowrap border-b-2 border-transparent bg-transparent px-[15px] py-[11px] -mb-px font-sans text-[.82rem] font-semibold text-tx-2 cursor-pointer transition hover:bg-white/[.035] hover:text-tx [&.active]:border-b-tx [&.active]:text-tx [&.active]:font-bold [&.active_.dash-tab-count]:bg-white/[.12] [&.active_.dash-tab-count]:text-tx [&.active_.dash-tab-count]:border-bd-2" data-dash-tab="images">
-                <svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="10" r="2"/><path d="M2 17l6-6 4 4 3-3 7 7"/></svg>图片 <span class="dash-tab-count rounded-md border border-bd bg-bg-5 px-[7px] py-px font-mono text-[.65rem] font-bold leading-[1.5] text-tx-2 transition" id="dashImgCount">—</span>
+              <button class="dash-tab active relative flex items-center gap-2 whitespace-nowrap border-b-2 border-transparent bg-transparent px-4 py-3 -mb-px font-sans text-sm font-semibold text-tx-2 cursor-pointer transition hover:bg-white/[.035] hover:text-tx [&.active]:border-b-tx [&.active]:text-tx [&.active]:font-bold [&.active_.dash-tab-count]:bg-white/[.12] [&.active_.dash-tab-count]:text-tx [&.active_.dash-tab-count]:border-bd-2" data-dash-tab="images">
+                <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="10" r="2"/><path d="M2 17l6-6 4 4 3-3 7 7"/></svg>图片 <span class="dash-tab-count rounded-xs border border-bd bg-bg-5 px-2 py-1 font-mono text-2xs font-bold leading-[1.5] text-tx-2 transition" id="dashImgCount">—</span>
               </button>
-              <button class="dash-tab relative flex items-center gap-[7px] whitespace-nowrap border-b-2 border-transparent bg-transparent px-[15px] py-[11px] -mb-px font-sans text-[.82rem] font-semibold text-tx-2 cursor-pointer transition hover:bg-white/[.035] hover:text-tx [&.active]:border-b-tx [&.active]:text-tx [&.active]:font-bold [&.active_.dash-tab-count]:bg-white/[.12] [&.active_.dash-tab-count]:text-tx [&.active_.dash-tab-count]:border-bd-2" data-dash-tab="pages">
-                <svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6V2z"/><path d="M15 2v5h5"/><line x1="9" y1="13" x2="16" y2="13"/><line x1="9" y1="17" x2="16" y2="17"/></svg>页面 <span class="dash-tab-count rounded-md border border-bd bg-bg-5 px-[7px] py-px font-mono text-[.65rem] font-bold leading-[1.5] text-tx-2 transition" id="dashPgCount">—</span>
+              <button class="dash-tab relative flex items-center gap-2 whitespace-nowrap border-b-2 border-transparent bg-transparent px-4 py-3 -mb-px font-sans text-sm font-semibold text-tx-2 cursor-pointer transition hover:bg-white/[.035] hover:text-tx [&.active]:border-b-tx [&.active]:text-tx [&.active]:font-bold [&.active_.dash-tab-count]:bg-white/[.12] [&.active_.dash-tab-count]:text-tx [&.active_.dash-tab-count]:border-bd-2" data-dash-tab="pages">
+                <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6V2z"/><path d="M15 2v5h5"/><line x1="9" y1="13" x2="16" y2="13"/><line x1="9" y1="17" x2="16" y2="17"/></svg>页面 <span class="dash-tab-count rounded-xs border border-bd bg-bg-5 px-2 py-1 font-mono text-2xs font-bold leading-[1.5] text-tx-2 transition" id="dashPgCount">—</span>
               </button>
-              <button class="dash-tab relative flex items-center gap-[7px] whitespace-nowrap border-b-2 border-transparent bg-transparent px-[15px] py-[11px] -mb-px font-sans text-[.82rem] font-semibold text-tx-2 cursor-pointer transition hover:bg-white/[.035] hover:text-tx [&.active]:border-b-tx [&.active]:text-tx [&.active]:font-bold [&.active_.dash-tab-count]:bg-white/[.12] [&.active_.dash-tab-count]:text-tx [&.active_.dash-tab-count]:border-bd-2" data-dash-tab="protos">
-                <svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v5l-8 8H2V2z"/><line x1="5" y1="2" x2="5" y2="5"/><line x1="8" y1="2" x2="8" y2="4"/><line x1="11" y1="2" x2="11" y2="5"/></svg>原型 <span class="dash-tab-count rounded-md border border-bd bg-bg-5 px-[7px] py-px font-mono text-[.65rem] font-bold leading-[1.5] text-tx-2 transition" id="dashProtoCount">—</span>
+              <button class="dash-tab relative flex items-center gap-2 whitespace-nowrap border-b-2 border-transparent bg-transparent px-4 py-3 -mb-px font-sans text-sm font-semibold text-tx-2 cursor-pointer transition hover:bg-white/[.035] hover:text-tx [&.active]:border-b-tx [&.active]:text-tx [&.active]:font-bold [&.active_.dash-tab-count]:bg-white/[.12] [&.active_.dash-tab-count]:text-tx [&.active_.dash-tab-count]:border-bd-2" data-dash-tab="protos">
+                <svg class="h-4 w-4 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v5l-8 8H2V2z"/><line x1="5" y1="2" x2="5" y2="5"/><line x1="8" y1="2" x2="8" y2="4"/><line x1="11" y1="2" x2="11" y2="5"/></svg>原型 <span class="dash-tab-count rounded-xs border border-bd bg-bg-5 px-2 py-1 font-mono text-2xs font-bold leading-[1.5] text-tx-2 transition" id="dashProtoCount">—</span>
               </button>
             </div>
-            <span class="dash-tab-hint ml-auto self-center pr-1 text-[.68rem] font-medium text-tx-2">Top 10 · 按访问量排序</span>
+            <span class="dash-tab-hint ml-auto self-center pr-1 text-2xs font-medium text-tx-2">Top 10 · 按访问量排序</span>
           </div>
 
           <!-- 列宽必须用 table-fixed 定：auto 布局下 Chrome 会忽略 <td> 上的
@@ -456,8 +455,8 @@ export function renderAdminPage() {
                table-fixed 之后只有「文件名 / 标题 / 名称」那一列吃剩余宽度，
                其余列按下面 th 上写死的宽度紧凑排列。文件名在列内用 .truncate 截断。 -->
           <div class="dash-tab-pane active hidden [&.active]:block" id="dashTabImages">
-            <div class="table-wrap overflow-x-auto rounded-lg border border-bd bg-bg-3 !rounded-none !border-none">
-              <table class="data-table w-full table-fixed border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
+            <div class="table-wrap overflow-x-auto rounded-md border border-bd bg-bg-3 !rounded-none !border-none">
+              <table class="data-table w-full table-fixed border-collapse text-sm [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-3 [&_th]:h-10 [&_th]:py-2 [&_th]:text-left [&_th]:text-2xs [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-3 [&_td]:py-2 [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
                 <thead><tr><th class="w-[64px]">图片</th><th>文件名</th><th class="w-[88px]">类型</th><th class="w-[96px]">总访问</th><th class="w-[120px]">最后访问</th><th class="w-[88px]">操作</th></tr></thead>
                 <tbody id="topImagesBody"><tr><td colspan="6" class="text-center text-tx-3 p-8">加载中…</td></tr></tbody>
               </table>
@@ -465,8 +464,8 @@ export function renderAdminPage() {
           </div>
 
           <div class="dash-tab-pane hidden [&.active]:block" id="dashTabPages">
-            <div class="table-wrap overflow-x-auto rounded-lg border border-bd bg-bg-3 !rounded-none !border-none">
-              <table class="data-table w-full table-fixed border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
+            <div class="table-wrap overflow-x-auto rounded-md border border-bd bg-bg-3 !rounded-none !border-none">
+              <table class="data-table w-full table-fixed border-collapse text-sm [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-3 [&_th]:h-10 [&_th]:py-2 [&_th]:text-left [&_th]:text-2xs [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-3 [&_td]:py-2 [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
                 <thead><tr><th>标题 / Slug</th><th class="w-[88px]">类型</th><th class="w-[96px]">总访问</th><th class="w-[120px]">最后访问</th><th class="w-[88px]">操作</th></tr></thead>
                 <tbody id="topPagesBody"><tr><td colspan="5" class="text-center text-tx-3 p-8">加载中…</td></tr></tbody>
               </table>
@@ -474,8 +473,8 @@ export function renderAdminPage() {
           </div>
 
           <div class="dash-tab-pane hidden [&.active]:block" id="dashTabProtos">
-            <div class="table-wrap overflow-x-auto rounded-lg border border-bd bg-bg-3 !rounded-none !border-none">
-              <table class="data-table w-full table-fixed border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
+            <div class="table-wrap overflow-x-auto rounded-md border border-bd bg-bg-3 !rounded-none !border-none">
+              <table class="data-table w-full table-fixed border-collapse text-sm [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-3 [&_th]:h-10 [&_th]:py-2 [&_th]:text-left [&_th]:text-2xs [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-3 [&_td]:py-2 [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
                 <thead><tr><th>名称</th><th class="w-[88px]">类型</th><th class="w-[120px]">作者</th><th class="w-[96px]">总访问</th><th class="w-[120px]">最后访问</th><th class="w-[216px]">操作</th></tr></thead>
                 <tbody id="topProtosBody"><tr><td colspan="6" class="text-center text-tx-3 p-8">加载中…</td></tr></tbody>
               </table>
@@ -485,15 +484,15 @@ export function renderAdminPage() {
       </div>
 
       <!-- ── Images ── -->
-      <div class="section hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-images">
-        <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
-          <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">图库管理</div>
+      <div class="section hidden mx-auto w-full max-w-[1600px] px-4 pt-16 pb-12 [&.active]:block sm:px-5 md:px-6 md:pt-8 lg:px-8" id="section-images">
+        <div class="page-header border-b border-bd mb-6 pb-4 md:mb-8 md:pb-6">
+          <div class="text-xl font-extrabold tracking-[-.03em] text-tx mb-2 md:text-2xl">图库管理</div>
           <div class="text-sm font-medium text-tx-3">查看、删除图片及访问统计</div>
         </div>
-        <h3 class="mb-3 text-[.8rem] font-semibold text-tx-2">所有图片</h3>
-        <div class="toolbar flex flex-wrap items-center gap-[10px] mb-3">
-          <input class="w-[230px] rounded-sm border border-bd bg-bg-3 px-[11px] py-[7px] font-sans text-[.83rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)]" id="gallerySearch" type="text" placeholder="搜索文件名 / 标签 / 用户">
-          <select class="cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-[7px] font-sans text-[.78rem] text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx" id="gallerySort">
+        <h3 class="mb-3 text-sm font-semibold text-tx-2">所有图片</h3>
+        <div class="toolbar flex flex-wrap items-center gap-2 mb-3">
+          <input class="w-60 rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="gallerySearch" type="text" placeholder="搜索文件名 / 标签 / 用户">
+          <select class="cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx" id="gallerySort">
             <option value="uploaded:desc">最新上传</option>
             <option value="uploaded:asc">最早上传</option>
             <option value="size:desc">文件最大</option>
@@ -502,23 +501,23 @@ export function renderAdminPage() {
             <option value="name:desc">名称 Z→A</option>
             <option value="views:desc">访问最多</option>
           </select>
-          <span class="text-[.72rem] text-tx-3" id="galleryHint"></span>
+          <span class="text-xs text-tx-3" id="galleryHint"></span>
           <div class="flex-1"></div>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="selectAllBtn">全选</button>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="refreshGallery"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.65 4.35A6 6 0 1 0 14 8"/><polyline points="13.5,1.5 13.5,4.5 10.5,4.5"/></svg>刷新</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="selectAllBtn">全选</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="refreshGallery"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.65 4.35A6 6 0 1 0 14 8"/><polyline points="13.5,1.5 13.5,4.5 10.5,4.5"/></svg>刷新</button>
         </div>
-        <div class="bulk-bar hidden flex-wrap items-center gap-[10px] mb-3 rounded-md border border-bd-2 bg-bg-3 px-[13px] py-[9px] text-[.82rem] text-tx-2 [&.show]:flex" id="bulkBar">
+        <div class="bulk-bar hidden flex-wrap items-center gap-2 mb-3 rounded-md border border-bd-2 bg-bg-3 px-3 py-2 text-sm text-tx-2 [&.show]:flex" id="bulkBar">
           <span id="bulkCount"></span>
           <div class="flex-1"></div>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="bulkCopyBtn">批量复制</button>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r" id="bulkDeleteBtn">批量删除</button>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="clearSelectBtn">取消</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="bulkCopyBtn">批量复制</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-red-r bg-red-g px-3 py-2 text-sm font-semibold leading-tight text-red transition hover:bg-red-r" id="bulkDeleteBtn">批量删除</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="clearSelectBtn">取消</button>
         </div>
-        <div class="overflow-hidden rounded-lg border border-bd bg-bg-3">
+        <div class="overflow-hidden rounded-md border border-bd bg-bg-3">
           <div class="gallery-grid grid grid-cols-[repeat(auto-fill,minmax(168px,1fr))] gap-3 md:gap-4 p-3" id="galleryGrid"></div>
-          <div class="py-[60px] text-center text-[.86rem] text-tx-3" id="galleryEmpty" style="display:none">${EMPTY_ILLUS}暂无图片</div>
-          <div class="mt-[22px] flex justify-center pb-3" id="loadMoreWrap" style="display:none">
-            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="loadMoreBtn">加载更多</button>
+          <div class="py-16 text-center text-md text-tx-3" id="galleryEmpty" style="display:none">${EMPTY_ILLUS}暂无图片</div>
+          <div class="mt-6 flex justify-center pb-3" id="loadMoreWrap" style="display:none">
+            <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="loadMoreBtn">加载更多</button>
           </div>
         </div>
       </div>
@@ -527,42 +526,42 @@ export function renderAdminPage() {
       <!-- 回收站（管理端视角：所有用户）。数据走用户端同一套 /api/trash，
            后端已认 admin token 并按角色决定范围（trash.js 的 resolveActor），
            所以这里不再复制一份接口，只是换了个管理视图。 -->
-      <div class="section hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-trash">
-        <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
-          <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">回收站</div>
+      <div class="section hidden mx-auto w-full max-w-[1600px] px-4 pt-16 pb-12 [&.active]:block sm:px-5 md:px-6 md:pt-8 lg:px-8" id="section-trash">
+        <div class="page-header border-b border-bd mb-6 pb-4 md:mb-8 md:pb-6">
+          <div class="text-xl font-extrabold tracking-[-.03em] text-tx mb-2 md:text-2xl">回收站</div>
           <div class="text-sm font-medium text-tx-3">删除的图片与原型保留 30 天，可按用户查看、恢复或彻底删除</div>
         </div>
-        <div class="toolbar flex flex-wrap items-center gap-[10px] mb-3">
-          <input class="w-[230px] rounded-sm border border-bd bg-bg-3 px-[11px] py-[7px] font-sans text-[.83rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)]" id="trashSearch" type="text" placeholder="搜索文件名 / 标题 / 用户">
-          <select class="cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-[7px] font-sans text-[.78rem] text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx" id="trashOwner"><option value="">全部用户</option></select>
-          <select class="cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-[7px] font-sans text-[.78rem] text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx" id="trashType">
+        <div class="toolbar flex flex-wrap items-center gap-2 mb-3">
+          <input class="w-60 rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="trashSearch" type="text" placeholder="搜索文件名 / 标题 / 用户">
+          <select class="cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx" id="trashOwner"><option value="">全部用户</option></select>
+          <select class="cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx" id="trashType">
             <option value="">全部类型</option>
             <option value="image">图片</option>
             <option value="proto">原型</option>
           </select>
           <div class="flex-1"></div>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="trashRefresh"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.65 4.35A6 6 0 1 0 14 8"/><polyline points="13.5,1.5 13.5,4.5 10.5,4.5"/></svg>刷新</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="trashRefresh"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.65 4.35A6 6 0 1 0 14 8"/><polyline points="13.5,1.5 13.5,4.5 10.5,4.5"/></svg>刷新</button>
         </div>
-        <div class="mb-2 text-[.74rem] text-tx-3" id="trashSummary"></div>
-        <div class="overflow-hidden rounded-lg border border-bd bg-bg-3">
-          <div class="p-12 text-center text-[.86rem] text-tx-3" id="trashEmpty">加载中…</div>
+        <div class="mb-2 text-xs text-tx-3" id="trashSummary"></div>
+        <div class="overflow-hidden rounded-md border border-bd bg-bg-3">
+          <div class="p-12 text-center text-md text-tx-3" id="trashEmpty">加载中…</div>
           <div id="trashGroups"></div>
         </div>
       </div>
 
       <!-- ── Users ── -->
-      <div class="section hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-users">
-        <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
-          <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">用户管理</div>
+      <div class="section hidden mx-auto w-full max-w-[1600px] px-4 pt-16 pb-12 [&.active]:block sm:px-5 md:px-6 md:pt-8 lg:px-8" id="section-users">
+        <div class="page-header border-b border-bd mb-6 pb-4 md:mb-8 md:pb-6">
+          <div class="text-xl font-extrabold tracking-[-.03em] text-tx mb-2 md:text-2xl">用户管理</div>
           <div class="text-sm font-medium text-tx-3">创建账号并设置上传权限</div>
         </div>
-        <h3 class="mb-3 text-[.8rem] font-semibold text-tx-2">所有账号</h3>
-        <div class="toolbar flex flex-wrap items-center gap-[10px] mb-3">
+        <h3 class="mb-3 text-sm font-semibold text-tx-2">所有账号</h3>
+        <div class="toolbar flex flex-wrap items-center gap-2 mb-3">
           <div class="min-w-[20px] flex-1"></div>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="createUserBtn">+ 新建用户</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="createUserBtn">+ 新建用户</button>
         </div>
-        <div class="overflow-auto rounded-lg border border-bd bg-bg-3">
-          <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
+        <div class="overflow-auto rounded-md border border-bd bg-bg-3">
+          <table class="data-table w-full border-collapse text-sm [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-3 [&_th]:h-10 [&_th]:py-2 [&_th]:text-left [&_th]:text-2xs [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-3 [&_td]:py-2 [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
             <thead><tr><th>用户名</th><th>权限</th><th>上传统计</th><th>限制</th><th>登录状态</th><th>操作</th></tr></thead>
             <tbody id="usersBody"><tr><td colspan="6" class="text-center text-tx-3 p-6">加载中…</td></tr></tbody>
           </table>
@@ -570,44 +569,44 @@ export function renderAdminPage() {
       </div>
 
       <!-- ── Pages ── -->
-      <div class="section hidden max-w-[1200px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-pages">
-        <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
-          <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">页面管理</div>
+      <div class="section hidden mx-auto w-full max-w-[1600px] px-4 pt-16 pb-12 [&.active]:block sm:px-5 md:px-6 md:pt-8 lg:px-8" id="section-pages">
+        <div class="page-header border-b border-bd mb-6 pb-4 md:mb-8 md:pb-6">
+          <div class="text-xl font-extrabold tracking-[-.03em] text-tx mb-2 md:text-2xl">页面管理</div>
           <div class="text-sm font-medium text-tx-3">托管的 MD / HTML 文档</div>
         </div>
-        <h3 class="mb-3 text-[.8rem] font-semibold text-tx-2">所有页面</h3>
-        <div class="toolbar flex flex-wrap items-center gap-[10px] mb-3">
-          <input class="w-[210px] rounded-sm border border-bd bg-bg-3 px-[11px] py-[7px] font-sans text-[.83rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)] !max-w-[200px]" id="adminPageSearch" type="text" placeholder="搜索标题/slug/作者…">
+        <h3 class="mb-3 text-sm font-semibold text-tx-2">所有页面</h3>
+        <div class="toolbar flex flex-wrap items-center gap-2 mb-3">
+          <input class="w-60 rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="adminPageSearch" type="text" placeholder="搜索标题/slug/作者…">
           <div class="inline-flex items-center gap-1">
-            <select class="max-w-[140px] cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-1.5 font-sans text-[.76rem] text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx ml-2" id="adminPageProjFilter"><option value="all">全部项目</option></select>
-            <span class="inline-flex items-center gap-[3px]" id="adminProjActions"></span>
+            <select class="max-w-[140px] cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx ml-2" id="adminPageProjFilter"><option value="all">全部项目</option></select>
+            <span class="inline-flex items-center gap-1" id="adminProjActions"></span>
           </div>
           <div class="inline-flex items-center gap-1">
-            <select class="max-w-[140px] cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-1.5 font-sans text-[.76rem] text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx ml-1" id="adminPageGrpFilter"><option value="all">全部分组</option></select>
-            <span class="inline-flex items-center gap-[3px]" id="adminGrpActions"></span>
+            <select class="max-w-[140px] cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx ml-1" id="adminPageGrpFilter"><option value="all">全部分组</option></select>
+            <span class="inline-flex items-center gap-1" id="adminGrpActions"></span>
           </div>
-          <select class="max-w-[140px] cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-1.5 font-sans text-[.76rem] text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx ml-1" id="adminPageTypeFilter"><option value="all">全部类型</option><option value="markdown">Markdown</option><option value="html">HTML</option></select>
+          <select class="max-w-[140px] cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx ml-1" id="adminPageTypeFilter"><option value="all">全部类型</option><option value="markdown">Markdown</option><option value="html">HTML</option></select>
           <div class="min-w-[20px] flex-1"></div>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.78rem]" id="pageSelectToggle">选择</button>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.78rem]" id="adminImportBtn">导入</button>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.78rem]" id="adminNewProjectBtn">+ 新建项目</button>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-[.78rem]" id="adminNewGroupBtn">+ 新建分组</button>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="adminNewPageBtn">+ 新建页面</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-sm" id="pageSelectToggle">选择</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-sm" id="adminImportBtn">导入</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-sm" id="adminNewProjectBtn">+ 新建项目</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !text-sm" id="adminNewGroupBtn">+ 新建分组</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="adminNewPageBtn">+ 新建页面</button>
         </div>
-        <div class="pg-bulk-bar hidden flex-wrap items-center gap-[10px] mb-3 rounded-md border border-bd-2 bg-bg-3 px-[13px] py-[9px] text-[.82rem] text-tx-2" id="adminPageBulkBar">
-          <span class="font-mono text-[.8rem] text-tx-3" id="adminPageSelCount">已选 0</span>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-[10px] !py-1 !text-[.76rem]" id="adminPageBulkDelete">批量删除</button>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-[10px] !py-1 !text-[.76rem]" id="adminPageBulkMove">更改项目/分组</button>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-[10px] !py-1 !text-[.76rem]" id="adminPageBulkPublic">设为公开</button>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-[10px] !py-1 !text-[.76rem]" id="adminPageBulkPrivate">设为私密</button>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-[10px] !py-1 !text-[.76rem]" id="adminPageCancelSel">取消</button>
+        <div class="pg-bulk-bar hidden flex-wrap items-center gap-2 mb-3 rounded-md border border-bd-2 bg-bg-3 px-3 py-2 text-sm text-tx-2" id="adminPageBulkBar">
+          <span class="font-mono text-sm text-tx-3" id="adminPageSelCount">已选 0</span>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-red-r bg-red-g px-3 py-2 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-3 !py-1 !text-sm" id="adminPageBulkDelete">批量删除</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-3 !py-1 !text-sm" id="adminPageBulkMove">更改项目/分组</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-3 !py-1 !text-sm" id="adminPageBulkPublic">设为公开</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-3 !py-1 !text-sm" id="adminPageBulkPrivate">设为私密</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-3 !py-1 !text-sm" id="adminPageCancelSel">取消</button>
         </div>
-        <div class="pg-reorder-hint mb-2 text-[.72rem] text-tx-3" id="adminPageReorderHint">拖动 <span class="text-tx-2">⠿</span> 手柄排序，拖到不同项目/分组行可移动页面</div>
-        <div class="table-wrap overflow-x-auto rounded-lg border border-bd bg-bg-3">
-          <table class="data-table w-full border-collapse text-[.82rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[10px] [&_th]:py-[8px] [&_th]:text-left [&_th]:text-[.64rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.1em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[10px] [&_td]:py-[7px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
+        <div class="pg-reorder-hint mb-2 text-xs text-tx-3" id="adminPageReorderHint">拖动 <span class="text-tx-2">⠿</span> 手柄排序，拖到不同项目/分组行可移动页面</div>
+        <div class="table-wrap overflow-x-auto rounded-md border border-bd bg-bg-3">
+          <table class="data-table w-full border-collapse text-sm [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-3 [&_th]:h-10 [&_th]:py-2 [&_th]:text-left [&_th]:text-2xs [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.1em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-3 [&_td]:py-2 [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
             <thead><tr>
               <th class="pg-drag-col hidden w-[28px] text-center [&.scoped]:table-cell" id="pgDragHead"></th>
-              <th class="pg-check-col hidden w-[34px] text-center [&.selecting]:table-cell" id="pgCheckHead"><input type="checkbox" class="h-[15px] w-[15px] cursor-pointer accent-tx-2" id="adminPageSelectAll"></th>
+              <th class="pg-check-col hidden w-9 text-center [&.selecting]:table-cell" id="pgCheckHead"><input type="checkbox" class="h-4 w-4 cursor-pointer accent-tx-2" id="adminPageSelectAll"></th>
               <th class="w-[26%] cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('title')">标题 / Slug</th>
               <th class="w-[48px] cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('type')">类型</th>
               <th class="w-[64px] cursor-pointer select-none hover:text-tx-2" onclick="adminPageSort('owner')">作者</th>
@@ -622,71 +621,72 @@ export function renderAdminPage() {
       </div>
 
       <!-- ── Protos ── -->
-      <div class="section hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-protos">
-        <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
-          <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">原型管理</div>
+      <div class="section hidden mx-auto w-full max-w-[1600px] px-4 pt-16 pb-12 [&.active]:block sm:px-5 md:px-6 md:pt-8 lg:px-8" id="section-protos">
+        <div class="page-header border-b border-bd mb-6 pb-4 md:mb-8 md:pb-6">
+          <div class="text-xl font-extrabold tracking-[-.03em] text-tx mb-2 md:text-2xl">原型管理</div>
           <div class="text-sm font-medium text-tx-3">AxureRP / HTML 原型文件托管</div>
         </div>
 
         <!-- Upload UI -->
-        <div class="proto-upload-card mb-[18px] rounded-lg border border-bd bg-bg-3 p-[18px]">
-          <h3 class="mb-3.5 border-b border-bd pb-[10px] text-[.65rem] font-bold uppercase tracking-[.12em] text-tx-3">上传新原型</h3>
-          <div id="adminProtoDropZone" class="proto-drop-zone flex cursor-pointer flex-col items-center gap-[7px] rounded-md border-[1.5px] border-dashed border-bd-2 bg-bg-2 px-5 py-5 text-center transition mb-[10px] hover:border-brand hover:bg-brand-muted" onclick="document.getElementById('adminProtoFileInput').click()">
+        <div class="proto-upload-card mb-4 rounded-md border border-bd bg-bg-3 p-5">
+          <h3 class="mb-4 border-b border-bd pb-2 text-2xs font-bold uppercase tracking-[.12em] text-tx-3">上传新原型</h3>
+          <div id="adminProtoDropZone" class="proto-drop-zone flex cursor-pointer flex-col items-center gap-2 rounded-md border border-dashed border-bd-2 bg-bg-2 px-5 py-5 text-center transition mb-2 hover:border-brand hover:bg-brand-muted" onclick="document.getElementById('adminProtoFileInput').click()">
             <svg class="h-6 w-6 text-tx-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7v10l10 5 10-5V7L12 2z"/><polyline points="2,7 12,12 22,7"/><line x1="12" y1="12" x2="12" y2="22"/></svg>
-            <div class="text-[.82rem] font-medium text-tx-2" id="adminProtoDropText">点击选择 ZIP 文件</div>
-            <div class="text-[.7rem] text-tx-3">或拖拽至此 · 最大 50 MB</div>
+            <div class="text-sm font-medium text-tx-2" id="adminProtoDropText">点击选择 ZIP 文件，或拖拽文件夹到此处</div>
+            <div class="text-xs text-tx-3">支持 ZIP / 文件夹 · 最大 50 MB</div>
           </div>
           <input class="hidden" type="file" id="adminProtoFileInput" accept=".zip,application/zip">
           <input class="hidden" type="file" id="adminProtoFolderInput" webkitdirectory>
-          <div class="proto-field-row grid grid-cols-2 gap-[10px] mb-[10px]">
-            <div class="flex flex-col gap-[5px] mb-3.5 !m-0"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">原型名称</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="adminProtoTitle" placeholder="My Prototype"></div>
-            <div class="flex flex-col gap-[5px] mb-3.5 !m-0"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">访问密码（可选，6位）</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)] font-mono tracking-[.12em]" type="text" id="adminProtoPassword" placeholder="留空则公开访问" maxlength="6"></div>
+          <div class="proto-field-row grid grid-cols-2 gap-2 mb-2">
+            <div class="flex flex-col gap-1 mb-4 !m-0"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">原型名称</label><input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="adminProtoTitle" placeholder="My Prototype"></div>
+            <div class="flex flex-col gap-1 mb-4 !m-0"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">访问密码（可选，6位）</label><input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)] font-mono tracking-[.12em]" type="text" id="adminProtoPassword" placeholder="留空则公开访问" maxlength="6"></div>
           </div>
-          <div class="proto-prog hidden h-[5px] overflow-hidden rounded-xs bg-bd [&.show]:block" id="adminProtoProgress"><div class="proto-prog-bar h-[5px] w-0 rounded-xs bg-[linear-gradient(90deg,var(--color-brand-d),var(--color-brand))] transition-[width] duration-[.4s]" id="adminProtoProgressBar"></div></div>
-          <div class="proto-prog-info hidden items-center justify-between mt-[5px] text-[.7rem] text-tx-3 [&.show]:flex" id="adminProtoProgressInfo">
+          <div class="proto-prog hidden h-1 overflow-hidden rounded-xs bg-bd [&.show]:block" id="adminProtoProgress"><div class="proto-prog-bar h-1 w-0 rounded-xs bg-[linear-gradient(90deg,var(--color-brand-d),var(--color-brand))] transition-[width] duration-[.4s]" id="adminProtoProgressBar"></div></div>
+          <div class="proto-prog-info hidden items-center justify-between mt-1 text-xs text-tx-3 [&.show]:flex" id="adminProtoProgressInfo">
             <span class="hidden" id="adminProtoStatusText"></span>
             <span id="adminProtoProgressPct">0%</span>
           </div>
-          <div class="proto-err mt-1 min-h-[16px] text-[.76rem] text-red" id="adminProtoErr"></div>
-          <div class="proto-upload-actions flex flex-wrap items-center gap-[7px]">
-            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="adminProtoUploadBtn" disabled>上传原型</button>
-            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="document.getElementById('adminProtoFolderInput').click()">选择文件夹</button>
+          <div class="proto-err mt-1 min-h-4 text-sm text-red" id="adminProtoErr"></div>
+          <div class="proto-upload-actions flex flex-wrap items-center gap-2">
+            <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="adminProtoUploadBtn" disabled>上传原型</button>
+            <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="document.getElementById('adminProtoFileInput').click()">选择 ZIP 文件</button>
+            <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="document.getElementById('adminProtoFolderInput').click()">选择文件夹</button>
           </div>
         </div>
 
-        <h3 class="mb-3 text-[.8rem] font-semibold text-tx-2">所有原型</h3>
-        <div class="toolbar flex flex-wrap items-center gap-[10px] mb-3">
+        <h3 class="mb-3 text-sm font-semibold text-tx-2">所有原型</h3>
+        <div class="toolbar flex flex-wrap items-center gap-2 mb-3">
           <div class="min-w-[20px] flex-1"></div>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="refreshAdminProtos"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.65 4.35A6 6 0 1 0 14 8"/><polyline points="13.5,1.5 13.5,4.5 10.5,4.5"/></svg>刷新</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="refreshAdminProtos"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.65 4.35A6 6 0 1 0 14 8"/><polyline points="13.5,1.5 13.5,4.5 10.5,4.5"/></svg>刷新</button>
         </div>
-        <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3">
-          <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
+        <div class="table-wrap overflow-hidden rounded-md border border-bd bg-bg-3">
+          <table class="data-table w-full border-collapse text-sm [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-3 [&_th]:h-10 [&_th]:py-2 [&_th]:text-left [&_th]:text-2xs [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-3 [&_td]:py-2 [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
             <thead><tr><th>名称</th><th>作者</th><th>文件数</th><th>大小</th><th>密码</th><th>版本</th><th>访问</th><th>上传时间</th><th>更新时间</th><th></th></tr></thead>
             <tbody id="adminProtosBody"><tr><td colspan="10" class="text-center text-tx-3 p-6">加载中…</td></tr></tbody>
           </table>
         </div>
-        <div class="py-[60px] text-center text-[.86rem] text-tx-3" id="adminProtosEmpty" style="display:none">${EMPTY_ILLUS}暂无原型</div>
+        <div class="py-16 text-center text-md text-tx-3" id="adminProtosEmpty" style="display:none">${EMPTY_ILLUS}暂无原型</div>
       </div>
 
       <!-- ── Members ── -->
-      <div class="section hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-members">
-        <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
-          <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">成员统计</div>
+      <div class="section hidden mx-auto w-full max-w-[1600px] px-4 pt-16 pb-12 [&.active]:block sm:px-5 md:px-6 md:pt-8 lg:px-8" id="section-members">
+        <div class="page-header border-b border-bd mb-6 pb-4 md:mb-8 md:pb-6">
+          <div class="text-xl font-extrabold tracking-[-.03em] text-tx mb-2 md:text-2xl">成员统计</div>
           <div class="text-sm font-medium text-tx-3">成员账号的详细上传与配额数据</div>
         </div>
-        <div class="mb-summary grid grid-cols-[repeat(auto-fit,minmax(130px,1fr))] gap-[10px] mb-[18px]">
-          <div class="rounded-md border border-bd bg-bg-3 p-[14px]"><div class="mb-1.5 text-[.62rem] font-bold uppercase tracking-[.1em] text-tx-3">注册成员</div><div class="font-mono text-[1.65rem] font-bold leading-none text-tx" id="mbTotal">—</div></div>
-          <div class="rounded-md border border-bd bg-bg-3 p-[14px]"><div class="mb-1.5 text-[.62rem] font-bold uppercase tracking-[.1em] text-tx-3">今日活跃</div><div class="font-mono text-[1.65rem] font-bold leading-none text-tx" id="mbActive">—</div></div>
-          <div class="rounded-md border border-bd bg-bg-3 p-[14px]"><div class="mb-1.5 text-[.62rem] font-bold uppercase tracking-[.1em] text-tx-3">今日上传合计</div><div class="font-mono text-[1.65rem] font-bold leading-none text-tx" id="mbSumToday">—</div></div>
-          <div class="rounded-md border border-bd bg-bg-3 p-[14px]"><div class="mb-1.5 text-[.62rem] font-bold uppercase tracking-[.1em] text-tx-3">总上传合计</div><div class="font-mono text-[1.65rem] font-bold leading-none text-tx" id="mbSumTotal">—</div></div>
+        <div class="mb-summary grid grid-cols-[repeat(auto-fit,minmax(130px,1fr))] gap-2 mb-4">
+          <div class="rounded-md border border-bd bg-bg-3 p-3"><div class="mb-2 text-2xs font-bold uppercase tracking-[.1em] text-tx-3">注册成员</div><div class="font-mono text-3xl font-bold leading-none text-tx" id="mbTotal">—</div></div>
+          <div class="rounded-md border border-bd bg-bg-3 p-3"><div class="mb-2 text-2xs font-bold uppercase tracking-[.1em] text-tx-3">今日活跃</div><div class="font-mono text-3xl font-bold leading-none text-tx" id="mbActive">—</div></div>
+          <div class="rounded-md border border-bd bg-bg-3 p-3"><div class="mb-2 text-2xs font-bold uppercase tracking-[.1em] text-tx-3">今日上传合计</div><div class="font-mono text-3xl font-bold leading-none text-tx" id="mbSumToday">—</div></div>
+          <div class="rounded-md border border-bd bg-bg-3 p-3"><div class="mb-2 text-2xs font-bold uppercase tracking-[.1em] text-tx-3">总上传合计</div><div class="font-mono text-3xl font-bold leading-none text-tx" id="mbSumTotal">—</div></div>
         </div>
-        <h3 class="mb-3 text-[.8rem] font-semibold text-tx-2">成员列表</h3>
-        <div class="toolbar flex flex-wrap items-center gap-[10px] mb-3">
+        <h3 class="mb-3 text-sm font-semibold text-tx-2">成员列表</h3>
+        <div class="toolbar flex flex-wrap items-center gap-2 mb-3">
           <div class="min-w-[20px] flex-1"></div>
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="loadMemberStats()"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.65 4.35A6 6 0 1 0 14 8"/><polyline points="13.5,1.5 13.5,4.5 10.5,4.5"/></svg>刷新</button>
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="loadMemberStats()"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.65 4.35A6 6 0 1 0 14 8"/><polyline points="13.5,1.5 13.5,4.5 10.5,4.5"/></svg>刷新</button>
         </div>
-        <div class="table-wrap overflow-hidden rounded-lg border border-bd bg-bg-3">
-          <table class="data-table w-full border-collapse text-[.83rem] [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-[13px] [&_th]:py-[10px] [&_th]:text-left [&_th]:text-[.66rem] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-[13px] [&_td]:py-[10px] [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
+        <div class="table-wrap overflow-hidden rounded-md border border-bd bg-bg-3">
+          <table class="data-table w-full border-collapse text-sm [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-bd-2 [&_th]:bg-bg-2 [&_th]:px-3 [&_th]:h-10 [&_th]:py-2 [&_th]:text-left [&_th]:text-2xs [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[.11em] [&_th]:text-tx-2 [&_td]:border-b [&_td]:border-bd [&_td]:px-3 [&_td]:py-2 [&_td]:align-middle [&_td]:text-tx [&_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-bg-hover">
             <thead><tr>
               <th class="cursor-pointer select-none hover:text-tx-2" onclick="memberSort('name')">用户名</th>
               <th>状态</th>
@@ -702,47 +702,47 @@ export function renderAdminPage() {
       </div>
 
       <!-- ── Audit Log ── -->
-      <div class="section hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-audit">
-        <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
-          <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">审计日志</div>
+      <div class="section hidden mx-auto w-full max-w-[1600px] px-4 pt-16 pb-12 [&.active]:block sm:px-5 md:px-6 md:pt-8 lg:px-8" id="section-audit">
+        <div class="page-header border-b border-bd mb-6 pb-4 md:mb-8 md:pb-6">
+          <div class="text-xl font-extrabold tracking-[-.03em] text-tx mb-2 md:text-2xl">审计日志</div>
           <div class="text-sm font-medium text-tx-3">登录、删除、用户与配置变更等敏感操作记录（保留 92 天）</div>
         </div>
 
         <!-- 筛选条 -->
-        <div class="mb-4 flex flex-wrap items-center gap-2.5 rounded-lg border border-bd bg-bg-3 px-4 py-3">
-          <label class="text-[.78rem] font-semibold text-tx-2">时间范围</label>
-          <select class="rounded-sm border border-bd bg-bg-2 px-2.5 py-1.5 text-[.8rem] text-tx outline-none transition focus:border-bd-focus" id="auditDays">
+        <div class="mb-4 flex flex-wrap items-center gap-2 rounded-md border border-bd bg-bg-3 px-4 py-3">
+          <label class="text-sm font-semibold text-tx-2">时间范围</label>
+          <select class="rounded-sm border border-bd bg-bg-2 px-3 py-2 text-sm text-tx outline-none transition focus:border-bd-focus" id="auditDays">
             <option value="1">今天</option>
             <option value="7" selected>最近 7 天</option>
             <option value="30">最近 30 天</option>
             <option value="31">最近 31 天</option>
           </select>
 
-          <label class="ml-2 text-[.78rem] font-semibold text-tx-2">操作类型</label>
-          <select class="rounded-sm border border-bd bg-bg-2 px-2.5 py-1.5 text-[.8rem] text-tx outline-none transition focus:border-bd-focus" id="auditAction">
+          <label class="ml-2 text-sm font-semibold text-tx-2">操作类型</label>
+          <select class="rounded-sm border border-bd bg-bg-2 px-3 py-2 text-sm text-tx outline-none transition focus:border-bd-focus" id="auditAction">
             <option value="">全部</option>
           </select>
 
-          <label class="ml-2 text-[.78rem] font-semibold text-tx-2">操作者</label>
-          <input class="w-[140px] rounded-sm border border-bd bg-bg-2 px-2.5 py-1.5 text-[.8rem] text-tx outline-none transition focus:border-bd-focus" type="text" id="auditActor" placeholder="用户名">
+          <label class="ml-2 text-sm font-semibold text-tx-2">操作者</label>
+          <input class="w-[140px] rounded-sm border border-bd bg-bg-2 px-3 py-2 text-sm text-tx outline-none transition focus:border-bd-focus" type="text" id="auditActor" placeholder="用户名">
 
-          <button class="rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-[.8rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="auditRefresh">刷新</button>
+          <button class="rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="auditRefresh">刷新</button>
           <div class="flex-1"></div>
-          <span class="font-mono text-[.75rem] text-tx-3" id="auditSummary"></span>
+          <span class="font-mono text-xs text-tx-3" id="auditSummary"></span>
         </div>
 
         <!-- 列表 -->
-        <div class="overflow-hidden rounded-lg border border-bd bg-bg-3">
+        <div class="overflow-hidden rounded-md border border-bd bg-bg-3">
           <div class="overflow-x-auto">
             <table class="w-full border-collapse text-left">
               <thead>
                 <tr class="border-b border-bd bg-bg-4">
-                  <th class="whitespace-nowrap px-4 py-2.5 text-[.65rem] font-bold uppercase tracking-[.1em] text-tx-3">时间</th>
-                  <th class="whitespace-nowrap px-4 py-2.5 text-[.65rem] font-bold uppercase tracking-[.1em] text-tx-3">操作</th>
-                  <th class="whitespace-nowrap px-4 py-2.5 text-[.65rem] font-bold uppercase tracking-[.1em] text-tx-3">操作者</th>
-                  <th class="whitespace-nowrap px-4 py-2.5 text-[.65rem] font-bold uppercase tracking-[.1em] text-tx-3">对象</th>
-                  <th class="whitespace-nowrap px-4 py-2.5 text-[.65rem] font-bold uppercase tracking-[.1em] text-tx-3">状态</th>
-                  <th class="whitespace-nowrap px-4 py-2.5 text-[.65rem] font-bold uppercase tracking-[.1em] text-tx-3">来源 IP</th>
+                  <th class="whitespace-nowrap px-4 py-2 text-2xs font-bold uppercase tracking-[.1em] text-tx-3">时间</th>
+                  <th class="whitespace-nowrap px-4 py-2 text-2xs font-bold uppercase tracking-[.1em] text-tx-3">操作</th>
+                  <th class="whitespace-nowrap px-4 py-2 text-2xs font-bold uppercase tracking-[.1em] text-tx-3">操作者</th>
+                  <th class="whitespace-nowrap px-4 py-2 text-2xs font-bold uppercase tracking-[.1em] text-tx-3">对象</th>
+                  <th class="whitespace-nowrap px-4 py-2 text-2xs font-bold uppercase tracking-[.1em] text-tx-3">状态</th>
+                  <th class="whitespace-nowrap px-4 py-2 text-2xs font-bold uppercase tracking-[.1em] text-tx-3">来源 IP</th>
                 </tr>
               </thead>
               <tbody id="auditBody">
@@ -752,42 +752,42 @@ export function renderAdminPage() {
           </div>
         </div>
 
-        <div class="mt-3 text-[.73rem] text-tx-3" id="auditHint"></div>
+        <div class="mt-3 text-xs text-tx-3" id="auditHint"></div>
       </div>
 
       <!-- ── Settings ── -->
-      <div class="section hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-settings">
-        <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
-          <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">系统设置</div>
+      <div class="section hidden mx-auto w-full max-w-[1600px] px-4 pt-16 pb-12 [&.active]:block sm:px-5 md:px-6 md:pt-8 lg:px-8" id="section-settings">
+        <div class="page-header border-b border-bd mb-6 pb-4 md:mb-8 md:pb-6">
+          <div class="text-xl font-extrabold tracking-[-.03em] text-tx mb-2 md:text-2xl">系统设置</div>
           <div class="text-sm font-medium text-tx-3">上传限制与文件类型配置</div>
         </div>
-        <div class="settings-card mb-3.5 rounded-lg border border-bd bg-bg-3 p-5">
-          <h3 class="mb-4 border-b border-bd pb-[10px] text-[.65rem] font-bold uppercase tracking-[.12em] text-tx-3">上传限制</h3>
-          <div class="flex items-center gap-4 border-b border-bd py-[11px] last:border-b-0">
-            <div class="w-[200px] shrink-0 text-[.83rem] text-tx-2">单文件最大大小</div>
-            <div class="flex flex-1 items-center gap-[10px] [&_input[type=number]]:w-[140px] [&_input[type=number]]:rounded-sm [&_input[type=number]]:border [&_input[type=number]]:border-bd [&_input[type=number]]:bg-bg-2 [&_input[type=number]]:px-[10px] [&_input[type=number]]:py-1.5 [&_input[type=number]]:font-sans [&_input[type=number]]:text-[.83rem] [&_input[type=number]]:text-tx [&_input[type=number]]:outline-none [&_input[type=number]]:transition [&_input[type=number]]:focus:border-bd-focus [&_input[type=number]]:focus:shadow-[0_0_0_3px_var(--color-brand-muted)] [&_input[type=text]]:w-[140px] [&_input[type=text]]:rounded-sm [&_input[type=text]]:border [&_input[type=text]]:border-bd [&_input[type=text]]:bg-bg-2 [&_input[type=text]]:px-[10px] [&_input[type=text]]:py-1.5 [&_input[type=text]]:font-sans [&_input[type=text]]:text-[.83rem] [&_input[type=text]]:text-tx [&_input[type=text]]:outline-none [&_input[type=text]]:transition [&_input[type=text]]:focus:border-bd-focus [&_input[type=text]]:focus:shadow-[0_0_0_3px_var(--color-brand-muted)]">
+        <div class="settings-card mb-4 rounded-md border border-bd bg-bg-3 p-5">
+          <h3 class="mb-4 border-b border-bd pb-2 text-2xs font-bold uppercase tracking-[.12em] text-tx-3">上传限制</h3>
+          <div class="flex items-center gap-4 border-b border-bd py-3 last:border-b-0">
+            <div class="w-[200px] shrink-0 text-sm text-tx-2">单文件最大大小</div>
+            <div class="flex flex-1 items-center gap-2 [&_input[type=number]]:w-[140px] [&_input[type=number]]:rounded-sm [&_input[type=number]]:border [&_input[type=number]]:border-bd [&_input[type=number]]:bg-bg-2 [&_input[type=number]]:px-3 [&_input[type=number]]:py-2 [&_input[type=number]]:font-sans [&_input[type=number]]:text-sm [&_input[type=number]]:text-tx [&_input[type=number]]:outline-none [&_input[type=number]]:transition [&_input[type=number]]:focus:border-bd-focus [&_input[type=number]]:focus:shadow-[0_0_0_3px_var(--color-brand-ring)] [&_input[type=text]]:w-[140px] [&_input[type=text]]:rounded-sm [&_input[type=text]]:border [&_input[type=text]]:border-bd [&_input[type=text]]:bg-bg-2 [&_input[type=text]]:px-3 [&_input[type=text]]:py-2 [&_input[type=text]]:font-sans [&_input[type=text]]:text-sm [&_input[type=text]]:text-tx [&_input[type=text]]:outline-none [&_input[type=text]]:transition [&_input[type=text]]:focus:border-bd-focus [&_input[type=text]]:focus:shadow-[0_0_0_3px_var(--color-brand-ring)]">
               <input type="number" id="cfgSize" min="1" max="100" step="1" value="10">
-              <span class="text-[.82rem] text-tx-3">MB</span>
-              <span class="text-[.73rem] text-tx-3">（当前：<span id="cfgSizeDisplay">—</span>）</span>
+              <span class="text-sm text-tx-3">MB</span>
+              <span class="text-xs text-tx-3">（当前：<span id="cfgSizeDisplay">—</span>）</span>
             </div>
           </div>
-          <div class="flex items-center gap-4 border-b border-bd py-[11px] last:border-b-0 !flex-col !items-start !gap-[10px]">
-            <div class="w-[200px] shrink-0 text-[.83rem] text-tx-2">允许的文件类型</div>
-            <div class="flex flex-wrap gap-1.5" id="typesGrid"></div>
+          <div class="flex items-center gap-4 border-b border-bd py-3 last:border-b-0 !flex-col !items-start !gap-2">
+            <div class="w-[200px] shrink-0 text-sm text-tx-2">允许的文件类型</div>
+            <div class="flex flex-wrap gap-2" id="typesGrid"></div>
           </div>
           <div class="mt-4 flex justify-end">
-            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="saveConfigBtn">保存设置</button>
+            <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="saveConfigBtn">保存设置</button>
           </div>
         </div>
-        <div class="settings-card mb-3.5 rounded-lg border border-bd bg-bg-3 p-5">
-          <h3 class="mb-4 border-b border-bd pb-[10px] text-[.65rem] font-bold uppercase tracking-[.12em] text-tx-3">密钥管理</h3>
-          <div class="flex items-center gap-4 border-b border-bd py-[11px] last:border-b-0">
-            <div class="w-[200px] shrink-0 text-[.83rem] text-tx-2">管理员账号</div>
-            <div class="flex flex-1 items-center gap-[10px] [&_input[type=number]]:w-[140px] [&_input[type=number]]:rounded-sm [&_input[type=number]]:border [&_input[type=number]]:border-bd [&_input[type=number]]:bg-bg-2 [&_input[type=number]]:px-[10px] [&_input[type=number]]:py-1.5 [&_input[type=number]]:font-sans [&_input[type=number]]:text-[.83rem] [&_input[type=number]]:text-tx [&_input[type=number]]:outline-none [&_input[type=number]]:transition [&_input[type=number]]:focus:border-bd-focus [&_input[type=number]]:focus:shadow-[0_0_0_3px_var(--color-brand-muted)] [&_input[type=text]]:w-[140px] [&_input[type=text]]:rounded-sm [&_input[type=text]]:border [&_input[type=text]]:border-bd [&_input[type=text]]:bg-bg-2 [&_input[type=text]]:px-[10px] [&_input[type=text]]:py-1.5 [&_input[type=text]]:font-sans [&_input[type=text]]:text-[.83rem] [&_input[type=text]]:text-tx [&_input[type=text]]:outline-none [&_input[type=text]]:transition [&_input[type=text]]:focus:border-bd-focus [&_input[type=text]]:focus:shadow-[0_0_0_3px_var(--color-brand-muted)] font-mono text-[.84rem] text-green" id="cfgAdminUser">—</div>
+        <div class="settings-card mb-4 rounded-md border border-bd bg-bg-3 p-5">
+          <h3 class="mb-4 border-b border-bd pb-2 text-2xs font-bold uppercase tracking-[.12em] text-tx-3">密钥管理</h3>
+          <div class="flex items-center gap-4 border-b border-bd py-3 last:border-b-0">
+            <div class="w-[200px] shrink-0 text-sm text-tx-2">管理员账号</div>
+            <div class="flex flex-1 items-center gap-2 [&_input[type=number]]:w-[140px] [&_input[type=number]]:rounded-sm [&_input[type=number]]:border [&_input[type=number]]:border-bd [&_input[type=number]]:bg-bg-2 [&_input[type=number]]:px-3 [&_input[type=number]]:py-2 [&_input[type=number]]:font-sans [&_input[type=number]]:text-sm [&_input[type=number]]:text-tx [&_input[type=number]]:outline-none [&_input[type=number]]:transition [&_input[type=number]]:focus:border-bd-focus [&_input[type=number]]:focus:shadow-[0_0_0_3px_var(--color-brand-ring)] [&_input[type=text]]:w-[140px] [&_input[type=text]]:rounded-sm [&_input[type=text]]:border [&_input[type=text]]:border-bd [&_input[type=text]]:bg-bg-2 [&_input[type=text]]:px-3 [&_input[type=text]]:py-2 [&_input[type=text]]:font-sans [&_input[type=text]]:text-sm [&_input[type=text]]:text-tx [&_input[type=text]]:outline-none [&_input[type=text]]:transition [&_input[type=text]]:focus:border-bd-focus [&_input[type=text]]:focus:shadow-[0_0_0_3px_var(--color-brand-ring)] font-mono text-sm text-green" id="cfgAdminUser">—</div>
           </div>
-          <div class="flex items-center gap-4 border-b border-bd py-[11px] last:border-b-0 !flex-col !items-start !gap-2">
-            <div class="w-[200px] shrink-0 text-[.83rem] text-tx-2">更新密钥（终端执行）</div>
-            <div class="font-mono text-[.76rem] text-tx-3 leading-[2.1] bg-bg-2 px-[14px] py-[10px] rounded-[7px] border border-bd">
+          <div class="flex items-center gap-4 border-b border-bd py-3 last:border-b-0 !flex-col !items-start !gap-2">
+            <div class="w-[200px] shrink-0 text-sm text-tx-2">更新密钥（终端执行）</div>
+            <div class="font-mono text-sm text-tx-3 leading-[2.1] bg-bg-2 px-3 py-2 rounded-sm border border-bd">
               npx wrangler secret put ADMIN_PASSWORD<br>
               npx wrangler secret put TOKEN_SECRET
             </div>
@@ -800,182 +800,182 @@ export function renderAdminPage() {
 </div>
 
 <!-- Create / Edit User Modal -->
-<div class="fixed inset-0 z-50 hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="userModal">
-  <div class="flex w-full max-w-[520px] max-h-[90vh] flex-col overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
+<div class="fixed inset-0 z-50 hidden items-end justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6 [&.show]:flex" id="userModal">
+  <div class="flex max-h-[100dvh] w-full max-w-full flex-col overflow-hidden rounded-t-xl rounded-b-none border-0 border-bd-2 bg-bg-4 shadow md:max-h-[90vh] md:max-w-[520px] md:rounded-lg md:border">
+    <div class="flex shrink-0 items-center border-b border-bd px-5 py-4">
       <h3 id="userModalTitle">新建用户</h3>
-      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-2 hover:text-tx" id="userModalClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+      <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-md text-tx-2 transition hover:border-bd-2 hover:text-tx" id="userModalClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body flex-1 overflow-y-auto px-[18px] py-4">
-      <div class="flex flex-col gap-[5px] mb-3.5" id="fieldUsername"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">用户名 <span class="text-tx-3">(字母/数字/_- 2-32位)</span></label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="umUsername" placeholder="alice"></div>
-      <div class="flex flex-col gap-[5px] mb-3.5" id="fieldPassword"><label id="umPassLabel">密码</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="password" id="umPassword" placeholder="留空则不修改"></div>
-      <div class="flex flex-col gap-[5px] mb-3.5 mt-1"><label class="mb-2 block">权限</label>
+    <div class="modal-body flex-1 overflow-y-auto px-5 py-4">
+      <div class="flex flex-col gap-1 mb-4" id="fieldUsername"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">用户名 <span class="text-tx-3">(字母/数字/_- 2-32位)</span></label><input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="umUsername" placeholder="alice"></div>
+      <div class="flex flex-col gap-1 mb-4" id="fieldPassword"><label id="umPassLabel">密码</label><input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="password" id="umPassword" placeholder="留空则不修改"></div>
+      <div class="flex flex-col gap-1 mb-4 mt-1"><label class="mb-2 block">权限</label>
         <div class="perm-grid grid grid-cols-2 gap-2 mt-1">
-          <label class="perm-check flex cursor-pointer items-center gap-2 rounded-sm border border-bd bg-bg-3 px-[11px] py-2 text-[.82rem] text-tx-2 transition hover:border-bd-2 [&_input]:h-3.5 [&_input]:w-3.5 [&_input]:cursor-pointer [&_input]:accent-brand"><input type="checkbox" id="pmUpload" checked><span>允许上传</span></label>
-          <label class="perm-check flex cursor-pointer items-center gap-2 rounded-sm border border-bd bg-bg-3 px-[11px] py-2 text-[.82rem] text-tx-2 transition hover:border-bd-2 [&_input]:h-3.5 [&_input]:w-3.5 [&_input]:cursor-pointer [&_input]:accent-brand"><input type="checkbox" id="pmDelete"><span>允许删除</span></label>
-          <label class="perm-check flex cursor-pointer items-center gap-2 rounded-sm border border-bd bg-bg-3 px-[11px] py-2 text-[.82rem] text-tx-2 transition hover:border-bd-2 [&_input]:h-3.5 [&_input]:w-3.5 [&_input]:cursor-pointer [&_input]:accent-brand"><input type="checkbox" id="pmEdit"><span>允许编辑</span></label>
-          <label class="perm-check flex cursor-pointer items-center gap-2 rounded-sm border border-bd bg-bg-3 px-[11px] py-2 text-[.82rem] text-tx-2 transition hover:border-bd-2 [&_input]:h-3.5 [&_input]:w-3.5 [&_input]:cursor-pointer [&_input]:accent-brand"><input type="checkbox" id="pmDisabled"><span>禁用账号</span></label>
+          <label class="perm-check flex cursor-pointer items-center gap-2 rounded-sm border border-bd bg-bg-3 px-3 py-2 text-sm text-tx-2 transition hover:border-bd-2 [&_input]:h-4 [&_input]:w-4 [&_input]:cursor-pointer [&_input]:accent-brand"><input type="checkbox" id="pmUpload" checked><span>允许上传</span></label>
+          <label class="perm-check flex cursor-pointer items-center gap-2 rounded-sm border border-bd bg-bg-3 px-3 py-2 text-sm text-tx-2 transition hover:border-bd-2 [&_input]:h-4 [&_input]:w-4 [&_input]:cursor-pointer [&_input]:accent-brand"><input type="checkbox" id="pmDelete"><span>允许删除</span></label>
+          <label class="perm-check flex cursor-pointer items-center gap-2 rounded-sm border border-bd bg-bg-3 px-3 py-2 text-sm text-tx-2 transition hover:border-bd-2 [&_input]:h-4 [&_input]:w-4 [&_input]:cursor-pointer [&_input]:accent-brand"><input type="checkbox" id="pmEdit"><span>允许编辑</span></label>
+          <label class="perm-check flex cursor-pointer items-center gap-2 rounded-sm border border-bd bg-bg-3 px-3 py-2 text-sm text-tx-2 transition hover:border-bd-2 [&_input]:h-4 [&_input]:w-4 [&_input]:cursor-pointer [&_input]:accent-brand"><input type="checkbox" id="pmDisabled"><span>禁用账号</span></label>
         </div>
-        <div class="perm-num-row flex items-center gap-[10px] mt-3">
-          <label class="w-[120px] shrink-0 text-[.8rem] text-tx-2">上传总量上限</label>
-          <input class="w-[100px] rounded-sm border border-bd bg-bg-2 px-[10px] py-1.5 font-sans text-[.83rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)]" type="number" id="pmMaxTotal" value="100" min="-1">
-          <span class="perm-hint text-[.7rem] text-tx-3">（-1 = 无限制）</span>
+        <div class="perm-num-row flex items-center gap-2 mt-3">
+          <label class="w-[120px] shrink-0 text-sm text-tx-2">上传总量上限</label>
+          <input class="w-[100px] rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="number" id="pmMaxTotal" value="100" min="-1">
+          <span class="perm-hint text-xs text-tx-3">（-1 = 无限制）</span>
         </div>
-        <div class="perm-num-row flex items-center gap-[10px] mt-3">
-          <label class="w-[120px] shrink-0 text-[.8rem] text-tx-2">每日上传上限</label>
-          <input class="w-[100px] rounded-sm border border-bd bg-bg-2 px-[10px] py-1.5 font-sans text-[.83rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)]" type="number" id="pmDailyLimit" value="20" min="-1">
-          <span class="perm-hint text-[.7rem] text-tx-3">（-1 = 无限制）</span>
+        <div class="perm-num-row flex items-center gap-2 mt-3">
+          <label class="w-[120px] shrink-0 text-sm text-tx-2">每日上传上限</label>
+          <input class="w-[100px] rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="number" id="pmDailyLimit" value="20" min="-1">
+          <span class="perm-hint text-xs text-tx-3">（-1 = 无限制）</span>
         </div>
-        <div class="perm-num-row flex items-center gap-[10px] mt-3 !mt-4 pt-3 border-t border-bd">
-          <label class="w-[120px] shrink-0 text-[.8rem] text-tx-2">Token 有效期</label>
-          <input class="w-[100px] rounded-sm border border-bd bg-bg-2 px-[10px] py-1.5 font-sans text-[.83rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)]" type="number" id="pmTokenTtl" value="7" min="1" max="365">
-          <span class="perm-hint text-[.7rem] text-tx-3">天（1–365）</span>
+        <div class="perm-num-row flex items-center gap-2 mt-3 !mt-4 pt-3 border-t border-bd">
+          <label class="w-[120px] shrink-0 text-sm text-tx-2">Token 有效期</label>
+          <input class="w-[100px] rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="number" id="pmTokenTtl" value="7" min="1" max="365">
+          <span class="perm-hint text-xs text-tx-3">天（1–365）</span>
         </div>
       </div>
     </div>
-    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="userModalCancel">取消</button>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="userModalSave">创建</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-5 py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="userModalCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="userModalSave">创建</button>
     </div>
   </div>
 </div>
 
 <!-- Admin Page Editor Modal -->
-<div class="fixed inset-0 z-50 hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="adminPageModal">
-  <div class="flex w-full max-w-[520px] max-h-[90vh] flex-col overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow !max-w-[960px] !h-[min(92dvh,900px)] !max-h-[calc(100dvh-3rem)]">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
-      <h3 class="flex-1 text-[.93rem] font-semibold text-tx">页面编辑</h3>
-      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-2 hover:text-tx" id="apmClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+<div class="fixed inset-0 z-50 hidden items-end justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6 [&.show]:flex" id="adminPageModal">
+  <div class="flex h-[100dvh] max-h-[100dvh] w-full max-w-full flex-col overflow-hidden rounded-t-xl rounded-b-none border-0 border-bd-2 bg-bg-4 shadow md:h-[min(92dvh,900px)] md:max-h-[calc(100dvh-3rem)] md:max-w-[960px] md:rounded-lg md:border">
+    <div class="flex shrink-0 items-center border-b border-bd px-5 py-4">
+      <h3 class="flex-1 text-lg font-semibold text-tx">页面编辑</h3>
+      <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-md text-tx-2 transition hover:border-bd-2 hover:text-tx" id="apmClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body flex-1 px-[18px] py-4 flex flex-col gap-3 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
-      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">标题</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="apmTitle" placeholder="My Page"></div>
-      <div class="flex flex-col gap-[5px] mb-3.5">
+    <div class="modal-body flex-1 px-5 py-4 flex flex-col gap-3 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
+      <div class="flex flex-col gap-1 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">标题</label><input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="apmTitle" placeholder="My Page"></div>
+      <div class="flex flex-col gap-1 mb-4">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">Slug（URL 后缀）</label>
-        <input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="apmSlug" placeholder="my-blog-post">
-        <span class="text-[.72rem] text-tx-3 mt-1">访问地址：<span class="text-tx-2" id="apmSlugPreview"></span></span>
+        <input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="apmSlug" placeholder="my-blog-post">
+        <span class="text-xs text-tx-3 mt-1">访问地址：<span class="text-tx-2" id="apmSlugPreview"></span></span>
       </div>
       <div class="grid grid-cols-2 gap-3">
-        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">类型</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="apmType"><option value="markdown">Markdown</option><option value="html">HTML</option></select></div>
-        <div class="flex flex-col gap-[5px] mb-3.5"><label class="flex items-center gap-2 mt-[26px] cursor-pointer"><input type="checkbox" id="apmPublic" checked> 公开访问</label></div>
+        <div class="flex flex-col gap-1 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">类型</label><select class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="apmType"><option value="markdown">Markdown</option><option value="html">HTML</option></select></div>
+        <div class="flex flex-col gap-1 mb-4"><label class="flex items-center gap-2 mt-6 cursor-pointer"><input type="checkbox" id="apmPublic" checked> 公开访问</label></div>
       </div>
       <div class="grid grid-cols-2 gap-3">
-        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">项目</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="apmProject"><option value="">-- 无 --</option></select></div>
-        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">分组</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="apmGroup"><option value="">-- 无 --</option></select></div>
+        <div class="flex flex-col gap-1 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">项目</label><select class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="apmProject"><option value="">-- 无 --</option></select></div>
+        <div class="flex flex-col gap-1 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">分组</label><select class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="apmGroup"><option value="">-- 无 --</option></select></div>
       </div>
-      <div class="flex flex-col gap-[5px] mb-3.5" id="apmPwdSection" style="display:none">
+      <div class="flex flex-col gap-1 mb-4" id="apmPwdSection" style="display:none">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">访问密码</label>
         <div class="flex gap-2 items-center">
-          <input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)] !w-[110px] !px-[10px] !py-2 font-mono tracking-[.18em] !text-[.95rem] !rounded-[7px] !border-bd-2" type="text" id="apmPassword" maxlength="6" autocomplete="off" spellcheck="false">
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx whitespace-nowrap shrink-0" type="button" id="apmPwdGen">重新生成</button>
+          <input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)] !w-28 !px-3 !py-2 font-mono tracking-[.18em] !text-lg !rounded-sm !border-bd-2" type="text" id="apmPassword" maxlength="6" autocomplete="off" spellcheck="false">
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx whitespace-nowrap shrink-0" type="button" id="apmPwdGen">重新生成</button>
         </div>
-        <span class="text-[.7rem] text-tx-3 mt-1 block">6位字母+数字，访客凭密码访问私密页面</span>
+        <span class="text-xs text-tx-3 mt-1 block">6位字母+数字，访客凭密码访问私密页面</span>
       </div>
-      <div class="flex flex-col gap-[5px]">
+      <div class="flex flex-col gap-1">
         <label id="apmContentLabel">内容</label>
         <div class="hidden" id="apmVditor"></div>
-        <textarea class="w-full min-h-[240px] resize-y rounded-md border border-bd-2 bg-bg-2 px-[14px] py-3 font-mono text-[.84rem] leading-[1.7] text-tx" id="apmContent" rows="10" placeholder="# Hello World\n\n写点什么…"></textarea>
+        <textarea class="w-full min-h-[240px] resize-y rounded-sm border border-bd-2 bg-bg-2 px-3 py-3 font-mono text-sm leading-[1.7] text-tx" id="apmContent" rows="10" placeholder="# Hello World\n\n写点什么…"></textarea>
       </div>
     </div>
-    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="apmCancel">取消</button>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="apmSave">创建</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-5 py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="apmCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="apmSave">创建</button>
     </div>
   </div>
 </div>
 
 <!-- Page Stats Modal -->
-<div class="fixed inset-0 z-50 hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="adminPageBulkMoveModal">
-  <div class="flex w-full max-w-[520px] max-h-[90vh] flex-col overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]"><h3 class="flex-1 text-[.93rem] font-semibold text-tx">批量移动页面</h3><button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-2 hover:text-tx" id="apgMoveClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button></div>
-    <div class="modal-body flex-1 overflow-y-auto px-[18px] py-4">
-      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">目标项目</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="apgMoveProject"><option value="">-- 无 --</option></select></div>
-      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">目标分组</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="apgMoveGroup"><option value="">-- 无 --</option></select></div>
-      <p class="text-[.76rem] text-tx-3 mt-[6px]">选中的 <span class="font-semibold text-tx" id="apgMoveCount">0</span> 个页面将被移动到所选项目/分组</p>
+<div class="fixed inset-0 z-50 hidden items-end justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6 [&.show]:flex" id="adminPageBulkMoveModal">
+  <div class="flex max-h-[100dvh] w-full max-w-full flex-col overflow-hidden rounded-t-xl rounded-b-none border-0 border-bd-2 bg-bg-4 shadow md:max-h-[90vh] md:max-w-[520px] md:rounded-lg md:border">
+    <div class="flex shrink-0 items-center border-b border-bd px-5 py-4"><h3 class="flex-1 text-lg font-semibold text-tx">批量移动页面</h3><button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-md text-tx-2 transition hover:border-bd-2 hover:text-tx" id="apgMoveClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button></div>
+    <div class="modal-body flex-1 overflow-y-auto px-5 py-4">
+      <div class="flex flex-col gap-1 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">目标项目</label><select class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="apgMoveProject"><option value="">-- 无 --</option></select></div>
+      <div class="flex flex-col gap-1 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">目标分组</label><select class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="apgMoveGroup"><option value="">-- 无 --</option></select></div>
+      <p class="text-sm text-tx-3 mt-2">选中的 <span class="font-semibold text-tx" id="apgMoveCount">0</span> 个页面将被移动到所选项目/分组</p>
     </div>
-    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="apgMoveCancel">取消</button>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="apgMoveConfirm">确认移动</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-5 py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="apgMoveCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="apgMoveConfirm">确认移动</button>
     </div>
   </div>
 </div>
 
 <!-- New/Edit Group Modal -->
-<div class="fixed inset-0 z-50 hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="adminNewGroupModal">
-  <div class="flex w-full max-w-[520px] max-h-[90vh] flex-col overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]"><h3 class="flex-1 text-[.93rem] font-semibold text-tx" id="apgGrpModalTitle">新建分组</h3><button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-2 hover:text-tx" id="apgNewGrpClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button></div>
-    <div class="modal-body flex-1 overflow-y-auto px-[18px] py-4">
-      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属项目 <span class="text-tx-3 font-normal">（可选）</span></label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="apgNewGrpProject"><option value="">-- 独立分组 --</option></select></div>
-      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">分组名称</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="apgNewGrpName" placeholder="分组名称" maxlength="60"></div>
+<div class="fixed inset-0 z-50 hidden items-end justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6 [&.show]:flex" id="adminNewGroupModal">
+  <div class="flex max-h-[100dvh] w-full max-w-full flex-col overflow-hidden rounded-t-xl rounded-b-none border-0 border-bd-2 bg-bg-4 shadow md:max-h-[90vh] md:max-w-[520px] md:rounded-lg md:border">
+    <div class="flex shrink-0 items-center border-b border-bd px-5 py-4"><h3 class="flex-1 text-lg font-semibold text-tx" id="apgGrpModalTitle">新建分组</h3><button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-md text-tx-2 transition hover:border-bd-2 hover:text-tx" id="apgNewGrpClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button></div>
+    <div class="modal-body flex-1 overflow-y-auto px-5 py-4">
+      <div class="flex flex-col gap-1 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属项目 <span class="text-tx-3 font-normal">（可选）</span></label><select class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="apgNewGrpProject"><option value="">-- 独立分组 --</option></select></div>
+      <div class="flex flex-col gap-1 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">分组名称</label><input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="apgNewGrpName" placeholder="分组名称" maxlength="60"></div>
     </div>
-    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="apgNewGrpCancel">取消</button>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="apgNewGrpConfirm">创建</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-5 py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="apgNewGrpCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="apgNewGrpConfirm">创建</button>
     </div>
   </div>
 </div>
 
 <!-- New/Edit Project Modal -->
-<div class="fixed inset-0 z-50 hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="adminProjectModal">
-  <div class="flex w-full max-w-[520px] max-h-[90vh] flex-col overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]"><h3 class="flex-1 text-[.93rem] font-semibold text-tx" id="apjModalTitle">新建项目</h3><button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-2 hover:text-tx" id="apjModalClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button></div>
-    <div class="modal-body flex-1 overflow-y-auto px-[18px] py-4">
-      <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">项目名称</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="apjName" placeholder="项目名称" maxlength="64"></div>
+<div class="fixed inset-0 z-50 hidden items-end justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6 [&.show]:flex" id="adminProjectModal">
+  <div class="flex max-h-[100dvh] w-full max-w-full flex-col overflow-hidden rounded-t-xl rounded-b-none border-0 border-bd-2 bg-bg-4 shadow md:max-h-[90vh] md:max-w-[520px] md:rounded-lg md:border">
+    <div class="flex shrink-0 items-center border-b border-bd px-5 py-4"><h3 class="flex-1 text-lg font-semibold text-tx" id="apjModalTitle">新建项目</h3><button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-md text-tx-2 transition hover:border-bd-2 hover:text-tx" id="apjModalClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button></div>
+    <div class="modal-body flex-1 overflow-y-auto px-5 py-4">
+      <div class="flex flex-col gap-1 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">项目名称</label><input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="apjName" placeholder="项目名称" maxlength="64"></div>
     </div>
-    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="apjModalCancel">取消</button>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="apjModalSave">创建</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-5 py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="apjModalCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="apjModalSave">创建</button>
     </div>
   </div>
 </div>
 
 <!-- Import Markdown / HTML Modal -->
-<div class="fixed inset-0 z-50 hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="adminImportModal">
-  <div class="flex w-full max-w-[540px] max-h-[90vh] flex-col overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]"><h3 class="flex-1 text-[.93rem] font-semibold text-tx">导入页面</h3><button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-2 hover:text-tx" id="aimClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button></div>
-    <div class="modal-body flex-1 overflow-y-auto px-[18px] py-4">
-      <div class="text-tx-3 transition hover:text-tx p-7 text-center border-2 border-dashed border-bd-2 rounded-[10px] cursor-pointer" id="aimDropZone">
+<div class="fixed inset-0 z-50 hidden items-end justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6 [&.show]:flex" id="adminImportModal">
+  <div class="flex max-h-[100dvh] w-full max-w-full flex-col overflow-hidden rounded-t-xl rounded-b-none border-0 border-bd-2 bg-bg-4 shadow md:max-h-[90vh] md:max-w-[540px] md:rounded-lg md:border">
+    <div class="flex shrink-0 items-center border-b border-bd px-5 py-4"><h3 class="flex-1 text-lg font-semibold text-tx">导入页面</h3><button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-md text-tx-2 transition hover:border-bd-2 hover:text-tx" id="aimClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button></div>
+    <div class="modal-body flex-1 overflow-y-auto px-5 py-4">
+      <div class="text-tx-3 transition hover:text-tx p-7 text-center border-2 border-dashed border-bd-2 rounded-md cursor-pointer" id="aimDropZone">
         <input class="hidden" type="file" id="aimFileInput" accept=".md,.markdown,.html,.htm,text/markdown,text/html">
         <div class="mb-2"><svg class="h-6 w-6 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6V2z"/><path d="M15 2v5h5"/></svg></div>
-        <div class="text-tx-2 text-[.84rem]">点击或拖拽 .md / .html 文件到此处</div>
-        <div class="text-tx-3 text-[.72rem] mt-1">支持 YAML frontmatter（title, slug, projectId, groupId, type, isPublic）</div>
+        <div class="text-tx-2 text-sm">点击或拖拽 .md / .html 文件到此处</div>
+        <div class="text-tx-3 text-xs mt-1">支持 YAML frontmatter（title, slug, projectId, groupId, type, isPublic）</div>
       </div>
       <div id="aimPreview" style="display:none">
-        <div class="flex flex-col gap-[5px] mb-3.5 mt-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">标题</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="aimTitle"></div>
-        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">Slug</label><input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="aimSlug"></div>
-        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">类型</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="aimType"><option value="markdown">Markdown</option><option value="html">HTML</option></select></div>
-        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属项目</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="aimProject"><option value="">-- 无 --</option></select></div>
-        <div class="flex flex-col gap-[5px] mb-3.5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属分组</label><select class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="aimGroup"><option value="">-- 无 --</option></select></div>
-        <div class="flex flex-col gap-[5px] mb-3.5"><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="aimPublic" checked> 公开访问</label></div>
+        <div class="flex flex-col gap-1 mb-4 mt-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">标题</label><input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="aimTitle"></div>
+        <div class="flex flex-col gap-1 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">Slug</label><input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="aimSlug"></div>
+        <div class="flex flex-col gap-1 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">类型</label><select class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="aimType"><option value="markdown">Markdown</option><option value="html">HTML</option></select></div>
+        <div class="flex flex-col gap-1 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属项目</label><select class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="aimProject"><option value="">-- 无 --</option></select></div>
+        <div class="flex flex-col gap-1 mb-4"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">所属分组</label><select class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" id="aimGroup"><option value="">-- 无 --</option></select></div>
+        <div class="flex flex-col gap-1 mb-4"><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="aimPublic" checked> 公开访问</label></div>
       </div>
     </div>
-    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-[18px] py-3">
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="aimCancel">取消</button>
-      <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="aimSave" disabled>导入</button>
+    <div class="flex shrink-0 justify-end gap-2 border-t border-bd px-5 py-3">
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="aimCancel">取消</button>
+      <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="aimSave" disabled>导入</button>
     </div>
   </div>
 </div>
 
 <!-- Page Stats Modal -->
-<div class="fixed inset-0 z-50 hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="pageStatsModal">
-  <div class="modal stats-modal flex w-full max-w-[680px] max-h-[90vh] flex-col overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
-      <h3 class="flex-1 text-[.93rem] font-semibold text-tx">页面统计 <span class="text-[.72rem] text-tx-3 font-normal" id="psmTitle"></span></h3>
-      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-2 hover:text-tx" id="psmClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+<div class="fixed inset-0 z-50 hidden items-end justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6 [&.show]:flex" id="pageStatsModal">
+  <div class="modal stats-modal flex max-h-[100dvh] w-full max-w-full flex-col overflow-hidden rounded-t-xl rounded-b-none border-0 border-bd-2 bg-bg-4 shadow md:max-h-[90vh] md:max-w-[680px] md:rounded-lg md:border">
+    <div class="flex shrink-0 items-center border-b border-bd px-5 py-4">
+      <h3 class="flex-1 text-lg font-semibold text-tx">页面统计 <span class="text-xs text-tx-3 font-normal" id="psmTitle"></span></h3>
+      <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-md text-tx-2 transition hover:border-bd-2 hover:text-tx" id="psmClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body flex-1 overflow-y-auto px-[18px] py-4">
-      <div class="grid grid-cols-3 gap-[10px] mb-[18px]">
-        <div class="rounded-md border border-bd bg-bg-3 p-[14px] text-center"><div class="font-mono text-2xl font-bold text-tx" id="psmTotal">—</div><div class="mt-[5px] text-[.66rem] uppercase tracking-[.07em] text-tx-3">总访问次数</div></div>
-        <div class="rounded-md border border-bd bg-bg-3 p-[14px] text-center"><div class="font-mono text-2xl font-bold text-tx" id="psmUniqueIps">—</div><div class="mt-[5px] text-[.66rem] uppercase tracking-[.07em] text-tx-3">独立 IP 数</div></div>
-        <div class="rounded-md border border-bd bg-bg-3 p-[14px] text-center"><div class="font-mono text-2xl font-bold text-tx" id="psmLast">—</div><div class="mt-[5px] text-[.66rem] uppercase tracking-[.07em] text-tx-3">最后访问</div></div>
+    <div class="modal-body flex-1 overflow-y-auto px-5 py-4">
+      <div class="grid grid-cols-3 gap-2 mb-4">
+        <div class="rounded-md border border-bd bg-bg-3 p-3 text-center"><div class="font-mono text-3xl font-bold text-tx" id="psmTotal">—</div><div class="mt-1 text-2xs uppercase tracking-[.07em] text-tx-3">总访问次数</div></div>
+        <div class="rounded-md border border-bd bg-bg-3 p-3 text-center"><div class="font-mono text-3xl font-bold text-tx" id="psmUniqueIps">—</div><div class="mt-1 text-2xs uppercase tracking-[.07em] text-tx-3">独立 IP 数</div></div>
+        <div class="rounded-md border border-bd bg-bg-3 p-3 text-center"><div class="font-mono text-3xl font-bold text-tx" id="psmLast">—</div><div class="mt-1 text-2xs uppercase tracking-[.07em] text-tx-3">最后访问</div></div>
       </div>
-      <div class="country-bars"><h4 class="mb-2 text-[.66rem] font-bold uppercase tracking-[.09em] text-tx-2">国家 / 地区分布</h4><div id="psmCountryBars"></div></div>
+      <div class="country-bars"><h4 class="mb-2 text-2xs font-bold uppercase tracking-[.09em] text-tx-2">国家 / 地区分布</h4><div id="psmCountryBars"></div></div>
       <div class="mt-5">
-        <h4 class="text-[.8rem] text-[#7a8fa8] mb-[10px] font-semibold">访问 IP Top 10</h4>
+        <h4 class="text-sm text-tx-3 mb-2 font-semibold">访问 IP Top 10</h4>
         <div id="psmIpBars"></div>
       </div>
       <div class="access-log mt-4">
-        <h4 class="mb-2 text-[.66rem] font-bold uppercase tracking-[.09em] text-tx-2">最近访问记录</h4>
-        <table class="log-table w-full border-collapse text-[.76rem] mt-1 [&_th]:text-left [&_th]:px-[10px] [&_th]:py-1.5 [&_th]:text-tx-3 [&_th]:font-semibold [&_th]:border-b [&_th]:border-bd [&_th]:uppercase [&_th]:tracking-[.06em] [&_th]:text-[.63rem] [&_td]:px-[10px] [&_td]:py-1.5 [&_td]:border-b [&_td]:border-bd [&_td]:text-tx-2 [&_td]:font-mono [&_td]:text-[.73rem]">
+        <h4 class="mb-2 text-2xs font-bold uppercase tracking-[.09em] text-tx-2">最近访问记录</h4>
+        <table class="log-table w-full border-collapse text-sm mt-1 [&_th]:text-left [&_th]:px-3 [&_th]:h-10 [&_th]:py-2 [&_th]:text-tx-3 [&_th]:font-semibold [&_th]:border-b [&_th]:border-bd [&_th]:uppercase [&_th]:tracking-[.06em] [&_th]:text-2xs [&_td]:px-3 [&_td]:py-2 [&_td]:border-b [&_td]:border-bd [&_td]:text-tx-2 [&_td]:font-mono [&_td]:text-xs">
           <thead><tr><th>时间</th><th>IP</th><th>国家</th><th>城市</th><th>ISP</th></tr></thead>
           <tbody id="psmLogBody"></tbody>
         </table>
@@ -985,22 +985,22 @@ export function renderAdminPage() {
 </div>
 
 <!-- Image Stats Modal -->
-<div class="fixed inset-0 z-50 hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="statsModal">
-  <div class="modal stats-modal flex w-full max-w-[680px] max-h-[90vh] flex-col overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
-      <h3 class="flex-1 text-[.93rem] font-semibold text-tx">访问统计 <span class="text-[.72rem] text-tx-3 font-normal" id="statsModalKey"></span></h3>
-      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-2 hover:text-tx" id="statsModalClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+<div class="fixed inset-0 z-50 hidden items-end justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6 [&.show]:flex" id="statsModal">
+  <div class="modal stats-modal flex max-h-[100dvh] w-full max-w-full flex-col overflow-hidden rounded-t-xl rounded-b-none border-0 border-bd-2 bg-bg-4 shadow md:max-h-[90vh] md:max-w-[680px] md:rounded-lg md:border">
+    <div class="flex shrink-0 items-center border-b border-bd px-5 py-4">
+      <h3 class="flex-1 text-lg font-semibold text-tx">访问统计 <span class="text-xs text-tx-3 font-normal" id="statsModalKey"></span></h3>
+      <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-md text-tx-2 transition hover:border-bd-2 hover:text-tx" id="statsModalClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body flex-1 overflow-y-auto px-[18px] py-4">
-      <div class="grid grid-cols-3 gap-[10px] mb-[18px]">
-        <div class="rounded-md border border-bd bg-bg-3 p-[14px] text-center"><div class="font-mono text-2xl font-bold text-tx" id="smTotal">—</div><div class="mt-[5px] text-[.66rem] uppercase tracking-[.07em] text-tx-3">总访问次数</div></div>
-        <div class="rounded-md border border-bd bg-bg-3 p-[14px] text-center"><div class="font-mono text-2xl font-bold text-tx" id="smCountries">—</div><div class="mt-[5px] text-[.66rem] uppercase tracking-[.07em] text-tx-3">国家/地区</div></div>
-        <div class="rounded-md border border-bd bg-bg-3 p-[14px] text-center"><div class="font-mono text-2xl font-bold text-tx" id="smLast">—</div><div class="mt-[5px] text-[.66rem] uppercase tracking-[.07em] text-tx-3">最后访问</div></div>
+    <div class="modal-body flex-1 overflow-y-auto px-5 py-4">
+      <div class="grid grid-cols-3 gap-2 mb-4">
+        <div class="rounded-md border border-bd bg-bg-3 p-3 text-center"><div class="font-mono text-3xl font-bold text-tx" id="smTotal">—</div><div class="mt-1 text-2xs uppercase tracking-[.07em] text-tx-3">总访问次数</div></div>
+        <div class="rounded-md border border-bd bg-bg-3 p-3 text-center"><div class="font-mono text-3xl font-bold text-tx" id="smCountries">—</div><div class="mt-1 text-2xs uppercase tracking-[.07em] text-tx-3">国家/地区</div></div>
+        <div class="rounded-md border border-bd bg-bg-3 p-3 text-center"><div class="font-mono text-3xl font-bold text-tx" id="smLast">—</div><div class="mt-1 text-2xs uppercase tracking-[.07em] text-tx-3">最后访问</div></div>
       </div>
-      <div class="country-bars"><h4 class="mb-2 text-[.66rem] font-bold uppercase tracking-[.09em] text-tx-2">国家 / 地区分布</h4><div id="countryBars"></div></div>
+      <div class="country-bars"><h4 class="mb-2 text-2xs font-bold uppercase tracking-[.09em] text-tx-2">国家 / 地区分布</h4><div id="countryBars"></div></div>
       <div class="access-log mt-4">
-        <h4 class="mb-2 text-[.66rem] font-bold uppercase tracking-[.09em] text-tx-2">最近访问记录</h4>
-        <table class="log-table w-full border-collapse text-[.76rem] mt-1 [&_th]:text-left [&_th]:px-[10px] [&_th]:py-1.5 [&_th]:text-tx-3 [&_th]:font-semibold [&_th]:border-b [&_th]:border-bd [&_th]:uppercase [&_th]:tracking-[.06em] [&_th]:text-[.63rem] [&_td]:px-[10px] [&_td]:py-1.5 [&_td]:border-b [&_td]:border-bd [&_td]:text-tx-2 [&_td]:font-mono [&_td]:text-[.73rem]">
+        <h4 class="mb-2 text-2xs font-bold uppercase tracking-[.09em] text-tx-2">最近访问记录</h4>
+        <table class="log-table w-full border-collapse text-sm mt-1 [&_th]:text-left [&_th]:px-3 [&_th]:h-10 [&_th]:py-2 [&_th]:text-tx-3 [&_th]:font-semibold [&_th]:border-b [&_th]:border-bd [&_th]:uppercase [&_th]:tracking-[.06em] [&_th]:text-2xs [&_td]:px-3 [&_td]:py-2 [&_td]:border-b [&_td]:border-bd [&_td]:text-tx-2 [&_td]:font-mono [&_td]:text-xs">
           <thead><tr><th>时间</th><th>IP</th><th>国家</th><th>城市</th><th>ISP</th></tr></thead>
           <tbody id="accessLogBody"></tbody>
         </table>
@@ -1010,68 +1010,68 @@ export function renderAdminPage() {
 </div>
 
 <!-- Lightbox -->
-<div class="lightbox fixed inset-0 z-[100] hidden items-center justify-center bg-overlay p-6 [&.show]:flex" id="lightbox">
-  <button class="absolute right-[14px] top-[14px] flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 text-[.9rem] text-tx-2 transition hover:border-bd-2 hover:text-tx" id="lbClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
-  <div class="w-full max-w-[740px] overflow-hidden rounded-lg border border-bd-2 bg-bg-4 shadow">
+<div class="lightbox fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 [&.show]:flex" id="lightbox">
+  <button class="absolute right-[14px] top-3 flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 text-lg text-tx-2 transition hover:border-bd-2 hover:text-tx" id="lbClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+  <div class="w-full max-w-[760px] overflow-hidden rounded-lg border border-bd-2 bg-bg-4 shadow">
     <div class="flex min-h-[260px] max-h-[55vh] items-center justify-center bg-bg"><img class="block max-h-[55vh] max-w-full object-contain" id="lbImg" src="" alt=""></div>
-    <div class="px-[18px] py-[14px]">
-      <div class="break-all font-mono text-[.84rem] text-tx-2" id="lbKey"></div>
-      <div class="mt-[5px] flex gap-[14px] text-[.75rem] text-tx-3"><span id="lbSize"></span><span id="lbDate"></span></div>
-      <div class="mt-3 flex flex-wrap gap-[7px]">
-        <button class="inline-flex min-h-8 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2.5 py-1.5 whitespace-nowrap text-[.78rem] font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbCopy">复制链接</button>
-        <button class="inline-flex min-h-8 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2.5 py-1.5 whitespace-nowrap text-[.78rem] font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbMd">复制 MD</button>
-        <button class="inline-flex min-h-8 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2.5 py-1.5 whitespace-nowrap text-[.78rem] font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbBbcode">复制 BBCode</button>
-        <button class="inline-flex min-h-8 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2.5 py-1.5 whitespace-nowrap text-[.78rem] font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbTag">标签</button>
-        <button class="inline-flex min-h-8 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2.5 py-1.5 whitespace-nowrap text-[.78rem] font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbVis">可见性</button>
-        <button class="inline-flex min-h-8 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2.5 py-1.5 whitespace-nowrap text-[.78rem] font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbStats">访问统计</button>
+    <div class="px-4 py-3">
+      <div class="break-all font-mono text-sm text-tx-2" id="lbKey"></div>
+      <div class="mt-1 flex gap-3 text-xs text-tx-3"><span id="lbSize"></span><span id="lbDate"></span></div>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <button class="inline-flex min-h-8 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-3 py-2 whitespace-nowrap text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbCopy">复制链接</button>
+        <button class="inline-flex min-h-8 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-3 py-2 whitespace-nowrap text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbMd">复制 MD</button>
+        <button class="inline-flex min-h-8 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-3 py-2 whitespace-nowrap text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbBbcode">复制 BBCode</button>
+        <button class="inline-flex min-h-8 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-3 py-2 whitespace-nowrap text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbTag">标签</button>
+        <button class="inline-flex min-h-8 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-3 py-2 whitespace-nowrap text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbVis">可见性</button>
+        <button class="inline-flex min-h-8 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-4 px-3 py-2 whitespace-nowrap text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="lbStats">访问统计</button>
         <div class="flex-1"></div>
-        <button class="inline-flex min-h-8 shrink-0 items-center justify-center rounded-sm border border-red-r bg-red-g px-2.5 py-1.5 whitespace-nowrap text-[.78rem] font-semibold leading-tight text-red transition hover:bg-red-r" id="lbDelete">删除</button>
+        <button class="inline-flex min-h-8 shrink-0 items-center justify-center rounded-sm border border-red-r bg-red-g px-3 py-2 whitespace-nowrap text-sm font-semibold leading-tight text-red transition hover:bg-red-r" id="lbDelete">删除</button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- Admin Tag Editor（管理端标签编辑：补齐与用户端的能力差异） -->
-<div class="fixed inset-0 z-[60] hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="adminTagModal">
-  <div class="flex w-full max-w-[420px] flex-col overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
-      <h3 class="flex-1 truncate text-[.98rem] font-bold tracking-[-.01em] text-tx">编辑标签 <span class="font-mono text-[.7rem] font-normal text-tx-3" id="adminTagTarget"></span></h3>
-      <button class="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-focus hover:text-tx" id="adminTagModalClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+<div class="fixed inset-0 z-50 hidden items-end justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6 [&.show]:flex" id="adminTagModal">
+  <div class="flex max-h-[100dvh] w-full max-w-full flex-col overflow-hidden rounded-t-xl rounded-b-none border-0 border-bd-2 bg-bg-4 shadow md:max-h-[90vh] md:max-w-[420px] md:rounded-lg md:border">
+    <div class="flex shrink-0 items-center border-b border-bd px-5 py-4">
+      <h3 class="flex-1 truncate text-lg font-bold tracking-[-.01em] text-tx">编辑标签 <span class="font-mono text-xs font-normal text-tx-3" id="adminTagTarget"></span></h3>
+      <button class="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-md text-tx-2 transition hover:border-bd-focus hover:text-tx" id="adminTagModalClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="flex flex-col gap-3 p-[18px]">
-      <div class="flex min-h-[28px] flex-wrap gap-1.5" id="adminTagList"></div>
-      <div class="flex flex-col gap-[5px]">
+    <div class="flex flex-col gap-3 p-5">
+      <div class="flex min-h-[28px] flex-wrap gap-2" id="adminTagList"></div>
+      <div class="flex flex-col gap-1">
         <label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">添加标签（最多 10 个）</label>
         <div class="flex gap-2">
-          <input class="min-w-0 flex-1 rounded-md border border-bd bg-bg-2 px-3 py-[7px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus" type="text" id="adminTagInput" placeholder="输入后回车或点添加" maxlength="24">
-          <button class="shrink-0 rounded-md border border-bd bg-bg-4 px-3 py-[7px] text-[.8rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:text-tx" id="adminTagAdd">添加</button>
+          <input class="min-w-0 flex-1 rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus" type="text" id="adminTagInput" placeholder="输入后回车或点添加" maxlength="24">
+          <button class="shrink-0 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold text-tx-2 transition hover:border-bd-2 hover:text-tx" id="adminTagAdd">添加</button>
         </div>
       </div>
       <div class="flex justify-end gap-2">
-        <button class="rounded-md border border-bd bg-bg-4 px-3.5 py-[7px] text-[.82rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:text-tx" onclick="document.getElementById('adminTagModal').classList.remove('show')">取消</button>
-        <button class="rounded-md border border-bd-focus bg-brand-muted px-3.5 py-[7px] text-[.82rem] font-semibold text-tx transition hover:opacity-90 disabled:opacity-50" id="adminTagSave">保存</button>
+        <button class="rounded-sm border border-bd bg-bg-4 px-4 py-2 text-sm font-semibold text-tx-2 transition hover:border-bd-2 hover:text-tx" onclick="document.getElementById('adminTagModal').classList.remove('show')">取消</button>
+        <button class="rounded-sm border border-bd-focus bg-brand-muted px-4 py-2 text-sm font-semibold text-tx transition hover:opacity-90 disabled:opacity-50" id="adminTagSave">保存</button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- Proto Stats Modal -->
-<div class="fixed inset-0 z-50 hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="protoStatsModal">
-  <div class="modal stats-modal flex w-full max-w-[680px] max-h-[90vh] flex-col overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
-      <h3 class="flex-1 text-[.93rem] font-semibold text-tx">原型统计 <span class="text-[.72rem] text-tx-3 font-normal" id="prsTitle"></span></h3>
-      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-2 hover:text-tx" id="prsClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+<div class="fixed inset-0 z-50 hidden items-end justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6 [&.show]:flex" id="protoStatsModal">
+  <div class="modal stats-modal flex max-h-[100dvh] w-full max-w-full flex-col overflow-hidden rounded-t-xl rounded-b-none border-0 border-bd-2 bg-bg-4 shadow md:max-h-[90vh] md:max-w-[680px] md:rounded-lg md:border">
+    <div class="flex shrink-0 items-center border-b border-bd px-5 py-4">
+      <h3 class="flex-1 text-lg font-semibold text-tx">原型统计 <span class="text-xs text-tx-3 font-normal" id="prsTitle"></span></h3>
+      <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-md text-tx-2 transition hover:border-bd-2 hover:text-tx" id="prsClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
-    <div class="modal-body flex-1 overflow-y-auto px-[18px] py-4">
-      <div class="grid grid-cols-3 gap-[10px] mb-[18px]">
-        <div class="rounded-md border border-bd bg-bg-3 p-[14px] text-center"><div class="font-mono text-2xl font-bold text-tx" id="prsTotal">—</div><div class="mt-[5px] text-[.66rem] uppercase tracking-[.07em] text-tx-3">总访问次数</div></div>
-        <div class="rounded-md border border-bd bg-bg-3 p-[14px] text-center"><div class="font-mono text-2xl font-bold text-tx" id="prsUniqueIps">—</div><div class="mt-[5px] text-[.66rem] uppercase tracking-[.07em] text-tx-3">独立 IP 数</div></div>
-        <div class="rounded-md border border-bd bg-bg-3 p-[14px] text-center"><div class="font-mono text-2xl font-bold text-tx" id="prsLast">—</div><div class="mt-[5px] text-[.66rem] uppercase tracking-[.07em] text-tx-3">最后访问</div></div>
+    <div class="modal-body flex-1 overflow-y-auto px-5 py-4">
+      <div class="grid grid-cols-3 gap-2 mb-4">
+        <div class="rounded-md border border-bd bg-bg-3 p-3 text-center"><div class="font-mono text-3xl font-bold text-tx" id="prsTotal">—</div><div class="mt-1 text-2xs uppercase tracking-[.07em] text-tx-3">总访问次数</div></div>
+        <div class="rounded-md border border-bd bg-bg-3 p-3 text-center"><div class="font-mono text-3xl font-bold text-tx" id="prsUniqueIps">—</div><div class="mt-1 text-2xs uppercase tracking-[.07em] text-tx-3">独立 IP 数</div></div>
+        <div class="rounded-md border border-bd bg-bg-3 p-3 text-center"><div class="font-mono text-3xl font-bold text-tx" id="prsLast">—</div><div class="mt-1 text-2xs uppercase tracking-[.07em] text-tx-3">最后访问</div></div>
       </div>
-      <div class="country-bars"><h4 class="mb-2 text-[.66rem] font-bold uppercase tracking-[.09em] text-tx-2">国家 / 地区分布</h4><div id="prsCountryBars"></div></div>
+      <div class="country-bars"><h4 class="mb-2 text-2xs font-bold uppercase tracking-[.09em] text-tx-2">国家 / 地区分布</h4><div id="prsCountryBars"></div></div>
       <div class="access-log mt-4">
-        <h4 class="mb-2 text-[.66rem] font-bold uppercase tracking-[.09em] text-tx-2">最近访问记录</h4>
-        <table class="log-table w-full border-collapse text-[.76rem] mt-1 [&_th]:text-left [&_th]:px-[10px] [&_th]:py-1.5 [&_th]:text-tx-3 [&_th]:font-semibold [&_th]:border-b [&_th]:border-bd [&_th]:uppercase [&_th]:tracking-[.06em] [&_th]:text-[.63rem] [&_td]:px-[10px] [&_td]:py-1.5 [&_td]:border-b [&_td]:border-bd [&_td]:text-tx-2 [&_td]:font-mono [&_td]:text-[.73rem]">
+        <h4 class="mb-2 text-2xs font-bold uppercase tracking-[.09em] text-tx-2">最近访问记录</h4>
+        <table class="log-table w-full border-collapse text-sm mt-1 [&_th]:text-left [&_th]:px-3 [&_th]:h-10 [&_th]:py-2 [&_th]:text-tx-3 [&_th]:font-semibold [&_th]:border-b [&_th]:border-bd [&_th]:uppercase [&_th]:tracking-[.06em] [&_th]:text-2xs [&_td]:px-3 [&_td]:py-2 [&_td]:border-b [&_td]:border-bd [&_td]:text-tx-2 [&_td]:font-mono [&_td]:text-xs">
           <thead><tr><th>时间</th><th>IP</th><th>国家</th></tr></thead>
           <tbody id="prsLogBody"></tbody>
         </table>
@@ -1081,34 +1081,34 @@ export function renderAdminPage() {
 </div>
 
 <!-- Proto Version History & Diff Modal -->
-<div class="fixed inset-0 z-50 hidden items-center justify-center bg-overlay p-6 backdrop-blur-[8px] [&.show]:flex" id="protoVersionModal">
-  <div class="flex w-full max-w-[520px] max-h-[90vh] flex-col overflow-hidden rounded-xl border border-bd-2 bg-bg-4 shadow !max-w-[900px] !w-[95vw] !max-h-[85vh] !h-[85vh]">
-    <div class="flex shrink-0 items-center border-b border-bd px-[18px] py-[15px]">
-      <h3 class="flex-1 text-[.93rem] font-semibold text-tx">版本历史 <span class="text-[.72rem] text-tx-3 font-normal" id="pvmTitle"></span></h3>
-      <button class="flex h-7 w-7 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-[.85rem] text-tx-2 transition hover:border-bd-2 hover:text-tx" id="pvmClose"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
+<div class="fixed inset-0 z-50 hidden items-end justify-center bg-overlay p-0 backdrop-blur-[8px] md:items-center md:p-6 [&.show]:flex" id="protoVersionModal">
+  <div class="flex h-[100dvh] max-h-[100dvh] w-full max-w-full flex-col overflow-hidden rounded-t-xl rounded-b-none border-0 border-bd-2 bg-bg-4 shadow md:h-[85vh] md:max-h-[85vh] md:max-w-[860px] md:rounded-lg md:border">
+    <div class="flex shrink-0 items-center border-b border-bd px-5 py-4">
+      <h3 class="flex-1 text-lg font-semibold text-tx">版本历史 <span class="text-xs text-tx-3 font-normal" id="pvmTitle"></span></h3>
+      <button class="flex h-8 w-8 items-center justify-center rounded-sm border border-bd bg-bg-5 font-sans text-md text-tx-2 transition hover:border-bd-2 hover:text-tx" id="pvmClose"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
     </div>
     <div class="flex flex-1 min-h-0">
       <!-- Left: version list -->
-      <div class="w-[200px] shrink-0 border-r border-[#1a1a1a] overflow-y-auto p-[12px_10px] flex flex-col gap-1.5" id="pvmVersionList"></div>
+      <div class="w-[200px] shrink-0 border-r border-bd overflow-y-auto p-3 flex flex-col gap-2" id="pvmVersionList"></div>
       <!-- Right: file view / diff -->
       <div class="flex-1 flex flex-col min-w-0">
         <!-- Toolbar -->
-        <div class="px-[14px] py-[10px] border-b border-[#1a1a1a] flex items-center gap-2 shrink-0 flex-wrap">
-          <span class="text-[.78rem] text-tx-3" id="pvmMode">点击版本号查看文件列表，勾选两个版本进行对比</span>
+        <div class="px-3 py-2 border-b border-bd flex items-center gap-2 shrink-0 flex-wrap">
+          <span class="text-sm text-tx-3" id="pvmMode">点击版本号查看文件列表，勾选两个版本进行对比</span>
           <div class="flex-1"></div>
-          <input class="w-full rounded-md border border-bd bg-bg-2 px-3 py-[9px] font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)] !w-[160px] !px-2 !py-1 !border-bd !text-tx-2 !text-[.78rem]" type="text" id="pvmSearch" placeholder="搜索文件…">
-          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx hidden !px-[10px] !py-1 !text-[.78rem]" id="pvmDiffBtn">对比选中版本</button>
+          <input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)] !w-[160px] !px-2 !py-1 !border-bd !text-tx-2 !text-sm" type="text" id="pvmSearch" placeholder="搜索文件…">
+          <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx hidden !px-3 !py-1 !text-sm" id="pvmDiffBtn">对比选中版本</button>
         </div>
         <!-- Content area -->
-        <div class="flex-1 overflow-y-auto px-4 py-[14px]" id="pvmContent">
-          <div class="text-tx-3 text-center py-[60px] text-[.85rem]"><svg class="inline-block h-4 w-4 -mt-0.5 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="13" y1="8" x2="3" y2="8"/><polyline points="7,4 3,8 7,12"/></svg>点击左侧版本号查看文件列表</div>
+        <div class="flex-1 overflow-y-auto px-4 py-3" id="pvmContent">
+          <div class="text-tx-3 text-center py-16 text-md"><svg class="inline-block h-4 w-4 -mt-1 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="13" y1="8" x2="3" y2="8"/><polyline points="7,4 3,8 7,12"/></svg>点击左侧版本号查看文件列表</div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<div class="toast fixed bottom-6 left-1/2 z-[300] -translate-x-1/2 translate-y-20 whitespace-nowrap rounded-md border border-bd-2 bg-bg-3 px-[18px] py-[9px] font-sans text-sm font-medium text-tx shadow-sm transition-transform duration-300 ease-[cubic-bezier(.34,1.56,.64,1)] [&.show]:translate-y-0 [&.t-success]:border-green-r [&.t-success]:bg-green-g [&.t-success]:text-green [&.t-warn]:border-amber-r [&.t-warn]:bg-amber-g [&.t-warn]:text-amber [&.t-error]:border-red-r [&.t-error]:bg-red-g [&.t-error]:text-red" id="toast"></div>
+<div class="toast fixed bottom-20 md:bottom-6 left-1/2 z-[70] -translate-x-1/2 translate-y-20 w-max max-w-[calc(100vw-32px)] whitespace-normal break-words text-center rounded-sm border border-bd-2 bg-bg-3 px-4 py-2 font-sans text-sm font-medium text-tx shadow-sm transition-transform duration-300 ease-[cubic-bezier(.34,1.56,.64,1)] [&.show]:translate-y-0 [&.t-success]:border-green-r [&.t-success]:text-green [&.t-warn]:border-amber-r [&.t-warn]:text-amber [&.t-error]:border-red-r [&.t-error]:text-red" id="toast"></div>
 
 <script>
   ${PROTO_ENGINE_JS}
@@ -1116,10 +1116,10 @@ export function renderAdminPage() {
   // Tailwind utility-class constants for elements whose className is fully
   // reassigned at runtime (className=, not classList.add) — declared once
   // here so they survive every reassignment site.
-  const BTN_GHOST_TOGGLE = 'inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx';
-  const BTN_PRIMARY_TOGGLE = 'inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none';
-  const BULK_BAR_BASE = 'hidden flex-wrap items-center gap-[10px] mb-3 rounded-md border border-bd-2 bg-bg-3 px-[13px] py-[9px] text-[.82rem] text-tx-2 [&.show]:flex';
-  const CF_FILL_BASE = 'h-[3px] rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red';
+  const BTN_GHOST_TOGGLE = 'inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx';
+  const BTN_PRIMARY_TOGGLE = 'inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none';
+  const BULK_BAR_BASE = 'hidden flex-wrap items-center gap-2 mb-3 rounded-md border border-bd-2 bg-bg-3 px-3 py-2 text-sm text-tx-2 [&.show]:flex';
+  const CF_FILL_BASE = 'h-1 rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red';
   const ICON_EYE = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg>';
   const ICON_EYE_OFF = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l12 12"/><path d="M6.6 3.4C7 3.3 7.5 3 8 3c4.5 0 7 5 7 5a13 13 0 0 1-2.3 3M4.2 4.2A13 13 0 0 0 1 8s2.5 5 7 5c1 0 1.9-.2 2.7-.6M6.2 6.2a2 2 0 0 0 2.6 2.6"/></svg>';
 
@@ -1144,7 +1144,7 @@ export function renderAdminPage() {
 
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'flex w-full min-w-0 items-center justify-between gap-2 rounded-sm border border-bd bg-bg-3 px-[11px] py-[7px] font-sans text-[.83rem] text-tx outline-none transition cursor-pointer hover:border-bd-2 hover:bg-bg-hover focus:border-bd-focus [&.open]:border-bd-focus';
+    btn.className = 'flex w-full min-w-0 items-center justify-between gap-2 rounded-sm border border-bd bg-bg-3 px-3 py-2 font-sans text-sm text-tx outline-none transition cursor-pointer hover:border-bd-2 hover:bg-bg-hover focus:border-bd-focus [&.open]:border-bd-focus';
     const label = document.createElement('span');
     label.className = 'truncate min-w-0';
     const chevron = document.createElement('span');
@@ -1154,7 +1154,7 @@ export function renderAdminPage() {
     wrap.appendChild(btn);
 
     const list = document.createElement('div');
-    list.className = 'cs-list absolute left-0 top-[calc(100%+4px)] z-30 hidden min-w-full w-max max-w-[280px] overflow-y-auto rounded-md border border-bd-2 bg-bg-4 py-1.5 shadow-lg max-h-[280px]';
+    list.className = 'cs-list absolute left-0 top-[calc(100%+4px)] z-30 hidden min-w-full w-max max-w-[280px] overflow-y-auto rounded-md border border-bd-2 bg-bg-4 py-2 shadow-lg max-h-[280px]';
     wrap.appendChild(list);
 
     function buildOptions() {
@@ -1163,7 +1163,7 @@ export function renderAdminPage() {
         const row = document.createElement('button');
         row.type = 'button';
         const active = opt.value === select.value;
-        row.className = 'flex w-full items-center px-3.5 py-2.5 text-left text-[.84rem] transition cursor-pointer hover:bg-bg-hover' +
+        row.className = 'flex w-full items-center px-4 py-2 text-left text-sm transition cursor-pointer hover:bg-bg-hover' +
           (active ? ' bg-brand-muted text-tx font-semibold' : ' text-tx-2 hover:text-tx');
         row.textContent = opt.textContent;
         row.addEventListener('click', () => {
@@ -1434,15 +1434,15 @@ export function renderAdminPage() {
     const t = e.ts ? new Date(e.ts).toLocaleString('zh-CN', { hour12: false }) : '—';
     const ok = (e.status ?? 'ok') === 'ok';
     const badge = ok
-      ? '<span class="rounded-xs border border-[rgba(52,211,153,.25)] bg-[rgba(52,211,153,.12)] px-1.5 py-px text-[.68rem] font-semibold text-[#34d399]">成功</span>'
-      : '<span class="rounded-xs border border-red-r bg-red-g px-1.5 py-px text-[.68rem] font-semibold text-red">失败</span>';
+      ? '<span class="rounded-xs border border-green-r bg-green-g px-2 py-1 text-2xs font-semibold text-green">成功</span>'
+      : '<span class="rounded-xs border border-red-r bg-red-g px-2 py-px text-2xs font-semibold text-red">失败</span>';
     return \`<tr class="border-b border-bd last:border-b-0 hover:bg-bg-4">
-      <td class="whitespace-nowrap px-4 py-2.5 font-mono text-[.76rem] text-tx-2">\${esc(t)}</td>
-      <td class="whitespace-nowrap px-4 py-2.5 text-[.8rem] text-tx">\${esc(auditLabel(e.action))}<span class="ml-1.5 font-mono text-[.68rem] text-tx-3">\${esc(e.action || '')}</span></td>
-      <td class="whitespace-nowrap px-4 py-2.5 text-[.8rem] text-tx-2">\${esc(e.actor || '—')}</td>
-      <td class="max-w-[240px] truncate px-4 py-2.5 font-mono text-[.74rem] text-tx-3" title="\${escAttr(e.target || '')}">\${esc(e.target || '—')}</td>
-      <td class="whitespace-nowrap px-4 py-2.5">\${badge}</td>
-      <td class="whitespace-nowrap px-4 py-2.5 font-mono text-[.74rem] text-tx-3">\${esc(e.ip || '—')}</td>
+      <td class="whitespace-nowrap px-4 py-2 font-mono text-sm text-tx-2">\${esc(t)}</td>
+      <td class="whitespace-nowrap px-4 py-2 text-sm text-tx">\${esc(auditLabel(e.action))}<span class="ml-2 font-mono text-2xs text-tx-3">\${esc(e.action || '')}</span></td>
+      <td class="whitespace-nowrap px-4 py-2 text-sm text-tx-2">\${esc(e.actor || '—')}</td>
+      <td class="max-w-[240px] truncate px-4 py-2 font-mono text-xs text-tx-3" title="\${escAttr(e.target || '')}">\${esc(e.target || '—')}</td>
+      <td class="whitespace-nowrap px-4 py-2">\${badge}</td>
+      <td class="whitespace-nowrap px-4 py-2 font-mono text-xs text-tx-3">\${esc(e.ip || '—')}</td>
     </tr>\`;
   }
 
@@ -1515,7 +1515,7 @@ export function renderAdminPage() {
   document.querySelectorAll('.nav-item').forEach(btn => {
     btn.addEventListener('click', function(e) {
       const r = document.createElement('span');
-      r.className = 'absolute h-[60px] w-[60px] rounded-full bg-white/[.08] pointer-events-none [transform:translate(-50%,-50%)_scale(0)] animate-[navRipple_.55s_ease-out_forwards]';
+      r.className = 'absolute h-16 w-[60px] rounded-full bg-white/[.08] pointer-events-none [transform:translate(-50%,-50%)_scale(0)] animate-[navRipple_.55s_ease-out_forwards]';
       const rect = this.getBoundingClientRect();
       r.style.left = (e.clientX - rect.left) + 'px';
       r.style.top  = (e.clientY - rect.top)  + 'px';
@@ -1585,13 +1585,13 @@ export function renderAdminPage() {
       const color = flat ? 'var(--color-tx-3)' : (up ? 'var(--color-green)' : 'var(--color-red)');
       const txt = flat ? '持平' : ((up ? '↑ ' : '↓ ') + (delta >= 1000 ? Math.round(delta) : delta.toFixed(1)) + '%');
       el.innerHTML = sparkSvg(counts, { color }) +
-        '<span class="font-mono text-[.68rem] font-bold" style="color:' + color + '" title="今日 ' + today + ' / 昨日 ' + yday + '">' + txt + '</span>';
+        '<span class="font-mono text-2xs font-bold" style="color:' + color + '" title="今日 ' + today + ' / 昨日 ' + yday + '">' + txt + '</span>';
       return;
     }
 
     // 2) 还没积累够数据：说明清楚，不画假线
     if (metric && trendCache) {
-      el.innerHTML = '<span class="text-[.66rem] text-tx-3">趋势数据积累中</span>';
+      el.innerHTML = '<span class="text-2xs text-tx-3">趋势数据积累中</span>';
       return;
     }
 
@@ -1605,8 +1605,8 @@ export function renderAdminPage() {
     const color = flat ? 'var(--color-tx-3)' : (up ? 'var(--color-green)' : 'var(--color-red)');
     const deltaTxt = flat ? '持平' : ((up ? '↑ ' : '↓ ') + (delta >= 1000 ? Math.round(delta) : delta.toFixed(1)) + '%');
     el.innerHTML = sparkSvg(hist, { color }) +
-      '<span class="font-mono text-[.68rem] font-bold" style="color:' + color + '" title="本地记录，非服务端历史">' + deltaTxt + '</span>' +
-      '<span class="text-[.6rem] text-tx-3">本地</span>';
+      '<span class="font-mono text-2xs font-bold" style="color:' + color + '" title="本地记录，非服务端历史">' + deltaTxt + '</span>' +
+      '<span class="text-2xs text-tx-3">本地</span>';
   }
 
   async function loadDashboard() {
@@ -1659,21 +1659,21 @@ export function renderAdminPage() {
     document.getElementById('dashProtoCount').textContent = prWithViews  || protos.length;
 
     // ── 图片 Tab ──
-    const TYPE_IMG = \`<span class="text-[.62rem] font-semibold px-1.5 py-px rounded bg-[rgba(52,211,153,.1)] text-[#34d399] border border-[rgba(52,211,153,.2)]">图片</span>\`;
+    const TYPE_IMG = \`<span class="text-2xs font-semibold px-2 py-1 rounded-xs bg-green-g text-green border border-green-r">图片</span>\`;
     const sortedImg = Object.entries(stats).sort((a,b) => (b[1].count??0)-(a[1].count??0)).slice(0,10);
     document.getElementById('topImagesBody').innerHTML = sortedImg.length
       ? sortedImg.map(([k,s]) => \`<tr>
           <td><img class="h-8 w-8 cursor-pointer rounded-xs border border-bd-2 object-cover" src="\${origin}/\${k}" loading="lazy" onclick="openLightbox('\${k}')"></td>
-          <td class="font-mono text-[.77rem] text-tx-3"><div class="truncate" title="\${escAttr(k)}">\${esc(k)}</div></td>
+          <td class="font-mono text-sm text-tx-3"><div class="truncate" title="\${escAttr(k)}">\${esc(k)}</div></td>
           <td>\${TYPE_IMG}</td>
-          <td class="font-mono text-[.82rem] font-bold text-tx">\${(s.count??0).toLocaleString()}</td>
-          <td class="text-[.79rem] text-tx-2">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
-          <td><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.73rem]" onclick="openStatsModal(\${jsStr(k)})">详情</button></td>
+          <td class="font-mono text-sm font-bold text-tx">\${(s.count??0).toLocaleString()}</td>
+          <td class="text-sm text-tx-2">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
+          <td><button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-xs" onclick="openStatsModal(\${jsStr(k)})">详情</button></td>
         </tr>\`).join('')
       : '<tr><td colspan="6" class="text-center text-tx-3 p-8">暂无访问记录</td></tr>';
 
     // ── 页面 Tab ──
-    const TYPE_PG = \`<span class="text-[.62rem] font-semibold px-1.5 py-px rounded bg-amber-g text-amber border border-amber-r">页面</span>\`;
+    const TYPE_PG = \`<span class="text-2xs font-semibold px-2 py-px rounded bg-amber-g text-amber border border-amber-r">页面</span>\`;
     const pageMap = {};
     pages.forEach(p => pageMap[p.slug] = { title: p.title || p.slug, type: p.type || 'markdown' });
     const sortedPg = Object.entries(pgStats).sort((a,b) => (b[1].count??0)-(a[1].count??0)).slice(0,10);
@@ -1682,42 +1682,42 @@ export function renderAdminPage() {
           const pm = pageMap[slug] || { title: slug, type: '' };
           return \`<tr>
             <td>
-              <div class="truncate font-medium text-[.84rem] text-tx" title="\${escAttr(pm.title)}">\${esc(pm.title)}</div>
-              <div class="truncate font-mono text-[.7rem] text-tx-3 mt-0.5">/p/\${esc(slug)}</div>
+              <div class="truncate font-medium text-sm text-tx" title="\${escAttr(pm.title)}">\${esc(pm.title)}</div>
+              <div class="truncate font-mono text-xs text-tx-3 mt-1">/p/\${esc(slug)}</div>
             </td>
             <td>\${TYPE_PG}</td>
-            <td class="font-mono text-[.82rem] font-bold text-tx">\${(s.count??0).toLocaleString()}</td>
-            <td class="text-[.79rem] text-tx-2">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
-            <td><button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.73rem]" data-title="\${escAttr(pm.title)}" onclick="openPageStatsModal(\${jsStr(slug)},this.dataset.title)">详情</button></td>
+            <td class="font-mono text-sm font-bold text-tx">\${(s.count??0).toLocaleString()}</td>
+            <td class="text-sm text-tx-2">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
+            <td><button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-xs" data-title="\${escAttr(pm.title)}" onclick="openPageStatsModal(\${jsStr(slug)},this.dataset.title)">详情</button></td>
           </tr>\`;
         }).join('')
       : '<tr><td colspan="5" class="text-center text-tx-3 p-8">暂无访问记录</td></tr>';
 
     // ── 原型 Tab ──
-    const TYPE_PT = \`<span class="text-[.62rem] font-semibold px-1.5 py-px rounded bg-[rgba(200,200,200,.08)] text-tx-a border border-[rgba(200,200,200,.15)]">原型</span>\`;
+    const TYPE_PT = \`<span class="text-2xs font-semibold px-2 py-px rounded bg-[rgba(200,200,200,.08)] text-tx-a border border-[rgba(200,200,200,.15)]">原型</span>\`;
     const protoMap = {};
     protos.forEach(p => protoMap[p.protoId] = p);
     const sortedPr = Object.entries(protoStats).sort((a,b) => (b[1].count??0)-(a[1].count??0)).slice(0,10);
     const protoTitleCell = (id, pm) => {
       const title = pm.title || id;
-      const lock  = pm.hasPassword ? ' <span class="inline-flex text-amber" title="已加密"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V4.5a3 3 0 0 1 6 0V7"/></svg></span>' : '';
+      const lock  = pm.hasPassword ? ' <span class="inline-flex text-amber" title="已加密"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V4.5a3 3 0 0 1 6 0V7"/></svg></span>' : '';
       const ver   = (pm.version ?? 1) > 0
-        ? \` <span class="font-mono text-[.66rem] font-semibold px-[5px] py-px rounded-[3px] bg-white/[.06] text-tx-2 border border-bd">v\${pm.version ?? 1}</span>\`
+        ? \` <span class="font-mono text-2xs font-semibold px-1 py-px rounded-xs bg-white/[.06] text-tx-2 border border-bd">v\${pm.version ?? 1}</span>\`
         : '';
       return \`
-        <div class="flex min-w-0 items-center gap-0.5">
-          <span class="truncate font-medium text-[.84rem] text-tx" title="\${escAttr(title)}">\${esc(title)}</span>\${lock}\${ver}
+        <div class="flex min-w-0 items-center gap-1">
+          <span class="truncate font-medium text-sm text-tx" title="\${escAttr(title)}">\${esc(title)}</span>\${lock}\${ver}
         </div>
-        <div class="truncate font-mono text-[.7rem] text-tx-3 mt-0.5">/proto/\${esc(id)}/</div>\`;
+        <div class="truncate font-mono text-xs text-tx-3 mt-1">/proto/\${esc(id)}/</div>\`;
     };
     const protoActions = (id, pm) => {
       const url = location.origin + '/proto/' + id + '/';
       const previewUrl = url + (pm.accessPassword ? '?pwd=' + encodeURIComponent(pm.accessPassword) : '');
       const pwdAttr = pm.accessPassword ? \` data-pwd="\${escAttr(pm.accessPassword)}"\` : '';
       return \`<div class="flex gap-1 flex-wrap">
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.73rem]" data-url="\${url}"\${pwdAttr} onclick="copyProtoAddr(this)">复制地址</button>
-        <a href="\${previewUrl}" target="_blank" class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.73rem] no-underline">预览</a>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.73rem]" data-title="\${escAttr(pm.title||id)}" onclick="openProtoStatsModal(\${jsStr(id)},this.dataset.title)">统计数据</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-xs" data-url="\${url}"\${pwdAttr} onclick="copyProtoAddr(this)">复制地址</button>
+        <a href="\${previewUrl}" target="_blank" class="inline-flex min-h-8 items-center justify-center gap-1 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-xs no-underline">预览</a>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-xs" data-title="\${escAttr(pm.title||id)}" onclick="openProtoStatsModal(\${jsStr(id)},this.dataset.title)">统计数据</button>
       </div>\`;
     };
     const prRows = sortedPr.length
@@ -1726,18 +1726,18 @@ export function renderAdminPage() {
           return \`<tr>
             <td>\${protoTitleCell(id, pm)}</td>
             <td>\${TYPE_PT}</td>
-            <td class="text-[.79rem] text-tx-2"><div class="truncate" title="\${escAttr(pm.owner||'—')}">\${esc(pm.owner||'—')}</div></td>
-            <td class="font-mono text-[.82rem] font-bold text-tx">\${(s.count??0).toLocaleString()}</td>
-            <td class="text-[.79rem] text-tx-2">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
+            <td class="text-sm text-tx-2"><div class="truncate" title="\${escAttr(pm.owner||'—')}">\${esc(pm.owner||'—')}</div></td>
+            <td class="font-mono text-sm font-bold text-tx">\${(s.count??0).toLocaleString()}</td>
+            <td class="text-sm text-tx-2">\${s.lastAccess ? timeAgo(s.lastAccess) : '—'}</td>
             <td>\${protoActions(id, pm)}</td>
           </tr>\`;
         }).join('')
       : protos.slice(0,10).map(pm => \`<tr>
           <td>\${protoTitleCell(pm.protoId, pm)}</td>
           <td>\${TYPE_PT}</td>
-          <td class="text-[.79rem] text-tx-2"><div class="truncate" title="\${escAttr(pm.owner||'—')}">\${esc(pm.owner||'—')}</div></td>
-          <td class="font-mono text-[.82rem] font-bold text-tx">0</td>
-          <td class="text-[.79rem] text-tx-2">—</td>
+          <td class="text-sm text-tx-2"><div class="truncate" title="\${escAttr(pm.owner||'—')}">\${esc(pm.owner||'—')}</div></td>
+          <td class="font-mono text-sm font-bold text-tx">0</td>
+          <td class="text-sm text-tx-2">—</td>
           <td>\${protoActions(pm.protoId, pm)}</td>
         </tr>\`).join('') || '<tr><td colspan="6" class="text-center text-tx-3 p-8">暂无原型</td></tr>';
     document.getElementById('topProtosBody').innerHTML = prRows;
@@ -1826,22 +1826,22 @@ export function renderAdminPage() {
       const views = item.views ?? allStats[item.key]?.count ?? 0;
       const title = item.name || item.key;
       const tagsLine = (item.tags && item.tags.length)
-        ? '<div class="mt-[2px] truncate text-[.62rem] text-tx-3" title="' + escAttr(item.tags.join(', ')) + '">' + esc(item.tags.join(' · ')) + '</div>'
+        ? '<div class="mt-1 truncate text-2xs text-tx-3" title="' + escAttr(item.tags.join(', ')) + '">' + esc(item.tags.join(' · ')) + '</div>'
         : '';
-      return \`<div class="gitem group relative cursor-pointer overflow-hidden rounded-md border border-bd bg-bg-3 transition hover:-translate-y-0.5 hover:border-bd-2 hover:shadow-[0_8px_28px_rgba(0,0,0,.5)] [&.selected]:border-tx-2 [&.selected]:shadow-[0_0_0_1px_var(--color-tx-2)]\${selected.has(item.key)?' selected':''}" onclick="handleGitem(event,'\${item.key}')">
-        <div class="checkbox absolute left-1.5 top-1.5 flex h-[17px] w-[17px] items-center justify-center rounded-xs border-[1.5px] border-bd-2 bg-black/75 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-[.selected]:opacity-100 group-[.selected]:border-tx-2 group-[.selected]:bg-tx-2"><svg class="h-2.5 w-2.5 fill-none stroke-white stroke-[2.5]" viewBox="0 0 12 12"><polyline points="1.5,6 5,9.5 10.5,2.5"/></svg></div>
+      return \`<div class="gitem group relative cursor-pointer overflow-hidden rounded-md border border-bd bg-bg-3 transition hover:border-bd-2 hover:shadow-sm [&.selected]:border-tx-2 [&.selected]:shadow-[0_0_0_1px_var(--color-tx-2)]\${selected.has(item.key)?' selected':''}" onclick="handleGitem(event,'\${item.key}')">
+        <div class="checkbox absolute left-2 top-2 flex h-4 w-4 items-center justify-center rounded-xs border border-bd-2 bg-black/75 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-[.selected]:opacity-100 group-[.selected]:border-tx-2 group-[.selected]:bg-tx-2"><svg class="h-3 w-3 fill-none stroke-white stroke-[2.5]" viewBox="0 0 12 12"><polyline points="1.5,6 5,9.5 10.5,2.5"/></svg></div>
         <img class="block h-auto w-full aspect-square bg-bg-2 object-cover" src="\${origin}/\${item.key}" loading="lazy">
-        <div class="px-[9px] py-[7px]">
+        <div class="px-2 py-2">
           \${title === item.key
-            ? '<div class="truncate font-mono text-[.68rem] text-tx-3" title="' + escAttr(item.key) + '">' + esc(item.key) + '</div>'
-            : '<div class="truncate text-[.71rem] font-medium text-tx" title="' + escAttr(title) + '">' + esc(title) + '</div>'
-              + '<div class="truncate font-mono text-[.62rem] text-tx-3" title="' + escAttr(item.key) + '">' + esc(item.key) + '</div>'}
+            ? '<div class="truncate font-mono text-2xs text-tx-3" title="' + escAttr(item.key) + '">' + esc(item.key) + '</div>'
+            : '<div class="truncate text-xs font-medium text-tx" title="' + escAttr(title) + '">' + esc(title) + '</div>'
+              + '<div class="truncate font-mono text-2xs text-tx-3" title="' + escAttr(item.key) + '">' + esc(item.key) + '</div>'}
           \${tagsLine}
-          <div class="mt-[3px] flex justify-between"><span class="truncate text-[.65rem] text-tx-3">\${esc([item.owner, fmtSize(item.size)].filter(Boolean).join(' · '))}</span><span class="font-mono text-[.65rem] font-semibold text-tx-a">\${views?views+' 次':''}</span></div>
-          <div class="mt-1.5 flex gap-[3px]">
-            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px] !text-[.7rem]" onclick="event.stopPropagation();copyText('\${origin}/\${item.key}',this)">复制</button>
-            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px] !text-[.7rem]" onclick="event.stopPropagation();openStatsModal('\${item.key}')">统计</button>
-            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-[3px] !text-[.7rem]" onclick="event.stopPropagation();deleteSingle('\${item.key}')">删除</button>
+          <div class="mt-1 flex justify-between"><span class="truncate text-2xs text-tx-3">\${esc([item.owner, fmtSize(item.size)].filter(Boolean).join(' · '))}</span><span class="font-mono text-2xs font-semibold text-tx-a">\${views?views+' 次':''}</span></div>
+          <div class="mt-2 flex gap-1">
+            <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-xs" onclick="event.stopPropagation();copyText('\${origin}/\${item.key}',this)">复制</button>
+            <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-xs" onclick="event.stopPropagation();openStatsModal('\${item.key}')">统计</button>
+            <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-red-r bg-red-g px-3 py-2 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-1 !text-xs" onclick="event.stopPropagation();deleteSingle('\${item.key}')">删除</button>
           </div>
         </div>
       </div>\`;
@@ -1941,18 +1941,18 @@ export function renderAdminPage() {
     images.forEach(it => push(it.owner, 'images', it));
     protos.forEach(it => push(it.owner, 'protos', it));
 
-    const ROW_BTN = 'inline-flex min-h-7 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-[3px] text-[.72rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx';
-    const ROW_BTN_RED = 'inline-flex min-h-7 items-center justify-center rounded-sm border border-red-r bg-red-g px-2 py-[3px] text-[.72rem] font-semibold text-red transition hover:bg-red-r';
-    const TYPE_IMG = '<span class="rounded-xs border border-[rgba(52,211,153,.2)] bg-[rgba(52,211,153,.1)] px-1.5 py-px text-[.62rem] font-semibold text-[#34d399]">图片</span>';
-    const TYPE_PROTO = '<span class="rounded-xs border border-[rgba(200,200,200,.15)] bg-[rgba(200,200,200,.08)] px-1.5 py-px text-[.62rem] font-semibold text-tx-a">原型</span>';
+    const ROW_BTN = 'inline-flex min-h-7 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-1 text-xs font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx';
+    const ROW_BTN_RED = 'inline-flex min-h-7 items-center justify-center rounded-sm border border-red-r bg-red-g px-2 py-1 text-xs font-semibold text-red transition hover:bg-red-r';
+    const TYPE_IMG = '<span class="rounded-xs border border-green-r bg-green-g px-2 py-1 text-2xs font-semibold text-green">图片</span>';
+    const TYPE_PROTO = '<span class="rounded-xs border border-[rgba(200,200,200,.15)] bg-[rgba(200,200,200,.08)] px-2 py-px text-2xs font-semibold text-tx-a">原型</span>';
 
     // 表头：行内各列是定宽的，标题对齐要靠同一组宽度
-    let html = '<div class="flex items-center gap-3 border-b border-bd-2 bg-bg-2 px-3 py-1.5 text-[.62rem] font-bold uppercase tracking-[.1em] text-tx-3">'
+    let html = '<div class="flex items-center gap-3 border-b border-bd-2 bg-bg-2 px-3 py-2 text-2xs font-bold uppercase tracking-[.1em] text-tx-3">'
       + '<span class="w-10 shrink-0"></span>'
       + '<span class="min-w-0 flex-1">文件名 / 标题</span>'
       + '<span class="w-[56px] shrink-0">类型</span>'
       + '<span class="w-[100px] shrink-0">删除时间</span>'
-      + '<span class="w-[86px] shrink-0">剩余</span>'
+      + '<span class="w-22 shrink-0">剩余</span>'
       + '<span class="w-[116px] shrink-0">操作</span>'
       + '</div>';
     for (const entry of [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0], 'zh'))) {
@@ -1961,21 +1961,21 @@ export function renderAdminPage() {
       if (g.images.length) parts.push(g.images.length + ' 张图片');
       if (g.protos.length) parts.push(g.protos.length + ' 个原型');
       html += '<div class="flex items-center gap-2 border-y border-bd-2 bg-bg-2 px-3 py-2 first:border-t-0">'
-        + '<span class="text-[.78rem] font-bold text-tx">' + esc(owner) + '</span>'
-        + '<span class="text-[.7rem] text-tx-3">' + parts.join(' · ') + '</span>'
+        + '<span class="text-sm font-bold text-tx">' + esc(owner) + '</span>'
+        + '<span class="text-xs text-tx-3">' + parts.join(' · ') + '</span>'
         + '</div>';
 
       for (const it of g.images) {
         html += '<div class="flex items-center gap-3 border-b border-bd px-3 py-2">'
           + '<img class="h-10 w-10 shrink-0 rounded-sm border border-bd-2 bg-bg-2 object-cover" src="' + origin + '/' + encodeURI(it.key) + '" loading="lazy">'
           + '<div class="min-w-0 flex-1">'
-          +   '<div class="truncate text-[.8rem] font-medium text-tx" title="' + escAttr(it.name || it.key) + '">' + esc(it.name || it.key) + '</div>'
-          +   '<div class="truncate font-mono text-[.66rem] text-tx-3">' + esc(it.key) + '</div>'
+          +   '<div class="truncate text-sm font-medium text-tx" title="' + escAttr(it.name || it.key) + '">' + esc(it.name || it.key) + '</div>'
+          +   '<div class="truncate font-mono text-2xs text-tx-3">' + esc(it.key) + '</div>'
           + '</div>'
           + '<span class="w-[56px] shrink-0">' + TYPE_IMG + '</span>'
-          + '<span class="w-[100px] shrink-0 text-[.72rem] text-tx-3">' + timeAgo(it.deletedAt) + '</span>'
-          + '<span class="w-[86px] shrink-0 text-[.72rem] text-tx-3">' + trashDaysLeft(it.deletedAt, retention) + '</span>'
-          + '<div class="flex shrink-0 gap-1.5">'
+          + '<span class="w-[100px] shrink-0 text-xs text-tx-3">' + timeAgo(it.deletedAt) + '</span>'
+          + '<span class="w-22 shrink-0 text-xs text-tx-3">' + trashDaysLeft(it.deletedAt, retention) + '</span>'
+          + '<div class="flex shrink-0 gap-2">'
           +   '<button class="' + ROW_BTN + '" ' + trashAction('adminRestoreTrash', 'image', it.key) + '>恢复</button>'
           +   '<button class="' + ROW_BTN_RED + '" ' + trashAction('adminPurgeTrash', 'image', it.key) + '>彻底删除</button>'
           + '</div></div>';
@@ -1985,13 +1985,13 @@ export function renderAdminPage() {
         html += '<div class="flex items-center gap-3 border-b border-bd px-3 py-2">'
           + '<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-bd-2 bg-bg-2 text-tx-3"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v5l-8 8H2V2z"/><line x1="5" y1="2" x2="5" y2="5"/><line x1="8" y1="2" x2="8" y2="4"/></svg></div>'
           + '<div class="min-w-0 flex-1">'
-          +   '<div class="truncate text-[.8rem] font-medium text-tx" title="' + escAttr(it.title || it.protoId) + '">' + esc(it.title || it.protoId) + '</div>'
-          +   '<div class="truncate font-mono text-[.66rem] text-tx-3">' + esc(it.protoId) + ' · ' + (it.fileCount ?? '—') + ' 个文件 · ' + fmtSize(it.totalSize || 0) + '</div>'
+          +   '<div class="truncate text-sm font-medium text-tx" title="' + escAttr(it.title || it.protoId) + '">' + esc(it.title || it.protoId) + '</div>'
+          +   '<div class="truncate font-mono text-2xs text-tx-3">' + esc(it.protoId) + ' · ' + (it.fileCount ?? '—') + ' 个文件 · ' + fmtSize(it.totalSize || 0) + '</div>'
           + '</div>'
           + '<span class="w-[56px] shrink-0">' + TYPE_PROTO + '</span>'
-          + '<span class="w-[100px] shrink-0 text-[.72rem] text-tx-3">' + timeAgo(it.deletedAt) + '</span>'
-          + '<span class="w-[86px] shrink-0 text-[.72rem] text-tx-3">' + trashDaysLeft(it.deletedAt, retention) + '</span>'
-          + '<div class="flex shrink-0 gap-1.5">'
+          + '<span class="w-[100px] shrink-0 text-xs text-tx-3">' + timeAgo(it.deletedAt) + '</span>'
+          + '<span class="w-22 shrink-0 text-xs text-tx-3">' + trashDaysLeft(it.deletedAt, retention) + '</span>'
+          + '<div class="flex shrink-0 gap-2">'
           +   '<button class="' + ROW_BTN + '" ' + trashAction('adminRestoreTrash', 'proto', it.protoId) + '>恢复</button>'
           +   '<button class="' + ROW_BTN_RED + '" ' + trashAction('adminPurgeTrash', 'proto', it.protoId) + '>彻底删除</button>'
           + '</div></div>';
@@ -2046,7 +2046,7 @@ export function renderAdminPage() {
     adminTagKey = key;
     adminTagDraft = [];
     document.getElementById('adminTagTarget').textContent = key;
-    document.getElementById('adminTagList').innerHTML = '<span class="text-[.76rem] text-tx-3">加载中…</span>';
+    document.getElementById('adminTagList').innerHTML = '<span class="text-sm text-tx-3">加载中…</span>';
     document.getElementById('adminTagModal').classList.add('show');
     try {
       const r = await adminFetch('/api/image/' + encodeURIComponent(key) + '/meta', { headers: authH() });
@@ -2061,8 +2061,8 @@ export function renderAdminPage() {
   function renderAdminTags() {
     const el = document.getElementById('adminTagList');
     el.innerHTML = adminTagDraft.length
-      ? adminTagDraft.map((t, i) => \`<span class="inline-flex items-center gap-1.5 rounded-xl border border-bd bg-bg-3 px-2.5 py-[3px] text-[.75rem] font-semibold text-tx-2">\${esc(t)}<button class="text-tx-3 transition hover:text-red" data-tag-i="\${i}" title="移除">×</button></span>\`).join('')
-      : '<span class="text-[.76rem] text-tx-3">暂无标签</span>';
+      ? adminTagDraft.map((t, i) => \`<span class="inline-flex items-center gap-1 rounded-xs border border-bd bg-bg-3 px-2 py-1 text-xs font-semibold text-tx-2">\${esc(t)}<button class="text-tx-3 transition hover:text-red" data-tag-i="\${i}" title="移除">×</button></span>\`).join('')
+      : '<span class="text-sm text-tx-3">暂无标签</span>';
     el.querySelectorAll('[data-tag-i]').forEach(b => {
       b.addEventListener('click', () => { adminTagDraft.splice(Number(b.dataset.tagI), 1); renderAdminTags(); });
     });
@@ -2119,23 +2119,23 @@ export function renderAdminPage() {
   }
 
   function renderLoginStatus(u) {
-    if (!u.lastLoginAt) return \`<td class="text-[.79rem] text-tx-2 whitespace-nowrap">—</td>\`;
+    if (!u.lastLoginAt) return \`<td class="text-sm text-tx-2 whitespace-nowrap">—</td>\`;
     const ttlMs = (u.tokenTtlDays ?? 7) * 86400000;
     const expiresAt = u.lastLoginAt + ttlMs;
     const remaining = expiresAt - Date.now();
     const active = remaining > 0;
     const dot = active
-      ? \`<span class="w-[7px] h-[7px] rounded-full bg-green shadow-[0_0_5px_rgba(52,211,153,.5)] inline-block shrink-0"></span>\`
-      : \`<span class="w-[7px] h-[7px] rounded-full bg-tx-3 inline-block shrink-0"></span>\`;
+      ? \`<span class="w-2 h-2 rounded-full bg-green shadow-[0_0_5px_rgba(52,211,153,.5)] inline-block shrink-0"></span>\`
+      : \`<span class="w-2 h-2 rounded-full bg-tx-3 inline-block shrink-0"></span>\`;
     const label = active
-      ? \`<span class="text-[.76rem] font-semibold text-green">活跃</span>\`
-      : \`<span class="text-[.76rem] text-tx-3">离线</span>\`;
+      ? \`<span class="text-sm font-semibold text-green">活跃</span>\`
+      : \`<span class="text-sm text-tx-3">离线</span>\`;
     const sub = active
-      ? \`<span class="text-[.7rem] text-tx-3">\${timeAgo(u.lastLoginAt)} 登录 · \${timeLeft(remaining)}</span>\`
-      : \`<span class="text-[.7rem] text-tx-3">\${timeAgo(u.lastLoginAt)} 登录 · \${timeLeft(remaining)}</span>\`;
+      ? \`<span class="text-xs text-tx-3">\${timeAgo(u.lastLoginAt)} 登录 · \${timeLeft(remaining)}</span>\`
+      : \`<span class="text-xs text-tx-3">\${timeAgo(u.lastLoginAt)} 登录 · \${timeLeft(remaining)}</span>\`;
     return \`<td class="whitespace-nowrap">
-      <div class="flex items-center gap-[5px]">\${dot}\${label}</div>
-      <div class="mt-0.5">\${sub}</div>
+      <div class="flex items-center gap-1">\${dot}\${label}</div>
+      <div class="mt-1">\${sub}</div>
     </td>\`;
   }
 
@@ -2143,23 +2143,23 @@ export function renderAdminPage() {
     document.getElementById('usersBody').innerHTML = users.map(u => {
       const p = u.permissions;
       const perms = u.isAdmin
-        ? \`<span class="inline-flex items-center rounded-xs border border-brand-ring bg-brand-muted px-1.5 py-0.5 text-[.68rem] font-semibold text-tx-a">超级管理员</span>\`
+        ? \`<span class="inline-flex items-center rounded-xs border border-brand-ring bg-brand-muted px-2 py-1 text-2xs font-semibold text-tx-a">超级管理员</span>\`
         : [
-            p.canUpload ? '<span class="inline-flex items-center rounded-xs border border-green-r bg-green-g px-1.5 py-0.5 text-[.68rem] font-semibold text-green">上传</span>' : '<span class="inline-flex items-center rounded-xs border border-bd bg-white/[.04] px-1.5 py-0.5 text-[.68rem] font-semibold text-tx-3">禁止上传</span>',
-            p.canDelete ? '<span class="inline-flex items-center rounded-xs border border-green-r bg-green-g px-1.5 py-0.5 text-[.68rem] font-semibold text-green">删除</span>' : '',
-            p.canEdit   ? '<span class="inline-flex items-center rounded-xs border border-green-r bg-green-g px-1.5 py-0.5 text-[.68rem] font-semibold text-green">编辑</span>' : '',
+            p.canUpload ? '<span class="inline-flex items-center rounded-xs border border-green-r bg-green-g px-2 py-1 text-2xs font-semibold text-green">上传</span>' : '<span class="inline-flex items-center rounded-xs border border-bd bg-white/[.04] px-2 py-1 text-2xs font-semibold text-tx-3">禁止上传</span>',
+            p.canDelete ? '<span class="inline-flex items-center rounded-xs border border-green-r bg-green-g px-2 py-1 text-2xs font-semibold text-green">删除</span>' : '',
+            p.canEdit   ? '<span class="inline-flex items-center rounded-xs border border-green-r bg-green-g px-2 py-1 text-2xs font-semibold text-green">编辑</span>' : '',
           ].filter(Boolean).join(' ');
       const quota = u.isAdmin ? '<span class="text-tx-3">—</span>' : (u.quota ? \`今日 \${u.quota.daily} 次 · 共 \${u.quota.total} 次\` : '—');
       const limits = u.isAdmin ? '<span class="text-tx-3">无限制</span>' : \`每日 \${p.dailyUploadLimit===-1?'∞':p.dailyUploadLimit} · 总量 \${p.maxTotalUploads===-1?'∞':p.maxTotalUploads}\`;
-      const disabled = u.disabled ? '<span class="inline-flex items-center rounded-xs border border-red-r bg-red-g px-1.5 py-0.5 text-[.68rem] font-semibold text-red">已禁用</span> ' : '';
+      const disabled = u.disabled ? '<span class="inline-flex items-center rounded-xs border border-red-r bg-red-g px-2 py-1 text-2xs font-semibold text-red">已禁用</span> ' : '';
       const actions = u.isAdmin ? '' : \`
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.75rem]" onclick="openEditUser('\${u.username}')">编辑</button>
-        <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-1 !text-[.75rem]" onclick="deleteUser('\${u.username}')">删除</button>\`;
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-xs" onclick="openEditUser('\${u.username}')">编辑</button>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-red-r bg-red-g px-3 py-2 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-1 !text-xs" onclick="deleteUser('\${u.username}')">删除</button>\`;
       return \`<tr>
         <td class="font-medium">\${disabled}\${u.username}</td>
         <td>\${perms}</td>
-        <td class="text-[.79rem] text-tx-2">\${quota}</td>
-        <td class="text-[.79rem] text-tx-2">\${limits}</td>
+        <td class="text-sm text-tx-2">\${quota}</td>
+        <td class="text-sm text-tx-2">\${limits}</td>
         \${renderLoginStatus(u)}
         <td>\${actions}</td>
       </tr>\`;
@@ -2261,7 +2261,7 @@ export function renderAdminPage() {
 
   function renderTypesGrid() {
     document.getElementById('typesGrid').innerHTML = ALL_TYPES.map(t =>
-      \`<div class="type-chip flex cursor-pointer items-center gap-[5px] rounded-xs border border-bd bg-bg-2 px-[9px] py-1 text-[.74rem] font-medium text-tx-3 transition hover:border-bd-2 hover:text-tx-2 [&.on]:border-brand-ring [&.on]:bg-brand-muted [&.on]:text-tx-a\${enabledTypes.has(t)?' on':''}" data-type="\${t}" onclick="toggleType('\${t}')">\${TYPE_LABELS[t]}</div>\`
+      \`<div class="type-chip flex cursor-pointer items-center gap-1 rounded-xs border border-bd bg-bg-2 px-2 py-1 text-xs font-medium text-tx-3 transition hover:border-bd-2 hover:text-tx-2 [&.on]:border-brand-ring [&.on]:bg-brand-muted [&.on]:text-tx-a\${enabledTypes.has(t)?' on':''}" data-type="\${t}" onclick="toggleType('\${t}')">\${TYPE_LABELS[t]}</div>\`
     ).join('');
   }
   function toggleType(t) { if (enabledTypes.has(t)) enabledTypes.delete(t); else enabledTypes.add(t); renderTypesGrid(); }
@@ -2297,8 +2297,8 @@ export function renderAdminPage() {
       document.getElementById('smLast').textContent = data.lastAccess ? timeAgo(data.lastAccess) : '—';
       const maxV = cl[0]?.[1]??1;
       document.getElementById('countryBars').innerHTML = cl.slice(0,8).map(([cc,cnt]) =>
-        \`<div class="flex items-center gap-[10px] mb-[5px] text-[.78rem]"><span class="w-9 shrink-0 font-mono text-[.73rem] text-tx-2">\${cc}</span><div class="h-[5px] flex-1 rounded-[3px] bg-bd"><div class="h-[5px] rounded-[3px] bg-brand transition-[width] duration-[.4s]" style="width:\${(cnt/maxV*100).toFixed(1)}%"></div></div><span class="w-7 text-right text-[.73rem] text-tx-3">\${cnt}</span></div>\`
-      ).join('') || '<span class="text-tx-3 text-[.82rem]">暂无数据</span>';
+        \`<div class="flex items-center gap-2 mb-1 text-sm"><span class="w-9 shrink-0 font-mono text-xs text-tx-2">\${cc}</span><div class="h-1 flex-1 rounded-xs bg-bd"><div class="h-1 rounded-xs bg-brand transition-[width] duration-[.4s]" style="width:\${(cnt/maxV*100).toFixed(1)}%"></div></div><span class="w-7 text-right text-xs text-tx-3">\${cnt}</span></div>\`
+      ).join('') || '<span class="text-tx-3 text-sm">暂无数据</span>';
       document.getElementById('accessLogBody').innerHTML = (data.accesses??[]).slice(0,50).map(a =>
         \`<tr><td>\${new Date(a.ts).toLocaleString('zh-CN')}</td><td>\${a.ip}</td><td>\${a.country}</td><td>\${[a.city,a.region].filter(x=>x&&x!=='—').join(' ')}</td><td class="text-tx-3">\${a.org!=='—'?a.org:''}</td></tr>\`
       ).join('') || '<tr><td colspan="5" class="text-tx-3 text-center">暂无记录</td></tr>';
@@ -2328,15 +2328,15 @@ export function renderAdminPage() {
       const cl = Object.entries(data.countries ?? {}).sort((a,b) => b[1]-a[1]);
       const maxC = cl[0]?.[1] ?? 1;
       document.getElementById('psmCountryBars').innerHTML = cl.slice(0,8).map(([cc,cnt]) =>
-        \`<div class="flex items-center gap-[10px] mb-[5px] text-[.78rem]"><span class="w-9 shrink-0 font-mono text-[.73rem] text-tx-2">\${cc}</span><div class="h-[5px] flex-1 rounded-[3px] bg-bd"><div class="h-[5px] rounded-[3px] bg-brand transition-[width] duration-[.4s]" style="width:\${(cnt/maxC*100).toFixed(1)}%"></div></div><span class="w-7 text-right text-[.73rem] text-tx-3">\${cnt}</span></div>\`
-      ).join('') || '<span class="text-tx-3 text-[.82rem]">暂无数据</span>';
+        \`<div class="flex items-center gap-2 mb-1 text-sm"><span class="w-9 shrink-0 font-mono text-xs text-tx-2">\${cc}</span><div class="h-1 flex-1 rounded-xs bg-bd"><div class="h-1 rounded-xs bg-brand transition-[width] duration-[.4s]" style="width:\${(cnt/maxC*100).toFixed(1)}%"></div></div><span class="w-7 text-right text-xs text-tx-3">\${cnt}</span></div>\`
+      ).join('') || '<span class="text-tx-3 text-sm">暂无数据</span>';
 
       // IP bars
       const il = Object.entries(data.ips ?? {}).sort((a,b) => b[1]-a[1]).slice(0,10);
       const maxI = il[0]?.[1] ?? 1;
       document.getElementById('psmIpBars').innerHTML = il.map(([ip,cnt]) =>
-        \`<div class="flex items-center gap-[10px] mb-[5px] text-[.78rem]"><span class="w-[120px] font-mono text-[.75rem] text-[#aaa] shrink-0 overflow-hidden text-ellipsis">\${ip}</span><div class="h-[5px] flex-1 rounded-[3px] bg-bd"><div class="h-[5px] rounded-[3px] bg-brand transition-[width] duration-[.4s]" style="width:\${(cnt/maxI*100).toFixed(1)}%"></div></div><span class="w-7 text-right text-[.73rem] text-tx-3">\${cnt}</span></div>\`
-      ).join('') || '<span class="text-tx-3 text-[.82rem]">暂无数据</span>';
+        \`<div class="flex items-center gap-2 mb-1 text-sm"><span class="w-[120px] font-mono text-xs text-tx-2 shrink-0 overflow-hidden text-ellipsis">\${ip}</span><div class="h-1 flex-1 rounded-xs bg-bd"><div class="h-1 rounded-xs bg-brand transition-[width] duration-[.4s]" style="width:\${(cnt/maxI*100).toFixed(1)}%"></div></div><span class="w-7 text-right text-xs text-tx-3">\${cnt}</span></div>\`
+      ).join('') || '<span class="text-tx-3 text-sm">暂无数据</span>';
 
       // Access log
       document.getElementById('psmLogBody').innerHTML = (data.accesses ?? []).slice(0,50).map(a =>
@@ -2368,10 +2368,10 @@ export function renderAdminPage() {
       const cl = Object.entries(data.countries ?? {}).sort((a,b) => b[1]-a[1]).slice(0,10);
       const maxC = cl[0]?.[1] ?? 1;
       document.getElementById('prsCountryBars').innerHTML = cl.map(([c,cnt]) =>
-        \`<div class="flex items-center gap-[10px] mb-[5px] text-[.78rem]"><span class="w-9 shrink-0 font-mono text-[.73rem] text-tx-2">\${c}</span><div class="h-[5px] flex-1 rounded-[3px] bg-bd"><div class="h-[5px] rounded-[3px] bg-brand transition-[width] duration-[.4s]" style="width:\${(cnt/maxC*100).toFixed(1)}%"></div></div><span class="w-7 text-right text-[.73rem] text-tx-3">\${cnt}</span></div>\`
-      ).join('') || '<span class="text-tx-3 text-[.82rem]">暂无数据</span>';
+        \`<div class="flex items-center gap-2 mb-1 text-sm"><span class="w-9 shrink-0 font-mono text-xs text-tx-2">\${c}</span><div class="h-1 flex-1 rounded-xs bg-bd"><div class="h-1 rounded-xs bg-brand transition-[width] duration-[.4s]" style="width:\${(cnt/maxC*100).toFixed(1)}%"></div></div><span class="w-7 text-right text-xs text-tx-3">\${cnt}</span></div>\`
+      ).join('') || '<span class="text-tx-3 text-sm">暂无数据</span>';
       document.getElementById('prsLogBody').innerHTML = (data.accesses ?? []).slice(0,50).map(a =>
-        \`<tr><td>\${new Date(a.ts).toLocaleString('zh-CN')}</td><td class="font-mono text-[.75rem]">\${a.ip}</td><td>\${a.country}</td></tr>\`
+        \`<tr><td>\${new Date(a.ts).toLocaleString('zh-CN')}</td><td class="font-mono text-xs">\${a.ip}</td><td>\${a.country}</td></tr>\`
       ).join('') || '<tr><td colspan="3" class="text-tx-3 text-center">暂无记录</td></tr>';
     } catch {
       document.getElementById('prsLogBody').innerHTML = '<tr><td colspan="3" class="text-tx-3 text-center">加载失败</td></tr>';
@@ -2396,7 +2396,7 @@ export function renderAdminPage() {
     document.getElementById('pvmSearch').value = '';
     document.getElementById('pvmDiffBtn').classList.add('hidden');
     document.getElementById('pvmMode').textContent = '点击版本号查看文件列表，勾选两个版本进行对比';
-    document.getElementById('pvmContent').innerHTML = '<div class="text-tx-3 text-center py-[60px] text-[.85rem]"><svg class="inline-block h-4 w-4 -mt-0.5 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="13" y1="8" x2="3" y2="8"/><polyline points="7,4 3,8 7,12"/></svg>点击左侧版本号查看文件列表</div>';
+    document.getElementById('pvmContent').innerHTML = '<div class="text-tx-3 text-center py-16 text-md"><svg class="inline-block h-4 w-4 -mt-1 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="13" y1="8" x2="3" y2="8"/><polyline points="7,4 3,8 7,12"/></svg>点击左侧版本号查看文件列表</div>';
 
     pvmRenderVersionList();
     document.getElementById('protoVersionModal').classList.add('show');
@@ -2409,22 +2409,22 @@ export function renderAdminPage() {
       const isLatest  = v.v === maxVer;
       const isActive  = pvmActiveVer === v.v;
       const checkIdx  = pvmChecked.indexOf(v.v);
-      const cardBase = 'pvm-ver-card cursor-pointer rounded-md border border-bd bg-bg-2 px-[10px] py-[9px] transition hover:border-bd-2 [&.active]:border-brand [&.active]:bg-brand-muted [&.checked-a]:border-green [&.checked-a]:bg-green-g [&.checked-b]:border-amber [&.checked-b]:bg-amber-g';
+      const cardBase = 'pvm-ver-card cursor-pointer rounded-md border border-bd bg-bg-2 px-3 py-2 transition hover:border-bd-2 [&.active]:border-brand [&.active]:bg-brand-muted [&.checked-a]:border-green [&.checked-a]:bg-green-g [&.checked-b]:border-amber [&.checked-b]:bg-amber-g';
       const cardClass = checkIdx === 0 ? cardBase+' checked-a'
                       : checkIdx === 1 ? cardBase+' checked-b'
                       : isActive       ? cardBase+' active'
                       :                  cardBase;
       return \`<div class="\${cardClass}" onclick="pvmSelectVersion(\${v.v})">
         <div class="flex items-center gap-1 flex-wrap">
-          <span class="mr-1 rounded-xs border border-bd-2 bg-white/[.08] px-[7px] py-px font-mono text-[.72rem] font-bold text-tx">v\${v.v}</span>
-          \${isLatest ? '<span class="rounded-[3px] border border-green-r bg-green-g px-1.5 py-px text-[.65rem] font-bold text-green">最新</span>' : ''}
-          \${!isLatest ? \`<button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-1.5 !py-px !text-[.62rem] ml-auto" onclick="event.stopPropagation();pvmDeleteVersion(\${v.v})">删除</button>\` : ''}
+          <span class="mr-1 rounded-xs border border-bd-2 bg-white/[.08] px-2 py-px font-mono text-xs font-bold text-tx">v\${v.v}</span>
+          \${isLatest ? '<span class="rounded-xs border border-green-r bg-green-g px-2 py-px text-2xs font-bold text-green">最新</span>' : ''}
+          \${!isLatest ? \`<button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-red-r bg-red-g px-3 py-2 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-px !text-2xs ml-auto" onclick="event.stopPropagation();pvmDeleteVersion(\${v.v})">删除</button>\` : ''}
         </div>
-        <div class="mt-1 font-mono text-[.7rem] text-tx-3">\${v.at ? new Date(v.at).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—'}</div>
-        <div class="mt-1 font-mono text-[.7rem] text-tx-3">\${v.files ?? '?'} 文件 · \${v.size ? fmtSize(v.size) : '—'}</div>
-        <label class="flex items-center gap-[5px] mt-[5px] text-[.7rem] text-tx-3" onclick="event.stopPropagation()">
+        <div class="mt-1 font-mono text-xs text-tx-3">\${v.at ? new Date(v.at).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—'}</div>
+        <div class="mt-1 font-mono text-xs text-tx-3">\${v.files ?? '?'} 文件 · \${v.size ? fmtSize(v.size) : '—'}</div>
+        <label class="flex items-center gap-1 mt-1 text-xs text-tx-3" onclick="event.stopPropagation()">
           <input type="checkbox" \${checkIdx >= 0 ? 'checked' : ''} onchange="pvmToggleCheck(\${v.v}, this.checked)">
-          <span style="color:\${checkIdx===0?'#10b981':checkIdx===1?'#f59e0b':'#555'}">\${checkIdx===0?'对比 A':checkIdx===1?'对比 B':'加入对比'}</span>
+          <span style="color:\${checkIdx===0?'var(--color-green)':checkIdx===1?'var(--color-amber)':'var(--color-tx-3)'}">\${checkIdx===0?'对比 A':checkIdx===1?'对比 B':'加入对比'}</span>
         </label>
       </div>\`;
     }).join('');
@@ -2442,7 +2442,7 @@ export function renderAdminPage() {
     pvmChecked = pvmChecked.filter(v => v !== ver);
     if (pvmActiveVer === ver) {
       pvmActiveVer = null;
-      document.getElementById('pvmContent').innerHTML = '<div class="text-tx-3 text-center py-[60px] text-[.85rem]"><svg class="inline-block h-4 w-4 -mt-0.5 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="13" y1="8" x2="3" y2="8"/><polyline points="7,4 3,8 7,12"/></svg>点击左侧版本号查看文件列表</div>';
+      document.getElementById('pvmContent').innerHTML = '<div class="text-tx-3 text-center py-16 text-md"><svg class="inline-block h-4 w-4 -mt-1 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="13" y1="8" x2="3" y2="8"/><polyline points="7,4 3,8 7,12"/></svg>点击左侧版本号查看文件列表</div>';
     }
     // Also sync adminProtosCache
     const cacheEntry = adminProtosCache.find(p => p.protoId === pid);
@@ -2498,13 +2498,13 @@ export function renderAdminPage() {
   function pvmShowFileList(files, title) {
     const q = document.getElementById('pvmSearch').value.toLowerCase();
     if (!files) {
-      document.getElementById('pvmContent').innerHTML = \`<div class="text-tx-3 text-[.82rem] text-center py-10">该版本无文件记录（旧版本上传未记录文件列表）</div>\`;
+      document.getElementById('pvmContent').innerHTML = \`<div class="text-tx-3 text-sm text-center py-10">该版本无文件记录（旧版本上传未记录文件列表）</div>\`;
       return;
     }
     const filtered = q ? files.filter(f => f.toLowerCase().includes(q)) : files;
     document.getElementById('pvmContent').innerHTML = \`
-      <div class="text-[.75rem] text-tx-3 mb-[10px] font-medium">\${title}\${q ? \` — 过滤 "\${q}"\` : ''}</div>
-      <div>\${filtered.map(f => \`<div class="flex items-center gap-1.5 rounded-xs px-1.5 py-[3px] font-mono text-[.7rem] mb-px text-tx-3 transition hover:bg-bg-hover hover:text-tx-2">\${esc(f)}</div>\`).join('') || '<div class="text-tx-3 text-[.82rem] py-5">无匹配文件</div>'}</div>\`;
+      <div class="text-xs text-tx-3 mb-2 font-medium">\${title}\${q ? \` — 过滤 "\${q}"\` : ''}</div>
+      <div>\${filtered.map(f => \`<div class="flex items-center gap-2 rounded-xs px-2 py-1 font-mono text-xs mb-px text-tx-3 transition hover:bg-bg-hover hover:text-tx-2">\${esc(f)}</div>\`).join('') || '<div class="text-tx-3 text-sm py-5">无匹配文件</div>'}</div>\`;
   }
 
   document.getElementById('pvmDiffBtn').addEventListener('click', async () => {
@@ -2513,12 +2513,12 @@ export function renderAdminPage() {
     pvmShowLoading();
     const [filesA, filesB] = await Promise.all([pvmFetchFiles(a), pvmFetchFiles(b)]);
     if (!filesA && !filesB) {
-      document.getElementById('pvmContent').innerHTML = '<div class="text-tx-3 text-center py-10 text-[.82rem]">两个版本均无文件记录（旧版本上传未记录文件列表）</div>';
+      document.getElementById('pvmContent').innerHTML = '<div class="text-tx-3 text-center py-10 text-sm">两个版本均无文件记录（旧版本上传未记录文件列表）</div>';
       return;
     }
     if (!filesA || !filesB) {
       const missing = !filesA ? \`v\${a}\` : \`v\${b}\`;
-      document.getElementById('pvmContent').innerHTML = \`<div class="text-tx-3 text-center py-10 text-[.82rem]">\${missing} 无文件记录，无法对比</div>\`;
+      document.getElementById('pvmContent').innerHTML = \`<div class="text-tx-3 text-center py-10 text-sm">\${missing} 无文件记录，无法对比</div>\`;
       return;
     }
     pvmRenderDiff(filesA, filesB, a, b);
@@ -2536,27 +2536,27 @@ export function renderAdminPage() {
       removed = removed.filter(f => f.toLowerCase().includes(q));
       same    = same.filter(f   => f.toLowerCase().includes(q));
     }
-    const summary = \`<div class="flex gap-3 mb-4 text-[.78rem] flex-wrap">
+    const summary = \`<div class="flex gap-3 mb-4 text-sm flex-wrap">
       <span>v\${verA} → v\${verB}</span>
-      <span class="text-[#10b981]">+\${added.length} 新增</span>
-      <span class="text-[#ef4444]">-\${removed.length} 删除</span>
+      <span class="text-green">+\${added.length} 新增</span>
+      <span class="text-red">-\${removed.length} 删除</span>
       <span class="text-tx-3">\${same.length} 不变</span>
     </div>\`;
 
-    const DIFF_FILE_BASE = 'flex items-center gap-1.5 rounded-xs px-1.5 py-[3px] font-mono text-[.72rem] mb-px';
+    const DIFF_FILE_BASE = 'flex items-center gap-2 rounded-xs px-2 py-1 font-mono text-xs mb-px';
     const mkRows = (files, cls, prefix) =>
-      files.map(f => \`<div class="diff-file \${DIFF_FILE_BASE} \${cls}"><span class="w-[14px] shrink-0 font-bold">\${prefix}</span>\${esc(f)}</div>\`).join('');
+      files.map(f => \`<div class="diff-file \${DIFF_FILE_BASE} \${cls}"><span class="w-4 shrink-0 font-bold">\${prefix}</span>\${esc(f)}</div>\`).join('');
 
     let html = summary;
-    const DIFF_H4_BASE = 'text-[.72rem] font-bold mb-1.5 px-2 py-[5px] rounded-xs uppercase tracking-[.08em]';
+    const DIFF_H4_BASE = 'text-xs font-bold mb-2 px-2 py-1 rounded-xs uppercase tracking-[.08em]';
     if (added.length)
-      html += \`<div class="diff-section mb-[14px]"><h4 class="\${DIFF_H4_BASE} bg-green-g text-green flex items-center gap-1"><svg class="h-3 w-3 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg>新增 \${added.length} 个文件（v\${verB} 新增）</h4>\${mkRows(added,'bg-green-g text-green','+')}</div>\`;
+      html += \`<div class="diff-section mb-3"><h4 class="\${DIFF_H4_BASE} bg-green-g text-green flex items-center gap-1"><svg class="h-3 w-3 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg>新增 \${added.length} 个文件（v\${verB} 新增）</h4>\${mkRows(added,'bg-green-g text-green','+')}</div>\`;
     if (removed.length)
-      html += \`<div class="diff-section mb-[14px]"><h4 class="\${DIFF_H4_BASE} bg-red-g text-red flex items-center gap-1"><svg class="h-3 w-3 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="8" x2="13" y2="8"/></svg>删除 \${removed.length} 个文件（v\${verB} 移除）</h4>\${mkRows(removed,'bg-red-g text-red','−')}</div>\`;
+      html += \`<div class="diff-section mb-3"><h4 class="\${DIFF_H4_BASE} bg-red-g text-red flex items-center gap-1"><svg class="h-3 w-3 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="8" x2="13" y2="8"/></svg>删除 \${removed.length} 个文件（v\${verB} 移除）</h4>\${mkRows(removed,'bg-red-g text-red','−')}</div>\`;
     if (same.length)
-      html += \`<div class="diff-section mb-[14px]"><h4 class="\${DIFF_H4_BASE} bg-[rgba(255,255,255,.04)] text-tx-3">· 未变动 \${same.length} 个文件</h4>\${mkRows(same,'text-tx-3',' ')}</div>\`;
+      html += \`<div class="diff-section mb-3"><h4 class="\${DIFF_H4_BASE} bg-[rgba(255,255,255,.04)] text-tx-3">· 未变动 \${same.length} 个文件</h4>\${mkRows(same,'text-tx-3',' ')}</div>\`;
     if (!added.length && !removed.length && !same.length)
-      html += '<div class="text-tx-3 text-center py-10 text-[.82rem]">无匹配文件</div>';
+      html += '<div class="text-tx-3 text-center py-10 text-sm">无匹配文件</div>';
 
     document.getElementById('pvmContent').innerHTML = html;
   }
@@ -2885,9 +2885,9 @@ export function renderAdminPage() {
         case 'updated': default: va = a.updatedAt||0; vb = b.updatedAt||0; return adminPageSortAsc ? va - vb : vb - va;
       }
     });
-    const TYPE_LABEL = { markdown: '<span class="bg-[rgba(59,130,246,.1)] text-accent px-1.5 py-0.5 rounded text-[.7rem]">MD</span>', html: '<span class="bg-[rgba(245,158,11,.1)] text-[#f59e0b] px-1.5 py-0.5 rounded text-[.7rem]">HTML</span>' };
+    const TYPE_LABEL = { markdown: '<span class="bg-blue-g text-blue px-2 py-1 rounded-xs text-xs">MD</span>', html: '<span class="bg-amber-g text-amber px-2 py-1 rounded-xs text-xs">HTML</span>' };
     const selMode = adminPageSelectMode;
-    const checkCol = (selMode ? 'pg-check-col selecting' : 'pg-check-col') + ' hidden w-[34px] text-center [&.selecting]:table-cell';
+    const checkCol = (selMode ? 'pg-check-col selecting' : 'pg-check-col') + ' hidden w-9 text-center [&.selecting]:table-cell';
     const scope = pageScope;
     document.getElementById('pgDragHead')?.classList.toggle('scoped', true);
     document.getElementById('adminPageReorderHint')?.classList.toggle('hidden', false);
@@ -2895,22 +2895,22 @@ export function renderAdminPage() {
     document.getElementById('adminPagesBody').innerHTML = sorted.length
       ? sorted.map(p => \`<tr data-slug="\${escAttr(p.slug)}" draggable="true" class="pg-drag-row" data-project-id="\${escAttr(p.projectId||'')}" data-group-id="\${escAttr(p.groupId||'')}">
           <td class="\${dragCol} cursor-grab select-none text-tx-3 active:cursor-grabbing pointer-events-none">⠿</td>
-          <td class="\${checkCol}"><input type="checkbox" class="h-[15px] w-[15px] cursor-pointer accent-tx-2" data-slug="\${escAttr(p.slug)}" \${adminPageSelected.has(p.slug)?'checked':''} onchange="adminPageToggleSel(\${jsStr(p.slug)},this.checked)"></td>
+          <td class="\${checkCol}"><input type="checkbox" class="h-4 w-4 cursor-pointer accent-tx-2" data-slug="\${escAttr(p.slug)}" \${adminPageSelected.has(p.slug)?'checked':''} onchange="adminPageToggleSel(\${jsStr(p.slug)},this.checked)"></td>
           <td>
-            <div class="font-medium text-[.84rem]">\${esc(p.title)}</div>
-            <div class="font-mono text-[.7rem] text-tx-3">/p/\${p.slug}</div>
+            <div class="font-medium text-sm">\${esc(p.title)}</div>
+            <div class="font-mono text-xs text-tx-3">/p/\${p.slug}</div>
           </td>
           <td>\${TYPE_LABEL[p.type] || p.type}</td>
-          <td class="text-[.76rem] text-tx-2">@\${p.owner}</td>
-          <td class="text-[.76rem] text-tx-2">\${p.projectId ? esc(projMap[p.projectId] || '--') : '--'}</td>
-          <td class="text-[.76rem] text-tx-2">\${p.groupId ? esc(grpMap[p.groupId] || '--') : '--'}</td>
-          <td>\${p.isPublic ? '<span class="text-green text-[.76rem]">公开</span>' : '<span class="text-tx-3 text-[.76rem]">私密</span>'}</td>
-          <td class="text-[.76rem] text-tx-2">\${timeAgo(p.updatedAt)}</td>
+          <td class="text-sm text-tx-2">@\${p.owner}</td>
+          <td class="text-sm text-tx-2">\${p.projectId ? esc(projMap[p.projectId] || '--') : '--'}</td>
+          <td class="text-sm text-tx-2">\${p.groupId ? esc(grpMap[p.groupId] || '--') : '--'}</td>
+          <td>\${p.isPublic ? '<span class="text-green text-sm">公开</span>' : '<span class="text-tx-3 text-sm">私密</span>'}</td>
+          <td class="text-sm text-tx-2">\${timeAgo(p.updatedAt)}</td>
           <td class="whitespace-nowrap">
-            <a href="/p/\${p.slug}" target="_blank" draggable="false" class="inline-flex items-center rounded-sm border border-bd bg-bg-4 px-2 py-1 text-[.72rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx no-underline" onclick="event.stopPropagation()">预览</a>
-            <button class="inline-flex items-center rounded-sm border border-bd bg-bg-4 px-2 py-1 text-[.72rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="event.stopPropagation();adminEditPage('\${p.slug}')">编辑</button>
-            <button class="inline-flex items-center rounded-sm border border-bd bg-bg-4 px-2 py-1 text-[.72rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-title="\${escAttr(p.title)}" onclick="event.stopPropagation();openPageStatsModal('\${p.slug}',this.dataset.title)">统计</button>
-            <button class="inline-flex items-center rounded-sm border border-red-r bg-red-g px-2 py-1 text-[.72rem] font-semibold text-red transition hover:bg-red-r" onclick="event.stopPropagation();adminDeletePage('\${p.slug}')">删除</button>
+            <a href="/p/\${p.slug}" target="_blank" draggable="false" class="inline-flex min-h-7 items-center rounded-sm border border-bd bg-bg-4 px-2 py-1 text-xs font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx no-underline" onclick="event.stopPropagation()">预览</a>
+            <button class="inline-flex min-h-7 items-center rounded-sm border border-bd bg-bg-4 px-2 py-1 text-xs font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="event.stopPropagation();adminEditPage('\${p.slug}')">编辑</button>
+            <button class="inline-flex min-h-7 items-center rounded-sm border border-bd bg-bg-4 px-2 py-1 text-xs font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" data-title="\${escAttr(p.title)}" onclick="event.stopPropagation();openPageStatsModal('\${p.slug}',this.dataset.title)">统计</button>
+            <button class="inline-flex min-h-7 items-center rounded-sm border border-red-r bg-red-g px-2 py-1 text-xs font-semibold text-red transition hover:bg-red-r" onclick="event.stopPropagation();adminDeletePage('\${p.slug}')">删除</button>
           </td>
         </tr>\`).join('')
       : '<tr><td colspan="10" class="text-center text-tx-3 p-6">暂无页面</td></tr>';
@@ -3528,30 +3528,30 @@ export function renderAdminPage() {
       tbody.innerHTML = protos.map(p => {
         const url = location.origin + '/proto/' + p.protoId + '/';
         const previewUrl = url + (p.accessPassword ? '?pwd=' + encodeURIComponent(p.accessPassword) : '');
-        const lock = p.hasPassword ? '<span class="inline-flex items-center bg-[rgba(251,191,36,.1)] text-[#fbbf24] rounded px-[5px] py-px"><svg class="h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V4.5a3 3 0 0 1 6 0V7"/></svg></span>' : '';
-        const priv = p.isPrivate ? '<span class="bg-white/[.06] text-tx-2 rounded text-[.68rem] px-[5px] py-px">私有</span>' : '';
+        const lock = p.hasPassword ? '<span class="inline-flex items-center bg-amber-g text-amber rounded-xs px-2 py-1"><svg class="h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V4.5a3 3 0 0 1 6 0V7"/></svg></span>' : '';
+        const priv = p.isPrivate ? '<span class="bg-white/[.06] text-tx-2 rounded text-2xs px-1 py-px">私有</span>' : '';
         const pwdCell = p.hasPassword
-          ? \`<div class="font-mono text-[.78rem] text-amber">\${esc(p.accessPassword || '••••••')}</div><div class="text-[.65rem] text-tx-3 mt-0.5">有效期：\${formatExpiry(p.passwordExpiry)}</div>\`
-          : '<span class="text-tx-3 text-[.78rem]">无</span>';
+          ? \`<div class="font-mono text-sm text-amber">\${esc(p.accessPassword || '••••••')}</div><div class="text-2xs text-tx-3 mt-1">有效期：\${formatExpiry(p.passwordExpiry)}</div>\`
+          : '<span class="text-tx-3 text-sm">无</span>';
         const verCount = (p.versions ?? []).length;
-        const verBadge = \`<span class="font-mono text-[.72rem] text-tx-2">v\${p.version || 1}\${verCount > 1 ? ' ('+verCount+')' : ''}</span>\`;
+        const verBadge = \`<span class="font-mono text-xs text-tx-2">v\${p.version || 1}\${verCount > 1 ? ' ('+verCount+')' : ''}</span>\`;
         const visits = p.visitCount ?? 0;
         return \`<tr>
           <td>
-            <div class="font-medium text-[.88rem] flex items-center gap-1 flex-wrap">\${esc(p.title || p.protoId)} \${lock}\${priv}</div>
-            <div class="font-mono text-[.68rem] text-tx-3">\${p.protoId}</div>
+            <div class="font-medium text-md flex items-center gap-1 flex-wrap">\${esc(p.title || p.protoId)} \${lock}\${priv}</div>
+            <div class="font-mono text-2xs text-tx-3">\${p.protoId}</div>
           </td>
-          <td class="text-[.79rem] text-tx-2">@\${esc(p.owner || '—')}</td>
-          <td class="text-[.79rem] text-tx-2">\${p.fileCount ?? '—'}</td>
-          <td class="text-[.79rem] text-tx-2">\${fmtSize(p.totalSize || 0)}</td>
+          <td class="text-sm text-tx-2">@\${esc(p.owner || '—')}</td>
+          <td class="text-sm text-tx-2">\${p.fileCount ?? '—'}</td>
+          <td class="text-sm text-tx-2">\${fmtSize(p.totalSize || 0)}</td>
           <td>\${pwdCell}</td>
           <td>\${verBadge}</td>
-          <td class="font-mono text-[.82rem] font-bold text-tx">\${visits > 0 ? visits.toLocaleString() : '—'}</td>
-          <td class="text-[.79rem] text-tx-2 whitespace-nowrap">\${fmtDate(p.createdAt)}</td>
-          <td class="text-[.79rem] text-tx-2 whitespace-nowrap">\${timeAgo(p.updatedAt || p.createdAt)}</td>
+          <td class="font-mono text-sm font-bold text-tx">\${visits > 0 ? visits.toLocaleString() : '—'}</td>
+          <td class="text-sm text-tx-2 whitespace-nowrap">\${fmtDate(p.createdAt)}</td>
+          <td class="text-sm text-tx-2 whitespace-nowrap">\${timeAgo(p.updatedAt || p.createdAt)}</td>
           <td class="whitespace-nowrap">
-            <a href="\${previewUrl}" target="_blank" class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-[.75rem] no-underline">预览</a>
-            <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-red-r bg-red-g px-3 py-1.5 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-1 !text-[.75rem]" onclick="adminDeleteProto(\${jsStr(p.protoId)})">删除</button>
+            <a href="\${previewUrl}" target="_blank" class="inline-flex min-h-8 items-center justify-center gap-1 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-1 !text-xs no-underline">预览</a>
+            <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-red-r bg-red-g px-3 py-2 text-sm font-semibold leading-tight text-red transition hover:bg-red-r !px-2 !py-1 !text-xs" onclick="adminDeleteProto(\${jsStr(p.protoId)})">删除</button>
           </td>
         </tr>\`;
       }).join('');
@@ -3586,8 +3586,8 @@ export function renderAdminPage() {
 
     function setStatus(msg, pct) {
       const icon = pct === 100
-        ? '<svg class="inline-block h-3.5 w-3.5 -mt-0.5 mr-1 text-green" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>'
-        : '<svg class="inline-block h-3.5 w-3.5 -mt-0.5 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="5.5" stroke-dasharray="26" stroke-dashoffset="8"/></svg>';
+        ? '<svg class="inline-block h-4 w-4 -mt-1 mr-1 text-green" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>'
+        : '<svg class="inline-block h-4 w-4 -mt-1 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="5.5" stroke-dasharray="26" stroke-dashoffset="8"/></svg>';
       statusEl.style.display = '';
       statusEl.innerHTML = icon + msg;
       if (pct !== undefined) { bar.style.width = pct + '%'; pctEl.textContent = pct + '%'; }
@@ -3615,7 +3615,7 @@ export function renderAdminPage() {
         bar.style.width = '0%'; resetProg();
         document.getElementById('adminProtoTitle').value = '';
         document.getElementById('adminProtoPassword').value = '';
-        document.getElementById('adminProtoDropText').textContent = '点击选择 ZIP 文件';
+        document.getElementById('adminProtoDropText').textContent = '点击选择 ZIP 文件，或拖拽文件夹到此处';
         document.getElementById('adminProtoUploadBtn').disabled = true;
         adminPendingProtoFile = null;
         toast(result.safePaths ? ('原型上传成功：' + result.safePaths.length + ' 个文件') : '原型上传成功');
@@ -3626,7 +3626,7 @@ export function renderAdminPage() {
         bar.style.width = '0%'; resetProg();
         document.getElementById('adminProtoTitle').value = '';
         document.getElementById('adminProtoPassword').value = '';
-        document.getElementById('adminProtoDropText').textContent = '点击选择 ZIP 文件';
+        document.getElementById('adminProtoDropText').textContent = '点击选择 ZIP 文件，或拖拽文件夹到此处';
         document.getElementById('adminProtoUploadBtn').disabled = true;
         adminPendingProtoFile = null;
         toast('原型上传成功');
@@ -3643,19 +3643,36 @@ export function renderAdminPage() {
   const adminProtoDropZone = document.getElementById('adminProtoDropZone');
   adminProtoDropZone.addEventListener('dragover', e => { e.preventDefault(); adminProtoDropZone.style.borderColor = 'var(--accent)'; adminProtoDropZone.style.color = 'var(--accent)'; });
   adminProtoDropZone.addEventListener('dragleave', () => { adminProtoDropZone.style.borderColor = ''; adminProtoDropZone.style.color = ''; });
-  adminProtoDropZone.addEventListener('drop', e => {
+  adminProtoDropZone.addEventListener('drop', async e => {
     e.preventDefault(); adminProtoDropZone.style.borderColor = ''; adminProtoDropZone.style.color = '';
+    const items = e.dataTransfer.items;
+    // 文件夹拖拽：与前台一致，优先按目录读取
+    if (items && items.length && items[0].webkitGetAsEntry) {
+      const entry = items[0].webkitGetAsEntry();
+      if (entry && entry.isDirectory) { await adminProtoPackEntry(entry); return; }
+    }
     const f = e.dataTransfer.files[0];
     if (f && (f.name.toLowerCase().endsWith('.zip') || f.type.includes('zip'))) setAdminProtoFile(f);
-    else toast('请拖拽 ZIP 文件');
+    else toast('请拖拽 ZIP 文件或文件夹', 'error');
   });
   document.getElementById('adminProtoFileInput').addEventListener('change', e => { if (e.target.files[0]) { setAdminProtoFile(e.target.files[0]); e.target.value=''; } });
+  document.getElementById('adminProtoFolderInput').addEventListener('change', e => {
+    if (e.target.files && e.target.files.length) adminProtoPackFolder(e.target.files);
+  });
 
   function setAdminProtoFile(f) {
     adminPendingProtoFile = f;
     document.getElementById('adminProtoDropText').textContent = f.name + ' (' + fmtSize(f.size) + ')';
     document.getElementById('adminProtoErr').textContent = '';
     document.getElementById('adminProtoUploadBtn').disabled = false;
+  }
+
+  function adminProtoZipFiles(filesData, topFolder) {
+    if (!Object.keys(filesData).length) throw new Error('文件夹为空');
+    const zipped = _fflate().zipSync(filesData);
+    const zipFile = new File([new Blob([zipped],{type:'application/zip'})], (topFolder||'prototype')+'.zip', {type:'application/zip'});
+    setAdminProtoFile(zipFile);
+    if (!document.getElementById('adminProtoTitle').value) document.getElementById('adminProtoTitle').value = topFolder || '';
   }
 
   async function adminProtoPackFolder(fileList) {
@@ -3672,15 +3689,43 @@ export function renderAdminPage() {
         const buf = await file.arrayBuffer();
         filesData[rel] = [new Uint8Array(buf), { level: 0 }];
       }
-      const zipped = _fflate().zipSync(filesData);
-      const zipFile = new File([new Blob([zipped],{type:'application/zip'})], (topFolder||'prototype')+'.zip', {type:'application/zip'});
-      setAdminProtoFile(zipFile);
-      if (!document.getElementById('adminProtoTitle').value) document.getElementById('adminProtoTitle').value = topFolder || '';
+      adminProtoZipFiles(filesData, topFolder || 'prototype');
     } catch(e) {
-      document.getElementById('adminProtoDropText').textContent = '点击选择 ZIP 文件';
+      document.getElementById('adminProtoDropText').textContent = '点击选择 ZIP 文件，或拖拽文件夹到此处';
       document.getElementById('adminProtoErr').textContent = '打包失败: ' + e.message;
     }
     document.getElementById('adminProtoFolderInput').value = '';
+  }
+
+  async function adminProtoPackEntry(dirEntry) {
+    document.getElementById('adminProtoDropText').textContent = '正在打包文件夹…';
+    document.getElementById('adminProtoUploadBtn').disabled = true;
+    document.getElementById('adminProtoErr').textContent = '';
+    try {
+      const filesData = {};
+      async function readDir(entry, prefix) {
+        const reader = entry.createReader();
+        const entries = await new Promise((res, rej) => {
+          const all = [];
+          function read() { reader.readEntries(e => { if (!e.length) res(all); else { all.push(...e); read(); } }, rej); }
+          read();
+        });
+        for (const e of entries) {
+          if (e.isDirectory) { await readDir(e, prefix + e.name + '/'); }
+          else {
+            if (e.name === '.DS_Store') continue;
+            const file = await new Promise((res, rej) => e.file(res, rej));
+            const buf = await file.arrayBuffer();
+            filesData[prefix + e.name] = [new Uint8Array(buf), { level: 0 }];
+          }
+        }
+      }
+      await readDir(dirEntry, '');
+      adminProtoZipFiles(filesData, dirEntry.name);
+    } catch(e) {
+      document.getElementById('adminProtoDropText').textContent = '点击选择 ZIP 文件，或拖拽文件夹到此处';
+      document.getElementById('adminProtoErr').textContent = '读取文件夹失败: ' + e.message;
+    }
   }
 
   document.getElementById('adminProtoUploadBtn').addEventListener('click', () => {
@@ -3704,7 +3749,7 @@ export function renderAdminPage() {
       if (badge) {
         badge.textContent = isCfApi ? 'CF API 精确' : '自追踪估算';
         badge.style.background    = isCfApi ? 'rgba(34,197,94,.12)' : 'rgba(251,191,36,.1)';
-        badge.style.color         = isCfApi ? '#22c55e' : '#f59e0b';
+        badge.style.color         = isCfApi ? 'var(--color-green)' : 'var(--color-amber)';
         badge.style.borderColor   = isCfApi ? 'rgba(34,197,94,.25)' : 'rgba(251,191,36,.2)';
       }
 
@@ -3817,8 +3862,9 @@ export function renderAdminPage() {
   }
 
   /** 体积/行数的紧凑格式化：1023 → "1.0K" 这种在 170px 的卡片里更耐看 */
-  const PALETTE = ['var(--color-brand)', '#8b5cf6', '#0ea5e9', '#10b981', '#f59e0b',
-                   '#ef4444', '#14b8a6', '#a855f7', '#64748b', '#84cc16'];
+  const PALETTE = ['var(--color-tx)', 'var(--color-tx-2)', 'var(--color-tx-3)', 'var(--color-brand)',
+                   'var(--color-green)', 'var(--color-amber)', 'var(--color-red)', 'var(--color-blue)',
+                   'var(--color-bd-2)', 'var(--color-bd)'];
 
   function renderD1Stats(d) {
     const L = d.limits || {};
@@ -3927,7 +3973,7 @@ export function renderAdminPage() {
 
     if (!total) {
       bar.innerHTML = '<div class="h-full bg-tx-3/20" style="width:100%"></div>';
-      legend.innerHTML = '<span class="text-[.66rem] text-tx-3">库里还没有任何元数据</span>';
+      legend.innerHTML = '<span class="text-2xs text-tx-3">库里还没有任何元数据</span>';
       if (hint) hint.textContent = '0 条';
       return;
     }
@@ -3951,8 +3997,8 @@ export function renderAdminPage() {
     }).join('');
 
     legend.innerHTML = segs.map(sg =>
-      '<span class="inline-flex items-center gap-1.5 text-[.66rem] text-tx-3">' +
-        '<i class="h-[7px] w-[7px] shrink-0 rounded-[2px]" style="background:' + sg.color + '"></i>' +
+      '<span class="inline-flex items-center gap-2 text-2xs text-tx-3">' +
+        '<i class="h-2 w-2 shrink-0 rounded-xs" style="background:' + sg.color + '"></i>' +
         '<span class="text-tx-2">' + esc(sg.label) + '</span>' +
         '<span class="font-mono">' + fmtNum(sg.count) + '</span>' +
       '</span>',
@@ -3977,7 +4023,7 @@ export function renderAdminPage() {
     const isCf = usageSource === 'cf-api';
     const days = usage && usage.days ? usage.days : [];
     if (days.length < 2) {
-      host.innerHTML = '<div class="flex h-full items-center justify-center text-[.68rem] text-tx-3">暂无按天数据</div>';
+      host.innerHTML = '<div class="flex h-full items-center justify-center text-2xs text-tx-3">暂无按天数据</div>';
       if (foot) foot.innerHTML = '<span>D1 不可用，无用量数据</span>';
       return;
     }
@@ -3990,7 +4036,7 @@ export function renderAdminPage() {
     const active = writes.some(v => v > 0) || reads.some(v => v > 0);
 
     if (!active) {
-      host.innerHTML = '<div class="flex h-full items-center justify-center text-[.68rem] text-tx-3">近期没有用量数据</div>';
+      host.innerHTML = '<div class="flex h-full items-center justify-center text-2xs text-tx-3">近期没有用量数据</div>';
       if (foot) foot.innerHTML = isCf
         ? '<span>CF Analytics · 按 UTC 天汇总</span>'
         : '<span>数据积累中 · 自部署起按 UTC 天累计</span>';
@@ -4044,12 +4090,12 @@ export function renderAdminPage() {
       const usedPct = Math.min(100, (d.storage / 10737418240) * 100);
       const bar = document.getElementById('r2FreeBar');
       bar.style.width      = usedPct.toFixed(2) + '%';
-      bar.style.background = usedPct >= 90 ? '#ef4444' : usedPct >= 70 ? '#f59e0b' : 'var(--accent)';
+      bar.style.background = usedPct >= 90 ? 'var(--color-red)' : usedPct >= 70 ? 'var(--color-amber)' : 'var(--color-accent)';
       // Donut chart (r=22, circumference ≈ 138.23)
       const circumference = 2 * Math.PI * 22;
       const arc = document.getElementById('r2DonutArc');
       arc.setAttribute('stroke-dashoffset', (circumference * (1 - usedPct / 100)).toFixed(2));
-      arc.setAttribute('stroke', usedPct >= 90 ? '#ef4444' : usedPct >= 70 ? '#f59e0b' : 'var(--accent)');
+      arc.setAttribute('stroke', usedPct >= 90 ? 'var(--color-red)' : usedPct >= 70 ? 'var(--color-amber)' : 'var(--color-accent)');
       document.getElementById('r2DonutLabel').textContent = usedPct.toFixed(1) + '%';
     } catch {}
   }
@@ -4101,10 +4147,10 @@ export function renderAdminPage() {
 
     document.getElementById('memberTableBody').innerHTML = sorted.map(u => {
       const p = u.permissions;
-      const disabledBadge = u.disabled ? '<span class="inline-flex items-center rounded-xs border border-red-r bg-red-g px-1.5 py-0.5 text-[.68rem] font-semibold text-red mr-[5px]">已禁用</span>' : '';
+      const disabledBadge = u.disabled ? '<span class="inline-flex items-center rounded-xs border border-red-r bg-red-g px-2 py-1 text-2xs font-semibold text-red mr-1">已禁用</span>' : '';
       const statusDot = u.disabled
-        ? '<span class="text-[#ef4444] text-[.75rem]">● 已禁用</span>'
-        : '<span class="text-[#22c55e] text-[.75rem]">● 正常</span>';
+        ? '<span class="text-red text-xs">● 已禁用</span>'
+        : '<span class="text-green text-xs">● 正常</span>';
 
       // Today quota bar
       const dLim = p ? p.dailyUploadLimit : -1;
@@ -4112,10 +4158,10 @@ export function renderAdminPage() {
       const dClass = dPct >= 100 ? ' full' : dPct >= 80 ? ' warn' : '';
       let todayCell;
       if (dLim === -1) {
-        todayCell = '<span class="text-[.82rem]">' + u.uploads.today + ' <span class="text-tx-3">/ ∞</span></span>';
+        todayCell = '<span class="text-sm">' + u.uploads.today + ' <span class="text-tx-3">/ ∞</span></span>';
       } else {
-        todayCell = '<div class="text-[.82rem]">' + u.uploads.today + ' <span class="text-tx-3">/ ' + dLim + '</span></div>'
-          + '<div class="mt-1 h-1 w-[90px] rounded-sm bg-bd"><div class="quota-fill h-1 rounded-sm bg-brand transition-[width] [&.warn]:bg-amber [&.full]:bg-red' + dClass + '" style="width:' + dPct.toFixed(0) + '%"></div></div>';
+        todayCell = '<div class="text-sm">' + u.uploads.today + ' <span class="text-tx-3">/ ' + dLim + '</span></div>'
+          + '<div class="mt-1 h-1 w-22 rounded-sm bg-bd"><div class="quota-fill h-1 rounded-sm bg-brand transition-[width] [&.warn]:bg-amber [&.full]:bg-red' + dClass + '" style="width:' + dPct.toFixed(0) + '%"></div></div>';
       }
 
       // Total quota bar
@@ -4124,26 +4170,26 @@ export function renderAdminPage() {
       const tClass = tPct >= 100 ? ' full' : tPct >= 80 ? ' warn' : '';
       let totalCell;
       if (tLim === -1) {
-        totalCell = '<span class="text-[.82rem]">' + u.uploads.total + ' <span class="text-tx-3">/ ∞</span></span>';
+        totalCell = '<span class="text-sm">' + u.uploads.total + ' <span class="text-tx-3">/ ∞</span></span>';
       } else {
-        totalCell = '<div class="text-[.82rem]">' + u.uploads.total + ' <span class="text-tx-3">/ ' + tLim + '</span></div>'
-          + '<div class="mt-1 h-1 w-[90px] rounded-sm bg-bd"><div class="quota-fill h-1 rounded-sm bg-brand transition-[width] [&.warn]:bg-amber [&.full]:bg-red' + tClass + '" style="width:' + tPct.toFixed(0) + '%"></div></div>';
+        totalCell = '<div class="text-sm">' + u.uploads.total + ' <span class="text-tx-3">/ ' + tLim + '</span></div>'
+          + '<div class="mt-1 h-1 w-22 rounded-sm bg-bd"><div class="quota-fill h-1 rounded-sm bg-brand transition-[width] [&.warn]:bg-amber [&.full]:bg-red' + tClass + '" style="width:' + tPct.toFixed(0) + '%"></div></div>';
       }
 
       const permsList = p ? [
-        p.canUpload ? '<span class="inline-flex items-center rounded-xs border border-green-r bg-green-g px-1.5 py-0.5 text-[.68rem] font-semibold text-green">上传</span>' : '<span class="inline-flex items-center rounded-xs border border-bd bg-white/[.04] px-1.5 py-0.5 text-[.68rem] font-semibold text-tx-3">禁止上传</span>',
-        p.canDelete ? '<span class="inline-flex items-center rounded-xs border border-green-r bg-green-g px-1.5 py-0.5 text-[.68rem] font-semibold text-green">删除</span>' : '',
-        p.canEdit   ? '<span class="inline-flex items-center rounded-xs border border-green-r bg-green-g px-1.5 py-0.5 text-[.68rem] font-semibold text-green">编辑</span>' : '',
+        p.canUpload ? '<span class="inline-flex items-center rounded-xs border border-green-r bg-green-g px-2 py-1 text-2xs font-semibold text-green">上传</span>' : '<span class="inline-flex items-center rounded-xs border border-bd bg-white/[.04] px-2 py-1 text-2xs font-semibold text-tx-3">禁止上传</span>',
+        p.canDelete ? '<span class="inline-flex items-center rounded-xs border border-green-r bg-green-g px-2 py-1 text-2xs font-semibold text-green">删除</span>' : '',
+        p.canEdit   ? '<span class="inline-flex items-center rounded-xs border border-green-r bg-green-g px-2 py-1 text-2xs font-semibold text-green">编辑</span>' : '',
       ].filter(Boolean).join(' ') : '—';
 
       return '<tr>'
         + '<td class="font-medium">' + disabledBadge + esc(u.username) + '</td>'
         + '<td>' + statusDot + '</td>'
-        + '<td class="min-w-[110px]">' + todayCell + '</td>'
-        + '<td class="min-w-[110px]">' + totalCell + '</td>'
+        + '<td class="min-w-28">' + todayCell + '</td>'
+        + '<td class="min-w-28">' + totalCell + '</td>'
         + '<td class="text-center" style="color:' + (u.pages ? 'var(--tx)' : 'var(--tx-3)') + '">' + u.pages + '</td>'
         + '<td>' + permsList + '</td>'
-        + '<td class="text-[.79rem] text-tx-2">' + (u.createdAt ? timeAgo(u.createdAt) : '—') + '</td>'
+        + '<td class="text-sm text-tx-2">' + (u.createdAt ? timeAgo(u.createdAt) : '—') + '</td>'
         + '</tr>';
     }).join('');
   }
