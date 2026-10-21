@@ -1917,7 +1917,7 @@ export function renderAdminPage() {
     document.getElementById('trashSummary').textContent = (allImages.length || allProtos.length)
       ? (total
           ? '当前显示 ' + total + ' 项：' + images.length + ' 张图片、' + protos.length + ' 个原型（保留 ' + retention + ' 天）'
-          : '没有匹配的删除项（共 ' + (allImages.length + allProtos.length) + ' 项）')
+          : '没有匹配的删除项')
       : '';
 
     const empty = document.getElementById('trashEmpty');
