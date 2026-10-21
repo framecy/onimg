@@ -23,6 +23,7 @@
 - D1 用量采集：`src/kv-d1.js` 每次读写后按官方计费口径累加 `meta.rows_read` / `meta.rows_written` 到 `d1u:{r|w}:{YYYY-MM-DD}`（走 `ctx.waitUntil`，不阻塞响应）。配了 `CF_API_TOKEN` + `CF_D1_DB_ID` 时面板改用 CF Analytics 的 `d1AnalyticsAdaptiveGroups`
 
 ### Changed
+- **抽出共享浏览器端工具层 `src/ui/client/shared.js`**：前台与后台此前各写一份同样的工具函数，语义已经漂移 —— `fmtSize` 前台只到 MB（1.2 GB 的图显示成 `1228.8 MB`）、后台 `timeAgo(0)` 显示「刚刚」、`toast` 停留 2600/2800ms 不一致、复制反馈两套实现。现在只留一份，两个页面以 `<script>${CLIENT_SHARED_JS}</script>` 注入，语义取两边超集；新增 `shared-client.test.js` 在真实 V8 里执行注入源码并检查两端没有重新定义（防漂移复发）。同时修正后台批量删除的确认文案 —— 它写着「此操作不可撤销」，实际是软删除进回收站
 - **存储层从 KV 迁移到 D1**：新增 `src/kv-d1.js`（KVNamespace 契约 + D1 内核），在请求入口把 `env.STATS` 就地替换，业务代码零改动。写入额度从 KV 免费版 1000 次/天提升到 D1 的 10 万行/天，并摆脱 KV 的最终一致性读延迟。KV 绑定保留作回滚路径
 - 审计日志、访问统计等数据统一存于 D1 的 `kv_store` 表（键格式不变）
 - **图片 key 随机段 48 → 64 位，并在生成时探测是否已存在**：`{毫秒时间戳}-{16位hex}.{ext}`，格式与直链形态不变

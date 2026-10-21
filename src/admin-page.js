@@ -1,5 +1,6 @@
 import { FFLATE_UMD } from './fflate-inline.js';
 import { PROTO_ENGINE_JS } from './proto-upload-engine.js';
+import { CLIENT_SHARED_JS } from './ui/client/shared.js';
 import apertureCss from './ui/aperture.generated.js';
 
 /* 手绘风空状态插画（Notion 风格简笔小人 + 空相框），单色中性，随主题切换 */
@@ -1070,10 +1071,10 @@ export function renderAdminPage() {
 
 <script>
   ${PROTO_ENGINE_JS}
+  ${CLIENT_SHARED_JS}
   // Tailwind utility-class constants for elements whose className is fully
   // reassigned at runtime (className=, not classList.add) — declared once
   // here so they survive every reassignment site.
-  const TOAST_BASE = 'fixed bottom-6 left-1/2 z-[300] -translate-x-1/2 translate-y-20 whitespace-nowrap rounded-md border border-bd-2 bg-bg-3 px-[18px] py-[9px] font-sans text-sm font-medium text-tx shadow-sm transition-transform duration-300 ease-[cubic-bezier(.34,1.56,.64,1)] [&.show]:translate-y-0 [&.t-success]:border-green-r [&.t-success]:bg-green-g [&.t-success]:text-green [&.t-warn]:border-amber-r [&.t-warn]:bg-amber-g [&.t-warn]:text-amber [&.t-error]:border-red-r [&.t-error]:bg-red-g [&.t-error]:text-red';
   const BTN_GHOST_TOGGLE = 'inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx';
   const BTN_PRIMARY_TOGGLE = 'inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-transparent bg-accent px-3 py-1.5 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover hover:shadow-[0_4px_16px_rgba(255,255,255,.08)] disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none';
   const BULK_BAR_BASE = 'hidden flex-wrap items-center gap-[10px] mb-3 rounded-md border border-bd-2 bg-bg-3 px-[13px] py-[9px] text-[.82rem] text-tx-2 [&.show]:flex';
@@ -1224,8 +1225,8 @@ export function renderAdminPage() {
     adminToken = null; showLogin();
   }
 
-  // HTML 文本节点转义。D1 面板要拼分布图例，用到它的位置比别的模块靠前，所以放在这里。
-  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  // 转义与格式化（esc / escAttr / jsStr / fmtSize / fmtNum / fmtDate / timeAgo）
+  // 由上方注入的 shared/client 提供：前后台同一份实现，别在本页重新定义。
 
   function showLogin() { document.getElementById('loginScreen').style.display = 'flex'; document.getElementById('adminApp').classList.add('hidden'); }
   function showApp() {
@@ -1384,45 +1385,7 @@ export function renderAdminPage() {
     return AUDIT_ACTION_LABEL[action] || action || '—';
   }
 
-  // HTML 属性上下文专用的转义：esc() 只处理 &<>，不含引号，
-  // 直接用在 title="..." 这类属性里时，值中出现双引号会突破属性边界。
-  // 注意：不要拿它去替换 onclick 里的 esc() —— 那些是「HTML 属性 + JS 字符串」
-  // 双重上下文，转成 &quot; 后 JS 拿到的就不是引号了，会导致参数值出错。
-  function escAttr(s) {
-    return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
-      .replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }
 
-  // ── 双重上下文转义（HTML 属性 + JS 字符串字面量）─────────────────────────────
-  // onclick="fn(\u0024{...})" 这类写法有两层解析：HTML 先解析属性，再把内容当 JS 执行。
-  // 单用 esc()（只转 &<>）会让含引号的值突破属性；单用 escAttr()（转成 &quot;）
-  // 又会让 JS 收到的不是引号 —— 两层都要处理，且顺序不能反：
-  //   1) jsStr 先把值变成合法的 JS 单引号字符串字面量（转义 \ ' 换行等）
-  //   2) escAttr 再把整个字面量作为属性值转义（& " < >）
-  // 用法：onclick="fn(<jsStr 的返回值>)"  —— jsStr 自带引号，不要再手写 ''
-  function jsStr(v) {
-    // 把值转成可安全嵌入 onclick 的 JS 单引号字符串字面量。
-    //
-    // ⚠ 实现刻意不使用任何反斜杠字面量 —— 本文件整体是 Node 端的模板字符串，
-    // 里面的反斜杠会被解析掉，导致浏览器端拿到的正则损坏（踩过三次）。
-    // 这里用 String.fromCharCode(92) 表示反斜杠，用码点判断控制字符，
-    // 源码里一个反斜杠都不出现，就不会再被模板字符串吃掉。
-    var BS = String.fromCharCode(92);
-    var SQ = String.fromCharCode(39);
-    var s = String(v == null ? '' : v);
-    var out = '';
-    for (var i = 0; i < s.length; i++) {
-      var c = s[i], code = s.charCodeAt(i);
-      if (c === BS) out += BS + BS;                    // 反斜杠自身要加倍
-      else if (c === SQ) out += BS + SQ;               // 单引号要转义
-      else if (code === 13) out += BS + 'r';           // CR
-      else if (code === 10) out += BS + 'n';           // LF
-      else if (code === 0x2028) out += BS + 'u2028';   // 行分隔符（会截断字面量）
-      else if (code === 0x2029) out += BS + 'u2029';   // 段分隔符
-      else out += c;
-    }
-    return escAttr(SQ + out + SQ);
-  }
 
 
   function auditRowHtml(e) {
@@ -1766,7 +1729,7 @@ export function renderAdminPage() {
   });
   document.getElementById('bulkDeleteBtn').addEventListener('click', async () => {
     const keys = [...selected];
-    if (!confirm(\`确认删除选中的 \${keys.length} 张图片？此操作不可撤销。\`)) return;
+    if (!confirm(\`确认将选中的 \${keys.length} 张图片移入回收站？（30 天后自动清理，可在用户端「回收站」恢复）\`)) return;
     const btn = document.getElementById('bulkDeleteBtn');
     btn.disabled = true;
     let ok = 0, fail = 0;
@@ -3798,12 +3761,6 @@ export function renderAdminPage() {
       '<span>峰值 <b class="font-mono font-semibold text-tx-2">' + fmtNum(maxW) + '</b> 行/天</span>';
   }
 
-  function fmtNum(n) {
-    if (n === null || n === undefined) return '—';
-    if (n >= 1e6) return (n/1e6).toFixed(2) + 'M';
-    if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
-    return n.toLocaleString();
-  }
 
   function applyCfQuota(barId, pctId, used, limit) {
     const pct   = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
@@ -3942,19 +3899,8 @@ export function renderAdminPage() {
     toast('登录已过期，请重新登录', 'error');
     setTimeout(showLogin, 1200);
   }
-  function fmtSize(b) { if(!b) return '0 B'; if(b<1024) return b+' B'; if(b<1048576) return (b/1024).toFixed(1)+' KB'; if(b<1073741824) return (b/1048576).toFixed(1)+' MB'; return (b/1073741824).toFixed(2)+' GB'; }
   function fmtSizeParts(b) { if(b<1048576) return {val:(b/1024).toFixed(1),unit:'KB'}; if(b<1073741824) return {val:(b/1048576).toFixed(1),unit:'MB'}; return {val:(b/1073741824).toFixed(2),unit:'GB'}; }
-  function copyText(text, btn) { navigator.clipboard.writeText(text).then(() => { if(btn){const o=btn.innerHTML;btn.innerHTML='<svg class="inline-block h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>';setTimeout(()=>btn.innerHTML=o,1400);} }); }
   function copyProtoAddr(btn) { const url = btn.dataset.url; const pwd = btn.dataset.pwd; copyText(pwd ? '内容：' + url + '\\n密码：' + pwd : url, btn); }
-  function toast(msg, type) {
-    const t = document.getElementById('toast');
-    t.className = TOAST_BASE + ' toast show' + (type ? ' t-' + type : '');
-    t.textContent = msg;
-    clearTimeout(t._tid);
-    t._tid = setTimeout(() => t.classList.remove('show'), 2800);
-  }
-  function timeAgo(ts) { const d=Date.now()-ts; if(d<60000) return '刚刚'; if(d<3600000) return Math.floor(d/60000)+' 分钟前'; if(d<86400000) return Math.floor(d/3600000)+' 小时前'; return Math.floor(d/86400000)+' 天前'; }
-  function fmtDate(ms) { if(!ms) return '—'; return new Date(ms).toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit',year:'2-digit'}); }
   function formatExpiry(ts) { if(!ts) return '永久'; return new Date(ts).toLocaleDateString('zh-CN') + ' 到期'; }
   document.addEventListener('keydown', e => {
     if (e.key==='Escape') {

@@ -1,5 +1,6 @@
 import { FFLATE_UMD } from './fflate-inline.js';
 import { PROTO_ENGINE_JS } from './proto-upload-engine.js';
+import { CLIENT_SHARED_JS } from './ui/client/shared.js';
 import apertureCss from './ui/aperture.generated.js';
 // 页脚文案：部署在 CF 上说的是 R2 免费额度与免出口流量，自托管后这些都不成立 ——
 // 所以从 SITE_NOTES 读（`|` 分隔，首项高亮），不配置时保持原有 Cloudflare 文案。
@@ -760,6 +761,7 @@ export function renderPage(env = {}) {
 
 <script>
   ${PROTO_ENGINE_JS}
+  ${CLIENT_SHARED_JS}
   // Tailwind utility-class constants for elements whose className is fully
   // reassigned at runtime (className=, not classList.add) — declared once
   // here so they survive every reassignment site.
@@ -771,7 +773,6 @@ export function renderPage(env = {}) {
   const UD_ACTION_DANGER = 'flex w-full items-center gap-2 border-none bg-transparent px-[14px] py-[10px] text-left font-sans text-[.82rem] font-medium text-tx-2 transition hover:bg-red-g hover:text-red';
   const BTN_PUBLIC = 'rounded-full border border-green-r bg-green-g px-[9px] py-[3px] text-xs font-semibold text-green cursor-pointer min-h-0';
   const BTN_PRIVATE = 'rounded-full border border-bd bg-brand-muted px-[9px] py-[3px] text-xs font-semibold text-tx-3 cursor-pointer min-h-0';
-  const TOAST_BASE = 'fixed bottom-6 left-1/2 z-[300] -translate-x-1/2 translate-y-20 whitespace-nowrap rounded-md border border-bd-2 bg-bg-3 px-[18px] py-[9px] font-sans text-sm font-medium text-tx shadow-sm transition-transform duration-300 ease-[cubic-bezier(.34,1.56,.64,1)] [&.show]:translate-y-0 [&.t-success]:border-green-r [&.t-success]:bg-green-g [&.t-success]:text-green [&.t-warn]:border-amber-r [&.t-warn]:bg-amber-g [&.t-warn]:text-amber [&.t-error]:border-red-r [&.t-error]:bg-red-g [&.t-error]:text-red';
   // Ghost/primary button pairs for buttons whose whole className is swapped at runtime
   // (classList.toggle('btn-primary', ...) no longer has CSS behind it — swap the full string instead).
   const BTN_GHOST_TOGGLE = 'inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx';
@@ -3289,15 +3290,6 @@ export function renderPage(env = {}) {
     if (!ts) return '永久';
     return new Date(ts).toLocaleDateString('zh-CN') + ' 到期';
   }
-  function timeAgo(ms) {
-    if (!ms) return '—';
-    const s = Math.floor((Date.now() - ms) / 1000);
-    if (s < 60) return '刚刚';
-    if (s < 3600) return Math.floor(s/60) + ' 分钟前';
-    if (s < 86400) return Math.floor(s/3600) + ' 小时前';
-    if (s < 2592000) return Math.floor(s/86400) + ' 天前';
-    return new Date(ms).toLocaleDateString('zh-CN');
-  }
 
   function renderProtos() {
     const tbody = document.getElementById('protoTableBody');
@@ -3766,41 +3758,12 @@ export function renderPage(env = {}) {
   }
   function imgMd(url, name) { return '![' + mdAlt(name) + '](' + url + ')'; }
   function imgBb(url) { return '[img]' + url + '[/img]'; }
-  const COPY_MARK = '<svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>';
-  // 复制反馈：把按钮内容换成对钩。
-  //
-  // 此前是「保存 innerHTML → 整体替换成纯 SVG → 1.4s 后还原」。因为原内容是文字、
-  // 替换后只剩一个图标，按钮高度由内容撑开，切换瞬间会明显跳动（用户反馈的
-  // 「点了复制按钮，变成对钩后高度变了」）。
-  //
-  // 现在改成：首次点击时把原内容包进一个固定行高的 <span>，图标用绝对定位覆盖在
-  // 同一位置。按钮尺寸自始至终由原来的文字内容决定，切换只改透明度/可见性。
-  function cp(text, btn) {
-    navigator.clipboard.writeText(text).then(() => {
-      if (!btn) return;
-      if (!btn.dataset.cpReady) {
-        const label = btn.innerHTML;
-        btn.innerHTML = \`<span class="cp-label">\${label}</span><span class="cp-mark">\${COPY_MARK}</span>\`;
-        btn.dataset.cpReady = '1';
-      }
-      btn.classList.add('copied');
-      clearTimeout(btn._copyTid);
-      btn._copyTid = setTimeout(() => btn.classList.remove('copied'), 1400);
-    });
-  }
   document.addEventListener('click', e => {
     const btn = e.target.closest('.copy-btn');
     if (!btn || !btn.dataset.copy) return;
     e.preventDefault();
     cp(btn.dataset.copy, btn);
   });
-  function toast(msg, type) {
-    const t = document.getElementById('toast');
-    t.className = TOAST_BASE + ' toast show' + (type ? ' t-' + type : '');
-    t.textContent = msg;
-    clearTimeout(t._tid);
-    t._tid = setTimeout(() => t.classList.remove('show'), 2600);
-  }
   var SKEL = 'rounded-sm bg-[linear-gradient(90deg,var(--color-bg-3)_25%,var(--color-bg-4)_50%,var(--color-bg-3)_75%)] bg-[length:400%_100%] animate-[shimmer_1.4s_ease_infinite]';
   function skelCards(el, n) {
     if (!el) return;
@@ -3812,47 +3775,8 @@ export function renderPage(env = {}) {
     if (!el) return;
     el.innerHTML = Array.from({ length: n }, () => \`<div class="\${SKEL} h-[58px] rounded-[9px] border border-bd mb-[10px]"></div>\`).join('');
   }
-  function fmtSize(b) { if(b<1024) return b+' B'; if(b<1048576) return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
-  function fmtDate(ms) { if(!ms) return '—'; return new Date(ms).toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit',year:'2-digit'}); }
-  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  // 属性上下文专用：esc() 不含引号，值里出现 " 会突破 title="..." 这类属性边界。
-  // 不要拿它替换 onclick 里的 esc() —— 那是「属性 + JS 字符串」双重上下文，
-  // 转成 &quot; 后 JS 拿到的不是引号，参数值会出错。
-  function escAttr(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;')
-      .replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  // ── 双重上下文转义（HTML 属性 + JS 字符串字面量）─────────────────────────────
-  // onclick="fn(\u0024{...})" 这类写法有两层解析：HTML 先解析属性，再把内容当 JS 执行。
-  // 单用 esc()（只转 &<>）会让含引号的值突破属性；单用 escAttr()（转成 &quot;）
-  // 又会让 JS 收到的不是引号 —— 两层都要处理，且顺序不能反：
-  //   1) jsStr 先把值变成合法的 JS 单引号字符串字面量（转义 \ ' 换行等）
-  //   2) escAttr 再把整个字面量作为属性值转义（& " < >）
-  // 用法：onclick="fn(<jsStr 的返回值>)"  —— jsStr 自带引号，不要再手写 ''
-  function jsStr(v) {
-    // 把值转成可安全嵌入 onclick 的 JS 单引号字符串字面量。
-    //
-    // ⚠ 实现刻意不使用任何反斜杠字面量 —— 本文件整体是 Node 端的模板字符串，
-    // 里面的反斜杠会被解析掉，导致浏览器端拿到的正则损坏（踩过三次）。
-    // 这里用 String.fromCharCode(92) 表示反斜杠，用码点判断控制字符，
-    // 源码里一个反斜杠都不出现，就不会再被模板字符串吃掉。
-    var BS = String.fromCharCode(92);
-    var SQ = String.fromCharCode(39);
-    var s = String(v == null ? '' : v);
-    var out = '';
-    for (var i = 0; i < s.length; i++) {
-      var c = s[i], code = s.charCodeAt(i);
-      if (c === BS) out += BS + BS;                    // 反斜杠自身要加倍
-      else if (c === SQ) out += BS + SQ;               // 单引号要转义
-      else if (code === 13) out += BS + 'r';           // CR
-      else if (code === 10) out += BS + 'n';           // LF
-      else if (code === 0x2028) out += BS + 'u2028';   // 行分隔符（会截断字面量）
-      else if (code === 0x2029) out += BS + 'u2029';   // 段分隔符
-      else out += c;
-    }
-    return escAttr(SQ + out + SQ);
-  }
+  // 转义与格式化（esc / escAttr / jsStr / fmtSize / fmtNum / fmtDate / timeAgo）
+  // 由上方注入的 shared/client 提供：前后台同一份实现，别在本页重新定义。
 
   document.addEventListener('keydown', e => {
     const lb = document.getElementById('lightbox');

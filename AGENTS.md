@@ -112,6 +112,21 @@ node -e "import('./src/page.js').then(m=>console.log(m.renderPage({}).length))"
 `render-smoke.test.js` 现在会把产物里每个内联脚本块真实交给 V8 解析（用例名带
 「浏览器端语法」），这类错误在提交前就会被拦住，不用等到线上才发现。
 
+### 共享浏览器端工具层（`src/ui/client/shared.js`）
+
+前后台共用的浏览器工具只在这里定义一次：`esc` / `escAttr` / `jsStr` / `fmtSize` /
+`fmtNum` / `fmtDate` / `timeAgo` / `copyText`（别名 `cp`）/ `toast` / `TOAST_BASE` /
+`COPY_MARK`。两个页面以 `<script>${CLIENT_SHARED_JS}</script>` 注入（与
+`FFLATE_UMD`、`PROTO_ENGINE_JS` 同一模式）。
+
+**不要在 `page.js` / `admin-page.js` 里重新定义这些函数。** 历史上两边各写一份，
+语义已经漂移过：前台 `fmtSize` 不认 GB（1.2 GB 显示成 1228.8 MB）、后台
+`timeAgo(0)` 显示"刚刚"、`toast` 停留时长 2600/2800ms 不一致、复制反馈两套实现。
+`test/features/shared-client.test.js` 会检查两个页面里每个函数只出现一次、且语义符合预期。
+
+新增共享工具时：写进 `shared.js` 的 `CLIENT_SHARED_JS` 字符串里，**不用反引号和
+`${`**（会被外层模板字面量吞掉），改完跑 `npx vitest run test/features/shared-client.test.js`。
+
 ### 转义函数的选用（三种上下文）
 
 | 上下文 | 用哪个 | 说明 |
