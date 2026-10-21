@@ -131,10 +131,14 @@ onimg
 ```bash
 cp wrangler.toml.example wrangler.toml   # 本地开发保留占位符即可，不必填真实 ID
 npm install
+npm run db:init    # 首次本地开发必须：给本地 D1 建表，否则接口会 500
 npm run dev        # 本地 wrangler dev
-npm test           # vitest 单元测试（262 项）
+npm test           # vitest 单元测试（319 项）
 npx wrangler deploy --dry-run   # 构建校验（只校验构建产物，见下）
 ```
+
+> 本地 D1 是独立的 Miniflare 数据库。第一次跑 `npm run dev` 前、或清掉 `.wrangler/state` 之后，
+> 必须跑一次 `npm run db:init`；否则页面 200 但 `/api/gallery`、`/admin/*` 全部 500。
 
 > `--dry-run` 只校验构建产物能不能正常打出来（编译、依赖、绑定表），
 > **不校验资源 ID 是否真实存在**：配置里全是 `<YOUR_ACCOUNT_ID>` 这类占位符时，

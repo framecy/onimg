@@ -5,6 +5,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "dev": "wrangler dev",
+    "db:init": "wrangler d1 execute onimg-stats --local --file=docs/d1-schema.sql",
     "deploy": "wrangler deploy",
     "secret": "wrangler secret put AUTH_KEY",
     "test": "vitest run",
