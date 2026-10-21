@@ -356,8 +356,11 @@ export async function handleProtoFileBatch(request, env, owner) {
       const ct = MIME_MAP[ext] ?? 'application/octet-stream';
       const cacheCtrl = ext === 'html' || ext === 'htm' ? 'no-cache' : 'public, max-age=31536000';
       const body = typeof file.stream === 'function' ? file.stream() : await file.arrayBuffer();
+      // contentEncoding 是 R2 的一等字段，回放侧优先认它；customMetadata.ce 留作
+      // 兼容（本地磁盘适配器没有 content_encoding 列）。两个都写：线上实测这条
+      // 流式 put 路径的 customMetadata 会丢，只写它等于没写（原型因此白屏过）。
       await env.BUCKET.put(`proto/${protoId}/${path}`, body, {
-        httpMetadata: { contentType: ct, cacheControl: cacheCtrl },
+        httpMetadata: { contentType: ct, cacheControl: cacheCtrl, ...(enc ? { contentEncoding: enc } : {}) },
         ...(enc ? { customMetadata: { ce: enc } } : {}),
       });
       uploaded++;

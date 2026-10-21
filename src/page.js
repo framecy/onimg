@@ -388,7 +388,7 @@ export function renderPage(env = {}) {
         </div>
         <div class="border-t border-bd p-4" id="protoUploadBody">
           <div class="proto-upload-box mb-3.5 cursor-pointer rounded-xl border-[1.5px] border-dashed border-bd-2 bg-white/[.012] px-4 py-7 text-center text-tx-3 transition hover:border-tx-2 hover:bg-white/[.03] hover:text-tx [&.over]:border-tx-2 [&.over]:bg-white/[.03] [&.over]:text-tx" id="protoDropZone">
-            <input type="file" id="protoFileInput" accept=".zip,application/zip,application/x-zip-compressed">
+            <input class="hidden" type="file" id="protoFileInput" accept=".zip,application/zip,application/x-zip-compressed">
             <input class="hidden" type="file" id="protoFolderInput" webkitdirectory multiple>
             <p class="text-tx text-[.9rem] font-medium">点击选择 <strong>ZIP 文件</strong>，或拖拽文件夹到此处</p>
             <small class="block mt-2 text-tx-3 text-[.76rem]">支持 AxureRP 导出目录（自动打包）或 ZIP 文件，最大 50 MB</small>
@@ -3200,7 +3200,9 @@ export function renderPage(env = {}) {
     }
 
     document.getElementById('protoErr').textContent = '';
-    document.getElementById('protoUploadBtn').disabled = true;
+    const uploadBtnEl = document.getElementById('protoUploadBtn');
+    uploadBtnEl.disabled = true;
+    uploadBtnEl.textContent = '上传中…';
     const prog     = document.getElementById('protoProgress');    prog.classList.add('show');
     const bar      = document.getElementById('protoProgressBar'); bar.style.width = '0%';
     const info     = document.getElementById('protoProgressInfo'); info.classList.add('show');
@@ -3211,13 +3213,14 @@ export function renderPage(env = {}) {
       const icon = pct === 100
         ? '<svg class="inline-block h-3.5 w-3.5 -mt-0.5 mr-1 text-green" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>'
         : '<svg class="inline-block h-3.5 w-3.5 -mt-0.5 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="5.5" stroke-dasharray="26" stroke-dashoffset="8"/></svg>';
+      statusEl.style.display = '';
       statusEl.innerHTML = icon + msg;
       if (pct !== undefined) { bar.style.width = pct + '%'; pctEl.textContent = pct + '%'; }
     }
     function resetProg() {
       setTimeout(() => {
         prog.classList.remove('show'); bar.style.width = '0%';
-        info.classList.remove('show'); statusEl.style.display = 'none'; statusEl.textContent = '';
+        info.classList.remove('show'); statusEl.classList.add('hidden'); statusEl.style.display = ''; statusEl.textContent = '';
       }, 1200);
     }
 
@@ -3234,7 +3237,8 @@ export function renderPage(env = {}) {
       protoDropZone.querySelector('p').textContent = '点击选择 ZIP 文件，或拖拽文件夹到此处';
       document.getElementById('protoTitle').value = '';
       document.getElementById('protoPassword').value = '';
-      document.getElementById('protoUploadBtn').disabled = true;
+      uploadBtnEl.disabled = true;
+      uploadBtnEl.textContent = '上传原型';
       const cleanPwd = password.replace(/[^A-Za-z0-9]/g,'').slice(0,6);
       userProtos.unshift({
         protoId: result.protoId, title: result.title || title || '未命名原型',
@@ -3248,7 +3252,8 @@ export function renderPage(env = {}) {
     } catch(e) {
       resetProg();
       document.getElementById('protoErr').textContent = e.message || '上传失败';
-      document.getElementById('protoUploadBtn').disabled = false;
+      uploadBtnEl.disabled = false;
+      uploadBtnEl.textContent = '上传原型';
     }
   });
 
@@ -3670,13 +3675,14 @@ export function renderPage(env = {}) {
       const icon = pct === 100
         ? '<svg class="inline-block h-3.5 w-3.5 -mt-0.5 mr-1 text-green" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>'
         : '<svg class="inline-block h-3.5 w-3.5 -mt-0.5 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="5.5" stroke-dasharray="26" stroke-dashoffset="8"/></svg>';
+      statusEl.style.display = '';
       statusEl.innerHTML = icon + msg;
       if (pct !== undefined) { bar.style.width = pct + '%'; pctEl.textContent = pct + '%'; }
     }
     function resetProg() {
       setTimeout(() => {
         prog.classList.remove('show'); bar.style.width = '0%';
-        info.classList.remove('show'); statusEl.style.display = 'none'; statusEl.textContent = '';
+        info.classList.remove('show'); statusEl.classList.add('hidden'); statusEl.style.display = ''; statusEl.textContent = '';
       }, 1200);
     }
 

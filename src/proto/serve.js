@@ -141,7 +141,13 @@ export async function serveProto(env, protoId, filePath, request) {
   const isHtml = ext === 'html' || ext === 'htm';
   // 上行压缩的文件在 R2 里存的就是 gzip 字节（见 src/proto/upload.js），
   // 回放时带上 Content-Encoding 让浏览器自己解 —— 服务端不做解压，省 CPU。
-  const ce = obj.customMetadata?.ce === 'gzip' ? 'gzip' : '';
+  //
+  // 为什么不能只认元数据：线上实测发现这条流式 put 路径下 R2 的
+  // customMetadata 会丢（同一条链路的图片上传却正常），于是「压缩标记在
+  // 写入侧有、读取侧没有」，浏览器把 gzip 字节当 JS 解析 —— 原型直接白屏。
+  // 所以这里三层兜底：R2 一等字段 contentEncoding → customMetadata → 瞄一眼
+  // gzip magic（1f 8b）。最后一层顺带把历史上已经写坏的按原样救回来。
+  const gz = await resolveGzip(obj, ext);
 
   // ── Track access (HTML requests only, fire-and-forget) ─────────────────────
   if (isHtml) {
@@ -179,7 +185,7 @@ export async function serveProto(env, protoId, filePath, request) {
     // HTML 需要改文本，压缩过就得先解（回给浏览器的是明文，不再带 Content-Encoding）
     const buf = await obj.arrayBuffer();
     let html;
-    if (ce === 'gzip') {
+    if (gz.gzip) {
       html = await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
     } else {
       html = new TextDecoder().decode(buf);
@@ -192,6 +198,46 @@ export async function serveProto(env, protoId, filePath, request) {
     return new Response(html, { headers });
   }
 
-  if (ce) headers.set('Content-Encoding', ce);
-  return new Response(obj.body, { headers });
+  if (gz.gzip) headers.set('Content-Encoding', 'gzip');
+  return new Response(gz.body, { headers });
+}
+
+// 判断一个原型对象是不是以 gzip 字节存储的；返回可安全回放的 body。
+// 见 serveProto 里关于「元数据三层兜底」的说明。
+const GZIP_MAGIC = [0x1f, 0x8b];
+// 只对文本类做 magic 嗅探：图片/字体等二进制偶尔也可能以 1f8b 开头，
+// 而文本类被压过必然以 1f8b 开头，判错概率可以忽略。
+const SNIFF_EXT = new Set(['html', 'htm', 'js', 'mjs', 'css', 'json', 'xml', 'svg', 'txt', 'md', 'map']);
+
+function looksGzip(bytes) {
+  return !!bytes && bytes.length >= 2 && bytes[0] === GZIP_MAGIC[0] && bytes[1] === GZIP_MAGIC[1];
+}
+
+async function resolveGzip(obj, ext) {
+  if (obj.httpMetadata?.contentEncoding === 'gzip' || obj.customMetadata?.ce === 'gzip') {
+    return { gzip: true, body: obj.body };
+  }
+  if (!SNIFF_EXT.has(ext)) return { gzip: false, body: obj.body };
+
+  // 非流式 body（本地磁盘适配器 / 测试替身）：直接看头两个字节
+  if (typeof obj.body?.getReader !== 'function') {
+    const buf = await obj.arrayBuffer();
+    const u8 = new Uint8Array(buf);
+    return { gzip: looksGzip(u8), body: u8 };
+  }
+
+  // 流式 body：读第一块判魔数，再把这一块拼回去，后续按需拉取
+  const reader = obj.body.getReader();
+  const { value: head } = await reader.read();
+  let probe = head || new Uint8Array(0);
+  const isGz = looksGzip(probe);
+  const body = new ReadableStream({
+    start(c) { if (probe && probe.length) c.enqueue(probe); },
+    async pull(c) {
+      const { done, value } = await reader.read();
+      if (done) c.close(); else c.enqueue(value);
+    },
+    cancel(reason) { return reader.cancel(reason); },
+  });
+  return { gzip: isGz, body };
 }

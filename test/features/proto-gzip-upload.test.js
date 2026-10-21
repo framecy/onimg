@@ -107,4 +107,46 @@ describe('原型上行 gzip 压缩', () => {
     expect((await env.BUCKET.get(`proto/${protoId}/a.js`)).customMetadata?.ce).toBe('gzip');
     expect((await env.BUCKET.get(`proto/${protoId}/b.png`)).customMetadata?.ce).toBeUndefined();
   });
+  test('R2 元数据丢失时靠 gzip magic 兜底（线上踩过的坑）', async () => {
+    // 线上实测：流式 put 的 customMetadata 会丢，回放就成了「压缩字节当 JS 用」
+    // → 原型白屏。这里模拟「只有 gzip 字节、没有任何标记」的历史对象。
+    const protoId = await startSession(env);
+    const src = Buffer.from('var a=1;\n'.repeat(100));
+    const gz = gzipSync(src);
+    await env.BUCKET.put(`proto/${protoId}/legacy.js`, gz, {
+      httpMetadata: { contentType: 'application/javascript', cacheControl: 'public, max-age=31536000' },
+    });
+    await handleProtoFinalize(createRequest('POST', 'http://localhost/upload/proto/finalize', {
+      body: { protoId, filePaths: ['index.html', 'legacy.js'] },
+    }), env, OWNER);
+
+    const res = await serveProto(env, protoId, 'legacy.js', new Request('http://localhost/proto/x/legacy.js'));
+    expect(res.headers.get('Content-Encoding')).toBe('gzip');
+    expect(gunzipSync(Buffer.from(await res.arrayBuffer())).toString()).toBe(src.toString());
+  });
+
+  test('只有 httpMetadata.contentEncoding 也能正确回放', async () => {
+    const protoId = await startSession(env);
+    const src = Buffer.from('body{color:#333}'.repeat(200));
+    await env.BUCKET.put(`proto/${protoId}/only-ce.css`, gzipSync(src), {
+      httpMetadata: { contentType: 'text/css', contentEncoding: 'gzip' },
+    });
+    await handleProtoFinalize(createRequest('POST', 'http://localhost/upload/proto/finalize', {
+      body: { protoId, filePaths: ['index.html', 'only-ce.css'] },
+    }), env, OWNER);
+
+    const res = await serveProto(env, protoId, 'only-ce.css', new Request('http://localhost/proto/x/only-ce.css'));
+    expect(res.headers.get('Content-Encoding')).toBe('gzip');
+  });
+
+  test('图片等二进制不做 magic 嗅探，避免误判', async () => {
+    const protoId = await startSession(env);
+    // 一个恰好以 1f 8b 开头的 PNG（真实 PNG 不可能，但用来验证扩展名白名单）
+    await env.BUCKET.put(`proto/${protoId}/pic.png`, new Uint8Array([0x1f, 0x8b, 0x00, 0x01]), {});
+    await handleProtoFinalize(createRequest('POST', 'http://localhost/upload/proto/finalize', {
+      body: { protoId, filePaths: ['index.html', 'pic.png'] },
+    }), env, OWNER);
+    const res = await serveProto(env, protoId, 'pic.png', new Request('http://localhost/proto/x/pic.png'));
+    expect(res.headers.get('Content-Encoding')).toBeNull();
+  });
 });

@@ -188,12 +188,17 @@ async function _protoChunkedUpload(opts) {
 
   // 上行预压缩：先把每批要发的字节压好，顺便算出真实上行总量（进度按字节走，
   // 不再按批数跳——12 批时按批数走会长时间"卡在同一格"）。
+  // 535 个文件在浏览器里串行压缩要几秒，必须报进度，否则界面像卡死在 15%。
   var parts = {}, wireBytes = 0, rawBytes = 0;
+  var gzTotal = uploadPaths.length;
   for (var ui = 0; ui < uploadPaths.length; ui++) {
     var up = uploadPaths[ui], ub = files[up] || new Uint8Array(0);
     var part = await _protoMakePart(up, ub);
     parts[up] = part;
     wireBytes += part.blob.size; rawBytes += ub.byteLength;
+    if (gzTotal > 60 && (ui + 1) % 20 === 0) {
+      setStatus('正在压缩文本资源… ' + (ui + 1) + '/' + gzTotal, 15);
+    }
   }
   var savedPct = rawBytes ? Math.round(100 - (wireBytes / rawBytes) * 100) : 0;
   if (savedPct > 0) {

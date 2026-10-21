@@ -304,76 +304,121 @@ export function renderAdminPage() {
             </div>
           </div>
 
-          <!-- KV -->
+          <!-- D1（元数据的真实存储与额度） -->
           <div class="border-b border-bd px-4 py-3 last:border-b-0">
-            <div class="mb-[10px] flex items-center gap-1 text-[.59rem] font-bold uppercase tracking-[.12em] text-tx-3"><svg class="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="6" rx="1"/><rect x="3" y="10" width="18" height="6" rx="1"/><rect x="3" y="17" width="18" height="4" rx="1"/><line x1="6" y1="6" x2="6" y2="6"/></svg>Workers KV（STATS 命名空间，日限额独立计算）</div>
+            <div class="mb-[10px] flex items-center gap-1 text-[.59rem] font-bold uppercase tracking-[.12em] text-tx-3">
+              <svg class="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>D1 数据库（元数据存储，行读取/写入按天计费）
+              <button class="ml-auto inline-flex cursor-pointer items-center gap-1 rounded-[3px] border border-bd bg-bg-4 px-[7px] py-px font-mono text-[.57rem] font-normal normal-case tracking-normal text-tx-3 transition hover:border-bd-2 hover:text-tx" onclick="loadD1Stats()" title="重新扫描库规模与用量">
+                <svg class="h-2.5 w-2.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.65 4.35A6 6 0 1 0 14 8"/><polyline points="13.5,1.5 13.5,4.5 10.5,4.5"/></svg>重新统计
+              </button>
+            </div>
             <div class="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-[9px]">
+              <!-- 行读取 -->
               <div class="rounded-sm border border-bd bg-bg-2 px-[13px] py-[11px]">
                 <div class="mb-[5px] flex items-start justify-between gap-1.5">
-                  <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">KV 读取</span>
-                  <span class="mt-px shrink-0 whitespace-nowrap rounded-[3px] border border-bd bg-bg-5 px-[5px] py-px font-mono text-[.57rem] text-tx-3" id="cfKvReadsMethod">本月</span>
+                  <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">行读取（本日）</span>
+                  <span class="mt-px shrink-0 whitespace-nowrap rounded-[3px] border border-bd bg-bg-5 px-[5px] py-px font-mono text-[.57rem] text-tx-3" id="d1ReadMethod">官方口径</span>
                 </div>
-                <div class="mb-[3px] font-mono text-[1.3rem] font-bold leading-none text-tx" id="cfKvReads">—</div>
-              <div class="mb-[5px] text-[.62rem] text-tx-3 [&_strong]:text-tx-2">日限 <strong>10 万次</strong>　今日 <span class="text-tx-2" id="cfKvReadsToday">—</span></div>
-                <div class="h-[3px] rounded-sm bg-bd overflow-hidden"><div class="cf-fill h-[3px] rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red" id="cfKvReadsBar" style="width:0%"></div></div>
+                <div class="mb-[3px] font-mono text-[1.3rem] font-bold leading-none text-tx" id="d1ReadVal">—</div>
+                <div class="mb-[5px] text-[.62rem] text-tx-3 [&_strong]:text-tx-2">日限 <strong>500 万行</strong>　本月 <span class="text-tx-2" id="d1ReadMonth">—</span></div>
+                <div class="h-[3px] rounded-sm bg-bd overflow-hidden"><div class="cf-fill h-[3px] rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red" id="d1ReadBar" style="width:0%"></div></div>
                 <div class="flex justify-between mt-[3px]">
-                  <span class="text-[.6rem] text-tx-3" id="cfKvReadsPct">均值/日</span>
-                  <span class="text-[.6rem] text-tx-3" id="cfKvReadsAvg">—</span>
+                  <span class="text-[.6rem] text-tx-3" id="d1ReadPct">0%</span>
+                  <span class="text-[.6rem] text-tx-3">剩余 <span id="d1ReadLeft">—</span></span>
                 </div>
               </div>
+
+              <!-- 行写入 -->
               <div class="rounded-sm border border-bd bg-bg-2 px-[13px] py-[11px]">
                 <div class="mb-[5px] flex items-start justify-between gap-1.5">
-                  <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">KV 写入</span>
-                  <span class="mt-px shrink-0 whitespace-nowrap rounded-[3px] border border-bd bg-bg-5 px-[5px] py-px font-mono text-[.57rem] text-tx-3" id="cfKvWritesMethod">本月</span>
+                  <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">行写入（本日）</span>
+                  <span class="mt-px shrink-0 whitespace-nowrap rounded-[3px] border border-bd bg-bg-5 px-[5px] py-px font-mono text-[.57rem] text-tx-3" id="d1WriteMethod">官方口径</span>
                 </div>
-                <div class="mb-[3px] font-mono text-[1.3rem] font-bold leading-none text-tx" id="cfKvWrites">—</div>
-                <div class="mb-[5px] text-[.62rem] text-tx-3 [&_strong]:text-tx-2">日限 <strong>1,000 次</strong>　今日 <span class="text-tx-2" id="cfKvWritesToday">—</span></div>
-                <div class="h-[3px] rounded-sm bg-bd overflow-hidden"><div class="cf-fill h-[3px] rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red" id="cfKvWritesBar" style="width:0%"></div></div>
+                <div class="mb-[3px] font-mono text-[1.3rem] font-bold leading-none text-tx" id="d1WriteVal">—</div>
+                <div class="mb-[5px] text-[.62rem] text-tx-3 [&_strong]:text-tx-2">日限 <strong>10 万行</strong>　本月 <span class="text-tx-2" id="d1WriteMonth">—</span></div>
+                <div class="h-[3px] rounded-sm bg-bd overflow-hidden"><div class="cf-fill h-[3px] rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red" id="d1WriteBar" style="width:0%"></div></div>
                 <div class="flex justify-between mt-[3px]">
-                  <span class="text-[.6rem] text-tx-3" id="cfKvWritesPct">均值/日</span>
-                  <span class="text-[.6rem] text-tx-3" id="cfKvWritesAvg">—</span>
+                  <span class="text-[.6rem] text-tx-3" id="d1WritePct">0%</span>
+                  <span class="text-[.6rem] text-tx-3">剩余 <span id="d1WriteLeft">—</span></span>
                 </div>
               </div>
+
+              <!-- 元数据条目 -->
               <div class="rounded-sm border border-bd bg-bg-2 px-[13px] py-[11px]">
                 <div class="mb-[5px] flex items-start justify-between gap-1.5">
-                  <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">KV 列表</span>
-                  <span class="mt-px shrink-0 whitespace-nowrap rounded-[3px] border border-bd bg-bg-5 px-[5px] py-px font-mono text-[.57rem] text-tx-3" id="cfKvListsMethod">本月</span>
+                  <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">元数据条目</span>
+                  <span class="mt-px shrink-0 whitespace-nowrap rounded-[3px] border border-bd bg-bg-5 px-[5px] py-px font-mono text-[.57rem] text-tx-3" id="d1RowsMethod">实时扫描</span>
                 </div>
-                <div class="mb-[3px] font-mono text-[1.3rem] font-bold leading-none text-tx" id="cfKvLists">—</div>
-                <div class="mb-[5px] text-[.62rem] text-tx-3 [&_strong]:text-tx-2">日限 <strong>1,000 次</strong>　今日 <span class="text-tx-2" id="cfKvListsToday">—</span></div>
-                <div class="h-[3px] rounded-sm bg-bd overflow-hidden"><div class="cf-fill h-[3px] rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red" id="cfKvListsBar" style="width:0%"></div></div>
+                <div class="mb-[3px] font-mono text-[1.3rem] font-bold leading-none text-tx" id="d1RowsVal">—</div>
+                <div class="mb-[5px] text-[.62rem] text-tx-3 [&_strong]:text-tx-2">平均每行 <span class="text-tx-2" id="d1RowAvg">—</span></div>
+                <!-- 条目数没有「上限」这个概念，不画进度条，换成构成说明 -->
+                <div class="h-[3px] rounded-sm bg-bd overflow-hidden" aria-hidden="true"></div>
                 <div class="flex justify-between mt-[3px]">
-                  <span class="text-[.6rem] text-tx-3" id="cfKvListsPct">均值/日</span>
-                  <span class="text-[.6rem] text-tx-3" id="cfKvListsAvg">—</span>
+                  <span class="text-[.6rem] text-tx-3" id="d1RowsPct">全部元数据行</span>
+                  <span class="text-[.6rem] text-tx-3" id="d1RowsHint">无固定上限</span>
                 </div>
               </div>
+
+              <!-- 存储占用 -->
               <div class="rounded-sm border border-bd bg-bg-2 px-[13px] py-[11px]">
                 <div class="mb-[5px] flex items-start justify-between gap-1.5">
-                  <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">KV 删除</span>
-                  <span class="mt-px shrink-0 whitespace-nowrap rounded-[3px] border border-bd bg-bg-5 px-[5px] py-px font-mono text-[.57rem] text-tx-3" id="cfKvDeletesMethod">本月</span>
+                  <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">存储占用</span>
+                  <span class="mt-px shrink-0 whitespace-nowrap rounded-[3px] border border-bd bg-bg-5 px-[5px] py-px font-mono text-[.57rem] text-tx-3" id="d1SizeMethod">实时扫描</span>
                 </div>
-                <div class="mb-[3px] font-mono text-[1.3rem] font-bold leading-none text-tx" id="cfKvDeletes">—</div>
-                <div class="mb-[5px] text-[.62rem] text-tx-3 [&_strong]:text-tx-2">日限 <strong>1,000 次</strong>　今日 <span class="text-tx-2" id="cfKvDeletesToday">—</span></div>
-                <div class="h-[3px] rounded-sm bg-bd overflow-hidden"><div class="cf-fill h-[3px] rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red" id="cfKvDeletesBar" style="width:0%"></div></div>
+                <div class="mb-[3px] font-mono text-[1.3rem] font-bold leading-none text-tx" id="d1SizeVal">—</div>
+                <div class="mb-[5px] text-[.62rem] text-tx-3 [&_strong]:text-tx-2">上限 <strong>500 MB</strong>（免费版单库）</div>
+                <div class="h-[3px] rounded-sm bg-bd overflow-hidden"><div class="cf-fill h-[3px] rounded-sm overflow-hidden bg-brand transition-[width] duration-500 ease-in-out [&.warn]:bg-amber [&.full]:bg-red" id="d1SizeBar" style="width:0%"></div></div>
                 <div class="flex justify-between mt-[3px]">
-                  <span class="text-[.6rem] text-tx-3" id="cfKvDeletesPct">均值/日</span>
-                  <span class="text-[.6rem] text-tx-3" id="cfKvDeletesAvg">—</span>
+                  <span class="text-[.6rem] text-tx-3" id="d1SizePct">0%</span>
+                  <span class="text-[.6rem] text-tx-3">剩余 <span id="d1SizeLeft">—</span></span>
                 </div>
+              </div>
+
+            </div>
+
+            <!-- 按前缀分布 -->
+            <div class="mt-[10px] rounded-sm border border-bd bg-bg-2 px-[13px] py-[11px]">
+              <div class="mb-[9px] flex items-center gap-1.5">
+                <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">条目构成</span>
+                <span class="mt-px shrink-0 whitespace-nowrap rounded-[3px] border border-bd bg-bg-5 px-[5px] py-px font-mono text-[.57rem] text-tx-3">按数量</span>
+                <span class="ml-auto text-[.63rem] text-tx-3" id="d1DistHint">—</span>
+              </div>
+              <div class="flex h-[6px] w-full gap-px overflow-hidden rounded-[3px] bg-bd" id="d1DistBar">
+                <div class="h-full bg-tx-3/20" style="width:100%"></div>
+              </div>
+              <div class="mt-[9px] flex flex-wrap gap-x-4 gap-y-[6px]" id="d1DistLegend">
+                <span class="text-[.66rem] text-tx-3">加载中…</span>
               </div>
             </div>
-            <div class="hidden"><span id="cfKvKeys"></span><span id="cfDay"></span><span id="cfMonth"></span></div>
-            <div class="mt-[10px] px-[13px] py-[10px] bg-amber-g border border-amber-r rounded-[7px] text-[.73rem] text-tx-2 leading-[1.6]" id="cfApiPrompt" style="display:none">
-              <svg class="inline-block h-3.5 w-3.5 -mt-0.5 mr-0.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.5 15 14H1L8 1.5z"/><line x1="8" y1="6" x2="8" y2="9.5"/><circle cx="8" cy="11.5" r=".2" fill="currentColor"/></svg>未配置 CF API Token，KV 数据不可用。运行以下命令设置后重新部署：<br>
-              <code class="inline-block mt-1 bg-bg px-2 py-[3px] rounded font-mono text-[.75rem] text-tx-a">wrangler secret put CF_API_TOKEN</code><br>
-              <span class="text-tx-3">权限选 <strong class="text-tx-2">Account Analytics: Read</strong></span>
+
+            <!-- 30 天用量趋势 -->
+            <div class="mt-[10px] rounded-sm border border-bd bg-bg-2 px-[13px] py-[11px]">
+              <div class="mb-[5px] flex items-center gap-1.5">
+                <span class="text-[.7rem] font-medium leading-[1.3] text-tx-2">近 30 天用量</span>
+                <span class="ml-auto inline-flex items-center gap-3 text-[.63rem] text-tx-3">
+                  <span class="inline-flex items-center gap-1.5"><i class="h-[3px] w-3 shrink-0 rounded-[2px] bg-brand"></i>行写入</span>
+                  <span class="inline-flex items-center gap-1.5"><i class="h-0 w-3 shrink-0 border-t border-dashed border-tx-3"></i>行读取</span>
+                </span>
+              </div>
+              <div class="h-[86px] w-full" id="d1Trend"></div>
+              <div class="mt-[7px] flex flex-wrap gap-x-4 gap-y-[3px] text-[.62rem] text-tx-3" id="d1TrendFoot">
+                <span>数据积累中</span>
+              </div>
             </div>
-            <div class="mt-[10px] text-[.65rem] leading-[1.6] text-tx-3 [&_a]:text-tx-a [&_a]:no-underline [&_a:hover]:underline pt-[10px]">
-              <svg class="inline-block h-3.5 w-3.5 -mt-0.5 mr-0.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><line x1="8" y1="7" x2="8" y2="11.5"/><circle cx="8" cy="4.7" r=".2" fill="currentColor"/></svg>R2 存储为实时精确扫描；R2 A/B 类操作及 KV 数据需配置 CF API Token 才能获取精确值；KV 限额为每日独立计算，进度条显示月均日用量占日限比例。
-              <a href="https://dash.cloudflare.com" target="_blank" rel="noopener">CF 控制台 <svg class="inline-block h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="12" y2="4"/><polyline points="5,4 12,4 12,11"/></svg></a>
+
+            <!-- 活跃度 / 状态 -->
+            <div class="mt-[10px] flex flex-wrap items-center gap-x-4 gap-y-[6px] px-[2px] text-[.65rem] leading-[1.6] text-tx-3" id="d1Foot">
+              <span>最近写入 <span class="text-tx-2" id="d1LastWrite">—</span></span>
+              <span>最早元数据 <span class="text-tx-2" id="d1FirstWrite">—</span></span>
+              <span>生成时间 <span class="text-tx-2" id="d1GeneratedAt">—</span></span>
+            </div>
+
+            <div class="mt-[10px] px-[13px] py-[10px] bg-amber-g border border-amber-r rounded-[7px] text-[.73rem] text-tx-2 leading-[1.6] hidden" id="d1Notice"></div>
+
+            <div class="mt-[10px] text-[.65rem] leading-[1.6] text-tx-3 pt-[10px] border-t border-bd">
+              <span class="inline-block align-top">行读取 / 行写入为 D1 官方计费口径。配置了 <code class="bg-bg px-1 rounded font-mono text-[.63rem] text-tx-2">CF_API_TOKEN</code> 与 <code class="bg-bg px-1 rounded font-mono text-[.63rem] text-tx-2">CF_D1_DB_ID</code> 时取 CF Analytics 的精确日用量，否则显示本站自追踪的同一口径计数；两者都按 UTC 归日（北京时间 08:00 换日）。</span>
             </div>
           </div>
-        </div>
-
         <!-- hidden R2 DOM nodes kept for JS compatibility -->
         <div style="display:none">
           <span id="r2Storage"></span><span id="r2Objects"></span><span id="r2Writes"></span>
@@ -1172,6 +1217,9 @@ export function renderAdminPage() {
     adminToken = null; showLogin();
   }
 
+  // HTML 文本节点转义。D1 面板要拼分布图例，用到它的位置比别的模块靠前，所以放在这里。
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
   function showLogin() { document.getElementById('loginScreen').style.display = 'flex'; document.getElementById('adminApp').classList.add('hidden'); }
   function showApp() {
     document.getElementById('loginScreen').style.display = 'none';
@@ -1182,6 +1230,7 @@ export function renderAdminPage() {
     loadDashboard();
     loadR2Stats();
     loadCfQuota();
+    loadD1Stats();
     loadSettings();
   }
 
@@ -3310,13 +3359,14 @@ export function renderAdminPage() {
       const icon = pct === 100
         ? '<svg class="inline-block h-3.5 w-3.5 -mt-0.5 mr-1 text-green" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>'
         : '<svg class="inline-block h-3.5 w-3.5 -mt-0.5 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="5.5" stroke-dasharray="26" stroke-dashoffset="8"/></svg>';
+      statusEl.style.display = '';
       statusEl.innerHTML = icon + msg;
       if (pct !== undefined) { bar.style.width = pct + '%'; pctEl.textContent = pct + '%'; }
     }
     function resetProg() {
       setTimeout(() => {
         prog.classList.remove('show'); bar.style.width = '0%';
-        info.classList.remove('show'); statusEl.style.display = 'none'; statusEl.textContent = '';
+        info.classList.remove('show'); statusEl.classList.add('hidden'); statusEl.style.display = ''; statusEl.textContent = '';
       }, 1200);
     }
 
@@ -3454,42 +3504,279 @@ export function renderAdminPage() {
       document.getElementById('cfR2BLeft').textContent = fmtNum(Math.max(0, d.r2.classBLimit - r2b));
       applyCfQuota('cfR2BBar','cfR2BPct', r2b, d.r2.classBLimit);
 
-      // KV 操作（CF API 精确 or 空）
-      const apiPrompt = document.getElementById('cfApiPrompt');
-      const dayOfMonth = parseInt(d.day.slice(8, 10)) || 1;  // 已过几天
-
-      const fillKv = (prefix, monthly, today, dailyLimit) => {
-        const el = (id) => document.getElementById(id);
-        if (monthly === null) {
-          if (el(prefix)) el(prefix).textContent = '—';
-          return;
-        }
-        if (el(prefix))          el(prefix).textContent = fmtNum(monthly);
-        if (el(prefix+'Today'))  el(prefix+'Today').textContent = today !== null ? fmtNum(today) : '—';
-        const avgDay = dayOfMonth > 0 ? monthly / dayOfMonth : 0;
-        if (el(prefix+'Avg'))  el(prefix+'Avg').textContent = '~' + fmtNum(Math.round(avgDay)) + '/天';
-        // 进度条：月均日用量 vs 日限
-        applyCfQuota(prefix+'Bar', prefix+'Pct', avgDay, dailyLimit);
-      };
-
-      fillKv('cfKvReads',   d.kv.readsMonth,   d.kv.readsToday,   d.kv.readDailyLimit);
-      fillKv('cfKvWrites',  d.kv.writesMonth,  d.kv.writesToday,  d.kv.writeDailyLimit);
-      fillKv('cfKvLists',   d.kv.listsMonth,   d.kv.listsToday,   d.kv.listDailyLimit);
-      fillKv('cfKvDeletes', d.kv.deletesMonth, d.kv.deletesToday, d.kv.deleteDailyLimit);
-
-      if (apiPrompt) apiPrompt.style.display = isCfApi ? 'none' : 'block';
-
-      // KV 键总数（仅自追踪模式才查）
-      if (!isCfApi && d.kv.totalKeys != null) {
-        document.getElementById('cfKvKeys').textContent = d.kv.totalKeys.toLocaleString();
-      } else {
-        const keysEl = document.getElementById('cfKvKeys');
-        if (keysEl && keysEl.textContent === '—') keysEl.textContent = 'N/A';
-      }
-
       document.getElementById('cfDay').textContent   = d.day;
       document.getElementById('cfMonth').textContent = d.month;
+
+      // D1 的行读取/写入也来自这份，交给 D1 面板统一渲染（避免两处各写一套）
+      renderD1Usage(d.d1, isCfApi);
     } catch(e) { console.error('CF quota error', e); }
+  }
+
+  // ── D1 面板 ─────────────────────────────────────────────────────────────────
+  // 数据来自两条腿，各司其职：
+  //   · /admin/cf-quota  → 额度用量（行读取/写入，CF API 或自追踪，同口径）
+  //   · /admin/d1-stats  → 库本身（行数、体积、前缀分布、30 天趋势、最近写入）
+  // 拆开的原因是后者要扫一遍表，不该跟「刷新额度」绑在一起；面板上「重新统计」
+  // 按钮就是只刷这一条。
+  let d1LastMeta = null;   // 缓存库规模，用量刷新时不必重扫
+
+  /** 渲染用量四件套里的「行读取 / 行写入」+ 分布占比提示 */
+  function renderD1Usage(u, isCfApi) {
+    if (!u) return;
+    const filled = isCfApi ? 'CF API 精确' : '本站自追踪';
+
+    const paint = (valId, monthId, barId, pctId, leftId, today, month, limit) => {
+      const el = (id) => document.getElementById(id);
+      if (today == null) { if (el(valId)) el(valId).textContent = '—'; return; }
+      el(valId).textContent  = fmtNum(today);
+      el(leftId).textContent = fmtNum(Math.max(0, limit - today));
+      el(monthId).textContent = month == null ? '—' : fmtNum(month);
+      // 进度条口径：今日已用 / 日限（日限是硬上限，用今日值最直观）
+      applyCfQuota(barId, pctId, today, limit);
+      const m = el(valId).closest('.rounded-sm');
+      if (m) m.title = '今日 ' + today.toLocaleString() + ' 行，日限 ' + limit.toLocaleString() + ' 行';
+    };
+
+    paint('d1ReadVal',  'd1ReadMonth',  'd1ReadBar',  'd1ReadPct',  'd1ReadLeft',
+          u.rowsReadToday, u.rowsReadMonth, u.rowsReadDaily);
+    paint('d1WriteVal', 'd1WriteMonth', 'd1WriteBar', 'd1WritePct', 'd1WriteLeft',
+          u.rowsWrittenToday, u.rowsWrittenMonth, u.rowsWrittenDaily);
+
+    const rm = document.getElementById('d1ReadMethod');
+    const wm = document.getElementById('d1WriteMethod');
+    if (rm) rm.textContent = filled;
+    if (wm) wm.textContent = filled;
+  }
+
+  /** 进度条 + 百分比文案：规模类的卡片用「已用/上限」，没有「今日」概念 */
+  function paintGauge(barId, pctId, used, limit) {
+    applyCfQuota(barId, pctId, used, limit);
+    const pctEl = document.getElementById(pctId);
+    if (pctEl) pctEl.textContent = (limit > 0 ? (used / limit) * 100 : 0).toFixed(1) + '%';
+  }
+
+  async function loadD1Stats() {
+    const btn = document.querySelector('[onclick="loadD1Stats()"]');
+    if (btn) btn.disabled = true;
+    try {
+      const r = await adminFetch('/admin/d1-stats', { headers: authH() });
+      if (r.status === 401) { handleUnauth(); return; }
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      renderD1Stats(d);
+    } catch (e) {
+      d1Notice('D1 数据加载失败：' + (e && e.message ? e.message : e) + '。额度用量仍可用，库规模需重新统计。', 'error');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  function d1Notice(msg, kind) {
+    const el = document.getElementById('d1Notice');
+    if (!el) return;
+    if (!msg) { el.classList.add('hidden'); el.textContent = ''; return; }
+    el.classList.remove('hidden');
+    el.textContent = msg;
+    el.style.borderColor = kind === 'error' ? 'rgba(248,113,113,.35)' : '';
+    el.style.background  = kind === 'error' ? 'rgba(248,113,113,.08)' : '';
+    el.style.color       = kind === 'error' ? 'var(--color-red)' : '';
+  }
+
+  /** 体积/行数的紧凑格式化：1023 → "1.0K" 这种在 170px 的卡片里更耐看 */
+  const PALETTE = ['var(--color-brand)', '#8b5cf6', '#0ea5e9', '#10b981', '#f59e0b',
+                   '#ef4444', '#14b8a6', '#a855f7', '#64748b', '#84cc16'];
+
+  function renderD1Stats(d) {
+    const L = d.limits || {};
+
+    if (!d.available) {
+      // 没有 D1 绑定：说明这套部署仍跑在 KV 上（回滚状态）或本地 Node 环境。
+      // 四张卡全部回到 —，不能留着上一轮的数（用户会以为是真值）。
+      d1Notice(d.reason === 'kv'
+        ? '当前环境没有 D1 绑定（env.DB），元数据仍存放在 Workers KV 上，库规模与用量不可用。'
+        : '当前环境没有可用的元数据存储，D1 数据不可用。', 'error');
+      ['d1ReadVal', 'd1WriteVal', 'd1RowsVal', 'd1SizeVal', 'd1RowAvg',
+       'd1ReadMonth', 'd1WriteMonth', 'd1SizePct', 'd1GeneratedAt'].forEach(id => {
+        const e = document.getElementById(id);
+        if (e) e.textContent = '—';
+      });
+      ['d1ReadLeft', 'd1WriteLeft', 'd1SizeLeft'].forEach(id => {
+        const e = document.getElementById(id);
+        if (e) e.textContent = '—';
+      });
+      // 进度条归零，别留着上一轮的宽度
+      ['d1ReadBar', 'd1WriteBar', 'd1SizeBar'].forEach(id => {
+        const e = document.getElementById(id);
+        if (e) e.style.width = '0%';
+      });
+      renderD1Distribution({ totalRows: 0, byPrefix: [], unknownRows: 0 });
+      const distHint = document.getElementById('d1DistHint');
+      if (distHint) distHint.textContent = '不可用';
+      renderD1Trend(null);
+      return;
+    }
+
+    // 用量（可能已由 /admin/cf-quota 填过；这里再用同一份接口兜底一次，避免竞态）
+    if (d.usage) {
+      renderD1Usage({
+        rowsReadToday:    d.usage.today.rowsRead,
+        rowsReadMonth:    d.usage.month.rowsRead,
+        rowsWrittenToday: d.usage.today.rowsWritten,
+        rowsWrittenMonth: d.usage.month.rowsWritten,
+        ...L,
+      }, false);
+    }
+
+    const m = d.meta;
+    if (!m) {
+      d1Notice('读取 D1 元数据失败' + (d.metaError ? '：' + d.metaError : '') +
+               '。若尚未建表，先执行 docs/d1-schema.sql。', 'error');
+      return;
+    }
+    d1Notice('');
+    d1LastMeta = m;
+
+    // 元数据条目
+    document.getElementById('d1RowsVal').textContent  = fmtNum(m.totalRows);
+    document.getElementById('d1RowAvg').textContent   = m.totalRows > 0 ? fmtSize(Math.round(m.totalBytes / m.totalRows)) : '—';
+    const rowsPct = document.getElementById('d1RowsPct');
+    if (rowsPct) rowsPct.textContent = '全部元数据行';
+    const rowsHint = document.getElementById('d1RowsHint');
+    if (rowsHint) rowsHint.textContent = '无固定上限';
+
+    // 存储占用
+    const sizeEl = document.getElementById('d1SizeVal');
+    sizeEl.textContent = fmtSize(m.totalBytes);
+    document.getElementById('d1SizeLeft').textContent = fmtSize(Math.max(0, (L.storageBytes || 0) - m.totalBytes));
+    paintGauge('d1SizeBar', 'd1SizePct', m.totalBytes, L.storageBytes || 1);
+
+    // 按前缀分布
+    renderD1Distribution(m);
+
+    // 30 天趋势
+    renderD1Trend(d.usage);
+
+    // 最近写入 / 最早
+    document.getElementById('d1LastWrite').textContent  = fmtAgo(m.lastWriteAt);
+    document.getElementById('d1LastWrite').title        = m.lastWriteAt ? new Date(m.lastWriteAt).toLocaleString() : '';
+    document.getElementById('d1FirstWrite').textContent = fmtAgo(m.firstWriteAt);
+    document.getElementById('d1FirstWrite').title       = m.firstWriteAt ? new Date(m.firstWriteAt).toLocaleString() : '';
+    document.getElementById('d1GeneratedAt').textContent = d.generatedAt ? new Date(d.generatedAt).toLocaleTimeString() : '—';
+  }
+
+  /** "3 分钟前" 这种相对时间；后端存的是 ms 时间戳 */
+  function fmtAgo(ts) {
+    if (!ts) return '—';
+    const diff = Date.now() - ts;
+    if (diff < 0) return '刚刚';
+    const s = Math.floor(diff / 1000);
+    if (s < 60) return s + ' 秒前';
+    const m = Math.floor(s / 60);
+    if (m < 60) return m + ' 分钟前';
+    const h = Math.floor(m / 60);
+    if (h < 24) return h + ' 小时前';
+    const dd = Math.floor(h / 24);
+    if (dd < 30) return dd + ' 天前';
+    return new Date(ts).toLocaleDateString();
+  }
+
+  function renderD1Distribution(m) {
+    const bar    = document.getElementById('d1DistBar');
+    const legend = document.getElementById('d1DistLegend');
+    const hint   = document.getElementById('d1DistHint');
+    if (!bar || !legend) return;
+
+    const groups = (m.byPrefix || []).filter(g => g.count > 0);
+    const total  = m.totalRows;
+
+    if (!total) {
+      bar.innerHTML = '<div class="h-full bg-tx-3/20" style="width:100%"></div>';
+      legend.innerHTML = '<span class="text-[.66rem] text-tx-3">库里还没有任何元数据</span>';
+      if (hint) hint.textContent = '0 条';
+      return;
+    }
+    // 空态文案由调用方按场景覆盖（例如「不可用」），这里只在有数据时写提示
+
+    // 排序后取前 8，其余并成「其他」—— 图例不无限拉长
+    const sorted = [...groups].sort((a, b) => b.count - a.count);
+    const head = sorted.slice(0, 8);
+    const tail = sorted.slice(8);
+    const restCount = tail.reduce((s, g) => s + g.count, 0) + (m.unknownRows || 0);
+
+    const segs = head.map((g, i) => ({ label: g.label, count: g.count, color: PALETTE[i % PALETTE.length] }));
+    if (restCount > 0) segs.push({ label: m.unknownRows ? '其他' : '其余', count: restCount, color: PALETTE[8] });
+
+    // 单段小于 0.4% 的用 2px 的最小可点击宽度，否则会直接消失
+    bar.innerHTML = segs.map(sg => {
+      const w = Math.max(0.6, (sg.count / total) * 100);
+      return '<div class="h-full transition-[width] duration-500" style="width:' + w.toFixed(2) +
+             '%;background:' + sg.color + '" title="' + esc(sg.label) + ' ' + sg.count.toLocaleString() +
+             ' 条（' + (sg.count / total * 100).toFixed(1) + '%）"></div>';
+    }).join('');
+
+    legend.innerHTML = segs.map(sg =>
+      '<span class="inline-flex items-center gap-1.5 text-[.66rem] text-tx-3">' +
+        '<i class="h-[7px] w-[7px] shrink-0 rounded-[2px]" style="background:' + sg.color + '"></i>' +
+        '<span class="text-tx-2">' + esc(sg.label) + '</span>' +
+        '<span class="font-mono">' + fmtNum(sg.count) + '</span>' +
+      '</span>',
+    ).join('');
+
+    if (hint) {
+      const biggest = head[0];
+      hint.textContent = biggest
+        ? total.toLocaleString() + ' 条 · 最多的是' + biggest.label + ' ' + (biggest.count / total * 100).toFixed(0) + '%'
+        : total.toLocaleString() + ' 条';
+    }
+  }
+
+  // 趋势图：行写入（实线，左轴）与行读取（虚线，右轴千分位）。
+  // 两者量级差 50 倍（10 万 vs 500 万），同一根 Y 轴会把写入压成一条贴地的线，
+  // 所以分开缩放。纯 SVG 手绘，不引第三方库。
+  function renderD1Trend(usage) {
+    const host = document.getElementById('d1Trend');
+    const foot = document.getElementById('d1TrendFoot');
+    if (!host) return;
+
+    const days = usage && usage.days ? usage.days : [];
+    if (days.length < 2) {
+      host.innerHTML = '<div class="flex h-full items-center justify-center text-[.68rem] text-tx-3">暂无按天数据</div>';
+      if (foot) foot.innerHTML = '<span>D1 不可用，无用量数据</span>';
+      return;
+    }
+
+    const W = 100, H = 30;              // viewBox 单位，靠 preserveAspectRatio 拉伸
+    const writes = days.map(p => p.rowsWritten);
+    const reads  = days.map(p => p.rowsRead);
+    const maxW = Math.max(1, ...writes);
+    const maxR = Math.max(1, ...reads);
+    const active = writes.some(v => v > 0) || reads.some(v => v > 0);
+
+    if (!active) {
+      host.innerHTML = '<div class="flex h-full items-center justify-center text-[.68rem] text-tx-3">上线后还没有累积到用量数据</div>';
+      if (foot) foot.innerHTML = '<span>数据积累中 · 自部署起按 UTC 天累计</span>';
+      return;
+    }
+
+    const path = (vals, max) => vals.map((v, i) => {
+      const x = (i / (vals.length - 1)) * W;
+      const y = H - (v / max) * (H - 2) - 1;
+      return (i ? 'L' : 'M') + x.toFixed(2) + ' ' + y.toFixed(2);
+    }).join(' ');
+
+    const lastDay = days[days.length - 1];
+    host.innerHTML =
+      '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" class="h-full w-full overflow-visible">' +
+        '<line x1="0" y1="' + (H - 1) + '" x2="' + W + '" y2="' + (H - 1) + '" stroke="var(--color-bd)" stroke-width=".3" vector-effect="non-scaling-stroke"/>' +
+        '<path d="' + path(writes, maxW) + '" fill="none" stroke="var(--color-brand)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" opacity=".9"/>' +
+        '<path d="' + path(reads, maxR) + '" fill="none" stroke="var(--color-tx-3)" stroke-width="1.2" stroke-dasharray="3 2.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>' +
+      '</svg>';
+
+    if (foot) foot.innerHTML =
+      '<span>今日写入 <b class="font-mono font-semibold text-tx-2">' + fmtNum(lastDay.rowsWritten) + '</b> 行</span>' +
+      '<span>今日读取 <b class="font-mono font-semibold text-tx-2">' + fmtNum(lastDay.rowsRead) + '</b> 行</span>' +
+      '<span>30 天写入 <b class="font-mono font-semibold text-tx-2">' + fmtNum(writes.reduce((a, b) => a + b, 0)) + '</b> 行</span>' +
+      '<span>峰值 <b class="font-mono font-semibold text-tx-2">' + fmtNum(maxW) + '</b> 行/天</span>';
   }
 
   function fmtNum(n) {
@@ -3629,7 +3916,6 @@ export function renderAdminPage() {
   }
 
   // ── Utils ─────────────────────────────────────────────────────────────────────
-  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function handleUnauth() {
     if (expiryTimerId) { clearInterval(expiryTimerId); expiryTimerId = null; }
     document.getElementById('expiryBanner').classList.remove('show');
@@ -3637,7 +3923,7 @@ export function renderAdminPage() {
     toast('登录已过期，请重新登录', 'error');
     setTimeout(showLogin, 1200);
   }
-  function fmtSize(b) { if(b<1024) return b+' B'; if(b<1048576) return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
+  function fmtSize(b) { if(!b) return '0 B'; if(b<1024) return b+' B'; if(b<1048576) return (b/1024).toFixed(1)+' KB'; if(b<1073741824) return (b/1048576).toFixed(1)+' MB'; return (b/1073741824).toFixed(2)+' GB'; }
   function fmtSizeParts(b) { if(b<1048576) return {val:(b/1024).toFixed(1),unit:'KB'}; if(b<1073741824) return {val:(b/1048576).toFixed(1),unit:'MB'}; return {val:(b/1073741824).toFixed(2),unit:'GB'}; }
   function copyText(text, btn) { navigator.clipboard.writeText(text).then(() => { if(btn){const o=btn.innerHTML;btn.innerHTML='<svg class="inline-block h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>';setTimeout(()=>btn.innerHTML=o,1400);} }); }
   function copyProtoAddr(btn) { const url = btn.dataset.url; const pwd = btn.dataset.pwd; copyText(pwd ? '内容：' + url + '\\n密码：' + pwd : url, btn); }
