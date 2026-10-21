@@ -1832,8 +1832,10 @@ export function renderAdminPage() {
         <div class="checkbox absolute left-1.5 top-1.5 flex h-[17px] w-[17px] items-center justify-center rounded-xs border-[1.5px] border-bd-2 bg-black/75 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-[.selected]:opacity-100 group-[.selected]:border-tx-2 group-[.selected]:bg-tx-2"><svg class="h-2.5 w-2.5 fill-none stroke-white stroke-[2.5]" viewBox="0 0 12 12"><polyline points="1.5,6 5,9.5 10.5,2.5"/></svg></div>
         <img class="block h-auto w-full aspect-square bg-bg-2 object-cover" src="\${origin}/\${item.key}" loading="lazy">
         <div class="px-[9px] py-[7px]">
-          <div class="truncate text-[.71rem] font-medium text-tx" title="\${escAttr(title)}">\${esc(title)}</div>
-          <div class="truncate font-mono text-[.62rem] text-tx-3" title="\${escAttr(item.key)}">\${esc(item.key)}</div>
+          \${title === item.key
+            ? '<div class="truncate font-mono text-[.68rem] text-tx-3" title="' + escAttr(item.key) + '">' + esc(item.key) + '</div>'
+            : '<div class="truncate text-[.71rem] font-medium text-tx" title="' + escAttr(title) + '">' + esc(title) + '</div>'
+              + '<div class="truncate font-mono text-[.62rem] text-tx-3" title="' + escAttr(item.key) + '">' + esc(item.key) + '</div>'}
           \${tagsLine}
           <div class="mt-[3px] flex justify-between"><span class="truncate text-[.65rem] text-tx-3">\${esc([item.owner, fmtSize(item.size)].filter(Boolean).join(' · '))}</span><span class="font-mono text-[.65rem] font-semibold text-tx-a">\${views?views+' 次':''}</span></div>
           <div class="mt-1.5 flex gap-[3px]">
