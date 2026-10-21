@@ -201,21 +201,16 @@ export async function serveProto(env, protoId, filePath, request) {
 
   if (!gz.gzip) return new Response(gz.body, { headers });
 
-  // 只有客户端声明支持 gzip 时才直接回压缩字节。否则 Cloudflare 会把
-  // Content-Encoding 头剥掉、body 仍留压缩字节（实测 curl 不带
-  // Accept-Encoding 就是这个结果），客户端会把 gzip 当明文读。
-  // 浏览器一定会带这个头，所以这只是给 CLI / 抓取工具兜底。
-  if (!acceptsGzip(request)) {
-    // gz.body 可能是 R2 的流，也可能是本地适配器直接给的字节，统一成流再解
-    const src = typeof gz.body?.pipeThrough === 'function' ? gz.body : new Blob([gz.body]).stream();
-    return new Response(src.pipeThrough(new DecompressionStream('gzip')), { headers });
-  }
-  headers.set('Content-Encoding', 'gzip');
-  return new Response(gz.body, { headers });
-}
-
-function acceptsGzip(request) {
-  return /(^|,)\s*gzip\s*(;|,|$)/i.test(request.headers.get('Accept-Encoding') || '');
+  // 压缩只用于「上传上行」，回放一律给明文。
+  //
+  // 为什么不直接回 Content-Encoding: gzip 让浏览器解：线上实测 Cloudflare
+  // 会剥掉这个头却保留压缩字节（不带 Accept-Encoding 的请求），
+  // 还会对这条流式 gzip 响应再压一层（带 Accept-Encoding 时拿到的其实是
+  // 套了两层的字节）—— 两条路都会把原型打坏。
+  // 回放明文交给 Cloudflare 自己按标准协商压缩，行为可预测；
+  // 代价是每次资源请求多一次解压（原生 DecompressionStream，几十 KB 级文件可忽略）。
+  const src = typeof gz.body?.pipeThrough === 'function' ? gz.body : new Blob([gz.body]).stream();
+  return new Response(src.pipeThrough(new DecompressionStream('gzip')), { headers });
 }
 
 // 判断一个原型对象是不是以 gzip 字节存储的；返回可安全回放的 body。

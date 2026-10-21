@@ -74,9 +74,9 @@ describe('原型上行 gzip 压缩', () => {
     }), env, OWNER);
 
     const res = await serveProto(env, protoId, 'css/site.css', new Request('http://localhost/proto/x/css/site.css', { headers: { 'Accept-Encoding': 'gzip' } }));
-    expect(res.headers.get('Content-Encoding')).toBe('gzip');
-    const body = Buffer.from(await res.arrayBuffer());
-    expect(gunzipSync(body).toString()).toBe(src.toString());
+    // 回放一律明文：压缩只用于上行，响应交给 Cloudflare 自己协商压缩
+    expect(res.headers.get('Content-Encoding')).toBeNull();
+    expect(await res.text()).toBe(src.toString());
   });
 
   test('压缩过的 HTML 仍能注入标题并返回明文', async () => {
@@ -121,8 +121,7 @@ describe('原型上行 gzip 压缩', () => {
     }), env, OWNER);
 
     const res = await serveProto(env, protoId, 'legacy.js', new Request('http://localhost/proto/x/legacy.js', { headers: { 'Accept-Encoding': 'gzip' } }));
-    expect(res.headers.get('Content-Encoding')).toBe('gzip');
-    expect(gunzipSync(Buffer.from(await res.arrayBuffer())).toString()).toBe(src.toString());
+    expect(await res.text()).toBe(src.toString());
   });
 
   test('只有 httpMetadata.contentEncoding 也能正确回放', async () => {
@@ -136,7 +135,7 @@ describe('原型上行 gzip 压缩', () => {
     }), env, OWNER);
 
     const res = await serveProto(env, protoId, 'only-ce.css', new Request('http://localhost/proto/x/only-ce.css', { headers: { 'Accept-Encoding': 'gzip' } }));
-    expect(res.headers.get('Content-Encoding')).toBe('gzip');
+    expect(await res.text()).toBe(src.toString());
   });
 
   test('图片等二进制不做 magic 嗅探，避免误判', async () => {
@@ -149,7 +148,7 @@ describe('原型上行 gzip 压缩', () => {
     const res = await serveProto(env, protoId, 'pic.png', new Request('http://localhost/proto/x/pic.png'));
     expect(res.headers.get('Content-Encoding')).toBeNull();
   });
-  test('客户端不声明 Accept-Encoding: gzip 时就地解压回明文', async () => {
+  test('回放一律明文（不再依赖 Content-Encoding 协商）', async () => {
     // Cloudflare 会把没有协商 gzip 的响应的 Content-Encoding 头剥掉，
     // body 却仍是压缩字节 —— 那类客户端（CLI / 抓取工具）会读到乱码。
     const protoId = await startSession(env);
