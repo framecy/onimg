@@ -330,6 +330,10 @@ export async function handleProtoFileBatch(request, env, owner) {
 
   const paths = fd.getAll('paths[]');
   const files = fd.getAll('files[]');
+  // 上行压缩标记：与 paths[]/files[] 同序，'gzip' 表示该文件在浏览器端已压缩。
+  // 服务端不做解压——原样存进 R2，回放时带上 Content-Encoding: gzip，
+  // 由浏览器自己解。这样省的是跨境上行字节，服务端零额外 CPU。
+  const encs = fd.getAll('enc[]');
 
   // 先过滤（安全检查 + 配对），再按组限流写入。
   // 原实现 Promise.all 让整批所有文件的 arrayBuffer() 同时物化在内存里，
@@ -341,19 +345,20 @@ export async function handleProtoFileBatch(request, env, owner) {
     if (!path || path.startsWith('/') || path.includes('..') || path.endsWith('/')) continue;
     if (path.startsWith('__MACOSX/') || path.includes('/.DS_Store') || path === '.DS_Store') continue;
     if (!file) continue;
-    items.push([path, file]);
+    items.push([path, file, encs[i] === 'gzip' ? 'gzip' : '']);
   }
 
   const PUT_CONCURRENCY = 4;
   let uploaded = 0;
   for (let g = 0; g < items.length; g += PUT_CONCURRENCY) {
-    await Promise.all(items.slice(g, g + PUT_CONCURRENCY).map(async ([path, file]) => {
+    await Promise.all(items.slice(g, g + PUT_CONCURRENCY).map(async ([path, file, enc]) => {
       const ext = path.split('.').pop()?.toLowerCase() ?? '';
       const ct = MIME_MAP[ext] ?? 'application/octet-stream';
       const cacheCtrl = ext === 'html' || ext === 'htm' ? 'no-cache' : 'public, max-age=31536000';
       const body = typeof file.stream === 'function' ? file.stream() : await file.arrayBuffer();
       await env.BUCKET.put(`proto/${protoId}/${path}`, body, {
         httpMetadata: { contentType: ct, cacheControl: cacheCtrl },
+        ...(enc ? { customMetadata: { ce: enc } } : {}),
       });
       uploaded++;
     }));

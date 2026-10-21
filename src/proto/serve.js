@@ -139,6 +139,9 @@ export async function serveProto(env, protoId, filePath, request) {
   const ext  = decodedPath.split('.').pop()?.toLowerCase() ?? '';
   const ct   = MIME_MAP[ext] ?? obj.httpMetadata?.contentType ?? 'application/octet-stream';
   const isHtml = ext === 'html' || ext === 'htm';
+  // 上行压缩的文件在 R2 里存的就是 gzip 字节（见 src/proto/upload.js），
+  // 回放时带上 Content-Encoding 让浏览器自己解 —— 服务端不做解压，省 CPU。
+  const ce = obj.customMetadata?.ce === 'gzip' ? 'gzip' : '';
 
   // ── Track access (HTML requests only, fire-and-forget) ─────────────────────
   if (isHtml) {
@@ -173,7 +176,14 @@ export async function serveProto(env, protoId, filePath, request) {
   // Inject prototype title into HTML files (AxureRP exports default to "Untitled Document")
   if (isHtml && meta.title) {
     const safeTitle = meta.title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    let html = await obj.text();
+    // HTML 需要改文本，压缩过就得先解（回给浏览器的是明文，不再带 Content-Encoding）
+    const buf = await obj.arrayBuffer();
+    let html;
+    if (ce === 'gzip') {
+      html = await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+    } else {
+      html = new TextDecoder().decode(buf);
+    }
     if (/<title>/i.test(html)) {
       html = html.replace(/<title>[^<]*<\/title>/i, `<title>${safeTitle}</title>`);
     } else {
@@ -182,5 +192,6 @@ export async function serveProto(env, protoId, filePath, request) {
     return new Response(html, { headers });
   }
 
+  if (ce) headers.set('Content-Encoding', ce);
   return new Response(obj.body, { headers });
 }

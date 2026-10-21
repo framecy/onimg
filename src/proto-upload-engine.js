@@ -19,6 +19,10 @@ export const PROTO_ENGINE_JS = `
 // 只按个数切会让「45 张 3MB 大图」凑成 135 MB 的一批，内存和请求体双双爆掉。
 var PROTO_BATCH_MAX_FILES = 45;
 var PROTO_BATCH_MAX_BYTES = 24 * 1024 * 1024;
+function _fmtMB(b) {
+  if (!b) return '0';
+  return b < 1048576 ? (b / 1024).toFixed(0) + ' KB' : (b / 1048576).toFixed(1) + ' MB';
+}
 function _protoPlanBatches(paths, files) {
   var batches = [];
   var cur = [], curBytes = 0;
@@ -75,6 +79,23 @@ function _protoFilter(files) {
   });
 }
 
+// ── 文本资源 gzip（上行压缩） ───────────────────────────────────────────────
+// 为什么要压：原型上传的瓶颈是「跨境上行带宽」，不是服务端 CPU（实测 535 文件
+// 走本机磁盘桶只需 0.17s）。浏览器对同一域名只开一条 TCP，HTTP/2 多路复用共享
+// 同一个拥塞窗口，所以在 300ms 往返下加并发不会变快 —— 只能少传字节。
+// Axure 导出的 js/css/html 压缩比很高（75%/94%/92%），PNG 等已压缩格式完全跳过。
+var PROTO_TEXT_EXT = { html: 1, htm: 1, js: 1, mjs: 1, css: 1, json: 1, xml: 1, svg: 1, txt: 1, md: 1, map: 1 };
+var PROTO_GZ_MIN_BYTES = 1024;  // 太小反而压大，且有 20 字节 gzip 头开销
+
+function _protoExt(p) {
+  var i = p.lastIndexOf('.');
+  return i < 0 ? '' : p.slice(i + 1).toLowerCase();
+}
+function _protoCanGz(p, bytes) {
+  return typeof CompressionStream !== 'undefined'
+      && !!bytes && bytes.byteLength >= PROTO_GZ_MIN_BYTES
+      && PROTO_TEXT_EXT[_protoExt(p)] === 1;
+}
 // 内容指纹：FNV-1a 32-bit（含长度前缀防碰撞），返回 hex 字符串。
 // 仅用于「内容是否变化」的快速判断，非加密用途。
 function _fnv1a(bytes) {
@@ -84,6 +105,22 @@ function _fnv1a(bytes) {
     h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
   }
   return (bytes.length >>> 0).toString(16) + '-' + h.toString(16);
+}
+
+async function _protoGzip(bytes) {
+  var stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+// 单个文件的上行形态：{ blob, enc }，enc 非空时服务端原样存并以 Content-Encoding 回放。
+// 压缩后反而变大（极小文件、已压缩内容）就退回原始字节。
+async function _protoMakePart(path, bytes) {
+  if (bytes && _protoCanGz(path, bytes)) {
+    try {
+      var gz = await _protoGzip(bytes);
+      if (gz.byteLength + 32 < bytes.byteLength) return { blob: new Blob([gz]), enc: 'gzip' };
+    } catch (e) {}
+  }
+  return { blob: new Blob([bytes || new Uint8Array(0)]), enc: '' };
 }
 
 // 共享分片上传引擎。
@@ -149,12 +186,31 @@ async function _protoChunkedUpload(opts) {
   var totalBatches = batches.length;
   if (skipped > 0) setStatus('增量上传：' + uploadPaths.length + ' 个变更，跳过 ' + skipped + ' 个未变文件', 15);
 
+  // 上行预压缩：先把每批要发的字节压好，顺便算出真实上行总量（进度按字节走，
+  // 不再按批数跳——12 批时按批数走会长时间"卡在同一格"）。
+  var parts = {}, wireBytes = 0, rawBytes = 0;
+  for (var ui = 0; ui < uploadPaths.length; ui++) {
+    var up = uploadPaths[ui], ub = files[up] || new Uint8Array(0);
+    var part = await _protoMakePart(up, ub);
+    parts[up] = part;
+    wireBytes += part.blob.size; rawBytes += ub.byteLength;
+  }
+  var savedPct = rawBytes ? Math.round(100 - (wireBytes / rawBytes) * 100) : 0;
+  if (savedPct > 0) {
+    setStatus('文本资源已压缩 ' + _fmtMB(rawBytes) + ' → ' + _fmtMB(wireBytes) + '（省 ' + savedPct + '%）', 18);
+  }
+
   // 单批上传：最多重试 3 次（指数退避）；4xx（除 429）不重试
   async function uploadBatch(b) {
     var batchPaths = batches[b];
     var fd = new FormData();
     fd.append('protoId', protoId);
-    batchPaths.forEach(function (p) { fd.append('paths[]', p); fd.append('files[]', new Blob([files[p]]), p); });
+    batchPaths.forEach(function (p) {
+      var part = parts[p] || { blob: new Blob([files[p] || new Uint8Array(0)]), enc: '' };
+      fd.append('paths[]', p);
+      fd.append('enc[]', part.enc);
+      fd.append('files[]', part.blob, p);
+    });
     var lastErr = null;
     for (var attempt = 0; attempt < 3; attempt++) {
       try {
@@ -172,16 +228,17 @@ async function _protoChunkedUpload(opts) {
   // 并发池：CONCURRENCY 个 worker 从队列取批次；任一批彻底失败则中止
   var queue = [];
   for (var qi = 0; qi < totalBatches; qi++) queue.push(qi);
-  var done = 0, abortErr = null;
+  var done = 0, abortErr = null, sentBytes = 0;
   async function poolWorker() {
     while (queue.length && !abortErr) {
       var b = queue.shift();
       try { await uploadBatch(b); }
       catch (e) { abortErr = e; return; }
       done++;
-      var pct = Math.round(15 + (done / totalBatches) * 75);
-      var filesDone = batches.slice(0, done).reduce(function (s, b) { return s + b.length; }, 0);
-      setStatus('已上传 ' + done + '/' + totalBatches + ' 批（' + filesDone + ' / ' + uploadPaths.length + ' 个变更文件 · 并发 ' + CONCURRENCY + '）', pct);
+      var batchBytes = batches[b].reduce(function (s, p) { return s + (parts[p] ? parts[p].blob.size : 0); }, 0);
+      sentBytes += batchBytes;
+      var pct = Math.round(18 + (wireBytes ? sentBytes / wireBytes : done / totalBatches) * 72);
+      setStatus('已上传 ' + _fmtMB(sentBytes) + ' / ' + _fmtMB(wireBytes) + '（' + done + '/' + totalBatches + ' 批）', Math.min(pct, 90));
     }
   }
   if (totalBatches > 0) {
