@@ -26,6 +26,16 @@ gh secret set WRANGLER_TOML < wrangler.toml
 GitHub 不提供读回 secret，所以**没法事后比对**——只能靠"改完立刻同步"的习惯。
 判断线上跑的是哪份配置，看部署是否生效即可（比如改了域名后线上是否跟着变）。
 
+### 后台 D1 面板依赖的变量
+
+参考额度面板里 D1 那一段有两个数据源，改 `wrangler.toml` 时注意：
+
+- `CF_D1_DB_ID`（**非 secret**，`[vars]` 里）—— 填了才能走 CF Analytics 拿官方日用量
+- 没填 / 没配 `CF_API_TOKEN` 时自动退回自追踪：`src/kv-d1.js` 把每次查询的
+  `meta.rows_read` / `rows_written` 累加进 `d1u:` 计数器，口径相同
+
+旧的 `CF_KV_STATS_ID` 已不再使用（KV 面板已移除），可以从 secret 里删掉。
+
 ### 相关事实
 
 - 部署流程：push `main` → CI 跑测试 → `deploy` job 从 secret 还原 `wrangler.toml` → `wrangler deploy`

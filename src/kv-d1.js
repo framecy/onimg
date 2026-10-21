@@ -22,6 +22,8 @@
 // 建表由部署前的一次性命令完成，适配器不在请求路径里执行 DDL：
 //   wrangler d1 execute <库名> --remote --file=scripts/d1-schema.sql
 
+import { NO_TRACK, recordD1Usage } from './admin/d1Stats.js';
+
 const DEFAULT_LIMIT = 1000;   // 与真实 KV 的 list 默认上限一致
 const MAX_LIMIT = 1000;
 
@@ -31,15 +33,31 @@ const LIVE = 'expires_at IS NULL OR expires_at > ?';
 /**
  * 把 KVNamespace 契约实现在 D1 上。
  *
- * @param {D1Database} db  Workers 的 env.DB 绑定
+ * @param {D1Database} db      Workers 的 env.DB 绑定
+ * @param {object}     [opts]
+ * @param {Function}   [opts.waitUntil]  用量计数器写成后台任务（Workers 的 ctx.waitUntil）。
+ *        传了它，每次 D1 读写都会按官方计费口径（meta.rows_read / rows_written）
+ *        累加当日用量 —— 后台 D1 面板在没配 CF API Token 时就靠这份数据。
+ *        不传则完全跳过计数（测试与本地 Node 环境用，避免为了监控多写一份数据）。
  * @returns KVNamespace 外形（get / getWithMetadata / put / delete / list / sweepExpired）
  */
-export function createD1Kv(db) {
+export function createD1Kv(db, { waitUntil } = {}) {
   if (!db || typeof db.prepare !== 'function') {
     throw new Error('createD1Kv 需要 D1 绑定（env.DB）');
   }
 
   const nowSec = () => Math.floor(Date.now() / 1000);
+
+  // 用量计数：把 D1 返回的 meta 原样交给 d1Stats。这里不做 try/catch ——
+  // 计数失败绝不能影响业务，所以统一包在 reject 里交给 waitUntil 吞掉。
+  const track = (meta) => {
+    if (!waitUntil || !meta) return;
+
+    const rowsRead    = Number(meta.rows_read)    || 0;
+    const rowsWritten = Number(meta.rows_written) || 0;
+    if (rowsRead === 0 && rowsWritten === 0) return;
+    waitUntil(recordD1Usage(adapter, { rowsRead, rowsWritten }).catch(() => {}));
+  };
 
   const decode = (raw, type) => {
     if (raw === null || raw === undefined) return null;
@@ -65,7 +83,7 @@ export function createD1Kv(db) {
     return Buffer.from(b64, 'base64').toString('utf8');
   };
 
-  return {
+  const adapter = {
     /** 读单个 key；type='json' 时反序列化，解析失败返回 null（与 KV 一致） */
     async get(key, type = 'text') {
       const row = await db
@@ -93,10 +111,11 @@ export function createD1Kv(db) {
      * 写 key。value 非字符串时 JSON 序列化；metadata 序列化后存 TEXT。
      * expirationTtl 单位秒，与 KV 一致；不传则永不过期。
      */
-    async put(key, value, { metadata, expirationTtl } = {}) {
+    async put(key, value, opts = {}) {
+      const { metadata, expirationTtl } = opts;
       const val = typeof value === 'string' ? value : JSON.stringify(value);
       const expiresAt = Number.isFinite(expirationTtl) ? nowSec() + expirationTtl : null;
-      await db
+      const r = await db
         .prepare(
           `INSERT INTO kv_store (key, value, metadata, expires_at, updated_at)
            VALUES (?, ?, ?, ?, ?)
@@ -114,11 +133,14 @@ export function createD1Kv(db) {
           Date.now(),
         )
         .run();
+      // 记账自己的写不再触发记账（见 d1Stats.js 的 NO_TRACK 说明）
+      if (!opts[NO_TRACK]) track(r?.meta);
     },
 
     /** 删单个 key（幂等，删不存在的 key 不报错） */
     async delete(key) {
-      await db.prepare('DELETE FROM kv_store WHERE key = ?').bind(key).run();
+      const r = await db.prepare('DELETE FROM kv_store WHERE key = ?').bind(key).run();
+      track(r?.meta);
     },
 
     /**
@@ -132,7 +154,9 @@ export function createD1Kv(db) {
       const take = Math.max(1, Math.min(Number(limit) || DEFAULT_LIMIT, MAX_LIMIT));
       const bound = decodeCursor(cursor) ?? prefix;  // 首页从 prefix 起，续页从「上个 key+\0」起
 
-      const { results } = await db
+      // all() 在真实 D1 上也带 meta（meta.rows_read 反映这次扫描实际读了多少行），
+      // 所以读路径同样按官方口径计数。
+      const { results, meta } = await db
         .prepare(
           `SELECT key, metadata FROM kv_store
            WHERE key >= ? AND (${LIVE})
@@ -140,6 +164,7 @@ export function createD1Kv(db) {
         )
         .bind(bound, nowSec(), take + 1)
         .all();
+      track(meta);
 
       // 断在前缀边界上：跨出 prefix 的第一条不属于本次结果
       const inPrefix = [];
@@ -170,7 +195,10 @@ export function createD1Kv(db) {
         .prepare('DELETE FROM kv_store WHERE expires_at IS NOT NULL AND expires_at <= ?')
         .bind(nowSec())
         .run();
+      track(r?.meta);
       return r?.meta?.changes ?? 0;
     },
   };
+
+  return adapter;
 }

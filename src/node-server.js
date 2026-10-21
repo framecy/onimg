@@ -37,7 +37,7 @@ export function buildEnv({ root = ROOT } = {}) {
     SITE_NOTES: process.env.SITE_NOTES,
     CF_ACCOUNT_ID: process.env.CF_ACCOUNT_ID,
     CF_API_TOKEN: process.env.CF_API_TOKEN,
-    CF_KV_STATS_ID: process.env.CF_KV_STATS_ID,
+    CF_D1_DB_ID: process.env.CF_D1_DB_ID,
     CF_R2_BUCKET: process.env.CF_R2_BUCKET,
     CF_WORKER_NAME: process.env.CF_WORKER_NAME,
   };

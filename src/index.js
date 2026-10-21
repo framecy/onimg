@@ -6,7 +6,7 @@ import { renderPage } from './page.js';
 import { renderAdminPage } from './admin-page.js';
 import apertureCss from './ui/aperture.generated.js';
 import { handleAdminLogin, verifyAdminToken, timingSafeEqual } from './admin/auth.js';
-import { handleAdminStats, handleReconcileStats, handleAllImageStats, handleImageStats, handleR2DetailedStats, handleMemberStats, handleAllPageStats, handlePageStats, handleAllProtoStats, handleProtoStats, handleCfQuota, handleTrend } from './admin/stats.js';
+import { handleAdminStats, handleReconcileStats, handleAllImageStats, handleImageStats, handleR2DetailedStats, handleD1Stats, handleMemberStats, handleAllPageStats, handlePageStats, handleAllProtoStats, handleProtoStats, handleCfQuota, handleTrend } from './admin/stats.js';
 import { cfBump, cfDay } from './admin/cfCounters.js';
 import { handleListUsers, handleCreateUser, handleUpdateUser, handleDeleteUser } from './admin/users.js';
 import { handleGetConfig, handleUpdateConfig } from './admin/config-handler.js';
@@ -34,14 +34,18 @@ import { createD1Kv } from './kv-d1.js';
 // 换到 D1 后额度是 10 万行写/天，且 D1 是强一致，imglist 的写后校验不再需要退避重试。
 //
 // 回滚：删掉 wrangler.toml 里的 d1_databases 绑定即可回到原始 KV 行为。
-function withD1Stats(env) {
-  if (env?.DB) env.STATS = createD1Kv(env.DB);
+//
+// 第二个参数 waitUntil 让适配器把每次查询的 meta.rows_read / rows_written
+// 累加进 d1u: 计数器 —— 后台 D1 面板在没配 CF API Token 时显示的就是这份
+// 官方计费口径的用量。不传（如 cron）就不计数，省掉那两次写入。
+function withD1Stats(env, waitUntil) {
+  if (env?.DB) env.STATS = createD1Kv(env.DB, { waitUntil });
   return env;
 }
 
 export default {
   async fetch(request, env, ctx) {
-    withD1Stats(env);
+    withD1Stats(env, (p) => ctx.waitUntil(p));
 
     const url = new URL(request.url);
     const { method } = request;
@@ -174,6 +178,7 @@ export default {
         if (!await verifyAdminToken(request, env)) return withCors(Response.json({ error: 'Unauthorized' }, { status: 401 }), request);
 
         if (method === 'GET'  && path === '/admin/cf-quota')         return withCors(await handleCfQuota(env), request);
+        if (method === 'GET'  && path === '/admin/d1-stats')         return withCors(await handleD1Stats(env), request);
         if (method === 'GET'  && path === '/admin/audit')            return withCors(await handleAuditLog(env, url), request);
         if (method === 'GET'  && path === '/admin/trend')            return withCors(await handleTrend(env, url), request);
         if (method === 'GET'  && path === '/admin/stats')           return withCors(await handleAdminStats(env), request);

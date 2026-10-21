@@ -1,6 +1,7 @@
 import { DAILY_METRICS, readDailyRange } from './dailyStats.js';
 
 import { getGlobalStats, reconcileGlobalStats } from './gstats.js';
+import { D1_LIMITS, readD1Overview, readD1Usage } from './d1Stats.js';
 
 // ── Cloudflare 免费额度 — CF Analytics API 优先，自追踪降级 ──────────────────────
 export async function handleCfQuota(env) {
@@ -42,26 +43,23 @@ export async function handleCfQuota(env) {
         classBMonth:       cfData.r2.classB,
         classBLimit:       10000000,
       },
-      kv: {
-        readsMonth:       cfData.kv.reads,
-        writesMonth:      cfData.kv.writes,
-        listsMonth:       cfData.kv.lists,
-        deletesMonth:     cfData.kv.deletes,
-        readsToday:       cfData.kv.readsToday,
-        writesToday:      cfData.kv.writesToday,
-        listsToday:       cfData.kv.listsToday,
-        deletesToday:     cfData.kv.deletesToday,
-        readDailyLimit:   100000,
-        writeDailyLimit:  1000,
-        listDailyLimit:   1000,
-        deleteDailyLimit: 1000,
-        storageLimitGb:   1,
+      d1: {
+        ...D1_LIMITS,
+        rowsReadMonth:    cfData.d1.rowsReadMonth,
+        rowsWrittenMonth: cfData.d1.rowsWrittenMonth,
+        rowsReadToday:    cfData.d1.rowsReadToday,
+        rowsWrittenToday: cfData.d1.rowsWrittenToday,
+        storageBytes:     null,          // 体积由 /admin/d1-stats 实时扫描
       },
     });
   }
 
-  // ── 降级模式：自追踪计数器 + KV 全量枚举 ────────────────────────────────────
-  const [r2Scan, cfCounters, kvCount] = await Promise.all([
+  // ── 降级模式：自追踪计数器 + D1 用量自追踪 ──────────────────────────────────
+  //
+  // D1 这份不再是「近似」：src/kv-d1.js 每次读写后都会把 D1 返回的
+  // meta.rows_read / meta.rows_written（官方计费口径）累加进 d1u: 计数器，
+  // 与 CF Analytics 是同一套口径，差别只在归日时点与查询开销。
+  const [r2Scan, cfCounters, d1Usage] = await Promise.all([
     r2ScanProm,
     (async () => {
       const [reqVal, r2aVal, r2bVal] = await Promise.all([
@@ -75,15 +73,7 @@ export async function handleCfQuota(env) {
         r2bMonth:   parseInt(r2bVal ?? '0'),
       };
     })(),
-    (async () => {
-      let total = 0, cursor;
-      do {
-        const list = await env.STATS.list({ limit: 1000, cursor });
-        total += list.keys.length;
-        cursor = list.list_complete ? undefined : list.cursor;
-      } while (cursor);
-      return total;
-    })(),
+    readD1Usage(env.STATS, 30).catch(() => null),
   ]);
 
   return Response.json({
@@ -103,15 +93,13 @@ export async function handleCfQuota(env) {
       classBMonth:       cfCounters.r2bMonth,
       classBLimit:       10000000,
     },
-    kv: {
-      readsMonth: null, writesMonth: null, listsMonth: null, deletesMonth: null,
-      readsToday: null, writesToday: null, listsToday: null, deletesToday: null,
-      totalKeys:        kvCount,
-      readDailyLimit:   100000,
-      writeDailyLimit:  1000,
-      listDailyLimit:   1000,
-      deleteDailyLimit: 1000,
-      storageLimitGb:   1,
+    d1: {
+      ...D1_LIMITS,
+      rowsReadMonth:    d1Usage?.month.rowsRead    ?? null,
+      rowsWrittenMonth: d1Usage?.month.rowsWritten ?? null,
+      rowsReadToday:    d1Usage?.today.rowsRead    ?? null,
+      rowsWrittenToday: d1Usage?.today.rowsWritten ?? null,
+      storageBytes:     null,          // 体积由 /admin/d1-stats 实时扫描
     },
   });
 }
@@ -119,7 +107,7 @@ export async function handleCfQuota(env) {
 // CF Analytics GraphQL 查询 ────────────────────────────────────────────────────
 async function _fetchCfAnalytics(env, today, month, monthStart) {
   const acct   = env.CF_ACCOUNT_ID;
-  const kvNsId = env.CF_KV_STATS_ID  ?? '';
+  const d1Id   = env.CF_D1_DB_ID     ?? '';
   const bucket = env.CF_R2_BUCKET    ?? 'onimg-images';
   const script = env.CF_WORKER_NAME  ?? 'onimg';
 
@@ -148,7 +136,7 @@ async function _fetchCfAnalytics(env, today, month, monthStart) {
   };
 
   // 并发查询所有指标
-  const [r2Ops, kvMonth, kvToday, wkToday, wkMonth] = await Promise.all([
+  const [r2Ops, wkToday, wkMonth, d1Month, d1Today] = await Promise.all([
 
     // R2 操作（本月，按 actionType 分组）
     gql(`query($a:String!,$s:Date!,$u:Date!,$b:String!){
@@ -159,26 +147,6 @@ async function _fetchCfAnalytics(env, today, month, monthStart) {
         }
       }}
     }`, { a: acct, s: monthStart, u: today, b: bucket }),
-
-    // KV 操作（本月，按 actionType 分组）
-    kvNsId ? gql(`query($a:String!,$s:Date!,$u:Date!,$n:String!){
-      viewer{accounts(filter:{accountTag:$a}){
-        kvOperationsAdaptiveGroups(limit:200
-          filter:{date_geq:$s,date_leq:$u,namespaceId:$n}){
-          sum{requests} dimensions{actionType}
-        }
-      }}
-    }`, { a: acct, s: monthStart, u: today, n: kvNsId }) : {},
-
-    // KV 操作（今日，按 actionType 分组）
-    kvNsId ? gql(`query($a:String!,$s:Date!,$n:String!){
-      viewer{accounts(filter:{accountTag:$a}){
-        kvOperationsAdaptiveGroups(limit:200
-          filter:{date_geq:$s,date_leq:$s,namespaceId:$n}){
-          sum{requests} dimensions{actionType}
-        }
-      }}
-    }`, { a: acct, s: today, n: kvNsId }) : {},
 
     // Workers 今日请求
     gql(`query($a:String!,$s:Date!,$sc:String!){
@@ -199,6 +167,28 @@ async function _fetchCfAnalytics(env, today, month, monthStart) {
         }
       }}
     }`, { a: acct, s: monthStart, u: today, sc: script }),
+
+    // D1 用量（本月）：rowsRead / rowsWritten 是官方计费口径，按天分组后求和。
+    // 没配 CF_D1_DB_ID 时跳过，返回空对象 → 上层算出来的都是 0。
+    d1Id ? gql(`query($a:String!,$s:Date!,$u:Date!,$d:String!){
+      viewer{accounts(filter:{accountTag:$a}){
+        d1AnalyticsAdaptiveGroups(limit:10000
+          filter:{date_geq:$s,date_leq:$u,databaseId:$d}){
+          sum{rowsRead rowsWritten readQueries writeQueries}
+          dimensions{date}
+        }
+      }}
+    }`, { a: acct, s: monthStart, u: today, d: d1Id }) : {},
+
+    // D1 用量（今日）
+    d1Id ? gql(`query($a:String!,$s:Date!,$d:String!){
+      viewer{accounts(filter:{accountTag:$a}){
+        d1AnalyticsAdaptiveGroups(limit:100
+          filter:{date_geq:$s,date_leq:$s,databaseId:$d}){
+          sum{rowsRead rowsWritten}
+        }
+      }}
+    }`, { a: acct, s: today, d: d1Id }) : {},
   ]);
 
   // 解析 R2 操作
@@ -208,21 +198,11 @@ async function _fetchCfAnalytics(env, today, month, monthStart) {
     R2_B.has(g.dimensions?.actionType) ? (r2ClassB += n) : (r2ClassA += n);
   }
 
-  // 解析 KV 操作（月+日）
-  const _kvParse = (groups) => {
-    const m = { reads: 0, writes: 0, lists: 0, deletes: 0 };
-    for (const g of (groups ?? [])) {
-      const n = g.sum?.requests ?? 0;
-      const t = (g.dimensions?.actionType ?? '').toLowerCase();
-      if      (t === 'read')   m.reads   += n;
-      else if (t === 'write')  m.writes  += n;
-      else if (t === 'list')   m.lists   += n;
-      else if (t === 'delete') m.deletes += n;
-    }
-    return m;
-  };
-  const kvM = _kvParse(kvMonth.kvOperationsAdaptiveGroups);
-  const kvD = _kvParse(kvToday.kvOperationsAdaptiveGroups);
+  // 解析 D1 用量（月+日）
+  const _d1Sum = (groups, field) =>
+    (groups ?? []).reduce((s, g) => s + (Number(g.sum?.[field]) || 0), 0);
+  const d1MonthG = d1Month.d1AnalyticsAdaptiveGroups ?? null;
+  const d1TodayG = d1Today.d1AnalyticsAdaptiveGroups ?? null;
 
   // 解析 Workers
   const _wkSum = (d) => (d.workersInvocationsAdaptive ?? [])
@@ -230,7 +210,12 @@ async function _fetchCfAnalytics(env, today, month, monthStart) {
 
   return {
     r2:      { classA: r2ClassA, classB: r2ClassB },
-    kv:      { ...kvM, readsToday: kvD.reads, writesToday: kvD.writes, listsToday: kvD.lists, deletesToday: kvD.deletes },
+    d1: {
+      rowsReadMonth:    d1MonthG ? _d1Sum(d1MonthG, 'rowsRead')       : null,
+      rowsWrittenMonth: d1MonthG ? _d1Sum(d1MonthG, 'rowsWritten')    : null,
+      rowsReadToday:    d1TodayG ? _d1Sum(d1TodayG, 'rowsRead')       : null,
+      rowsWrittenToday: d1TodayG ? _d1Sum(d1TodayG, 'rowsWritten')    : null,
+    },
     workers: { today: _wkSum(wkToday), month: _wkSum(wkMonth) },
   };
 }
@@ -275,6 +260,47 @@ export async function handleAllImageStats(env) {
   } while (cursor);
 
   return Response.json(result);
+}
+
+/**
+ * D1 面板数据：元数据规模 + 近 30 天用量走势（实时）。
+ *
+ * 与 /admin/cf-quota 的分工：那边给的是「额度用了多少」（CF API 或自追踪计数器），
+ * 这边给的是「库里到底有什么」——总行数、占用体积、按前缀的分布、最近写入时间、
+ * 以及 30 天趋势线要的逐日序列。两者在前端拼成一块面板。
+ *
+ * 没有 D1 绑定（本地 Node 环境 / 回滚到 KV）时返回 available:false，
+ * 前端据此显示不可用原因，而不是显示一堆 0。
+ */
+export async function handleD1Stats(env) {
+  const usage = await readD1Usage(env.STATS, 30).catch(() => null);
+
+  if (!env.DB || typeof env.DB.batch !== 'function') {
+    return Response.json({
+      available: false,
+      reason: env.STATS ? 'kv' : 'no-storage',
+      limits: D1_LIMITS,
+      usage: usage ?? null,
+      meta: null,
+    });
+  }
+
+  let meta = null, metaError = null;
+  try {
+    meta = await readD1Overview(env.DB);
+  } catch (e) {
+    // 表不存在（还没跑建表脚本）时不要 500，面板上给出可执行的提示
+    metaError = e?.message ?? String(e);
+  }
+
+  return Response.json({
+    available: true,
+    limits: D1_LIMITS,
+    usage,
+    meta,
+    ...(metaError ? { metaError } : {}),
+    generatedAt: Date.now(),
+  });
 }
 
 // R2 存储 + 操作统计（实时）
