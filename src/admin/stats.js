@@ -1,7 +1,7 @@
 import { DAILY_METRICS, readDailyRange } from './dailyStats.js';
 
 import { getGlobalStats, reconcileGlobalStats } from './gstats.js';
-import { D1_LIMITS, readD1Overview, readD1Usage } from './d1Stats.js';
+import { D1_LIMITS, d1Day, d1Month, readD1Overview, readD1Usage } from './d1Stats.js';
 
 // ── Cloudflare 免费额度 — CF Analytics API 优先，自追踪降级 ──────────────────────
 export async function handleCfQuota(env) {
@@ -105,6 +105,30 @@ export async function handleCfQuota(env) {
 }
 
 // CF Analytics GraphQL 查询 ────────────────────────────────────────────────────
+
+/**
+ * 单次 GraphQL 查询，返回 viewer.accounts[0]（失败/无数据时是 {}）。
+ *
+ * 抽到模块级是因为「额度卡片」和「D1 面板」查的是同一套 Analytics：两处各写一份
+ * 就容易出现「额度卡 6.9 万行 / 趋势图 4.6 千行」这种同一面板里自相矛盾的数字。
+ */
+async function _cfGql(env, query, vars) {
+  const res = await fetch('https://api.cloudflare.com/client/v4/graphql', {
+    method:  'POST',
+    headers: {
+      Authorization:  `Bearer ${env.CF_API_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query, variables: vars }),
+  });
+  const j = await res.json();
+  // CF's GraphQL API returns 200 with an `errors` array on bad queries (wrong field
+  // name, bad filter, etc) — data stays null, so silently falling back below would
+  // just look like "0 usage" forever. Log it so a broken query is visible in tail.
+  if (j?.errors?.length) console.error('[cf-quota] GraphQL error:', JSON.stringify(j.errors));
+  return j?.data?.viewer?.accounts?.[0] ?? {};
+}
+
 async function _fetchCfAnalytics(env, today, month, monthStart) {
   const acct   = env.CF_ACCOUNT_ID;
   const d1Id   = env.CF_D1_DB_ID     ?? '';
@@ -118,22 +142,7 @@ async function _fetchCfAnalytics(env, today, month, monthStart) {
     'GetBucketLifecycleConfiguration','GetBucketPolicy',
   ]);
 
-  const gql = async (query, vars) => {
-    const res = await fetch('https://api.cloudflare.com/client/v4/graphql', {
-      method:  'POST',
-      headers: {
-        Authorization:  `Bearer ${env.CF_API_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ query, variables: vars }),
-    });
-    const j = await res.json();
-    // CF's GraphQL API returns 200 with an `errors` array on bad queries (wrong field
-    // name, bad filter, etc) — data stays null, so silently falling back below would
-    // just look like "0 usage" forever. Log it so a broken query is visible in tail.
-    if (j?.errors?.length) console.error('[cf-quota] GraphQL error:', JSON.stringify(j.errors));
-    return j?.data?.viewer?.accounts?.[0] ?? {};
-  };
+  const gql = (query, vars) => _cfGql(env, query, vars);
 
   // 并发查询所有指标
   const [r2Ops, wkToday, wkMonth, d1Month, d1Today] = await Promise.all([
@@ -263,17 +272,85 @@ export async function handleAllImageStats(env) {
 }
 
 /**
+ * 近 N 天的 D1 用量，取自 CF Analytics（按 UTC 日分组）。
+ *
+ * 与自追踪计数器口径相同，但覆盖**所有**客户端：计数器只数本 Worker 进程内读写，
+ * 而运维直接用 `wrangler d1 execute`、或前几次部署没带计数器时，那部分只有官方
+ * 数据里才有。所以只要配了 CF_D1_DB_ID，面板就以这份为准。
+ *
+ * 返回结构与 readD1Usage 一致（days / today / month），前端两套数据源共用一套渲染。
+ */
+async function _fetchD1DailyUsage(env, days = 30) {
+  const d1Id = env.CF_D1_DB_ID;
+  if (!d1Id) return null;
+
+  const today = d1Day();
+  const from  = d1Day(Date.now() - (days - 1) * 86400 * 1000);
+  const data  = await _cfGql(env, `query($a:String!,$s:Date!,$u:Date!,$d:String!){
+    viewer{accounts(filter:{accountTag:$a}){
+      d1AnalyticsAdaptiveGroups(limit:1000
+        filter:{date_geq:$s,date_leq:$u,databaseId:$d}){
+        sum{rowsRead rowsWritten} dimensions{date}
+      }
+    }}
+  }`, { a: env.CF_ACCOUNT_ID, s: from, u: today, d: d1Id });
+
+  const groups = data?.d1AnalyticsAdaptiveGroups;
+  // 查询失败（缺权限 / 数据集不可用）返回 null → 上层退回自追踪，不显示成 0
+  if (!Array.isArray(groups)) return null;
+
+  const byDay = new Map();
+  for (const g of groups) {
+    const day = g?.dimensions?.date;
+    if (!day) continue;
+    byDay.set(day, {
+      rowsRead:    Number(g?.sum?.rowsRead)    || 0,
+      rowsWritten: Number(g?.sum?.rowsWritten) || 0,
+    });
+  }
+
+  const month = d1Month();
+  const series = [];
+  const monthSum = { rowsRead: 0, rowsWritten: 0 };
+  for (let i = days - 1; i >= 0; i--) {
+    const day = d1Day(Date.now() - i * 86400 * 1000);
+    const v = byDay.get(day) ?? { rowsRead: 0, rowsWritten: 0 };
+    series.push({ day, ...v });
+    if (day.startsWith(month)) {
+      monthSum.rowsRead    += v.rowsRead;
+      monthSum.rowsWritten += v.rowsWritten;
+    }
+  }
+
+  const last = series[series.length - 1] ?? { rowsRead: 0, rowsWritten: 0 };
+  return {
+    days: series,
+    today: { rowsRead: last.rowsRead, rowsWritten: last.rowsWritten },
+    month: monthSum,
+  };
+}
+
+/**
  * D1 面板数据：元数据规模 + 近 30 天用量走势（实时）。
  *
  * 与 /admin/cf-quota 的分工：那边给的是「额度用了多少」（CF API 或自追踪计数器），
  * 这边给的是「库里到底有什么」——总行数、占用体积、按前缀的分布、最近写入时间、
  * 以及 30 天趋势线要的逐日序列。两者在前端拼成一块面板。
  *
+ * 用量两处都要给，且必须同源，否则同一块面板会出现两套数字（额度卡片用 CF
+ * Analytics、趋势图用自追踪计数器，差一个数量级）。所以这里优先走 CF Analytics，
+ * 只有查不到时才退回自追踪，并用 usageSource 告诉前端该怎么标注。
+ *
  * 没有 D1 绑定（本地 Node 环境 / 回滚到 KV）时返回 available:false，
  * 前端据此显示不可用原因，而不是显示一堆 0。
  */
 export async function handleD1Stats(env) {
-  const usage = await readD1Usage(env.STATS, 30).catch(() => null);
+  const cfReady = !!(env.CF_API_TOKEN && env.CF_ACCOUNT_ID && env.CF_D1_DB_ID);
+
+  let usage = cfReady ? await _fetchD1DailyUsage(env, 30).catch(() => null) : null;
+  let usageSource = usage ? 'cf-api' : 'self';
+  if (!usage) usage = await readD1Usage(env.STATS, 30).catch(() => null);
+  if (!usage) usageSource = null;
 
   if (!env.DB || typeof env.DB.batch !== 'function') {
     return Response.json({
@@ -281,6 +358,7 @@ export async function handleD1Stats(env) {
       reason: env.STATS ? 'kv' : 'no-storage',
       limits: D1_LIMITS,
       usage: usage ?? null,
+      usageSource,
       meta: null,
     });
   }
@@ -297,6 +375,7 @@ export async function handleD1Stats(env) {
     available: true,
     limits: D1_LIMITS,
     usage,
+    usageSource,
     meta,
     ...(metaError ? { metaError } : {}),
     generatedAt: Date.now(),

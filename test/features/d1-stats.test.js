@@ -251,6 +251,62 @@ describe('/admin/d1-stats 响应形状', () => {
   });
 });
 
+describe('/admin/d1-stats 的用量来源', () => {
+  const withCf = (env) => Object.assign(env, {
+    CF_API_TOKEN: 'test-token', CF_ACCOUNT_ID: 'acct', CF_D1_DB_ID: 'db-id',
+  });
+
+  test('配了 CF_D1_DB_ID：用量取自 CF Analytics，并标注来源', async () => {
+    const { env } = await wiredEnv();
+    withCf(env);
+
+    const today = d1Day();
+    const origFetch = global.fetch;
+    global.fetch = async () => new Response(JSON.stringify({
+      data: { viewer: { accounts: [{
+        d1AnalyticsAdaptiveGroups: [
+          { dimensions: { date: today }, sum: { rowsRead: 1234, rowsWritten: 56 } },
+        ],
+      }] } },
+    }), { status: 200 });
+
+    try {
+      const d = await (await handleD1Stats(env)).json();
+      expect(d.usageSource).toBe('cf-api');
+      // CF 的口径覆盖所有客户端，比自追踪计数器权威 —— 面板必须以它为准，
+      // 否则额度卡片和趋势图会各显示一套数字（线上真出现过 6.9 万 vs 4.6 千）
+      expect(d.usage.today.rowsRead).toBe(1234);
+      expect(d.usage.today.rowsWritten).toBe(56);
+      expect(d.usage.month.rowsRead).toBeGreaterThanOrEqual(1234);
+      expect(d.usage.days).toHaveLength(30);
+      expect(d.usage.days[29].day).toBe(today);
+      expect(d.usage.days[29].rowsRead).toBe(1234);
+    } finally {
+      global.fetch = origFetch;
+    }
+  });
+
+  test('CF 查询失败（缺权限 / 数据集不可用）时退回自追踪，而不是显示成 0', async () => {
+    const { env, drain } = await wiredEnv();
+    withCf(env);
+    await env.STATS.put('imgmeta:a.jpg', '{}');
+    await drain();
+
+    const origFetch = global.fetch;
+    global.fetch = async () => new Response(JSON.stringify({
+      data: null, errors: [{ message: 'no dataset' }],
+    }), { status: 200 });
+
+    try {
+      const d = await (await handleD1Stats(env)).json();
+      expect(d.usageSource).toBe('self');
+      expect(d.usage.today.rowsWritten).toBeGreaterThan(0);
+    } finally {
+      global.fetch = origFetch;
+    }
+  });
+});
+
 describe('/admin/cf-quota 里的 D1 段', () => {
   test('降级模式下 d1 字段来自自追踪，且保留免费版额度常量', async () => {
     const { env, drain } = await wiredEnv();

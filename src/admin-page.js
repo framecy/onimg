@@ -3519,10 +3519,15 @@ export function renderAdminPage() {
   // 拆开的原因是后者要扫一遍表，不该跟「刷新额度」绑在一起；面板上「重新统计」
   // 按钮就是只刷这一条。
   let d1LastMeta = null;   // 缓存库规模，用量刷新时不必重扫
+  // 已经画到面板上的用量来源。CF Analytics 覆盖所有客户端（含 wrangler 手工执行），
+  // 比自追踪计数器权威；两个接口谁后返回不该决定显示哪一份，所以只允许 self → cf-api 升级。
+  let d1UsageSource = null;
 
   /** 渲染用量四件套里的「行读取 / 行写入」+ 分布占比提示 */
   function renderD1Usage(u, isCfApi) {
     if (!u) return;
+    if (!isCfApi && d1UsageSource === 'cf-api') return;   // 不拿自追踪覆盖精确值
+    d1UsageSource = isCfApi ? 'cf-api' : 'self';
     const filled = isCfApi ? 'CF API 精确' : '本站自追踪';
 
     const paint = (valId, monthId, barId, pctId, leftId, today, month, limit) => {
@@ -3617,6 +3622,8 @@ export function renderAdminPage() {
     }
 
     // 用量（可能已由 /admin/cf-quota 填过；这里再用同一份接口兜底一次，避免竞态）
+    // 来源以后端标注的 usageSource 为准：配了 CF_D1_DB_ID 时这条腿也是 CF Analytics，
+    // 与额度卡片同源；没配时才是自追踪。renderD1Usage 拒绝降级覆盖。
     if (d.usage) {
       renderD1Usage({
         rowsReadToday:    d.usage.today.rowsRead,
@@ -3624,7 +3631,7 @@ export function renderAdminPage() {
         rowsWrittenToday: d.usage.today.rowsWritten,
         rowsWrittenMonth: d.usage.month.rowsWritten,
         ...L,
-      }, false);
+      }, d.usageSource === 'cf-api');
     }
 
     const m = d.meta;
@@ -3654,7 +3661,7 @@ export function renderAdminPage() {
     renderD1Distribution(m);
 
     // 30 天趋势
-    renderD1Trend(d.usage);
+    renderD1Trend(d.usage, d.usageSource);
 
     // 最近写入 / 最早
     document.getElementById('d1LastWrite').textContent  = fmtAgo(m.lastWriteAt);
@@ -3733,11 +3740,12 @@ export function renderAdminPage() {
   // 趋势图：行写入（实线，左轴）与行读取（虚线，右轴千分位）。
   // 两者量级差 50 倍（10 万 vs 500 万），同一根 Y 轴会把写入压成一条贴地的线，
   // 所以分开缩放。纯 SVG 手绘，不引第三方库。
-  function renderD1Trend(usage) {
+  function renderD1Trend(usage, usageSource) {
     const host = document.getElementById('d1Trend');
     const foot = document.getElementById('d1TrendFoot');
     if (!host) return;
 
+    const isCf = usageSource === 'cf-api';
     const days = usage && usage.days ? usage.days : [];
     if (days.length < 2) {
       host.innerHTML = '<div class="flex h-full items-center justify-center text-[.68rem] text-tx-3">暂无按天数据</div>';
@@ -3753,8 +3761,10 @@ export function renderAdminPage() {
     const active = writes.some(v => v > 0) || reads.some(v => v > 0);
 
     if (!active) {
-      host.innerHTML = '<div class="flex h-full items-center justify-center text-[.68rem] text-tx-3">上线后还没有累积到用量数据</div>';
-      if (foot) foot.innerHTML = '<span>数据积累中 · 自部署起按 UTC 天累计</span>';
+      host.innerHTML = '<div class="flex h-full items-center justify-center text-[.68rem] text-tx-3">近期没有用量数据</div>';
+      if (foot) foot.innerHTML = isCf
+        ? '<span>CF Analytics · 按 UTC 天汇总</span>'
+        : '<span>数据积累中 · 自部署起按 UTC 天累计</span>';
       return;
     }
 
