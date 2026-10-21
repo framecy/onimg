@@ -91,7 +91,14 @@ export function createR2() {
         ...obj,
         async text() { return typeof body === 'string' ? body : new TextDecoder().decode(body); },
         async json() { return JSON.parse(typeof body === 'string' ? body : new TextDecoder().decode(body)); },
-        async arrayBuffer() { return body instanceof ArrayBuffer ? body : (body?.buffer ?? new ArrayBuffer(0)); },
+        async arrayBuffer() {
+          // 不能直接返回 body.buffer：Node 的 Buffer 常来自池化分配的 slab，
+          // byteOffset/byteLength 才是这段字节的真实范围，否则会读到别人的数据
+          // （原型上传的 gzip 嗅探就因此拿到错误字节）。
+          if (body instanceof ArrayBuffer) return body;
+          if (ArrayBuffer.isView(body)) return body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength);
+          return new ArrayBuffer(0);
+        },
       };
     },
     async head(key) {
@@ -228,14 +235,54 @@ export function createD1({ schema = D1_SCHEMA } = {}) {
   const db = new DatabaseSync(':memory:');
   if (schema) db.exec(schema);
 
-  const metaOf = (info, changes = 0) => ({
+  // 真实 D1 对每条语句都返回 meta，其中 rows_read 是这条查询**扫描**的行数
+  // （计费口径，不是返回行数）。
+  //
+  // 模拟层怎么给这个数：先跑一遍 EXPLAIN，数出这条语句的**扫描型指令**
+  // （Rewind/Last 开循环、Next 推进、SeekRowid 等值定位、VFilter 虚拟表过滤）。
+  // 主键等值查找没有 Rewind 也没有 Next，只有 SeekRowid —— 计 1 行；
+  // 前缀范围扫是 Rewind + Next 一对 —— 也只计 1。这样「读也会产生行读取」
+  // 在测试里才断言得到；写死 0 会让读路径的用量计数永远测不出来。
+  //
+  // 不能用 EXPLAIN QUERY PLAN：它只给「SEARCH table USING INDEX (key>?)」，
+  // 不含行数（只有跑过 ANALYZE 才有 ~N rows 提示），据此估算恒为 0。
+  const scanRows = (sql, args) => {
+    // 只统计读语句。写语句的 rows_read 在真实 D1 上也非零，但用量计数器本身
+    // 是写在 kv_store 里的，给写路径再记账会变成「记账→再写→再记账」的自我放大。
+    // 写由 meta.changes 覆盖，already 计入 rows_written。
+    if (!/^\s*SELECT\b/i.test(sql)) return 0;
+    let plan;
+    try { plan = db.prepare('EXPLAIN ' + sql).all(...args); }
+    catch { return 0; }
+    const opcodeOf = (r) => String(r.opcode_name ?? r.opcode ?? '');
+    // SeekGE/SeekGT/SeekLE/SeekLT：索引定位。主键等值查找在本版 sqlite 上编译成
+    // SeekGE + IdxGT 一对（不是 SeekRowid），所以这几个都要算作「定位到一行」。
+    const SCAN_OPS = new Set([
+      'Next', 'Rewind', 'VNext', 'VFilter', 'Last',
+      'SeekRowid', 'SeekGE', 'SeekGT', 'SeekLE', 'SeekLT',
+    ]);
+    let n = 0;
+    for (const r of plan) {
+      if (!SCAN_OPS.has(opcodeOf(r))) continue;
+      n++;
+      // Rewind/Last 与它对应的 Next 是同一次扫描的两端，只算一次
+      const isNext = opcodeOf(r) === 'Next' || opcodeOf(r) === 'VNext';
+      if (isNext && Number.isFinite(Number(r.p2))) {
+        const target = plan.find(x => Number(x.addr) === Number(r.p2));
+        if (target && (opcodeOf(target) === 'Rewind' || opcodeOf(target) === 'Last')) n--;
+      }
+    }
+    return Math.max(0, n);
+  };
+
+  const metaOf = (info, changes = 0, rowsRead = 0) => ({
     served_by: 'mock.d1',
     duration: 0,
     changes: Number(changes),
     last_row_id: Number(info?.lastInsertRowid ?? 0),
     changed_db: Number(changes) > 0,
     size_after: 0,
-    rows_read: 0,
+    rows_read: Number(rowsRead) || 0,
     rows_written: Number(changes),
   });
 
@@ -246,11 +293,11 @@ export function createD1({ schema = D1_SCHEMA } = {}) {
       bind(...args) { bound = args.map(a => (a === undefined ? null : a)); return api; },
       async run() {
         const info = stmt.run(...bound);
-        return { success: true, meta: metaOf(info, info.changes), results: [] };
+        return { success: true, meta: metaOf(info, info.changes, scanRows(sql, bound)), results: [] };
       },
       async all() {
         const results = stmt.all(...bound);
-        return { success: true, meta: metaOf(null, 0), results };
+        return { success: true, meta: metaOf(null, 0, scanRows(sql, bound)), results };
       },
       async first() {
         const rows = stmt.all(...bound);
