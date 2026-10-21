@@ -163,7 +163,11 @@ export function renderAdminPage() {
           <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="14" height="14" rx="2.5"/><circle cx="5.5" cy="5.5" r="1.5"/><polyline points="1,12 5,8 8,11 11,8 15,12"/></svg></span>
           图库管理
         </button>
-        <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="users">
+                <button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="trash">
+          <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h12"/><path d="M5.5 4V2.5h5V4"/><path d="M3.5 4l.8 10h7.4l.8-10"/><line x1="6.5" y1="7.2" x2="6.5" y2="11.2"/><line x1="9.5" y1="7.2" x2="9.5" y2="11.2"/></svg></span>
+          回收站
+        </button>
+<button class="nav-item relative flex w-full items-center gap-[9px] overflow-hidden rounded-sm border-none bg-transparent px-[11px] py-[9px] text-left text-[.85rem] font-semibold text-tx-2 transition hover:bg-bg-hover hover:text-tx active:scale-[.972] [&.active]:bg-bg-active [&.active]:text-tx [&.active]:font-bold [&.active_.nav-icon]:text-tx max-md:min-h-[40px]" data-section="users">
           <span class="nav-icon flex h-4 w-4 shrink-0 items-center justify-center text-inherit [&_svg]:h-[15px] [&_svg]:w-[15px]"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5" r="3"/><path d="M1.5 15c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/></svg></span>
           用户管理
         </button>
@@ -488,7 +492,17 @@ export function renderAdminPage() {
         </div>
         <h3 class="mb-3 text-[.8rem] font-semibold text-tx-2">所有图片</h3>
         <div class="toolbar flex flex-wrap items-center gap-[10px] mb-3">
-          <input class="w-[210px] rounded-sm border border-bd bg-bg-3 px-[11px] py-[7px] font-sans text-[.83rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)]" id="gallerySearch" type="text" placeholder="搜索文件名…">
+          <input class="w-[230px] rounded-sm border border-bd bg-bg-3 px-[11px] py-[7px] font-sans text-[.83rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)]" id="gallerySearch" type="text" placeholder="搜索文件名 / 标签 / 用户">
+          <select class="cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-[7px] font-sans text-[.78rem] text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx" id="gallerySort">
+            <option value="uploaded:desc">最新上传</option>
+            <option value="uploaded:asc">最早上传</option>
+            <option value="size:desc">文件最大</option>
+            <option value="size:asc">文件最小</option>
+            <option value="name:asc">名称 A→Z</option>
+            <option value="name:desc">名称 Z→A</option>
+            <option value="views:desc">访问最多</option>
+          </select>
+          <span class="text-[.72rem] text-tx-3" id="galleryHint"></span>
           <div class="flex-1"></div>
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="selectAllBtn">全选</button>
           <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="refreshGallery"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.65 4.35A6 6 0 1 0 14 8"/><polyline points="13.5,1.5 13.5,4.5 10.5,4.5"/></svg>刷新</button>
@@ -506,6 +520,33 @@ export function renderAdminPage() {
           <div class="mt-[22px] flex justify-center pb-3" id="loadMoreWrap" style="display:none">
             <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="loadMoreBtn">加载更多</button>
           </div>
+        </div>
+      </div>
+
+      <!-- ── Trash ── -->
+      <!-- 回收站（管理端视角：所有用户）。数据走用户端同一套 /api/trash，
+           后端已认 admin token 并按角色决定范围（trash.js 的 resolveActor），
+           所以这里不再复制一份接口，只是换了个管理视图。 -->
+      <div class="section hidden max-w-[1600px] mx-auto px-[18px] pt-[72px] pb-[48px] [&.active]:block md:px-8 md:pt-8 md:pb-12" id="section-trash">
+        <div class="page-header border-b border-bd mb-6 pb-6 md:mb-8">
+          <div class="text-[1.375rem] font-extrabold tracking-[-.03em] text-tx mb-1.5">回收站</div>
+          <div class="text-sm font-medium text-tx-3">删除的图片与原型保留 30 天，可按用户查看、恢复或彻底删除</div>
+        </div>
+        <div class="toolbar flex flex-wrap items-center gap-[10px] mb-3">
+          <input class="w-[230px] rounded-sm border border-bd bg-bg-3 px-[11px] py-[7px] font-sans text-[.83rem] text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-muted)]" id="trashSearch" type="text" placeholder="搜索文件名 / 标题 / 用户">
+          <select class="cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-[7px] font-sans text-[.78rem] text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx" id="trashOwner"><option value="">全部用户</option></select>
+          <select class="cursor-pointer rounded-sm border border-bd bg-bg-3 px-2 py-[7px] font-sans text-[.78rem] text-tx outline-none transition focus:border-bd-focus [&_option]:bg-bg-3 [&_option]:text-tx" id="trashType">
+            <option value="">全部类型</option>
+            <option value="image">图片</option>
+            <option value="proto">原型</option>
+          </select>
+          <div class="flex-1"></div>
+          <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" id="trashRefresh"><svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.65 4.35A6 6 0 1 0 14 8"/><polyline points="13.5,1.5 13.5,4.5 10.5,4.5"/></svg>刷新</button>
+        </div>
+        <div class="mb-2 text-[.74rem] text-tx-3" id="trashSummary"></div>
+        <div class="overflow-hidden rounded-lg border border-bd bg-bg-3">
+          <div class="p-12 text-center text-[.86rem] text-tx-3" id="trashEmpty">加载中…</div>
+          <div id="trashGroups"></div>
         </div>
       </div>
 
@@ -1359,6 +1400,7 @@ export function renderAdminPage() {
     document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.section === name));
     document.querySelectorAll('.section').forEach(s => s.classList.toggle('active', s.id === 'section-' + name));
     if (name === 'images' && !allImages.length) loadGallery(true);
+    if (name === 'trash') loadTrash();
     if (name === 'users') loadUsers();
     if (name === 'pages') loadAdminPages();
     if (name === 'protos') loadAdminProtos();
@@ -1702,23 +1744,55 @@ export function renderAdminPage() {
   }
 
   // ── Gallery ─────────────────────────────────────────────────────────────────
+  // ── 图库：服务端搜索 / 筛选 / 排序 ─────────────────────────────────────────
+  // 此前是「拉回 50 条 → 本地 filter」：只能按 key 搜、只搜已加载的部分，更搜不到
+  // 原始文件名和标签。现在查询参数交给服务端（/list 管理端分支，见 src/list.js），
+  // 搜索覆盖 key / 文件名 / 标签 / 归属用户，排序是全局的而不是只排当前页。
+  let galleryQuery = '';
+  let gallerySort  = 'uploaded';
+  let galleryOrder = 'desc';
+  let galleryTotal = null;
+  let galleryNext  = null;   // { cursor } | { offset }
+
   async function loadGallery(reset = false) {
-    if (reset) { allImages = []; galleryCursor = null; selected.clear(); updateBulkBar(); }
+    if (reset) { allImages = []; galleryNext = null; selected.clear(); updateBulkBar(); }
     if (!Object.keys(allStats).length) {
       const r = await adminFetch('/admin/all-image-stats', { headers: authH() });
       if (r.ok) allStats = (await r.json()).stats;
     }
-    const url = '/list?limit=50' + (galleryCursor ? '&cursor=' + encodeURIComponent(galleryCursor) : '');
-    const res = await adminFetch(url, { headers: authH() });
-    if (!res.ok) return;
+    const p = new URLSearchParams({ limit: '50', sort: gallerySort, order: galleryOrder });
+    if (galleryQuery.trim()) p.set('q', galleryQuery.trim());
+    if (galleryNext && galleryNext.cursor) p.set('cursor', galleryNext.cursor);
+    if (galleryNext && galleryNext.offset != null) p.set('offset', String(galleryNext.offset));
+
+    const res = await adminFetch('/list?' + p.toString(), { headers: authH() });
+    if (res.status === 401) { handleUnauth(); return; }
+    if (!res.ok) { toast('图库加载失败（' + res.status + '）', 'error'); return; }
     const data = await res.json();
     allImages = reset ? data.items : [...allImages, ...data.items];
-    galleryCursor = data.cursor;
-    document.getElementById('loadMoreWrap').style.display = data.cursor ? 'flex' : 'none';
+    galleryTotal = data.total == null ? null : data.total;
+    galleryNext = data.nextOffset != null ? { offset: data.nextOffset } : (data.cursor ? { cursor: data.cursor } : null);
+    document.getElementById('loadMoreWrap').style.display = galleryNext ? 'flex' : 'none';
+    const hint = document.getElementById('galleryHint');
+    if (hint) {
+      const n = galleryTotal != null ? '共 ' + galleryTotal + ' 张' : '已加载 ' + allImages.length + ' 张';
+      hint.textContent = data.degraded ? n + ' · 当前存储不支持按文件名搜索' : n;
+    }
     renderGallery();
   }
 
-  document.getElementById('gallerySearch').addEventListener('input', renderGallery);
+  let gallerySearchTid = null;
+  document.getElementById('gallerySearch').addEventListener('input', (e) => {
+    galleryQuery = e.target.value;
+    clearTimeout(gallerySearchTid);
+    gallerySearchTid = setTimeout(() => loadGallery(true), 260);
+  });
+  document.getElementById('gallerySort').addEventListener('change', (e) => {
+    const parts = String(e.target.value).split(':');
+    gallerySort = parts[0] || 'uploaded';
+    galleryOrder = parts[1] || 'desc';
+    loadGallery(true);
+  });
   document.getElementById('refreshGallery').addEventListener('click', () => { allStats = {}; loadGallery(true); });
   document.getElementById('loadMoreBtn').addEventListener('click', () => loadGallery(false));
   document.getElementById('selectAllBtn').addEventListener('click', () => { filtered().forEach(i => selected.add(i.key)); updateBulkBar(); renderGallery(); });
@@ -1729,35 +1803,39 @@ export function renderAdminPage() {
   });
   document.getElementById('bulkDeleteBtn').addEventListener('click', async () => {
     const keys = [...selected];
-    if (!confirm(\`确认将选中的 \${keys.length} 张图片移入回收站？（30 天后自动清理，可在用户端「回收站」恢复）\`)) return;
+    if (!confirm('确认将选中的 ' + keys.length + ' 张图片移入回收站？（30 天后自动清理，可在用户端「回收站」恢复）')) return;
     const btn = document.getElementById('bulkDeleteBtn');
     btn.disabled = true;
     let ok = 0, fail = 0;
     for (const k of keys) {
       try { await doDelete(k); ok++; } catch { fail++; }
-      btn.textContent = \`删除中 (\${ok + fail}/\${keys.length})\`;
+      btn.textContent = '删除中 (' + (ok + fail) + '/' + keys.length + ')';
     }
     btn.disabled = false; btn.textContent = '批量删除';
     allImages = allImages.filter(i => !selected.has(i.key));
     selected.clear(); updateBulkBar(); renderGallery();
-    toast(fail ? \`删除完成：\${ok} 成功，\${fail} 失败\` : \`已删除 \${ok} 张图片\`, fail ? 'warn' : 'success');
+    toast(fail ? '删除完成：' + ok + ' 成功，' + fail + ' 失败' : '已删除 ' + ok + ' 张图片', fail ? 'warn' : 'success');
   });
 
-  function filtered() {
-    const q = document.getElementById('gallerySearch').value.toLowerCase();
-    return q ? allImages.filter(i => i.key.toLowerCase().includes(q)) : allImages;
-  }
+  // 服务端已经做过搜索/筛选，这里不再本地过滤（否则会二次过滤掉分页外的结果）
+  function filtered() { return allImages; }
   function renderGallery() {
     const items = filtered();
     document.getElementById('galleryEmpty').style.display = items.length ? 'none' : 'block';
     document.getElementById('galleryGrid').innerHTML = items.map(item => {
-      const views = allStats[item.key]?.count ?? 0;
+      const views = item.views ?? allStats[item.key]?.count ?? 0;
+      const title = item.name || item.key;
+      const tagsLine = (item.tags && item.tags.length)
+        ? '<div class="mt-[2px] truncate text-[.62rem] text-tx-3" title="' + escAttr(item.tags.join(', ')) + '">' + esc(item.tags.join(' · ')) + '</div>'
+        : '';
       return \`<div class="gitem group relative cursor-pointer overflow-hidden rounded-md border border-bd bg-bg-3 transition hover:-translate-y-0.5 hover:border-bd-2 hover:shadow-[0_8px_28px_rgba(0,0,0,.5)] [&.selected]:border-tx-2 [&.selected]:shadow-[0_0_0_1px_var(--color-tx-2)]\${selected.has(item.key)?' selected':''}" onclick="handleGitem(event,'\${item.key}')">
         <div class="checkbox absolute left-1.5 top-1.5 flex h-[17px] w-[17px] items-center justify-center rounded-xs border-[1.5px] border-bd-2 bg-black/75 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-[.selected]:opacity-100 group-[.selected]:border-tx-2 group-[.selected]:bg-tx-2"><svg class="h-2.5 w-2.5 fill-none stroke-white stroke-[2.5]" viewBox="0 0 12 12"><polyline points="1.5,6 5,9.5 10.5,2.5"/></svg></div>
         <img class="block h-auto w-full aspect-square bg-bg-2 object-cover" src="\${origin}/\${item.key}" loading="lazy">
         <div class="px-[9px] py-[7px]">
-          <div class="truncate font-mono text-[.68rem] text-tx-3">\${item.key}</div>
-          <div class="mt-[3px] flex justify-between"><span class="text-[.65rem] text-tx-3">\${fmtSize(item.size)}</span><span class="font-mono text-[.65rem] font-semibold text-tx-a">\${views?views+' 次':''}</span></div>
+          <div class="truncate text-[.71rem] font-medium text-tx" title="\${escAttr(title)}">\${esc(title)}</div>
+          <div class="truncate font-mono text-[.62rem] text-tx-3" title="\${escAttr(item.key)}">\${esc(item.key)}</div>
+          \${tagsLine}
+          <div class="mt-[3px] flex justify-between"><span class="truncate text-[.65rem] text-tx-3">\${esc([item.owner, fmtSize(item.size)].filter(Boolean).join(' · '))}</span><span class="font-mono text-[.65rem] font-semibold text-tx-a">\${views?views+' 次':''}</span></div>
           <div class="mt-1.5 flex gap-[3px]">
             <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px] !text-[.7rem]" onclick="event.stopPropagation();copyText('\${origin}/\${item.key}',this)">复制</button>
             <button class="inline-flex min-h-8 items-center justify-center gap-[5px] rounded-sm border border-bd bg-bg-4 px-3 py-1.5 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx !px-2 !py-[3px] !text-[.7rem]" onclick="event.stopPropagation();openStatsModal('\${item.key}')">统计</button>
@@ -1772,6 +1850,175 @@ export function renderAdminPage() {
   function updateBulkBar() { const n=selected.size; document.getElementById('bulkBar').className=BULK_BAR_BASE+(n?' show':''); document.getElementById('bulkCount').textContent='已选 '+n+' 张'; }
   async function deleteSingle(key) { if (!confirm('确认删除？')) return; await doDelete(key); allImages=allImages.filter(i=>i.key!==key); selected.delete(key); updateBulkBar(); renderGallery(); toast('已删除'); }
   async function doDelete(key) { await adminFetch('/delete/'+key, { method:'DELETE', headers:authH() }); }
+
+  // ── 回收站（管理端视角）────────────────────────────────────────────────────
+  // 复用用户端同一套 /api/trash：后端 resolveActor 认 admin token 并按角色
+  // 决定范围（管理员=所有用户），所以这里不复制接口，只换管理视图。
+  // 「按用户分级」体现在两处：用户下拉筛选 + 列表按 owner 分组。
+  let trashData = null, trashQuery = '', trashOwner = '', trashType = '';
+
+  async function loadTrash() {
+    const empty = document.getElementById('trashEmpty');
+    empty.style.display = 'block';
+    empty.textContent = '加载中…';
+    document.getElementById('trashGroups').innerHTML = '';
+    document.getElementById('trashSummary').textContent = '';
+    const res = await adminFetch('/api/trash', { headers: authH() });
+    if (res.status === 401) { handleUnauth(); return; }
+    if (!res.ok) { empty.textContent = '加载失败（' + res.status + '）'; return; }
+    trashData = await res.json();
+    renderTrash();
+  }
+
+  function trashDaysLeft(deletedAt, days) {
+    const left = Math.ceil((deletedAt + days * 86400000 - Date.now()) / 86400000);
+    return left > 0 ? left + ' 天后清理' : '即将清理';
+  }
+
+  // 用 HTML 实体写 onclick 里的引号，避免在外层模板字符串里堆反斜杠
+  function trashAction(fnName, type, id) {
+    return 'onclick="' + fnName + '(&#39;' + type + '&#39;,' + jsStr(id) + ')"';
+  }
+
+  function renderTrash() {
+    const data = trashData || {};
+    const retention = data.retentionDays ?? 30;
+    const q = trashQuery.trim().toLowerCase();
+
+    const allImages = data.images || [];
+    const allProtos = data.protos || [];
+
+    // 用户下拉：按当前数据重建，尽量保留已选值
+    const owners = [...new Set([
+      ...allImages.map(i => i.owner), ...allProtos.map(p => p.owner),
+    ].filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh'));
+    const sel = document.getElementById('trashOwner');
+    if (sel) {
+      const cur = sel.value || trashOwner;
+      sel.innerHTML = '<option value="">全部用户</option>'
+        + owners.map(o => '<option value="' + escAttr(o) + '">' + esc(o) + '</option>').join('');
+      sel.value = owners.includes(cur) ? cur : '';
+    }
+
+    let images = trashType && trashType !== 'image' ? [] : allImages;
+    let protos = trashType && trashType !== 'proto' ? [] : allProtos;
+    const hit = (owner, id, title) => !q
+      || String(id).toLowerCase().includes(q)
+      || String(title || '').toLowerCase().includes(q)
+      || String(owner || '').toLowerCase().includes(q);
+    images = images.filter(it => hit(it.owner, it.key, it.name));
+    protos = protos.filter(it => hit(it.owner, it.protoId, it.title));
+    if (trashOwner) {
+      images = images.filter(it => it.owner === trashOwner);
+      protos = protos.filter(it => it.owner === trashOwner);
+    }
+
+    const total = images.length + protos.length;
+    document.getElementById('trashSummary').textContent = (allImages.length || allProtos.length)
+      ? (total
+          ? '当前显示 ' + total + ' 项：' + images.length + ' 张图片、' + protos.length + ' 个原型（保留 ' + retention + ' 天）'
+          : '没有匹配的删除项（共 ' + (allImages.length + allProtos.length) + ' 项）')
+      : '';
+
+    const empty = document.getElementById('trashEmpty');
+    const host = document.getElementById('trashGroups');
+    if (!total) {
+      empty.style.display = 'block';
+      empty.textContent = (allImages.length || allProtos.length) ? '没有匹配的删除项' : '回收站为空';
+      host.innerHTML = '';
+      return;
+    }
+    empty.style.display = 'none';
+
+    const groups = new Map();
+    const push = (owner, kind, item) => {
+      const o = owner || '（未登记用户）';
+      if (!groups.has(o)) groups.set(o, { images: [], protos: [] });
+      groups.get(o)[kind].push(item);
+    };
+    images.forEach(it => push(it.owner, 'images', it));
+    protos.forEach(it => push(it.owner, 'protos', it));
+
+    const ROW_BTN = 'inline-flex min-h-7 items-center justify-center rounded-sm border border-bd bg-bg-4 px-2 py-[3px] text-[.72rem] font-semibold text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx';
+    const ROW_BTN_RED = 'inline-flex min-h-7 items-center justify-center rounded-sm border border-red-r bg-red-g px-2 py-[3px] text-[.72rem] font-semibold text-red transition hover:bg-red-r';
+    const TYPE_IMG = '<span class="rounded-xs border border-[rgba(52,211,153,.2)] bg-[rgba(52,211,153,.1)] px-1.5 py-px text-[.62rem] font-semibold text-[#34d399]">图片</span>';
+    const TYPE_PROTO = '<span class="rounded-xs border border-[rgba(200,200,200,.15)] bg-[rgba(200,200,200,.08)] px-1.5 py-px text-[.62rem] font-semibold text-tx-a">原型</span>';
+
+    let html = '';
+    for (const entry of [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0], 'zh'))) {
+      const owner = entry[0], g = entry[1];
+      const parts = [];
+      if (g.images.length) parts.push(g.images.length + ' 张图片');
+      if (g.protos.length) parts.push(g.protos.length + ' 个原型');
+      html += '<div class="flex items-center gap-2 border-y border-bd-2 bg-bg-2 px-3 py-2 first:border-t-0">'
+        + '<span class="text-[.78rem] font-bold text-tx">' + esc(owner) + '</span>'
+        + '<span class="text-[.7rem] text-tx-3">' + parts.join(' · ') + '</span>'
+        + '</div>';
+
+      for (const it of g.images) {
+        html += '<div class="flex items-center gap-3 border-b border-bd px-3 py-2">'
+          + '<img class="h-10 w-10 shrink-0 rounded-sm border border-bd-2 bg-bg-2 object-cover" src="' + origin + '/' + encodeURI(it.key) + '" loading="lazy">'
+          + '<div class="min-w-0 flex-1">'
+          +   '<div class="truncate text-[.8rem] font-medium text-tx" title="' + escAttr(it.name || it.key) + '">' + esc(it.name || it.key) + '</div>'
+          +   '<div class="truncate font-mono text-[.66rem] text-tx-3">' + esc(it.key) + '</div>'
+          + '</div>'
+          + '<span class="w-[56px] shrink-0">' + TYPE_IMG + '</span>'
+          + '<span class="w-[100px] shrink-0 text-[.72rem] text-tx-3">' + timeAgo(it.deletedAt) + '</span>'
+          + '<span class="w-[86px] shrink-0 text-[.72rem] text-tx-3">' + trashDaysLeft(it.deletedAt, retention) + '</span>'
+          + '<div class="flex shrink-0 gap-1.5">'
+          +   '<button class="' + ROW_BTN + '" ' + trashAction('adminRestoreTrash', 'image', it.key) + '>恢复</button>'
+          +   '<button class="' + ROW_BTN_RED + '" ' + trashAction('adminPurgeTrash', 'image', it.key) + '>彻底删除</button>'
+          + '</div></div>';
+      }
+
+      for (const it of g.protos) {
+        html += '<div class="flex items-center gap-3 border-b border-bd px-3 py-2">'
+          + '<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-bd-2 bg-bg-2 text-tx-3"><svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v5l-8 8H2V2z"/><line x1="5" y1="2" x2="5" y2="5"/><line x1="8" y1="2" x2="8" y2="4"/></svg></div>'
+          + '<div class="min-w-0 flex-1">'
+          +   '<div class="truncate text-[.8rem] font-medium text-tx" title="' + escAttr(it.title || it.protoId) + '">' + esc(it.title || it.protoId) + '</div>'
+          +   '<div class="truncate font-mono text-[.66rem] text-tx-3">' + esc(it.protoId) + ' · ' + (it.fileCount ?? '—') + ' 个文件 · ' + fmtSize(it.totalSize || 0) + '</div>'
+          + '</div>'
+          + '<span class="w-[56px] shrink-0">' + TYPE_PROTO + '</span>'
+          + '<span class="w-[100px] shrink-0 text-[.72rem] text-tx-3">' + timeAgo(it.deletedAt) + '</span>'
+          + '<span class="w-[86px] shrink-0 text-[.72rem] text-tx-3">' + trashDaysLeft(it.deletedAt, retention) + '</span>'
+          + '<div class="flex shrink-0 gap-1.5">'
+          +   '<button class="' + ROW_BTN + '" ' + trashAction('adminRestoreTrash', 'proto', it.protoId) + '>恢复</button>'
+          +   '<button class="' + ROW_BTN_RED + '" ' + trashAction('adminPurgeTrash', 'proto', it.protoId) + '>彻底删除</button>'
+          + '</div></div>';
+      }
+    }
+    host.innerHTML = html;
+  }
+
+  window.adminRestoreTrash = async function (type, id) {
+    const payload = type === 'image' ? { type: type, key: id } : { type: type, protoId: id };
+    const res = await adminFetch('/api/trash/restore', { method: 'POST', headers: authH(), body: JSON.stringify(payload) });
+    if (res.status === 401) { handleUnauth(); return; }
+    if (!res.ok) { toast('恢复失败（' + res.status + '）', 'error'); return; }
+    toast('已恢复');
+    await loadTrash();
+    if (type === 'image') { allStats = {}; loadGallery(true); } else { loadAdminProtos(); }
+  };
+
+  window.adminPurgeTrash = async function (type, id) {
+    if (!confirm('彻底删除后无法恢复，确定？')) return;
+    const payload = type === 'image' ? { type: type, key: id } : { type: type, protoId: id };
+    const res = await adminFetch('/api/trash/purge', { method: 'DELETE', headers: authH(), body: JSON.stringify(payload) });
+    if (res.status === 401) { handleUnauth(); return; }
+    if (!res.ok) { toast('删除失败（' + res.status + '）', 'error'); return; }
+    toast('已彻底删除');
+    loadTrash();
+  };
+
+  let trashSearchTid = null;
+  document.getElementById('trashSearch').addEventListener('input', (e) => {
+    trashQuery = e.target.value;
+    clearTimeout(trashSearchTid);
+    trashSearchTid = setTimeout(renderTrash, 200);
+  });
+  document.getElementById('trashOwner').addEventListener('change', (e) => { trashOwner = e.target.value; renderTrash(); });
+  document.getElementById('trashType').addEventListener('change', (e) => { trashType = e.target.value; renderTrash(); });
+  document.getElementById('trashRefresh').addEventListener('click', loadTrash);
 
   // 把一次修改（可见性/标签）同步进本地列表并重绘，避免整表重新拉取
   async function syncImageMeta(key, patch) {

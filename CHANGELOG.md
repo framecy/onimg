@@ -7,6 +7,8 @@
 ## [未发布] — 2026-10-19
 
 ### Added
+- **后台回收站（按用户分级）**：新增「回收站」分区，复用用户端同一套 `/api/trash` 接口（后端已认 admin token 并按角色决定范围），管理员能看到所有用户的删除项，支持按用户下拉筛选 + 列表按用户分组、按类型（图片 / 原型）筛选、按文件名/标题/用户搜索，单项恢复与彻底删除。列表带图片原名（`/api/trash` 现在会补 `name`），不再只显示随机 key
+- **后台图库搜索与排序**：`/list` 管理端分支支持 `q` / `owner` / `tag` / `visibility` / `sort` / `order` / `offset`，搜索覆盖 key、原始文件名、标签、归属用户；排序（上传时间 / 大小 / 名称 / 访问量）是**全局**的而不是只排当前页。新增 `src/admin/image-index.js` 一次性读入 imgmeta 索引（D1 一条 SQL，KV 回滚路径降级为只有 metadata）
 - **审计日志后台界面**：新增「审计日志」标签页，支持按时间范围（今天 / 7 / 30 / 31 天）、操作类型、操作者筛选，展示时间 / 操作 / 操作者 / 对象 / 状态 / 来源 IP。此前只有后端接口，后台没有入口
 - **趋势图改用真实数据**：新增按天计数 `daily:{metric}:{YYYY-MM-DD}`（图片访问 / 页面访问 / 原型访问 / 上传）与 `GET /admin/trend` 接口，仪表盘迷你趋势线读取真实历史。数据未积累够时显示「趋势数据积累中」，不再画模拟曲线
 - **管理端图片管理补齐**：lightbox 增加复制 BBCode、可见性切换、标签编辑；`/list` 的管理员分支带出 `isPublic` / `owner` / `indexed`；新增 `GET /api/image/{key}/meta`
@@ -23,6 +25,7 @@
 - D1 用量采集：`src/kv-d1.js` 每次读写后按官方计费口径累加 `meta.rows_read` / `meta.rows_written` 到 `d1u:{r|w}:{YYYY-MM-DD}`（走 `ctx.waitUntil`，不阻塞响应）。配了 `CF_API_TOKEN` + `CF_D1_DB_ID` 时面板改用 CF Analytics 的 `d1AnalyticsAdaptiveGroups`
 
 ### Changed
+- `/list` 管理端分支现在返回 `name` / `tags` / `views` / `uploadedAt`（此前只有 key/size/isPublic/owner，所以后台看不到原名与标签）；默认视图仍是 R2 列表（能带出未索引的裸对象），只在带搜索/筛选/非默认排序时切到索引视图
 - **抽出共享浏览器端工具层 `src/ui/client/shared.js`**：前台与后台此前各写一份同样的工具函数，语义已经漂移 —— `fmtSize` 前台只到 MB（1.2 GB 的图显示成 `1228.8 MB`）、后台 `timeAgo(0)` 显示「刚刚」、`toast` 停留 2600/2800ms 不一致、复制反馈两套实现。现在只留一份，两个页面以 `<script>${CLIENT_SHARED_JS}</script>` 注入，语义取两边超集；新增 `shared-client.test.js` 在真实 V8 里执行注入源码并检查两端没有重新定义（防漂移复发）。同时修正后台批量删除的确认文案 —— 它写着「此操作不可撤销」，实际是软删除进回收站
 - **存储层从 KV 迁移到 D1**：新增 `src/kv-d1.js`（KVNamespace 契约 + D1 内核），在请求入口把 `env.STATS` 就地替换，业务代码零改动。写入额度从 KV 免费版 1000 次/天提升到 D1 的 10 万行/天，并摆脱 KV 的最终一致性读延迟。KV 绑定保留作回滚路径
 - 审计日志、访问统计等数据统一存于 D1 的 `kv_store` 表（键格式不变）

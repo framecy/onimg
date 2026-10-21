@@ -4,6 +4,7 @@ import { verifyUserToken } from './user-auth.js';
 import { cfBump, cfMonth } from './admin/cfCounters.js';
 import { bumpGlobalStats } from './admin/gstats.js';
 import { purgeProto } from './proto/manage.js';
+import { readImageNames } from './admin/image-index.js';
 
 export const TRASH_RETENTION_MS = 30 * 86400 * 1000; // 30 天保留期
 export const TRASH_RETENTION_DAYS = 30;
@@ -42,6 +43,10 @@ export async function handleTrashList(request, env) {
       fileCount: p.fileCount, totalSize: p.totalSize, deletedAt: p.deletedAt,
     });
   }
+
+  // 补图片原名：回收站里只有 key 的话，管理员分不清删掉的是哪张
+  const names = await readImageNames(env, images.map(it => it.key)).catch(() => new Map());
+  for (const it of images) it.name = names.get(it.key) ?? null;
 
   images.sort((a, b) => b.deletedAt - a.deletedAt);
   protos.sort((a, b) => b.deletedAt - a.deletedAt);

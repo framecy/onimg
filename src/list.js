@@ -1,4 +1,5 @@
 import { verifyAdminToken } from './admin/auth.js';
+import { readImageIndex, queryImageIndex } from './admin/image-index.js';
 import { verifyUserToken } from './user-auth.js';
 import {
   mergeUserImgEntry, putImageRecords, repairUserManifest,
@@ -13,38 +14,63 @@ export async function handleList(request, env) {
     const cursor = url.searchParams.get('cursor') ?? undefined;
     const limit  = Math.min(parseInt(url.searchParams.get('limit') ?? '50'), 200);
 
-    // 收集所有已软删除的 key + 公开状态（单次 KV list，metadata 含
-    // deletedAt / isPublic / owner，无需额外读取）。管理端要显示和切换
-    // 可见性，此前这里只取了 trashed，导致后台看不到图片是公开还是私密。
-    const trashed = new Set();
-    const metaOf = new Map();
-    let kvCursor;
-    do {
-      const kv = await env.STATS.list({ prefix: 'imgmeta:', cursor: kvCursor, limit: 1000 });
-      for (const k of kv.keys) {
-        const key = k.name.slice('imgmeta:'.length);
-        metaOf.set(key, k.metadata ?? null);
-        if (k.metadata?.deletedAt) trashed.add(key);
-      }
-      kvCursor = kv.list_complete ? undefined : kv.cursor;
-    } while (kvCursor);
+    // 查询参数（管理端）：搜索 / 筛选 / 排序 / 分页。
+    // 用户端不认这些参数（它只看自己的清单），所以不会因为这里多出参数而变行为。
+    const q          = (url.searchParams.get('q') ?? '').trim();
+    const owner      = (url.searchParams.get('owner') ?? '').trim();
+    const tag        = (url.searchParams.get('tag') ?? '').trim();
+    const visibility = url.searchParams.get('visibility') ?? '';
+    const sort       = url.searchParams.get('sort') ?? 'uploaded';
+    const order      = url.searchParams.get('order') ?? 'desc';
+    const offset     = Math.max(0, parseInt(url.searchParams.get('offset') ?? '0', 10) || 0);
 
+    // 索引视图：一次读出 imgmeta 的 name / tags / owner / 大小 / 访问次数。
+    // 有 D1 时是一条 SQL；KV 回滚路径降级为只有 metadata（name/tags 为空）。
+    const idx = await readImageIndex(env);
+    const live = idx.items.filter(it => !it.deletedAt);
+    const byKey = new Map(live.map(it => [it.key, it]));
+
+    // 只要带了搜索 / 筛选 / 非默认排序，就走索引而不是 R2 列表：
+    // R2 列表只能按 key 词法顺序翻页，搜不到名字和标签，也没法全局排序。
+    const useIndex = !!(q || owner || tag || visibility || sort !== 'uploaded');
+    if (useIndex) {
+      const r = queryImageIndex(live, { q, owner, tag, visibility, sort, order, limit, offset });
+      return Response.json({
+        items: r.items,
+        total: r.total,
+        nextOffset: r.nextOffset,
+        cursor: null,
+        truncated: false,
+        source: idx.source,
+        // 回滚到 KV 时没有 name/tags：前端据此提示「搜索仅覆盖 key / 用户」
+        degraded: idx.degraded,
+      });
+    }
+
+    // 默认视图：R2 列表（能带出未索引的裸对象），再用索引补名字 / 标签 / 访问次数
+    const trashed = new Set(idx.items.filter(it => it.deletedAt).map(it => it.key));
     const result = await env.BUCKET.list({ limit, cursor });
     return Response.json({
       items: result.objects
         .filter(o => !o.key.startsWith('proto/') && !o.key.startsWith('manifests/') && !trashed.has(o.key))
         .map(o => {
-          const md = metaOf.get(o.key);
+          const rec = byKey.get(o.key);
           return {
             key: o.key, size: o.size, uploaded: o.uploaded, etag: o.etag,
-            // 未索引的裸对象（老数据/手工上传）md 为 null，前端按私密处理
-            isPublic: !!md?.isPublic,
-            owner: md?.owner ?? null,
-            indexed: !!md,
+            name: rec?.name ?? null,
+            tags: rec?.tags ?? [],
+            views: rec?.views ?? 0,
+            uploadedAt: rec?.uploadedAt ?? null,
+            // 未索引的裸对象（老数据/手工上传）rec 为 undefined，前端按私密处理
+            isPublic: rec ? rec.isPublic : false,
+            owner: rec?.owner ?? null,
+            indexed: !!rec,
           };
         }),
       cursor: result.truncated ? result.cursor : null,
       truncated: result.truncated,
+      source: idx.source,
+      degraded: idx.degraded,
     });
   }
 
