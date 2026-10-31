@@ -332,3 +332,60 @@ GET /auth/device?callback=http://localhost:<PORT>/cb
 ```
 
 浏览器端完成登录后，页面 JS 重定向至 callback URL，携带 `?token=<jwt>` 参数。callback 必须是 `http://localhost:*` 或 `http://127.0.0.1:*`，其他地址返回 400。
+
+---
+
+## Agent / Skill 用法（`onimg-agent`）
+
+`onimg` 是给人用的交互式菜单；给 Agent 的是另一个入口 **`onimg-agent`**，同一条命令能跑完，
+全程可以用 `--json` 拿结构化结果。两者共用 `~/.config/onimg/` 下的配置与 token。
+
+### 安装
+
+```bash
+curl -fsSL https://img.diswant.space/scripts/onimg-agent.py -o ~/.local/bin/onimg-agent
+chmod +x ~/.local/bin/onimg-agent
+```
+
+### 授权（只读 / 读写）
+
+```bash
+onimg-agent auth login --scope read    # 只读：只能看和下载
+onimg-agent auth login --scope write   # 读写：还能上传 / 修改 / 删除
+onimg-agent auth status --json
+```
+
+授权走与 CLI 相同的浏览器设备授权页，页面上会明示「本次申请权限：只读 / 读写」。
+只读 token 在服务端拒绝一切写操作，不是前端约束。
+
+### 常用命令
+
+```bash
+onimg-agent ls --json                    # 列表（img / page / proto / project / group）
+onimg-agent ls --q logo --json           # 关键字过滤
+onimg-agent tree --json                  # 项目 / 分组 → 页面
+onimg-agent get img:<key> -o a.png       # 取单个对象
+onimg-agent pull --all -o ./backup       # 全量拉取（图片 + 页面 + 原型当前版本）
+onimg-agent push img a.png b.jpg         # 上传图片
+onimg-agent push proto ./site --title 首页   # 上传原型（目录或 zip）
+onimg-agent push proto ./site --id <id>  # 更新已有原型（服务端增量）
+onimg-agent edit proto:<id> --private --tags 甲,乙
+onimg-agent rm img:<key>                 # dry-run，加 --yes 才真删（进回收站）
+onimg-agent versions <protoId>
+```
+
+### 退出码
+
+| 码 | 含义 |
+|---|---|
+| 0 | 成功 |
+| 1 | 执行失败 |
+| 2 | 参数错误 |
+| 3 | 未登录 / 权限不足（去 `auth login`，或找管理员开 `apiAccess`） |
+| 4 | 部分成功（看 `errors`） |
+
+### 限制
+
+- 原型只拉**当前版本**的正文：历史版本的文件字节会被新版本覆盖，`versions` 只有元数据。
+- 访问统计（每张图 / 每个原型的浏览量）仅管理员可见，普通账号的 `/api/index` 不返回。
+- 图片可以改可见性和标签，**不支持重命名**（文件名是上传时记录的原始名）。

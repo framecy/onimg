@@ -141,6 +141,17 @@ node -e "import('./src/page.js').then(m=>console.log(m.renderPage({}).length))"
 新增这类代码时，`test/features/js-attr-escaping.test.js` 里的往返验证
 （HTML 解析 → JS 求值应等于原值）是判断转义是否正确的可靠手段。
 
+### `scripts/onimg-agent.py`：走构建，不手写内联
+
+Agent 用的非交互 CLI 是 `scripts/onimg-agent.py`，它**不**像 `onimg-cli.py` 那样手写进
+`index.js` 的模板字符串（Python 里的反斜杠会被 JS 模板字面量吃掉），而是由
+`npm run build:agent` 生成 `src/agent-cli.generated.js`（与 `build:rp` 同一模式），
+再由 `GET /scripts/onimg-agent.py` 下发。该产物已 gitignore。
+
+- 改完 `scripts/onimg-agent.py` 要跑一次 `npm run build:agent`，否则下发的还是旧脚本
+- `pretest / predev / predeploy` 已串上它，正常流程不用手记
+- 验证：`curl -s <host>/scripts/onimg-agent.py | diff - scripts/onimg-agent.py` 应无差异
+
 ### 内联脚本的双份维护
 
 `scripts/onimg-cli.py` 与 `scripts/typora-upload.sh` 同时以字符串常量
@@ -159,7 +170,7 @@ node -e "import('./src/page.js').then(m=>console.log(m.renderPage({}).length))"
 ## 提交与验证
 
 - 推 `main` 会自动触发 CI 部署（`.github/workflows/deploy.yml`）
-- 提交前跑 `npx vitest run`（当前 256 项 / 21 个文件）
+- 提交前跑 `npx vitest run`（当前 343 项 / 29 个文件）
 - CI 顺序要求 `build:css` 在 `npm test` 之前：`src/ui/aperture.generated.js` 是
   Tailwind 生成物且被 gitignore，而 `d1-integration` 测试会 import `src/index.js`，
   顺着 `index → page` 链条要求该文件存在

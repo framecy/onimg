@@ -7,6 +7,19 @@
 ## [未发布] — 2026-10-19
 
 ### Added
+- **Agent / Skill 接入（`onimg-agent` 非交互 CLI + `/api/index` 索引接口）**：让 Agent 在「已登录并授权」的前提下读取、检索、上传、编辑、删除本账号内容。三层设计：Skill 文本负责「何时调哪条命令」，CLI 负责把分片/增量/并发/续期等易错逻辑写死，服务端只补缺口
+  - 新增 `GET /api/index`：一次返回本账号的项目/分组/页面/图片/原型（含版本列表），图片带原名与体积。刻意不返回页面正文、任何密码字段与访问统计（统计仅管理员可见）
+  - 私有 / 带密码原型此前对**所有人** 403（连属主自己都用 token 拿不到文件），现在带合法 token 且 `username === owner` 时放行；只认 Bearer token，不认 Cookie 或查询参数
+  - 新增账号权限 `permissions.apiAccess`（`off` / `read` / `write`，缺省 `write` 向后兼容），后台「用户管理 → 编辑」里可改，列表页显示「API 只读 / API 关闭」徽标；`off` 时该账号的索引接口与私有原型 owner 通道一并关闭
+  - 设备授权新增 `scope=read|write`：授权页会显示「本次申请权限：只读 / 读写」，只读 token 在请求入口统一拒绝一切写方法（`code: read_only_scope`）。申请额度不得超过账号的 `apiAccess` 上限；网页登录不申请 scope，行为不变
+  - `scripts/onimg-agent.py`：`auth / ls / tree / get / pull / push / edit / rm / versions`，全部支持 `--json`，退出码 0/1/2/3/4 区分成功、失败、参数错、授权问题、部分成功；`rm` 默认 dry-run，`--yes` 才执行。`pull` 产出 `index.json` + `tree.json` + `images/` + `pages/` + `protos/<id>/`
+  - 经 `npm run build:agent` 打包成 `src/agent-cli.generated.js`（与 `build:rp` 同一模式，避免手写模板字符串转义），由 `GET /scripts/onimg-agent.py` 下发
+  - 技能说明见仓库 `skills/onimg/SKILL.md`
+- **上传页直接支持 Axure `.rp`**：不再要求先用 Axure「发布 HTML」再打包 ZIP。选中 `.rp` 后由浏览器内的 Web Worker 解析（Axure RP 9/10/11 的 `AC EF` 容器：LZ4 manifest + gzip 对象包），生成静态 HTML 后走原有原型上传流程，线上仍是 `/proto/<id>/index.html`
+  - 解析引擎源码 `src/rp/engine-src.js`，`npm run build:rp` 打包成 `src/rp-engine.js` 字符串常量注入页面（与 `PROTO_ENGINE_JS` 同一模式）
+  - 支持：页面/文件夹结构、控件坐标与层级、文字（字体/字号/字重/颜色/对齐/runs）、填充、描边、圆角、内嵌图片、表格与单元格、动态面板默认状态、图层容器
+  - 不支持：交互（用例/变量/表达式/面板切换）——只做静态浏览；`thumbnail` 与 `.version` part 跳过
+  - `.rp` 同样支持「上传新版本」弹窗；解析在 Worker 中执行，20 MB / 22 页约 1 秒，不阻塞 UI
 - **后台回收站（按用户分级）**：新增「回收站」分区，复用用户端同一套 `/api/trash` 接口（后端已认 admin token 并按角色决定范围），管理员能看到所有用户的删除项，支持按用户下拉筛选 + 列表按用户分组、按类型（图片 / 原型）筛选、按文件名/标题/用户搜索，单项恢复与彻底删除。列表带图片原名（`/api/trash` 现在会补 `name`），不再只显示随机 key
 - **后台图库搜索与排序**：`/list` 管理端分支支持 `q` / `owner` / `tag` / `visibility` / `sort` / `order` / `offset`，搜索覆盖 key、原始文件名、标签、归属用户；排序（上传时间 / 大小 / 名称 / 访问量）是**全局**的而不是只排当前页。新增 `src/admin/image-index.js` 一次性读入 imgmeta 索引（D1 一条 SQL，KV 回滚路径降级为只有 metadata）
 - **审计日志后台界面**：新增「审计日志」标签页，支持按时间范围（今天 / 7 / 30 / 31 天）、操作类型、操作者筛选，展示时间 / 操作 / 操作者 / 对象 / 状态 / 来源 IP。此前只有后端接口，后台没有入口

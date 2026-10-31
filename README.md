@@ -23,6 +23,13 @@
 - **零配置凭据**：不存储密码，仅缓存 JWT token 至 `~/.config/onimg/token`
 - **CLI 管理工具** `onimg`：查看状态、手动上传、最近记录、Token 管理
 
+### Agent / Skill 接入
+- **非交互 CLI `onimg-agent`**：`auth / ls / tree / get / pull / push / edit / rm / versions`，全部支持 `--json`
+- **只读 / 读写授权**：浏览器设备授权页可申请 `scope=read`，只读 token 在服务端拒绝一切写操作
+- **全量拉取**：`onimg-agent pull --all -o ./backup` 导出索引 + 目录 + 图片 + 页面 + 原型（当前版本）
+- **按账号控权**：后台「用户管理 → Agent / API」可设 关闭 / 只读 / 读写
+- 技能说明：`skills/onimg/SKILL.md`；命令速查见 [CLI 手册](docs/cli-usage.md#agent--skill-用法onimg-agent)
+
 ### 原型托管
 - ZIP / 文件夹上传，分片上传（规避免费版单请求 50 subrequest 上限）
 - **增量上传**：更新时按内容指纹只传变更文件，自动清理孤儿文件

@@ -11,9 +11,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "build:css": "tailwindcss -i ./src/ui/aperture.css -o ./src/ui/aperture.generated.css --minify && node scripts/wrap-css.mjs",
-    "pretest": "npm run build:css",
-    "predev": "npm run build:css",
-    "predeploy": "npm run build:css"
+    "pretest": "npm run build:css && npm run build:rp && npm run build:agent",
+    "predev": "npm run build:css && npm run build:rp && npm run build:agent",
+    "predeploy": "npm run build:css && npm run build:rp && npm run build:agent",
+    "build:rp": "node scripts/build-rp-engine.mjs",
+    "build:agent": "node scripts/build-agent-cli.mjs"
   },
   "engines": {
     "node": ">=22"

@@ -5,6 +5,8 @@ node_modules/
 # Tailwind v4 构建产物（由 build:css 生成，源文件为 src/ui/aperture.css）
 src/ui/aperture.generated.css
 src/ui/aperture.generated.js
+# Agent CLI 构建产物（由 build:agent 从 scripts/onimg-agent.py 生成）
+src/agent-cli.generated.js
 
 # 部署配置：含个人账号的资源 ID（account_id / KV namespace / D1 database），
 # 不随公开仓库分发。仓库里放的是 wrangler.toml.example，复制一份填自己的值：

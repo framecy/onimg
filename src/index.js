@@ -22,6 +22,7 @@ import { listProtos, deleteProto, updateProtoMeta, deleteProtoVersion } from './
 import { handleTrashList, handleTrashRestore, handleTrashPurge, purgeExpiredTrash } from './trash.js';
 import { logAudit, clientIp, handleAuditLog } from './admin/audit.js';
 import { createD1Kv } from './kv-d1.js';
+import { ONIMG_AGENT_PY } from './agent-cli.generated.js';
 
 // ── 存储层接线 ───────────────────────────────────────────────────────────────
 // 把 env.STATS 从 Workers KV 换成 D1 适配器。
@@ -99,6 +100,7 @@ export default {
       if (method === 'GET'   && path === '/install.sh')                  return serveInstallScript(url);
       if (method === 'GET'   && path === '/scripts/onimg-cli.py')        return serveStaticScript(env, 'onimg-cli.py', 'text/plain');
       if (method === 'GET'   && path === '/scripts/typora-upload.sh')    return serveStaticScript(env, 'typora-upload.sh', 'text/plain');
+      if (method === 'GET'   && path === '/scripts/onimg-agent.py')      return serveStaticScript(env, 'onimg-agent.py', 'text/plain');
 
       // ── User auth ────────────────────────────────────────────────────────────
       if (method === 'GET'   && path === '/auth/device') return addSecurityHeaders(serveDeviceAuthPage(url));
@@ -645,7 +647,9 @@ async function serveStaticAsset(env, name) {
 // Files are embedded inline so the private repo doesn't block downloads.
 
 function serveStaticScript(env, name, contentType) {
-  const content = name === 'onimg-cli.py' ? ONIMG_CLI_PY : TYPORA_UPLOAD_SH;
+  const content = name === 'onimg-cli.py' ? ONIMG_CLI_PY
+                : name === 'onimg-agent.py' ? ONIMG_AGENT_PY
+                : TYPORA_UPLOAD_SH;
   return new Response(content, {
     headers: { 'Content-Type': contentType + '; charset=utf-8', 'Cache-Control': 'no-store' },
   });
