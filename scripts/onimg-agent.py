@@ -164,10 +164,16 @@ def api_form(path, fields, files):
     return api('POST', path, raw=bytes(body), headers={'Content-Type': 'multipart/form-data; boundary=' + boundary})
 
 
-def download(url, dest):
-    """下载到本地文件。原型文件要带 token（私有原型靠它放行）。"""
+def download(url, dest, use_auth=True):
+    """下载到本地文件。
+
+    use_auth=False 时不带 Authorization：公共图片 / 公共原型走 Cloudflare 边缘缓存，
+    又快又稳；带上 token 反而会被判定为「私有请求」绕过缓存，每次都回源。
+    线上实测（本机链路很差的时段）：同一张图不带 token 2.6s 成功、带 token 15s 超时。
+    需要鉴权的资源由调用方传 True，或在 401/403 后用 True 重试一次。
+    """
     hdrs = {'User-Agent': 'onimg-agent/1.0'}
-    tok = load_token()
+    tok = load_token() if use_auth else ''
     if tok:
         hdrs['Authorization'] = 'Bearer ' + tok
     req = urllib.request.Request(url, headers=hdrs)
@@ -184,6 +190,9 @@ def download(url, dest):
                     total += len(chunk)
             return total
         except urllib.error.HTTPError as e:
+            # 没带 token 被拒（私有资源）→ 带 token 再试一次，这条对调用方透明。
+            if e.code in (401, 403) and not use_auth and load_token():
+                return download(url, dest, use_auth=True)
             # 原型文件走的是 /proto/... 路由，返回的是纯文本而不是 JSON；
             # 统一成 ApiError，调用方才能按 401/403 翻译成授权错误，
             # 而不是抛出一整屏 Traceback。
@@ -480,16 +489,19 @@ def cmd_pull(args):
         base = load_config()['ONIMG_URL']
         if 'img' in plan:
             for img in (idx['images'] if not ref_id else [i for i in idx['images'] if i['key'] == ref_id]):
+                # 图片按 key 直出，不带 token 走边缘缓存（见 download 的说明）
                 jobs.append(('img', os.path.join(out_dir, 'images', img['key']),
-                             base + '/' + urllib.parse.quote(img['key'])))
+                             base + '/' + urllib.parse.quote(img['key']), False))
         if 'page' in plan:
             for p in (idx['pages'] if not ref_id else [x for x in idx['pages'] if x['slug'] == ref_id]):
-                jobs.append(('page', os.path.join(out_dir, 'pages', p['slug'] + ('.md' if p.get('type') == 'markdown' else '.html')), p['slug']))
+                jobs.append(('page', os.path.join(out_dir, 'pages', p['slug'] + ('.md' if p.get('type') == 'markdown' else '.html')), p['slug'], True))
         if 'proto' in plan:
             for proto in (idx['protos'] if not ref_id else [x for x in idx['protos'] if x['protoId'] == ref_id]):
                 try:
+                    # 私有 / 带密码的原型必须带 token；公开的走缓存更快
+                    need_auth = bool(proto.get('isPrivate') or proto.get('hasPassword'))
                     for rel, url in _fetch_proto_files(proto):
-                        jobs.append(('proto', os.path.join(out_dir, 'protos', proto['protoId'], rel), url))
+                        jobs.append(('proto', os.path.join(out_dir, 'protos', proto['protoId'], rel), url, need_auth))
                 except ApiError as e:
                     errors.append({'proto': proto['protoId'], 'error': str(e)})
 
@@ -510,7 +522,7 @@ def cmd_pull(args):
             sys.stderr.flush()
 
         def work(job):
-            kind, dest, src = job
+            kind, dest, src, need_auth = job
             try:
                 # 断点续传：已经落盘且非空的文件直接跳过。网络差的时候一次拉不全
                 # 是常态，重跑一次只补缺口，而不是把几千个文件重下一遍。
@@ -526,7 +538,7 @@ def cmd_pull(args):
                         f.write(page.get('content') or '')
                     total_bytes[0] += os.path.getsize(dest)
                 else:
-                    total_bytes[0] += download(src, dest)
+                    total_bytes[0] += download(src, dest, use_auth=need_auth)
                 done[0] += 1
                 if done[0] % 10 == 0 or done[0] == total_jobs:
                     progress()
