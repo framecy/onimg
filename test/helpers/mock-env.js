@@ -196,6 +196,7 @@ export async function createTestUser(env, username, password, {
   maxTotalUploads = -1,
   dailyUploadLimit = -1,
   disabled = false,
+  apiAccess = 'write',
 } = {}) {
   const salt = randomSalt();
   const passwordHash = await hashPassword(password, salt);
@@ -203,7 +204,7 @@ export async function createTestUser(env, username, password, {
     passwordHash,
     salt,
     disabled,
-    permissions: { canUpload, canDelete, canEdit, maxTotalUploads, dailyUploadLimit },
+    permissions: { canUpload, canDelete, canEdit, maxTotalUploads, dailyUploadLimit, apiAccess },
   };
   await env.STATS.put('user:' + username, JSON.stringify(user));
   return user;

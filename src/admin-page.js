@@ -817,6 +817,15 @@ export function renderAdminPage() {
           <label class="perm-check flex cursor-pointer items-center gap-2 rounded-sm border border-bd bg-bg-3 px-3 py-2 text-sm text-tx-2 transition hover:border-bd-2 [&_input]:h-4 [&_input]:w-4 [&_input]:cursor-pointer [&_input]:accent-brand"><input type="checkbox" id="pmDisabled"><span>禁用账号</span></label>
         </div>
         <div class="perm-num-row flex items-center gap-2 mt-3">
+          <label class="w-[120px] shrink-0 text-sm text-tx-2">Agent / API</label>
+          <select class="rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" id="pmApiAccess">
+            <option value="write">读写</option>
+            <option value="read">只读</option>
+            <option value="off">关闭</option>
+          </select>
+          <span class="perm-hint text-xs text-tx-3">Skill / CLI 访问上限</span>
+        </div>
+        <div class="perm-num-row flex items-center gap-2 mt-3">
           <label class="w-[120px] shrink-0 text-sm text-tx-2">上传总量上限</label>
           <input class="w-[100px] rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[0_0_0_3px_var(--color-brand-ring)]" type="number" id="pmMaxTotal" value="100" min="-1">
           <span class="perm-hint text-xs text-tx-3">（-1 = 无限制）</span>
@@ -2148,6 +2157,8 @@ export function renderAdminPage() {
             p.canUpload ? '<span class="inline-flex items-center rounded-xs border border-green-r bg-green-g px-2 py-1 text-2xs font-semibold text-green">上传</span>' : '<span class="inline-flex items-center rounded-xs border border-bd bg-white/[.04] px-2 py-1 text-2xs font-semibold text-tx-3">禁止上传</span>',
             p.canDelete ? '<span class="inline-flex items-center rounded-xs border border-green-r bg-green-g px-2 py-1 text-2xs font-semibold text-green">删除</span>' : '',
             p.canEdit   ? '<span class="inline-flex items-center rounded-xs border border-green-r bg-green-g px-2 py-1 text-2xs font-semibold text-green">编辑</span>' : '',
+            p.apiAccess === 'read' ? '<span class="inline-flex items-center rounded-xs border border-amber-r bg-amber-g px-2 py-1 text-2xs font-semibold text-amber">API 只读</span>' : '',
+            p.apiAccess === 'off'  ? '<span class="inline-flex items-center rounded-xs border border-bd bg-white/[.04] px-2 py-1 text-2xs font-semibold text-tx-3">API 关闭</span>' : '',
           ].filter(Boolean).join(' ');
       const quota = u.isAdmin ? '<span class="text-tx-3">—</span>' : (u.quota ? \`今日 \${u.quota.daily} 次 · 共 \${u.quota.total} 次\` : '—');
       const limits = u.isAdmin ? '<span class="text-tx-3">无限制</span>' : \`每日 \${p.dailyUploadLimit===-1?'∞':p.dailyUploadLimit} · 总量 \${p.maxTotalUploads===-1?'∞':p.maxTotalUploads}\`;
@@ -2183,6 +2194,7 @@ export function renderAdminPage() {
     document.getElementById('pmMaxTotal').value = 100;
     document.getElementById('pmDailyLimit').value = 20;
     document.getElementById('pmTokenTtl').value = 7;
+    document.getElementById('pmApiAccess').value = 'write';
     document.getElementById('userModalSave').textContent = isEdit ? '保存' : '创建';
     document.getElementById('userModal').classList.add('show');
   }
@@ -2200,6 +2212,7 @@ export function renderAdminPage() {
       document.getElementById('pmMaxTotal').value   = u.permissions.maxTotalUploads;
       document.getElementById('pmDailyLimit').value = u.permissions.dailyUploadLimit;
       document.getElementById('pmTokenTtl').value   = u.tokenTtlDays ?? 7;
+      document.getElementById('pmApiAccess').value = u.permissions.apiAccess ?? 'write';
     });
   }
 
@@ -2213,6 +2226,7 @@ export function renderAdminPage() {
       canEdit:   document.getElementById('pmEdit').checked,
       maxTotalUploads:  parseInt(document.getElementById('pmMaxTotal').value),
       dailyUploadLimit: parseInt(document.getElementById('pmDailyLimit').value),
+      apiAccess: document.getElementById('pmApiAccess').value,
     };
     const disabled = document.getElementById('pmDisabled').checked;
     const tokenTtlDays = parseInt(document.getElementById('pmTokenTtl').value) || 7;

@@ -1,4 +1,7 @@
 import { MIME_MAP } from './upload.js';
+import { bearerToken } from '../admin/auth.js';
+import { verifyUserToken } from '../user-auth.js';
+import { canUseAgent } from '../agent-access.js';
 import { cfBump, cfMonth } from '../admin/cfCounters.js';
 import { bumpDaily } from '../admin/dailyStats.js';
 
@@ -70,15 +73,22 @@ export async function serveProto(env, protoId, filePath, request) {
   const meta = await env.STATS.get(`proto:${protoId}`, 'json');
   if (!meta) return new Response('Prototype Not Found', { status: 404 });
 
+  // ── 属主 token 通道 ────────────────────────────────────────────────────────
+  // 私有 / 带密码的原型原本对所有人 403 —— 连属主自己用 token 也拿不到文件，
+  // 「登录授权后完整拉取」于是走不通。带合法 token 且 username === meta.owner
+  // 时放行。只认 Bearer token：Cookie 会话、?owner= 之类参数一律不认，
+  // 避免绕过权限。账号被设为 apiAccess=off 时连属主也不放行。
+  const ownerBypass = await isProtoOwner(env, request, meta);
+
   // ── Private check ─────────────────────────────────────────────────────────
-  if (meta.isPrivate === true) {
+  if (meta.isPrivate === true && !ownerBypass) {
     return new Response('This prototype is private', { status: 403 });
   }
 
   // ── Password protection ────────────────────────────────────────────────────
   // If password has expired, skip password check (treat as public)
   const pwdExpired = meta.accessPassword && meta.passwordExpiry && Date.now() > meta.passwordExpiry;
-  if (meta.accessPassword && !pwdExpired) {
+  if (meta.accessPassword && !pwdExpired && !ownerBypass) {
     const url     = new URL(request.url);
     const urlPwd  = url.searchParams.get('pwd');
     const cookies = parseCookies(request.headers.get('Cookie') || '');
@@ -251,4 +261,14 @@ async function resolveGzip(obj, ext) {
     cancel(reason) { return reader.cancel(reason); },
   });
   return { gzip: isGz, body };
+}
+
+// 属主判定：必须同时满足「带 Bearer token」「token 有效」「username 等于原型 owner」
+// 「账号未关闭 Agent 访问」。任何一条不满足都返回 false，走原来的公开/密码流程。
+async function isProtoOwner(env, request, meta) {
+  if (!meta?.owner) return false;
+  if (!bearerToken(request)) return false;
+  const user = await verifyUserToken(request, env);
+  if (!user || user.username !== meta.owner) return false;
+  return canUseAgent(user);
 }

@@ -11,6 +11,7 @@ import { cfBump, cfDay } from './admin/cfCounters.js';
 import { handleListUsers, handleCreateUser, handleUpdateUser, handleDeleteUser } from './admin/users.js';
 import { handleGetConfig, handleUpdateConfig } from './admin/config-handler.js';
 import { handleUserLogin, verifyUserToken, getUserQuotaInfo, getUploadLimits, getUser, putUser, hashPassword, randomSalt } from './user-auth.js';
+import { handleAgentIndex } from './agent/index.js';
 import { servePage } from './pages/handler.js';
 import { listPages, handleGetPage, handleListPages, handleCreatePage, handleUpdatePage, handleDeletePage, handleReorderPages, handleImportPage } from './pages/manage.js';
 import { handleCreateProject, handleListProjects, handleUpdateProject, handleDeleteProject, handleReorderProjects } from './pages/project.js';
@@ -59,6 +60,20 @@ export default {
 
     if (method === 'OPTIONS') return corsResponse(request);
 
+    // ── 只读 token 拦截 ────────────────────────────────────────────────────────
+    // 设备授权可以申请 scope=read，给 Agent 一个只能读的额度。只读 token 不允许
+    // 任何写方法，在这里统一拦一次，比在二十多个写端点里逐个加判断更不容易漏。
+    // 登录接口本身不带 token（verifyUserToken 返回 null），不受影响。
+    if (method !== 'GET' && method !== 'HEAD') {
+      const readOnlyActor = await verifyUserToken(request, env);
+      if (readOnlyActor?.scope === 'read') {
+        return withCors(Response.json(
+          { error: '只读授权，不能执行写操作', code: 'read_only_scope' },
+          { status: 403 }
+        ), request);
+      }
+    }
+
     // Workers 请求计数 — 1% 采样，展示时 × 100
     if (Math.random() < 0.01) {
       ctx.waitUntil(cfBump(env.STATS, 'cf:req:' + cfDay(), 1));
@@ -105,6 +120,14 @@ export default {
         const user = await verifyUserToken(request, env);
         if (!user) return withCors(Response.json({ error: 'Unauthorized' }, { status: 401 }), request);
         return withCors(Response.json(await getUploadLimits(env)), request);
+      }
+
+      // ── Agent / Skill 检索入口 ───────────────────────────────────────────────
+      // 一次拿全本账号的目录 / 页面 / 图片 / 原型（含版本），正文与文件按下发的 url 取。
+      if (method === 'GET' && path === '/api/index') {
+        const user = await verifyUserToken(request, env);
+        if (!user) return withCors(Response.json({ error: 'Unauthorized' }, { status: 401 }), request);
+        return withCors(await handleAgentIndex(request, env, user), request);
       }
 
       // ── User API ─────────────────────────────────────────────────────────────
@@ -721,6 +744,9 @@ function serveDeviceAuthPage(url) {
   if (cb && !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/.test(cb)) {
     return new Response('Invalid callback — must be localhost', { status: 400 });
   }
+  // 调用方可以申请只读额度（Agent 场景）。默认不申请，保持历史行为。
+  const scopeParam = url.searchParams.get('scope');
+  const reqScope = (scopeParam === 'read' || scopeParam === 'write') ? scopeParam : '';
   const html = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -747,6 +773,7 @@ ${apertureCss}
       <div class="mt-px text-xs text-tx-3">登录后令牌将自动返回给调用方（仅限本机）</div>
     </div>
   </div>
+  ${reqScope ? `<div class="mb-5 rounded-sm border border-bd bg-bg-2 p-3 text-center text-xs leading-[1.6] text-tx-2">本次申请权限：<b class="text-tx">${reqScope === 'read' ? '只读' : '读写'}</b><br><span class="text-tx-3">${reqScope === 'read' ? '只能读取和下载，不能上传、修改或删除' : '可读取，也可上传、修改、删除'}</span></div>` : ''}
   <div class="flex flex-col gap-2 mb-5"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">用户名</label><input class="h-9 w-full rounded-sm border border-bd bg-bg-2 px-3 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[var(--focus-ring)]" type="text" id="u" autocomplete="username" placeholder="username"></div>
   <div class="flex flex-col gap-2 mb-6"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">密码</label><div class="relative"><input class="h-9 w-full rounded-sm border border-bd bg-bg-2 px-3 pr-10 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:bg-bg focus:shadow-[var(--focus-ring)]" type="password" id="p" autocomplete="current-password" placeholder="••••••••"><button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center border-none bg-transparent p-0 text-tx-3 cursor-pointer transition hover:text-tx" id="pToggle" title="显示/隐藏密码"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg></button></div></div>
   <button class="w-full rounded-sm border-none bg-accent h-9 px-4 font-sans text-md font-bold text-tx-inv transition  hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 [&.loading]:pointer-events-none [&.loading]:before:content-[''] [&.loading]:before:inline-block [&.loading]:before:mr-2 [&.loading]:before:h-4 [&.loading]:before:w-4 [&.loading]:before:align-middle [&.loading]:before:rounded-full [&.loading]:before:border-2 [&.loading]:before:border-[var(--tx-inv)] [&.loading]:before:border-t-transparent [&.loading]:before:animate-[loginSpin_.6s_linear_infinite]" id="btn">登录并授权</button>
@@ -756,6 +783,7 @@ ${apertureCss}
 </div>
 <script>
 const CB = ${JSON.stringify(cb)};
+const SCOPE = ${JSON.stringify(reqScope)};
 const ERR_MAP = {'Invalid credentials':'账号或密码错误','Missing credentials':'请填写账号和密码'};
 const friendlyErr = m => ERR_MAP[m] || m || '登录失败，请稍后重试';
 const btn = document.getElementById('btn');
@@ -778,7 +806,7 @@ btn.addEventListener('click', async () => {
     const res = await fetch('/auth/login', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({username: u, password: p})
+      body: JSON.stringify(SCOPE ? {username: u, password: p, scope: SCOPE} : {username: u, password: p})
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || '登录失败');

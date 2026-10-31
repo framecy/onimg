@@ -1,9 +1,28 @@
 import { createToken, verifyToken, bearerToken, timingSafeEqual, REMEMBER_TOKEN_TTL } from './admin/auth.js';
+import { apiAccessOf } from './agent-access.js';
 
 const DEFAULT_TOKEN_TTL_DAYS = 7;
 
 function tokenTtlMs(ttlDays) {
   return (ttlDays ?? DEFAULT_TOKEN_TTL_DAYS) * 24 * 60 * 60 * 1000;
+}
+
+// ── token scope（只读授权） ──────────────────────────────────────────────────
+// 登录请求里带了 scope 字段 = 这次是设备授权（CLI / Agent）在申请额度。
+// 网页登录不带这个字段，走历史路径，token 里也不出现 scope。
+function needsScope(body) {
+  return body?.scope === 'read' || body?.scope === 'write';
+}
+
+/** 返回要写进 token 的 scope；网页登录（没申请）返回 null，payload 里就不写字段。 */
+function requestedScope(body, ceiling) {
+  if (!needsScope(body)) return null;
+  return (body.scope === 'read' || ceiling === 'read') ? 'read' : 'write';
+}
+
+/** 老 token 没有 scope 字段，按 write 处理（向后兼容）。 */
+function normalizeScope(scope) {
+  return scope === 'read' ? 'read' : 'write';
 }
 
 export async function handleUserLogin(request, env) {
@@ -18,12 +37,13 @@ export async function handleUserLogin(request, env) {
     if (!env.ADMIN_PASSWORD || !timingSafeEqual(password, env.ADMIN_PASSWORD)) {
       return Response.json({ error: 'Invalid credentials' }, { status: 401 });
     }
-    const unlimitedPerms = { canUpload: true, canDelete: true, canEdit: true, maxTotalUploads: -1, dailyUploadLimit: -1 };
+    const unlimitedPerms = { canUpload: true, canDelete: true, canEdit: true, maxTotalUploads: -1, dailyUploadLimit: -1, apiAccess: 'write' };
     const ttl = body.remember ? REMEMBER_TOKEN_TTL : tokenTtlMs(DEFAULT_TOKEN_TTL_DAYS);
-    const token = await createToken({ type: 'user', username, isAdmin: true }, ttl, env.TOKEN_SECRET);
+    const scope = requestedScope(body, 'write');
+    const token = await createToken({ type: 'user', username, isAdmin: true, ...(scope ? { scope } : {}) }, ttl, env.TOKEN_SECRET);
     // Best-effort: record admin last login (no await — don't delay response)
     env.STATS?.put('admin:lastLoginAt', String(Date.now())).catch(() => {});
-    return Response.json({ token, username, isAdmin: true, permissions: unlimitedPerms, tokenTtlDays: ttl / 86400000 });
+    return Response.json({ token, username, isAdmin: true, permissions: unlimitedPerms, scope: scope ?? 'write', tokenTtlDays: ttl / 86400000 });
   }
 
   const user = await getUser(env, username);
@@ -34,14 +54,22 @@ export async function handleUserLogin(request, env) {
     return Response.json({ error: 'Invalid credentials' }, { status: 401 });
   }
 
+  // 设备授权（CLI / Agent）可以显式申请只读额度；网页登录不带 scope，
+  // 行为与历史完全一致。申请额度不得超过账号上限（apiAccess）。
+  const apiAccess = apiAccessOf(user.permissions);
+  if (needsScope(body) && apiAccess === 'off') {
+    return Response.json({ error: '该账号未开放 Agent 访问', code: 'agent_access_denied' }, { status: 403 });
+  }
+  const scope = requestedScope(body, apiAccess === 'read' ? 'read' : 'write');
+
   const ttl = body.remember ? REMEMBER_TOKEN_TTL : tokenTtlMs(user.tokenTtlDays);
-  const token = await createToken({ type: 'user', username }, ttl, env.TOKEN_SECRET);
+  const token = await createToken({ type: 'user', username, ...(scope ? { scope } : {}) }, ttl, env.TOKEN_SECRET);
 
   // Record last login time (update only lastLoginAt, avoid full rewrite race)
   user.lastLoginAt = Date.now();
   await putUser(env, username, user);
 
-  return Response.json({ token, username, permissions: user.permissions, tokenTtlDays: ttl / 86400000 });
+  return Response.json({ token, username, permissions: user.permissions, scope: scope ?? 'write', tokenTtlDays: ttl / 86400000 });
 }
 
 // Returns { username, permissions } or null
@@ -56,13 +84,15 @@ export async function verifyUserToken(request, env) {
   if (payload.isAdmin) {
     return {
       username: payload.username,
-      permissions: { canUpload: true, canDelete: true, canEdit: true, maxTotalUploads: -1, dailyUploadLimit: -1 },
+      isAdmin: true,
+      scope: normalizeScope(payload.scope),
+      permissions: { canUpload: true, canDelete: true, canEdit: true, maxTotalUploads: -1, dailyUploadLimit: -1, apiAccess: 'write' },
     };
   }
 
   const user = await getUser(env, payload.username);
   if (!user || user.disabled) return null;
-  return { username: payload.username, permissions: user.permissions };
+  return { username: payload.username, scope: normalizeScope(payload.scope), permissions: user.permissions };
 }
 
 // ── User helpers ─────────────────────────────────────────────────────────────

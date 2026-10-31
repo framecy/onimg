@@ -1,4 +1,5 @@
 import { getUser, putUser, hashPassword, randomSalt, getUserQuotaInfo } from '../user-auth.js';
+import { API_ACCESS_LEVELS } from '../agent-access.js';
 
 const UNLIMITED_PERMS = {
   canUpload: true,
@@ -6,6 +7,7 @@ const UNLIMITED_PERMS = {
   canEdit: true,
   maxTotalUploads: -1,
   dailyUploadLimit: -1,
+  apiAccess: 'write',
 };
 
 export async function handleListUsers(env) {
@@ -71,6 +73,9 @@ export async function handleCreateUser(request, env) {
       canEdit: permissions?.canEdit ?? false,
       maxTotalUploads: permissions?.maxTotalUploads ?? 100,
       dailyUploadLimit: permissions?.dailyUploadLimit ?? 20,
+      // Agent / API 访问上限：off 完全关闭，read 只读，write 可读可写。
+      // 默认 write = 与历史行为一致（这些账号本来就能用 CLI 上传）。
+      apiAccess: API_ACCESS_LEVELS.includes(permissions?.apiAccess) ? permissions.apiAccess : 'write',
     },
     tokenTtlDays: (isNaN(ttlDays) || ttlDays < 1) ? 7 : Math.min(ttlDays, 365),
     createdAt: Date.now(),
@@ -97,6 +102,9 @@ export async function handleUpdateUser(request, env, username) {
   }
   if (body.disabled !== undefined) existing.disabled = !!body.disabled;
   if (body.permissions) {
+    if (body.permissions.apiAccess !== undefined && !API_ACCESS_LEVELS.includes(body.permissions.apiAccess)) {
+      return Response.json({ error: 'apiAccess 只能是 off / read / write' }, { status: 400 });
+    }
     existing.permissions = { ...existing.permissions, ...body.permissions };
   }
   if (body.tokenTtlDays !== undefined) {
