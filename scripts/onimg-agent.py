@@ -14,7 +14,7 @@
 """
 
 import os, sys, json, time, base64, argparse, mimetypes, webbrowser, threading
-import urllib.request, urllib.parse, urllib.error, http.server, socket, zipfile, tempfile
+import urllib.request, urllib.parse, urllib.error, http.server, http.client, socket, zipfile, tempfile
 from concurrent.futures import ThreadPoolExecutor
 
 EXIT_OK, EXIT_ERR, EXIT_USAGE, EXIT_AUTH, EXIT_PARTIAL = 0, 1, 2, 3, 4
@@ -76,6 +76,29 @@ def token_claims(token):
 
 # ── HTTP ─────────────────────────────────────────────────────────────────────
 
+# 重试策略：只在「网络抖动」和「服务端临时错误」上重试。
+# 线上实测：对 Cloudflare 连续请求时会偶发 SSL UNEXPECTED_EOF / IncompleteRead
+# （同一个 URL 三次里坏一次），重试一次就好。4xx 一律不重试 —— 401/403/404 重试
+# 只会把错误放大成更长的等待。
+# 单次请求超时（秒）。线上实测：对 Cloudflare 偶发 30s+ 的挂起，把超时压到
+# 20s 让坏连接尽快失败并重试，比「等 60 秒再重试」快得多。
+TIMEOUT = 20
+
+RETRY_STATUS = {408, 429, 500, 502, 503, 504}
+RETRY_ATTEMPTS = 3
+RETRY_BACKOFF = (0.6, 1.8)
+
+
+def _retryable(exc):
+    if isinstance(exc, urllib.error.HTTPError):
+        return exc.code in RETRY_STATUS
+    if isinstance(exc, urllib.error.URLError):
+        return True
+    if isinstance(exc, http.client.HTTPException):   # IncompleteRead / BadStatusLine …
+        return True
+    return isinstance(exc, (TimeoutError, ConnectionError))
+
+
 class ApiError(Exception):
     def __init__(self, status, body, path=''):
         self.status, self.body, self.path = status, body, path
@@ -99,20 +122,29 @@ def api(method, path, body=None, raw=None, headers=None, base=None, token=None):
         data = json.dumps(body).encode()
         hdrs['Content-Type'] = 'application/json'
     req = urllib.request.Request(url, data=data, headers=hdrs, method=method)
-    try:
-        with urllib.request.urlopen(req, timeout=60) as r:
-            payload = r.read()
-            ctype = r.headers.get('Content-Type', '')
-            if 'application/json' in ctype:
-                return json.loads(payload.decode() or '{}')
-            return payload
-    except urllib.error.HTTPError as e:
-        tricky = e.read()
+    for attempt in range(RETRY_ATTEMPTS):
         try:
-            parsed = json.loads(tricky.decode() or '{}')
-        except Exception:
-            parsed = {'error': tricky.decode('utf-8', 'replace')[:300]}
-        raise ApiError(e.code, parsed, path)
+            with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
+                payload = r.read()
+                ctype = r.headers.get('Content-Type', '')
+                if 'application/json' in ctype:
+                    return json.loads(payload.decode() or '{}')
+                return payload
+        except urllib.error.HTTPError as e:
+            body = e.read()
+            try:
+                parsed = json.loads(body.decode() or '{}')
+            except Exception:
+                parsed = {'error': body.decode('utf-8', 'replace')[:300]}
+            if _retryable(e) and attempt < RETRY_ATTEMPTS - 1:
+                time.sleep(RETRY_BACKOFF[min(attempt, len(RETRY_BACKOFF) - 1)])
+                continue
+            raise ApiError(e.code, parsed, path)
+        except Exception as e:  # 网络层：超时 / 断连 / 半包
+            if _retryable(e) and attempt < RETRY_ATTEMPTS - 1:
+                time.sleep(RETRY_BACKOFF[min(attempt, len(RETRY_BACKOFF) - 1)])
+                continue
+            raise ApiError(0, {'error': '%s: %s' % (type(e).__name__, e)}, path)
 
 
 def api_form(path, fields, files):
@@ -140,26 +172,39 @@ def download(url, dest):
         hdrs['Authorization'] = 'Bearer ' + tok
     req = urllib.request.Request(url, headers=hdrs)
     os.makedirs(os.path.dirname(dest) or '.', exist_ok=True)
-    try:
-        with urllib.request.urlopen(req, timeout=120) as r, open(dest, 'wb') as f:
-            total = 0
-            while True:
-                chunk = r.read(65536)
-                if not chunk:
-                    break
-                f.write(chunk)
-                total += len(chunk)
-        return total
-    except urllib.error.HTTPError as e:
-        # 原型文件走的是 /proto/... 路由，返回的是纯文本而不是 JSON；
-        # 统一成 ApiError，调用方才能按 401/403 翻译成授权错误，
-        # 而不是抛出一整屏 Traceback。
-        body = e.read()
+    for attempt in range(RETRY_ATTEMPTS):
         try:
-            parsed = json.loads(body.decode() or '{}')
-        except Exception:
-            parsed = {'error': body.decode('utf-8', 'replace')[:200]}
-        raise ApiError(e.code, parsed, url)
+            with urllib.request.urlopen(req, timeout=max(TIMEOUT, 30)) as r, open(dest, 'wb') as f:
+                total = 0
+                while True:
+                    chunk = r.read(65536)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    total += len(chunk)
+            return total
+        except urllib.error.HTTPError as e:
+            # 原型文件走的是 /proto/... 路由，返回的是纯文本而不是 JSON；
+            # 统一成 ApiError，调用方才能按 401/403 翻译成授权错误，
+            # 而不是抛出一整屏 Traceback。
+            body = e.read()
+            try:
+                parsed = json.loads(body.decode() or '{}')
+            except Exception:
+                parsed = {'error': body.decode('utf-8', 'replace')[:200]}
+            if _retryable(e) and attempt < RETRY_ATTEMPTS - 1:
+                time.sleep(RETRY_BACKOFF[min(attempt, len(RETRY_BACKOFF) - 1)])
+                continue
+            raise ApiError(e.code, parsed, url)
+        except Exception as e:
+            # 半包会留下一个截断的文件：重试前必须删掉，否则最终得到一个
+            # 「看起来拉成功了」的坏文件。这是最危险的一种失败。
+            try: os.path.exists(dest) and os.unlink(dest)
+            except Exception: pass
+            if _retryable(e) and attempt < RETRY_ATTEMPTS - 1:
+                time.sleep(RETRY_BACKOFF[min(attempt, len(RETRY_BACKOFF) - 1)])
+                continue
+            raise ApiError(0, {'error': '%s: %s' % (type(e).__name__, e)}, url)
 
 
 # ── 输出 ─────────────────────────────────────────────────────────────────────
@@ -404,6 +449,9 @@ def cmd_get(args):
 
 
 def cmd_pull(args):
+    global TIMEOUT
+    TIMEOUT = max(5, args.timeout)
+
     def run():
         idx = load_index()
         out_dir = args.output or 'onimg-backup'
@@ -441,6 +489,15 @@ def cmd_pull(args):
 
         total_bytes = [0]
         done = [0]
+        total_jobs = len(jobs)
+        started = time.time()
+
+        def progress():
+            # 进度写 stderr：--json 时 stdout 必须只有最终 JSON，但长时间拉取
+            # 不能是个黑盒（线上几千个文件时尤其如此）。
+            sys.stderr.write('\r  %d/%d 文件  %.1f MB  %.0fs   '
+                             % (done[0], total_jobs, total_bytes[0] / 1048576.0, time.time() - started))
+            sys.stderr.flush()
 
         def work(job):
             kind, dest, src = job
@@ -454,11 +511,16 @@ def cmd_pull(args):
                 else:
                     total_bytes[0] += download(src, dest)
                 done[0] += 1
+                if done[0] % 10 == 0 or done[0] == total_jobs:
+                    progress()
             except Exception as e:
                 errors.append({'path': dest, 'error': str(e)})
+                done[0] += 1
 
         with ThreadPoolExecutor(max_workers=max(1, min(args.concurrency, 8))) as pool:
             list(pool.map(work, jobs))
+        if not args.json:
+            sys.stderr.write('\n')
 
         summary = {'ok': not errors, 'dir': os.path.abspath(out_dir), 'files': done[0],
                    'bytes': total_bytes[0], 'errors': errors, 'counts': idx['counts']}
@@ -668,7 +730,8 @@ def build_parser():
     pl.add_argument('--all', action='store_true', help='图片 + 页面 + 原型')
     pl.add_argument('--kind', choices=['img', 'page', 'proto'], help='只拉某一类')
     pl.add_argument('-o', '--output', default='onimg-backup')
-    pl.add_argument('--concurrency', type=int, default=6)
+    pl.add_argument('--concurrency', type=int, default=8)
+    pl.add_argument('--timeout', type=int, default=20, help='单次请求超时秒数（默认 20）')
     pl.set_defaults(func=cmd_pull)
 
     ps = sub.add_parser('push', help='上传', parents=[common])
