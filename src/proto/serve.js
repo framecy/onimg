@@ -195,12 +195,24 @@ export async function serveProto(env, protoId, filePath, request) {
     // 必须走 gz.body：嗅探已经把 R2 的流读过一块了，再 obj.arrayBuffer() 会抛
     // 「Body has already been used」。gz.body 是已经把那一块拼回去的可读流。
     const buf = await new Response(gz.body).arrayBuffer();
+    const bytes = gz.gzip
+      ? new Uint8Array(await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer())
+      : new Uint8Array(buf);
+
+    // 只有「确实是 UTF-8 文本」才敢改标题。
+    //
+    // decode() 默认是有损的：非 UTF-8 字节会被替换成 U+FFFD，再编码回去就**永久
+    // 改坏了内容**。真实场景不是没有 —— 中文版 Axure 导出的 HTML 有 GBK 的，
+    // 任何以 .html 结尾的二进制资源也会走这里。2026-10 的 900 文件回环测试就是
+    // 这么发现 162 个 .html 的字节被改掉的。
+    // fatal:true 让非法字节直接抛错，此时原样回放（不注入标题），宁可少个标题也不改坏文件。
     let html;
-    if (gz.gzip) {
-      html = await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
-    } else {
-      html = new TextDecoder().decode(buf);
+    try {
+      html = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    } catch {
+      return new Response(bytes, { headers });
     }
+
     if (/<title>/i.test(html)) {
       html = html.replace(/<title>[^<]*<\/title>/i, `<title>${safeTitle}</title>`);
     } else {
