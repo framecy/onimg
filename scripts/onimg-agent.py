@@ -467,17 +467,26 @@ def cmd_pull(args):
             want = k
         plan = kinds.get(want or 'all', ['img', 'page', 'proto'])
 
+        # 指定了 ref（pull proto:<id> / img:<key> / page:<slug>）时只拉那一个对象。
+        # 早期版本只用了 ref 的类型、没用 id，导致「拉一个原型」实际把账号下所有
+        # 原型都拉了一遍（900 文件压测时 planned=903 才暴露）。
+        ref_kind = ref_id = None
+        if args.ref:
+            ref_kind, ref_id = ref_split(args.ref)
+            if ref_kind == 'image':
+                ref_kind = 'img'
+
         jobs, errors = [], []
         base = load_config()['ONIMG_URL']
         if 'img' in plan:
-            for img in idx['images']:
+            for img in (idx['images'] if not ref_id else [i for i in idx['images'] if i['key'] == ref_id]):
                 jobs.append(('img', os.path.join(out_dir, 'images', img['key']),
                              base + '/' + urllib.parse.quote(img['key'])))
         if 'page' in plan:
-            for p in idx['pages']:
+            for p in (idx['pages'] if not ref_id else [x for x in idx['pages'] if x['slug'] == ref_id]):
                 jobs.append(('page', os.path.join(out_dir, 'pages', p['slug'] + ('.md' if p.get('type') == 'markdown' else '.html')), p['slug']))
         if 'proto' in plan:
-            for proto in idx['protos']:
+            for proto in (idx['protos'] if not ref_id else [x for x in idx['protos'] if x['protoId'] == ref_id]):
                 try:
                     for rel, url in _fetch_proto_files(proto):
                         jobs.append(('proto', os.path.join(out_dir, 'protos', proto['protoId'], rel), url))
@@ -530,7 +539,7 @@ def cmd_pull(args):
         if not args.json:
             sys.stderr.write('\n')
 
-        summary = {'ok': not errors, 'dir': os.path.abspath(out_dir), 'files': done[0],
+        summary = {'ok': not errors, 'dir': os.path.abspath(out_dir), 'planned': total_jobs, 'files': done[0],
                    'skipped': skipped[0], 'bytes': total_bytes[0], 'errors': errors, 'counts': idx['counts']}
         lines = ['拉取完成：%d 个文件（跳过已存在 %d），%.1f MB'
                  % (done[0], skipped[0], total_bytes[0] / 1048576.0),

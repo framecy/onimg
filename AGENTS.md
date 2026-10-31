@@ -170,7 +170,7 @@ Agent 用的非交互 CLI 是 `scripts/onimg-agent.py`，它**不**像 `onimg-cl
 ## 提交与验证
 
 - 推 `main` 会自动触发 CI 部署（`.github/workflows/deploy.yml`）
-- 提交前跑 `npx vitest run`（当前 343 项 / 29 个文件）
+- 提交前跑 `npx vitest run`（当前 347 项 / 30 个文件）
 - CI 顺序要求 `build:css` 在 `npm test` 之前：`src/ui/aperture.generated.js` 是
   Tailwind 生成物且被 gitignore，而 `d1-integration` 测试会 import `src/index.js`，
   顺着 `index → page` 链条要求该文件存在
