@@ -489,6 +489,7 @@ def cmd_pull(args):
 
         total_bytes = [0]
         done = [0]
+        skipped = [0]
         total_jobs = len(jobs)
         started = time.time()
 
@@ -502,6 +503,13 @@ def cmd_pull(args):
         def work(job):
             kind, dest, src = job
             try:
+                # 断点续传：已经落盘且非空的文件直接跳过。网络差的时候一次拉不全
+                # 是常态，重跑一次只补缺口，而不是把几千个文件重下一遍。
+                if not args.force and os.path.exists(dest) and os.path.getsize(dest) > 0:
+                    total_bytes[0] += os.path.getsize(dest)
+                    skipped[0] += 1
+                    done[0] += 1
+                    return
                 if kind == 'page':
                     page = api('GET', '/api/pages/' + urllib.parse.quote(src))
                     os.makedirs(os.path.dirname(dest) or '.', exist_ok=True)
@@ -523,8 +531,9 @@ def cmd_pull(args):
             sys.stderr.write('\n')
 
         summary = {'ok': not errors, 'dir': os.path.abspath(out_dir), 'files': done[0],
-                   'bytes': total_bytes[0], 'errors': errors, 'counts': idx['counts']}
-        lines = ['拉取完成：%d 个文件，%.1f MB' % (done[0], total_bytes[0] / 1048576.0),
+                   'skipped': skipped[0], 'bytes': total_bytes[0], 'errors': errors, 'counts': idx['counts']}
+        lines = ['拉取完成：%d 个文件（跳过已存在 %d），%.1f MB'
+                 % (done[0], skipped[0], total_bytes[0] / 1048576.0),
                  '输出目录：%s' % os.path.abspath(out_dir)]
         if errors:
             lines.append('失败 %d 项（见 --json 输出的 errors）' % len(errors))
@@ -732,6 +741,7 @@ def build_parser():
     pl.add_argument('-o', '--output', default='onimg-backup')
     pl.add_argument('--concurrency', type=int, default=8)
     pl.add_argument('--timeout', type=int, default=20, help='单次请求超时秒数（默认 20）')
+    pl.add_argument('--force', action='store_true', help='重新下载已存在的文件（默认跳过，用于断点续传）')
     pl.set_defaults(func=cmd_pull)
 
     ps = sub.add_parser('push', help='上传', parents=[common])
