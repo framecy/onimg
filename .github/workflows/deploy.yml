@@ -95,8 +95,11 @@ jobs:
             exit 1
           fi
 
-      - name: Build CSS (Tailwind — generated file is gitignored)
-        run: npm run build:css
+      # 部署 job 直接调 npx wrangler，不走 npm run deploy，所以 predeploy 钩子不生效：
+      # 两个 gitignore 的生成物（aperture.generated.*、agent-cli.generated.js）都必须
+      # 在这里显式构建，缺一个 wrangler 就报 Could not resolve。
+      - name: Build generated assets (Tailwind + Agent CLI — both gitignored)
+        run: npm run build:css && npm run build:agent
 
       - name: Deploy to Cloudflare Workers
         run: npx wrangler deploy

@@ -174,6 +174,9 @@ Agent 用的非交互 CLI 是 `scripts/onimg-agent.py`，它**不**像 `onimg-cl
 - CI 顺序要求 `build:css` 在 `npm test` 之前：`src/ui/aperture.generated.js` 是
   Tailwind 生成物且被 gitignore，而 `d1-integration` 测试会 import `src/index.js`，
   顺着 `index → page` 链条要求该文件存在
+- **deploy job 直接跑 `npx wrangler deploy`，不走 `npm run deploy`，predeploy 不生效**：
+  凡是 gitignore 的生成物（`aperture.generated.*`、`agent-cli.generated.js`）都必须在
+  deploy job 里显式构建，否则构建阶段报 `Could not resolve`，测试全绿也部署不上去
 
 ### 改动 `page.js` / `admin-page.js` 后的必查项
 
