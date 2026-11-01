@@ -554,7 +554,7 @@ def cmd_pull(args):
                     errors.append({'path': dest, 'error': str(e)})
                     done[0] += 1
 
-        with ThreadPoolExecutor(max_workers=max(1, min(args.concurrency, 8))) as pool:
+        with ThreadPoolExecutor(max_workers=max(1, min(args.concurrency, 16))) as pool:
             list(pool.map(work, jobs))
         if not args.json:
             sys.stderr.write('\n')
