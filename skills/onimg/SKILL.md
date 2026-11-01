@@ -26,6 +26,17 @@ chmod +x ~/.local/bin/onimg-agent
 
 自建实例把域名换成自己的。装完 `onimg-agent --help` 能出帮助即可。
 
+**保持最新**：脚本本身就是服务器下发的静态资源，一条命令自更新（会先校验语法，
+再原子替换，半截文件不会覆盖掉自己）：
+
+```bash
+onimg-agent update --json      # {"changed": true, "from": "1.0.0", "to": "1.1.0"}
+onimg-agent --version
+```
+
+Skill 文本本身不会自动更新——它只是本地的一份说明书。命令有变化时重新安装
+（或从仓库 `skills/onimg/SKILL.md` 复制）。
+
 ## 1. 每次开工先确认登录态
 
 ```bash
@@ -67,6 +78,7 @@ onimg-agent auth login --scope read --json
 | 改标题/标签/可见性 | `onimg-agent edit proto:<id> --title X --tags 甲,乙 --private` |
 | 删除 | `onimg-agent rm img:<key>`（dry-run）→ 加 `--yes` 执行 |
 | 原型版本 | `onimg-agent versions <protoId> --json` |
+| 更新自己 | `onimg-agent update` |
 
 **引用格式一律是 `kind:id`**：`img:<key>`、`page:<slug>`、`proto:<protoId>`、
 `project:<id>`、`group:<id>`。`ls` 输出的 `ref` 字段可以直接当参数用，不要自己拼。

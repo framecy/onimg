@@ -17,6 +17,8 @@ import os, sys, json, time, base64, argparse, mimetypes, webbrowser, threading
 import urllib.request, urllib.parse, urllib.error, http.server, http.client, socket, zipfile, tempfile
 from concurrent.futures import ThreadPoolExecutor
 
+AGENT_VERSION = '1.1.0'
+
 EXIT_OK, EXIT_ERR, EXIT_USAGE, EXIT_AUTH, EXIT_PARTIAL = 0, 1, 2, 3, 4
 
 _cfg_dir = os.path.join(os.environ.get('XDG_CONFIG_HOME', os.path.expanduser('~/.config')), 'onimg')
@@ -292,13 +294,14 @@ def cmd_auth(args):
         exp = (claims.get('exp') or 0) / 1000
         remaining = max(0, exp - time.time())
         info = {
-            'ok': True, 'loggedIn': True, 'server': cfg['ONIMG_URL'],
+            'ok': True, 'loggedIn': True, 'server': cfg['ONIMG_URL'], 'agentVersion': AGENT_VERSION,
             'username': claims.get('username'), 'scope': claims.get('scope', 'write'),
             'expiresAt': int(exp) if exp else None,
             'remainingHours': round(remaining / 3600, 1),
         }
         emit(args, info, [
             '服务器  %s' % cfg['ONIMG_URL'],
+            '版本    v%s' % AGENT_VERSION,
             '账号    %s' % claims.get('username'),
             '权限    %s' % ('只读' if claims.get('scope') == 'read' else '读写'),
             '到期    %s' % (time.strftime('%Y-%m-%d %H:%M', time.localtime(exp)) if exp else '未知'),
@@ -338,6 +341,51 @@ def cmd_auth(args):
     claims = token_claims(token)
     emit(args, {'ok': True, 'username': claims.get('username'), 'scope': claims.get('scope', scope), 'server': base},
          ['授权成功：%s（%s）' % (claims.get('username'), '只读' if claims.get('scope') == 'read' else '读写')])
+
+
+# ── 自更新 ───────────────────────────────────────────────────────────────────
+
+def cmd_update(args):
+    """从服务器重新下载自己并原地替换。
+
+    脚本本身就是 Worker 下发的静态资源，所以「更新」= 重新拉一次。
+    先落到同目录的临时文件、编译通过再原子替换 —— 半截文件覆盖掉自己会让
+    CLI 直接不可用，这是最不该发生的失败。
+    """
+    target = os.path.abspath(__file__)
+    raw = api('GET', '/scripts/onimg-agent.py')
+    if isinstance(raw, dict):
+        fail(args, '服务器返回的不是脚本内容', EXIT_ERR)
+    new_src = raw.decode('utf-8')
+    if 'AGENT_VERSION' not in new_src:
+        fail(args, '下载到的内容不像 onimg-agent（缺少版本标记），已放弃替换', EXIT_ERR)
+
+    old = ''
+    try:
+        with open(target) as f:
+            old = f.read()
+    except Exception:
+        pass
+    if old == new_src:
+        emit(args, {'ok': True, 'changed': False, 'version': AGENT_VERSION},
+             ['已是最新（v%s）' % AGENT_VERSION])
+
+    tmp = target + '.new'
+    with open(tmp, 'w') as f:
+        f.write(new_src)
+    try:
+        compile(new_src, target, 'exec')
+    except SyntaxError as e:
+        os.unlink(tmp)
+        fail(args, '下载到的脚本有语法错误，已放弃替换：%s' % e, EXIT_ERR)
+    os.chmod(tmp, 0o755)
+    os.replace(tmp, target)
+
+    import re
+    m = re.search(r"AGENT_VERSION = '([^']+)'", new_src)
+    ver = m.group(1) if m else 'unknown'
+    emit(args, {'ok': True, 'changed': True, 'from': AGENT_VERSION, 'to': ver, 'path': target},
+         ['已更新 %s → v%s（%s）' % (AGENT_VERSION, ver, target)])
 
 
 # ── 索引 / 检索 ──────────────────────────────────────────────────────────────
@@ -738,6 +786,7 @@ def cmd_versions(args):
 def build_parser():
     p = argparse.ArgumentParser(prog='onimg-agent', description='Onimg 非交互 CLI（Agent / Skill 用）')
     p.add_argument('--json', action='store_true', help='输出机器可解析的 JSON')
+    p.add_argument('--version', action='version', version='onimg-agent ' + AGENT_VERSION)
     # --json 放在子命令前后都要能用：Agent 自然会把全局开关写在最后，
     # 只定义在顶层的话 argparse 会直接报 unrecognized arguments。
     common = argparse.ArgumentParser(add_help=False)
@@ -798,6 +847,9 @@ def build_parser():
     v = sub.add_parser('versions', help='原型版本列表', parents=[common])
     v.add_argument('proto')
     v.set_defaults(func=cmd_versions)
+
+    u = sub.add_parser('update', help='把自己更新到服务器上的最新版', parents=[common])
+    u.set_defaults(func=cmd_update)
 
     return p
 
