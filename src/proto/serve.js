@@ -141,6 +141,31 @@ export async function serveProto(env, protoId, filePath, request) {
     return new Response('Not Found', { status: 404 });
   }
 
+  // 缓存检查必须在读 R2 **之前**：否则命中也要先读一次对象，等于没省。
+  // 放在访问控制之后，是因为私有 / 带密码的原型不能进缓存。
+
+  // ── 边缘缓存（仅公开资源） ──────────────────────────────────────────────────
+  // 私有 / 带密码的原型一律不缓存：访问控制必须每次实时判定。
+  // 公开资源按「URL + meta.updatedAt」做缓存键 —— 改标题、切私有、换密码都会让
+  // updatedAt 变化，于是旧缓存自动失效，不需要额外的清理逻辑。
+  // 缓存键里带上 meta 的版本，也顺带覆盖了「重新上传同名文件」的情况。
+  const cache = edgeCache();
+  const cacheable = cache && request.method === 'GET'
+    && !meta.isPrivate && !meta.accessPassword
+    && !request.headers.get('Authorization');
+  const cacheKey = cacheable
+    ? new Request(request.url.split('?')[0] + '?__v=' + (meta.updatedAt ?? 0), { method: 'GET' })
+    : null;
+
+  if (cacheKey) {
+    const hit = await cache.match(cacheKey);
+    if (hit) {
+      const res = new Response(hit.body, hit);
+      res.headers.set('X-Cache', 'HIT');
+      return res;
+    }
+  }
+
   // Fetch from R2
   const r2Key = `proto/${protoId}/${decodedPath}`;
   const obj   = await env.BUCKET.get(r2Key);
@@ -189,6 +214,7 @@ export async function serveProto(env, protoId, filePath, request) {
     'Cache-Control': isHtml ? 'no-cache' : 'public, max-age=31536000',
   });
 
+
   // Inject prototype title into HTML files (AxureRP exports default to "Untitled Document")
   if (isHtml && meta.title) {
     const safeTitle = meta.title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -218,10 +244,10 @@ export async function serveProto(env, protoId, filePath, request) {
     } else {
       html = html.replace(/<head>/i, `<head><title>${safeTitle}</title></head>`);
     }
-    return new Response(html, { headers });
+    return cacheableResponse(new Response(html, { headers }), cache, cacheKey);
   }
 
-  if (!gz.gzip) return new Response(gz.body, { headers });
+  if (!gz.gzip) return cacheableResponse(new Response(gz.body, { headers }), cache, cacheKey);
 
   // 压缩只用于「上传上行」，回放一律给明文。
   //
@@ -232,7 +258,33 @@ export async function serveProto(env, protoId, filePath, request) {
   // 回放明文交给 Cloudflare 自己按标准协商压缩，行为可预测；
   // 代价是每次资源请求多一次解压（原生 DecompressionStream，几十 KB 级文件可忽略）。
   const src = typeof gz.body?.pipeThrough === 'function' ? gz.body : new Blob([gz.body]).stream();
-  return new Response(src.pipeThrough(new DecompressionStream('gzip')), { headers });
+  return cacheableResponse(new Response(src.pipeThrough(new DecompressionStream('gzip')), { headers }), cache, cacheKey);
+}
+
+/**
+ * 给公开原型资源套上边缘缓存：响应带 X-Cache，副本存 1 天。
+ * 缓存键已含 meta.updatedAt（见 serveProto），所以原型一改就自动换键，
+ * 不存在「改了内容还在发旧版本」的问题。
+ */
+async function cacheableResponse(res, cache, cacheKey) {
+  res.headers.set('X-Cache', 'MISS');
+  if (!cacheKey) return res;
+  const stored = new Response(res.clone().body, {
+    headers: new Headers([...res.headers, ['Cache-Control', 'public, max-age=86400']]),
+  });
+  // 这里必须 await：serveProto 没有 ctx，不能 waitUntil；不 await 的话 Worker
+  // 一返回响应，未完成的 put 可能被丢弃，缓存永远写不进去。
+  // 代价是一次本地 Cache API 写入（毫秒级），相比省掉的 R2 读取是划算的。
+  try { await cache.put(cacheKey, stored); } catch {}
+  return res;
+}
+
+function edgeCache() {
+  try {
+    return (typeof caches !== 'undefined' && caches.default) ? caches.default : null;
+  } catch {
+    return null;
+  }
 }
 
 // 判断一个原型对象是不是以 gzip 字节存储的；返回可安全回放的 body。
