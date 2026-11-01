@@ -508,6 +508,9 @@ def cmd_pull(args):
         with open(os.path.join(out_dir, 'tree.json'), 'w') as f:
             json.dump({k: idx[k] for k in ('projects', 'groups', 'counts', 'account')}, f, ensure_ascii=False, indent=2)
 
+        # 计数器要加锁：+= 是「读-改-写」，8 个线程并发会丢更新。
+        # 之前 901 个文件只报 4.9MB（实际 46MB）就是被这个吃掉的。
+        lock = threading.Lock()
         total_bytes = [0]
         done = [0]
         skipped = [0]
@@ -527,24 +530,29 @@ def cmd_pull(args):
                 # 断点续传：已经落盘且非空的文件直接跳过。网络差的时候一次拉不全
                 # 是常态，重跑一次只补缺口，而不是把几千个文件重下一遍。
                 if not args.force and os.path.exists(dest) and os.path.getsize(dest) > 0:
-                    total_bytes[0] += os.path.getsize(dest)
-                    skipped[0] += 1
-                    done[0] += 1
+                    with lock:
+                        total_bytes[0] += os.path.getsize(dest)
+                        skipped[0] += 1
+                        done[0] += 1
                     return
                 if kind == 'page':
                     page = api('GET', '/api/pages/' + urllib.parse.quote(src))
                     os.makedirs(os.path.dirname(dest) or '.', exist_ok=True)
                     with open(dest, 'w') as f:
                         f.write(page.get('content') or '')
-                    total_bytes[0] += os.path.getsize(dest)
+                    nbytes = os.path.getsize(dest)
                 else:
-                    total_bytes[0] += download(src, dest, use_auth=need_auth)
-                done[0] += 1
-                if done[0] % 10 == 0 or done[0] == total_jobs:
+                    nbytes = download(src, dest, use_auth=need_auth)
+                with lock:
+                    total_bytes[0] += nbytes
+                    done[0] += 1
+                    cur = done[0]
+                if cur % 10 == 0 or cur == total_jobs:
                     progress()
             except Exception as e:
-                errors.append({'path': dest, 'error': str(e)})
-                done[0] += 1
+                with lock:
+                    errors.append({'path': dest, 'error': str(e)})
+                    done[0] += 1
 
         with ThreadPoolExecutor(max_workers=max(1, min(args.concurrency, 8))) as pool:
             list(pool.map(work, jobs))
