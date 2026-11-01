@@ -1,6 +1,15 @@
 import { sanitizeOriginalName } from './upload.js';
 import { bumpDaily } from './admin/dailyStats.js';
 
+// ⚠️ 这里**故意没有鉴权**，不是漏了。
+//
+// 图片的可见性（imgmeta.isPublic）只决定「是否出现在公开图库 / 列表里」，
+// 不影响直链能不能访问 —— 图床的核心用途就是把直链发给别人看（Markdown、
+// 邮件、IM、文档里嵌）。一旦按 isPublic 给直链加 token 校验，所有已经发出去
+// 的链接会立刻全部失效，分享场景直接废掉。
+//
+// 所以：不要在这里加 Authorization 校验，也不要把「私密」理解成「需要登录」。
+// 原型那边同理：isPrivate 才拦截，普通原型按 URL 公开。
 export async function handleGet(env, ctx, key, request) {
   if (!key) return new Response('Not Found', { status: 404 });
 

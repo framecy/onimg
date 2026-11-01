@@ -158,6 +158,14 @@ Agent 用的非交互 CLI 是 `scripts/onimg-agent.py`，它**不**像 `onimg-cl
 （`ONIMG_CLI_PY` / `TYPORA_UPLOAD_SH`）内联在 `src/index.js` 中，运行时用的是内联副本。
 **改动这两个脚本后要同步更新 `index.js` 里的常量**，否则线上行为不变。
 
+### 产品语义：图片的「私密」不等于「需要登录」
+
+- `imgmeta.isPublic` 只控制**是否出现在公开图库 / 列表里**；直链**永远可访问**。
+  图床的用途就是把链接发出去（Markdown / IM / 文档），给直链加鉴权会让所有已发出的
+  链接失效。**不要给 `src/get.js` 加 token 校验**，这是设计，不是技术债。
+- 原型不同：`isPrivate` / `accessPassword` 会真的拦人（见 `src/proto/serve.js`）。
+- 因此「批量拉取」也不需要为图片带 token —— 带了反而会被判定为私有请求、绕过边缘缓存。
+
 ### 存储层
 
 - 元数据全部走 D1（`src/kv-d1.js` 是 KVNamespace 契约 + D1 内核，在 `src/index.js`
