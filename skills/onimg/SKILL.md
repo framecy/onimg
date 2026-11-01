@@ -75,6 +75,10 @@ onimg-agent auth login --scope read --json
 | 上传图片 | `onimg-agent push img a.png b.jpg --json` |
 | 上传原型 | `onimg-agent push proto ./site --title 首页改版` |
 | 更新已有原型 | `onimg-agent push proto ./site --id <protoId>` |
+| 新建文档 | `onimg-agent push page ./周报.md --title 周报` |
+| 替换文档正文 | `onimg-agent edit page:<slug> --file ./v2.html` |
+| 定点改一处 | `onimg-agent edit page:<slug> --replace "旧=新"` |
+| 读文档正文 | `onimg-agent get page:<slug> -o -` |
 | 改标题/标签/可见性 | `onimg-agent edit proto:<id> --title X --tags 甲,乙 --private` |
 | 删除 | `onimg-agent rm img:<key>`（dry-run）→ 加 `--yes` 执行 |
 | 原型版本 | `onimg-agent versions <protoId> --json` |
@@ -135,6 +139,36 @@ onimg-agent ls --q 首页 --json     # 名字/标签里含「首页」
 onimg-agent push proto ./dist --title "客户方案页" --json
 # 返回 protoId + url；后续更新用 --id <protoId>，服务端会自动做增量
 ```
+
+**改一篇文档（HTML / Markdown）**
+
+页面正文可以整篇替换，也可以只改一处。四种写法按场景选：
+
+```bash
+# 1. 整篇替换（最常用）：本地改好再推上去
+onimg-agent edit page:2026-10-report --file ./report.html --json
+
+# 2. 只改一处：不用下载整篇，服务端取回原文、替换、写回
+onimg-agent edit page:2026-10-report --replace "28,324.84=29,101.20" --json
+# 原文里找不到 OLD 会直接报错退出（不会静默不改）
+
+# 3. 管道：适合 Agent 生成的内容直接灌进去
+cat report.md | onimg-agent edit page:weekly --stdin --json
+
+# 4. 短内容直接给
+onimg-agent edit page:weekly --content "# 标题" --json
+```
+
+配套：
+
+```bash
+onimg-agent get page:<slug> -o -          # 正文打到 stdout（可管道 / 重定向）
+onimg-agent push page ./报告.html --title 月报 --slug 2026-10   # 新建（--private 则不进公开列表）
+onimg-agent edit page:<slug> --type html  # 改类型（markdown ↔ html）
+```
+
+注意：**页面改正文走的是 `edit page:`，不是 `edit proto:`**。原型的内容只能整包重传
+（`push proto --id`，服务端做增量），没有单文件编辑。
 
 **把一批图设为公开**
 

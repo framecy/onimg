@@ -374,6 +374,19 @@ onimg-agent rm img:<key>                 # dry-run，加 --yes 才真删（进�
 onimg-agent versions <protoId>
 ```
 
+### 编辑文档正文（HTML / Markdown）
+
+```bash
+onimg-agent get page:<slug> -o -                        # 读正文到 stdout
+onimg-agent edit page:<slug> --file ./v2.html           # 整篇替换（按扩展名自动判类型）
+onimg-agent edit page:<slug> --replace "旧=新"           # 定点替换，找不到原文会报错
+cat x.md | onimg-agent edit page:<slug> --stdin         # 从管道读
+onimg-agent edit page:<slug> --content "# 短内容"        # 直接给
+onimg-agent push page ./报告.html --title 月报 --slug r1  # 新建
+```
+
+原型不支持单文件编辑：内容只能整包重传（`push proto --id <id>`，服务端做增量）。
+
 ### 退出码
 
 | 码 | 含义 |

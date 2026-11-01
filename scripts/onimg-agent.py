@@ -480,14 +480,29 @@ def cmd_get(args):
         if kind in ('img', 'image'):
             url = base + '/' + urllib.parse.quote(ident)
             dest = args.output or os.path.basename(ident)
+            if dest == '-':
+                # -o - ：直接把字节写到 stdout，方便管道处理
+                data = download(url, '/dev/stdout') if False else None
+                hdrs = {'User-Agent': 'onimg-agent/1.0'}
+                req = urllib.request.Request(url, headers=hdrs)
+                with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
+                    sys.stdout.buffer.write(r.read())
+                sys.exit(0)
             n = download(url, dest)
             emit(args, {'ok': True, 'path': os.path.abspath(dest), 'bytes': n}, ['已保存 %s (%d 字节)' % (dest, n)])
         if kind == 'page':
             page = api('GET', '/api/pages/' + urllib.parse.quote(ident))
             ext = 'md' if page.get('type') == 'markdown' else 'html'
+            text = page.get('content') or ''
             dest = args.output or ('%s.%s' % (ident, ext))
+            if dest == '-':
+                # -o - ：正文直接打到 stdout（配合 shell 重定向 / 管道）
+                if args.json:
+                    emit(args, {'ok': True, 'slug': ident, 'title': page.get('title'), 'content': text})
+                sys.stdout.write(text)
+                sys.exit(0)
             with open(dest, 'w') as f:
-                f.write(page.get('content') or '')
+                f.write(text)
             emit(args, {'ok': True, 'path': os.path.abspath(dest), 'slug': ident, 'title': page.get('title')},
                  ['已保存 %s' % dest])
         if kind == 'proto':
@@ -618,6 +633,51 @@ def cmd_pull(args):
     guard(run, args)
 
 
+# ── 文档正文（页面）─────────────────────────────────────────────────────────
+
+def read_content(args):
+    """按 --file / --stdin / --content 取正文。都没给返回 None。
+
+    push 的子命令没有这几个参数，所以统一走 getattr —— 否则 cmd_push 里
+    一碰 args.file 就 AttributeError。
+    """
+    path = getattr(args, 'file', None)
+    if path == '-':
+        return sys.stdin.read()
+    if path:
+        if not os.path.isfile(path):
+            fail(args, '文件不存在：%s' % path, EXIT_ERR)
+        with open(path, encoding='utf-8') as f:
+            return f.read()
+    if getattr(args, 'stdin', False):
+        return sys.stdin.read()
+    if getattr(args, 'content', None) is not None:
+        return args.content
+    return None
+
+
+def infer_type(path, default='markdown'):
+    ext = os.path.splitext(path or '')[1].lower()
+    if ext in ('.md', '.markdown', '.txt'):
+        return 'markdown'
+    if ext in ('.html', '.htm'):
+        return 'html'
+    return default
+
+
+def slugify(name):
+    base = os.path.basename(name or '')
+    base = os.path.splitext(base)[0]
+    out = []
+    for ch in base:
+        if ch.isalnum() or ch in '-_':
+            out.append(ch)
+        elif ch in ' _':
+            out.append('-')
+    slug = ''.join(out).strip('-')[:120]
+    return slug or 'page-' + str(int(time.time()))
+
+
 # ── 写操作 ───────────────────────────────────────────────────────────────────
 
 def cmd_push(args):
@@ -646,6 +706,36 @@ def cmd_push(args):
                  ['%s -> %s' % (r['file'], r['url']) for r in ok] + ['%s 失败：%s' % (r['file'], r['error']) for r in results if r.get('error')],
                  EXIT_OK if len(ok) == len(results) else EXIT_PARTIAL)
         guard(run, args)
+
+    if args.what == 'page':
+        def run_page():
+            path = args.files[0]
+            content = read_content(args) if (getattr(args, 'file', None) or getattr(args, 'stdin', False)
+                                             or getattr(args, 'content', None) is not None) else None
+            if content is None:
+                if not os.path.isfile(path):
+                    fail(args, '文件不存在：%s' % path, EXIT_ERR)
+                with open(path, encoding='utf-8') as f:
+                    content = f.read()
+            slug = args.slug or slugify(path)
+            body = {
+                'slug': slug,
+                'title': args.title or os.path.splitext(os.path.basename(path))[0],
+                'content': content,
+                'type': args.type or infer_type(path),
+                'isPublic': not getattr(args, 'private', False),
+            }
+            if args.password:
+                body['accessPassword'] = args.password
+            if args.project:
+                body['projectId'] = args.project
+            if args.group:
+                body['groupId'] = args.group
+            r = api('POST', '/api/pages', body)
+            emit(args, {'ok': True, 'slug': r.get('slug'), 'title': r.get('title'),
+                        'type': r.get('type'), 'url': load_config()['ONIMG_URL'] + '/p/' + urllib.parse.quote(slug)},
+                 ['已创建：%s  %s' % (r.get('slug'), r.get('title'))])
+        guard(run_page, args)
 
     # proto：目录或 zip 一律打包成 zip 再走 /upload/proto（服务端自己解压）
     def run_proto():
@@ -704,10 +794,41 @@ def cmd_edit(args):
                 body['title'] = args.title
             if args.public or args.private:
                 body['isPublic'] = bool(args.public)
+            if args.password is not None:
+                # 页面用的是 accessPassword，不是原型那个 password 字段
+                body['accessPassword'] = args.password
+            if args.type:
+                body['type'] = args.type
+
+            content = read_content(args)
+            if args.replace:
+                # 定点改：先取回现有正文，逐条替换，再整篇写回。
+                # 只改一个数字 / 一句话时不用把整篇下载下来再传一遍。
+                current = api('GET', '/api/pages/' + urllib.parse.quote(ident)).get('content') or ''
+                new = current
+                for pair in args.replace:
+                    if '=' not in pair:
+                        fail(args, '--replace 需要 old=new 形式：%s' % pair, EXIT_USAGE)
+                    old, repl = pair.split('=', 1)
+                    if old not in new:
+                        fail(args, '原文里找不到要替换的内容：%s' % old, EXIT_ERR)
+                    new = new.replace(old, repl)
+                content = new
+            if content is not None:
+                body['content'] = content
+                if not args.type and args.file and args.file != '-':
+                    body['type'] = infer_type(args.file, None) or None
+                    if body['type'] is None:
+                        del body['type']
+
             if not body:
-                fail(args, '没有可改的字段（--title / --public / --private）', EXIT_USAGE)
+                fail(args, '没有可改的字段（--title / --file / --stdin / --content / --replace / --public / --private / --password）', EXIT_USAGE)
             api('PATCH', '/api/pages/' + urllib.parse.quote(ident), body)
-            emit(args, {'ok': True, 'ref': args.ref, 'changed': body}, ['%s 已更新' % args.ref])
+            changed = sorted(k for k in body if k != 'content')
+            if 'content' in body:
+                changed.append('content(%d 字符)' % len(body['content']))
+            emit(args, {'ok': True, 'ref': args.ref, 'changed': changed},
+                 ['%s 已更新：%s' % (args.ref, ', '.join(changed))])
         if kind == 'proto':
             body = {}
             if args.title is not None:
@@ -823,20 +944,32 @@ def build_parser():
     pl.set_defaults(func=cmd_pull)
 
     ps = sub.add_parser('push', help='上传', parents=[common])
-    ps.add_argument('what', choices=['img', 'proto'])
+    ps.add_argument('what', choices=['img', 'proto', 'page'])
     ps.add_argument('files', nargs='+')
     ps.add_argument('--id', dest='proto_id', help='原型 ID：填了就是更新（增量）')
     ps.add_argument('--title')
     ps.add_argument('--password')
+    ps.add_argument('--slug', help='页面 slug（默认取文件名）')
+    ps.add_argument('--type', choices=['markdown', 'html'], help='页面类型（默认按扩展名猜）')
+    ps.add_argument('--project', help='页面所属项目 ID')
+    ps.add_argument('--group', help='页面所属分组 ID')
+    ps.add_argument('--public', action='store_true', help='页面公开（默认）')
+    ps.add_argument('--private', action='store_true', help='页面私有（不进公开列表）')
     ps.set_defaults(func=cmd_push)
 
-    e = sub.add_parser('edit', help='改元数据（标题 / 标签 / 可见性 / 密码）', parents=[common])
+    e = sub.add_parser('edit', help='改元数据或文档正文（标题 / 标签 / 可见性 / 密码 / 内容）', parents=[common])
     e.add_argument('ref')
     e.add_argument('--title')
     e.add_argument('--tags')
     e.add_argument('--public', action='store_true')
     e.add_argument('--private', action='store_true')
     e.add_argument('--password')
+    e.add_argument('--file', help='用文件内容替换页面正文（- 表示读 stdin）')
+    e.add_argument('--stdin', action='store_true', help='从 stdin 读正文')
+    e.add_argument('--content', help='直接给正文（适合短内容）')
+    e.add_argument('--replace', action='append', metavar='OLD=NEW',
+                   help='定点替换：把原文里的 OLD 换成 NEW，可重复')
+    e.add_argument('--type', choices=['markdown', 'html'], help='改页面类型')
     e.set_defaults(func=cmd_edit)
 
     r = sub.add_parser('rm', help='删除（默认 dry-run）', parents=[common])
