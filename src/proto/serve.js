@@ -269,9 +269,11 @@ export async function serveProto(env, protoId, filePath, request) {
 async function cacheableResponse(res, cache, cacheKey) {
   res.headers.set('X-Cache', 'MISS');
   if (!cacheKey) return res;
-  const stored = new Response(res.clone().body, {
-    headers: new Headers([...res.headers, ['Cache-Control', 'public, max-age=86400']]),
-  });
+  // set 而不是 append：HTML 原本是 no-cache，append 会留下两个 Cache-Control，
+  // Cache API 取第一个 → 永远不会缓存（线上实测 HTML 一直 MISS 就是这个）。
+  const storeHeaders = new Headers(res.headers);
+  storeHeaders.set('Cache-Control', 'public, max-age=86400');
+  const stored = new Response(res.clone().body, { headers: storeHeaders });
   // 这里必须 await：serveProto 没有 ctx，不能 waitUntil；不 await 的话 Worker
   // 一返回响应，未完成的 put 可能被丢弃，缓存永远写不进去。
   // 代价是一次本地 Cache API 写入（毫秒级），相比省掉的 R2 读取是划算的。

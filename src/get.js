@@ -62,9 +62,11 @@ export async function handleGet(env, ctx, key, request) {
     // 存一份「1 天过期」的副本，而不是响应里那年的长缓存：
     // Cache API 的 delete 只作用于当前 colo，彻底删除图片后其他 PoP 最多残留
     // 1 天，而不是 1 年。浏览器侧拿到的仍是长缓存（key 不可变，安全）。
-    const stored = new Response(res.clone().body, {
-      headers: new Headers([...res.headers, ['Cache-Control', 'public, max-age=86400']]),
-    });
+    // 必须用 set 覆盖：直接 append 会留下两个 Cache-Control（原值 + 新值），
+    // Cache API 取第一个，等于边缘 TTL 仍是浏览器那一年。
+    const storeHeaders = new Headers(res.headers);
+    storeHeaders.set('Cache-Control', 'public, max-age=86400');
+    const stored = new Response(res.clone().body, { headers: storeHeaders });
     ctx.waitUntil(cache.put(cacheKey, stored).catch(() => {}));
   }
   return res;
