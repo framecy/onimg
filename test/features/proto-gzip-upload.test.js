@@ -60,7 +60,7 @@ describe('原型上行 gzip 压缩', () => {
     await handleProtoFinalize(createRequest('POST', 'http://localhost/upload/proto/finalize', {
       body: { protoId, filePaths: ['index.html', 'a.css'] },
     }), env, OWNER);
-    const res = await serveProto(env, protoId, 'a.css', new Request('http://localhost/proto/x/a.css'));
+    const res = await serveProto(env, protoId, '_s0-1/a.css', new Request('http://localhost/proto/x/_s0-1/a.css'));
     expect(res.headers.get('Content-Encoding')).toBeNull();
     expect(await res.text()).toBe('body{}');
   });
@@ -73,7 +73,7 @@ describe('原型上行 gzip 压缩', () => {
       body: { protoId, filePaths: ['index.html', 'css/site.css'] },
     }), env, OWNER);
 
-    const res = await serveProto(env, protoId, 'css/site.css', new Request('http://localhost/proto/x/css/site.css', { headers: { 'Accept-Encoding': 'gzip' } }));
+    const res = await serveProto(env, protoId, '_s0-1/css/site.css', new Request('http://localhost/proto/x/_s0-1/css/site.css', { headers: { 'Accept-Encoding': 'gzip' } }));
     // 回放一律明文：压缩只用于上行，响应交给 Cloudflare 自己协商压缩
     expect(res.headers.get('Content-Encoding')).toBeNull();
     expect(await res.text()).toBe(src.toString());
@@ -89,7 +89,7 @@ describe('原型上行 gzip 压缩', () => {
       body: { protoId, filePaths: ['index.html'] },
     }), env, OWNER);
 
-    const res = await serveProto(env, protoId, 'index.html', new Request('http://localhost/proto/x/index.html'));
+    const res = await serveProto(env, protoId, '_s0-1/index.html', new Request('http://localhost/proto/x/_s0-1/index.html'));
     expect(res.headers.get('Content-Encoding')).toBeNull();
     const text = await res.text();
     expect(text).toContain('<title>Demo</title>');
@@ -120,7 +120,7 @@ describe('原型上行 gzip 压缩', () => {
       body: { protoId, filePaths: ['index.html', 'legacy.js'] },
     }), env, OWNER);
 
-    const res = await serveProto(env, protoId, 'legacy.js', new Request('http://localhost/proto/x/legacy.js', { headers: { 'Accept-Encoding': 'gzip' } }));
+    const res = await serveProto(env, protoId, '_s0-1/legacy.js', new Request('http://localhost/proto/x/_s0-1/legacy.js', { headers: { 'Accept-Encoding': 'gzip' } }));
     expect(await res.text()).toBe(src.toString());
   });
 
@@ -134,7 +134,7 @@ describe('原型上行 gzip 压缩', () => {
       body: { protoId, filePaths: ['index.html', 'only-ce.css'] },
     }), env, OWNER);
 
-    const res = await serveProto(env, protoId, 'only-ce.css', new Request('http://localhost/proto/x/only-ce.css', { headers: { 'Accept-Encoding': 'gzip' } }));
+    const res = await serveProto(env, protoId, '_s0-1/only-ce.css', new Request('http://localhost/proto/x/_s0-1/only-ce.css', { headers: { 'Accept-Encoding': 'gzip' } }));
     expect(await res.text()).toBe(src.toString());
   });
 
@@ -145,7 +145,7 @@ describe('原型上行 gzip 压缩', () => {
     await handleProtoFinalize(createRequest('POST', 'http://localhost/upload/proto/finalize', {
       body: { protoId, filePaths: ['index.html', 'pic.png'] },
     }), env, OWNER);
-    const res = await serveProto(env, protoId, 'pic.png', new Request('http://localhost/proto/x/pic.png'));
+    const res = await serveProto(env, protoId, '_s0-1/pic.png', new Request('http://localhost/proto/x/_s0-1/pic.png'));
     expect(res.headers.get('Content-Encoding')).toBeNull();
   });
   test('回放一律明文（不再依赖 Content-Encoding 协商）', async () => {
@@ -160,7 +160,7 @@ describe('原型上行 gzip 压缩', () => {
       body: { protoId, filePaths: ['index.html', 'plain.js'] },
     }), env, OWNER);
 
-    const res = await serveProto(env, protoId, 'plain.js', new Request('http://localhost/proto/x/plain.js'));
+    const res = await serveProto(env, protoId, '_s0-1/plain.js', new Request('http://localhost/proto/x/_s0-1/plain.js'));
     expect(res.headers.get('Content-Encoding')).toBeNull();
     expect(await res.text()).toBe(src.toString());
   });

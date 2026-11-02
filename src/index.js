@@ -87,7 +87,9 @@ export default {
         const slashIdx = rest.indexOf('/');
         const protoId  = slashIdx === -1 ? rest : rest.slice(0, slashIdx);
         const filePath = slashIdx === -1 ? '' : rest.slice(slashIdx + 1);
-        return await serveProto(env, protoId, filePath, request);
+        // ctx 透传给 serveProto：缓存写入与访问统计挂 waitUntil，
+        // 不阻塞响应（旧实现 await cache.put() 挡在关键路径上）。
+        return await serveProto(env, protoId, filePath, request, ctx);
       }
 
       // ── Public page hosting ──────────────────────────────────────────────────

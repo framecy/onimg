@@ -2,10 +2,14 @@ import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { serveProto } from '../../src/proto/serve.js';
 import { createEnv } from '../helpers/mock-env.js';
 
-// 公开原型资源的边缘缓存。三条底线：
-//   1. 公开资源第二次请求不再读 R2
+// 版本化 URL 下的边缘缓存。底线：
+//   1. 公开资源第二次请求不再读 R2（版本化路径零 D1：缓存命中即返回）
 //   2. 私有 / 带密码原型一次都不缓存（访问控制必须实时判定）
-//   3. 原型一改（updatedAt 变化）旧缓存自动失效 —— 缓存键里带着它
+//   3. 重新上传（version 变化）→ 新 URL，旧缓存键自然作废
+//   4. 改标题 / 改标签（updatedAt 变化但 version 不变）不再冲掉缓存
+//      —— 旧实现缓存键含 updatedAt，改一次标题全站 MISS，这是要修的 bug
+//   5. 404 有负缓存：Axure 每页发的 shouldShow*Hint 探测不再打穿 D1+R2
+//   6. If-None-Match 命中回 304
 
 function fakeCaches() {
   const store = new Map();
@@ -26,11 +30,16 @@ afterEach(() => {
   else globalThis.caches = originalCaches;
 });
 
-async function seed(env, { isPrivate = false, password, updatedAt = 1000, body = '<html><body>ok</body></html>' } = {}) {
+const ctx = { waitUntil(p) { p?.catch?.(() => {}); } };
+
+async function seed(env, {
+  isPrivate = false, password, updatedAt = 1000, version = 1,
+  body = '<html><body>ok</body></html>',
+} = {}) {
   const meta = {
     protoId: 'p1', title: '原型', owner: 'alice', entryPoint: 'index.html',
-    fileCount: 1, totalSize: 30, version: 1, updatedAt,
-    versions: [{ v: 1, at: updatedAt, files: 1, size: 30 }],
+    fileCount: 1, totalSize: 30, version, updatedAt,
+    versions: [{ v: version, at: updatedAt, files: 1, size: 30 }],
     isPrivate,
     ...(password ? { accessPassword: password, passwordExpiry: Date.now() + 86400000 } : {}),
   };
@@ -40,57 +49,219 @@ async function seed(env, { isPrivate = false, password, updatedAt = 1000, body =
   return meta;
 }
 
-const req = (p = 'index.html') => new Request('http://localhost/proto/p1/' + p);
+const req = (p, extra = {}) => new Request('http://localhost/proto/p1/' + p, {
+  method: 'GET', ...extra,
+});
 
-describe('原型边缘缓存', () => {
-  test('公开资源第二次命中，不再读 R2', async () => {
+/** 入口请求 → 302 → 返回版本化 URL（测试辅助） */
+async function versionUrl(env, protoId = 'p1') {
+  const r = await serveProto(env, protoId, '', req(''), ctx);
+  return r.headers.get('Location');
+}
+
+describe('原型边缘缓存（版本化 URL）', () => {
+  test('入口 /proto/{id}/ 302 到版本化 URL，随后资源零 D1 命中', async () => {
     const env = createEnv();
     await seed(env);
-    let reads = 0;
-    const real = env.BUCKET.get.bind(env.BUCKET);
-    env.BUCKET.get = async (k) => { reads++; return real(k); };
 
-    const r1 = await serveProto(env, 'p1', 'index.html', req());
-    expect(r1.headers.get('X-Cache')).toBe('MISS');
-    const r2 = await serveProto(env, 'p1', 'index.html', req());
-    expect(r2.headers.get('X-Cache')).toBe('HIT');
-    expect(reads).toBe(1);
+    const loc = await versionUrl(env);
+    expect(loc).toMatch(/^\/proto\/p1\/_s0-1\/index\.html$/);
+
+    // 计数：版本化路径上的 D1 读（meta get）与 R2 读
+    let metaReads = 0, r2Reads = 0;
+    const realGet = env.STATS.get.bind(env.STATS);
+    env.STATS.get = async (k, ...a) => { if (k === 'proto:p1') metaReads++; return realGet(k, ...a); };
+    const realR2 = env.BUCKET.get.bind(env.BUCKET);
+    env.BUCKET.get = async (k) => { r2Reads++; return realR2(k); };
+
+    const u = 'http://localhost' + loc;
+    const r1 = await serveProto(env, 'p1', loc.slice('/proto/p1/'.length), new Request(u), ctx);
+    expect(r1.status).toBe(200);
+    expect(r1.headers.get('Cache-Control')).toBe('no-store');   // HTML 不缓存
+    const r2 = await serveProto(env, 'p1', loc.slice('/proto/p1/'.length), new Request(u), ctx);
+    expect(r2.status).toBe(200);
+
+    // HTML 恒不缓存 → 两次都回源；标题注入读 meta 但资产路径零 D1。
+    // HTML 的 meta 读是「标题注入」功能本身（每 HTML 1 次），不算热路径回归：
+    // 一页 Axure 只有 1-2 个 HTML，其余 ~118 个资产请求全部零 D1。
+    expect(metaReads).toBe(2);
+    expect(r2Reads).toBe(2);
     expect(await r2.text()).toContain('ok');
   });
 
-  test('私有原型不缓存', async () => {
+  test('公开资产：第二次命中边缘缓存，不再读 R2，也不读 meta', async () => {
+    const env = createEnv();
+    await seed(env);
+    await env.BUCKET.put('proto/p1/app.js', new TextEncoder().encode('ok()').buffer,
+      { httpMetadata: { contentType: 'application/javascript' } });
+
+    let metaReads = 0, r2Reads = 0;
+    const realGet = env.STATS.get.bind(env.STATS);
+    env.STATS.get = async (k, ...a) => { if (k === 'proto:p1') metaReads++; return realGet(k, ...a); };
+    const realR2 = env.BUCKET.get.bind(env.BUCKET);
+    env.BUCKET.get = async (k) => { r2Reads++; return realR2(k); };
+
+    const path = '_s0-1/app.js';
+    const r1 = await serveProto(env, 'p1', path, req(path), ctx);
+    expect(r1.headers.get('X-Cache')).toBe('MISS');
+    const r2 = await serveProto(env, 'p1', path, req(path), ctx);
+    expect(r2.headers.get('X-Cache')).toBe('HIT');
+    expect(r2Reads).toBe(1);
+    expect(metaReads).toBe(0);          // 公开原型热路径零 D1
+    expect(await r2.text()).toBe('ok()');
+    expect(r2.headers.get('Cache-Control')).toBe('public, max-age=86400');
+  });
+
+  test('私有原型不缓存且签名错误会被拒', async () => {
     const env = createEnv();
     await seed(env, { isPrivate: true });
-    const r1 = await serveProto(env, 'p1', 'index.html', req());
-    expect(r1.status).toBe(403);
+
+    // 入口：无属主 token → 403
+    const r0 = await serveProto(env, 'p1', '', req(''), ctx);
+    expect(r0.status).toBe(403);
+
+    // 直接猜版本化路径：签名对不上 → 302 回入口（再被 403）
+    const bad = await serveProto(env, 'p1', '_sdeadbeef-1/index.html', req('_sdeadbeef-1/index.html'), ctx);
+    expect(bad.status).toBe(302);
+    expect(bad.headers.get('Location')).toBe('/proto/p1/');
     expect(globalThis.caches._store.size).toBe(0);
   });
 
   test('带密码原型不缓存（公开读也要先过密码）', async () => {
     const env = createEnv();
     await seed(env, { password: '123456' });
-    const r1 = await serveProto(env, 'p1', 'index.html', req());
+
+    const r1 = await serveProto(env, 'p1', '', req(''), ctx);
     expect(r1.status).toBe(403);
     expect(globalThis.caches._store.size).toBe(0);
+
+    // 伪造签名直连资产：302 回入口重新走密码流程
+    const bad = await serveProto(env, 'p1', '_sdeadbeef-1/app.js', req('_sdeadbeef-1/app.js'), ctx);
+    expect(bad.status).toBe(302);
   });
 
-  test('原型更新后（updatedAt 变化）旧缓存失效', async () => {
+  test('密码正确后 302 到签名 URL，签名 URL 可读资产，改密码后立刻失效', async () => {
     const env = createEnv();
-    await seed(env, { updatedAt: 1000, body: '<html><body>旧</body></html>' });
-    await serveProto(env, 'p1', 'index.html', req());
+    await seed(env, { password: '123456' });
+    await env.BUCKET.put('proto/p1/app.js', new TextEncoder().encode('ok()').buffer,
+      { httpMetadata: { contentType: 'application/javascript' } });
 
-    await seed(env, { updatedAt: 2000, body: '<html><body>新</body></html>' });
-    const r2 = await serveProto(env, 'p1', 'index.html', req());
-    expect(r2.headers.get('X-Cache')).toBe('MISS');
-    expect(await r2.text()).toContain('新');
+    // 提交正确密码 → 302 回入口（带 cookie）→ 入口再 302 到签名 URL
+    const submit = await serveProto(env, 'p1', '', req('?pwd=123456'), ctx);
+    expect(submit.status).toBe(302);
+    const entry = await serveProto(env, 'p1', '', new Request('http://localhost/proto/p1/', {
+      headers: { Cookie: 'onimg_proto_p1=123456' },
+    }), ctx);
+    expect(entry.status).toBe(302);
+    const loc = entry.headers.get('Location');
+    expect(loc).toMatch(/^\/proto\/p1\/_s[0-9a-f]{16}-1\/index\.html$/);
+
+    // 签名 URL 可读资产
+    const assetPath = loc.slice('/proto/p1/'.length).replace('index.html', 'app.js');
+    const asset = await serveProto(env, 'p1', assetPath, req(assetPath), ctx);
+    expect(asset.status).toBe(200);
+    expect(await asset.text()).toBe('ok()');
+
+    // 改密码：meta 变化 → 旧签名立刻失效（实时判定）
+    const meta = JSON.parse(await env.STATS.get('proto:p1'));
+    meta.accessPassword = '654321';
+    await env.STATS.put('proto:p1', JSON.stringify(meta));
+    const stale = await serveProto(env, 'p1', assetPath, req(assetPath), ctx);
+    expect(stale.status).toBe(302);
+    expect(stale.headers.get('Location')).toBe('/proto/p1/');
+  });
+
+  test('重新上传（version 变化）→ 新 URL；旧 URL 缓存键不同', async () => {
+    const env = createEnv();
+    await seed(env, { updatedAt: 1000, version: 1, body: '<html><body>旧</body></html>' });
+    const loc1 = await versionUrl(env);
+    expect(loc1).toContain('_s0-1/');
+
+    await seed(env, { updatedAt: 2000, version: 2, body: '<html><body>新</body></html>' });
+    const loc2 = await versionUrl(env);
+    expect(loc2).toContain('_s0-2/');
+    expect(loc2).not.toBe(loc1);
+
+    // 旧版本化 URL 读到的是新内容（R2 已被覆盖）—— 正确性由 URL 更迭保证
+    const r = await serveProto(env, 'p1', '_s0-1/index.html', req('_s0-1/index.html'), ctx);
+    expect(await r.text()).toContain('新');
+  });
+
+  test('改标题（updatedAt 变、version 不变）不再让资产缓存失效', async () => {
+    const env = createEnv();
+    await seed(env);
+    await env.BUCKET.put('proto/p1/app.js', new TextEncoder().encode('ok()').buffer,
+      { httpMetadata: { contentType: 'application/javascript' } });
+
+    const path = '_s0-1/app.js';
+    await serveProto(env, 'p1', path, req(path), ctx);   // 填充缓存
+    const meta = JSON.parse(await env.STATS.get('proto:p1'));
+    meta.title = '改个标题'; meta.updatedAt = 9999;
+    await env.STATS.put('proto:p1', JSON.stringify(meta));
+
+    let r2Reads = 0;
+    const realR2 = env.BUCKET.get.bind(env.BUCKET);
+    env.BUCKET.get = async (k) => { r2Reads++; return realR2(k); };
+
+    // URL 没变（version 没变）→ 缓存键没变 → 命中
+    const hit = await serveProto(env, 'p1', path, req(path), ctx);
+    expect(hit.headers.get('X-Cache')).toBe('HIT');
+    expect(r2Reads).toBe(0);
+  });
+
+  test('404 负缓存：第二次探测不再读 R2', async () => {
+    const env = createEnv();
+    await seed(env);
+
+    const path = '_s0-1/shouldShowSitemapHint';
+    let r2Reads = 0;
+    const realR2 = env.BUCKET.get.bind(env.BUCKET);
+    env.BUCKET.get = async (k) => { r2Reads++; return realR2(k); };
+
+    const r1 = await serveProto(env, 'p1', path, req(path), ctx);
+    expect(r1.status).toBe(404);
+    // waitUntil 是异步落缓存，等一拍
+    await new Promise(r => setTimeout(r, 10));
+    const r2 = await serveProto(env, 'p1', path, req(path), ctx);
+    expect(r2.status).toBe(404);
+    expect(r2.headers.get('X-Cache')).toBe('HIT');
+    expect(r2Reads).toBe(1);
+  });
+
+  test('If-None-Match 命中回 304', async () => {
+    const env = createEnv();
+    await seed(env);
+    await env.BUCKET.put('proto/p1/app.js', new TextEncoder().encode('ok()').buffer,
+      { httpMetadata: { contentType: 'application/javascript' } });
+
+    const path = '_s0-1/app.js';
+    const r1 = await serveProto(env, 'p1', path, req(path), ctx);
+    const etag = r1.headers.get('ETag');
+    expect(etag).toBe('"1"');
+
+    const r2 = await serveProto(env, 'p1', path, req(path, {
+      headers: { 'If-None-Match': etag },
+    }), ctx);
+    expect(r2.status).toBe(304);
   });
 
   test('没有 Cache API 时行为不变', async () => {
     delete globalThis.caches;
     const env = createEnv();
     await seed(env);
-    const res = await serveProto(env, 'p1', 'index.html', req());
+    await env.BUCKET.put('proto/p1/app.js', new TextEncoder().encode('ok()').buffer,
+      { httpMetadata: { contentType: 'application/javascript' } });
+    const res = await serveProto(env, 'p1', '_s0-1/app.js', req('_s0-1/app.js'), ctx);
     expect(res.status).toBe(200);
     expect(res.headers.get('X-Cache')).toBe('MISS');
+    expect(await res.text()).toBe('ok()');
+  });
+
+  test('入口路径上的旧式直链 302 到版本化路径（URL 兼容）', async () => {
+    const env = createEnv();
+    await seed(env);
+    const r = await serveProto(env, 'p1', 'index.html', req('index.html'), ctx);
+    expect(r.status).toBe(302);
+    expect(r.headers.get('Location')).toBe('/proto/p1/_s0-1/index.html');
   });
 });

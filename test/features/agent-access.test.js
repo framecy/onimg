@@ -186,8 +186,15 @@ describe('私有原型的属主读取通道', () => {
   test('属主 token 可以读到文件字节', async () => {
     await seedProto('secret', 'alice', { isPrivate: true });
     const token = await userToken('alice');
-    const res = await serveProto(envRef, 'secret', 'index.html',
+    // 入口：属主 token 放行 → 302 到签名 URL（私有原型 sig ≠ '0'）
+    const r0 = await serveProto(envRef, 'secret', 'index.html',
       authedRequest('GET', 'http://localhost/proto/secret/index.html', token));
+    expect(r0.status).toBe(302);
+    const loc = r0.headers.get('Location');
+    expect(loc).toMatch(/^\/proto\/secret\/_s[0-9a-f]{16}-1\/index\.html$/);
+    // 跟随重定向：带 token 的第二跳仍要过属主判定（签名 + Authorization 均可）
+    const res = await serveProto(envRef, 'secret', loc.slice('/proto/secret/'.length),
+      authedRequest('GET', 'http://localhost' + loc, token));
     expect(res.status).toBe(200);
     expect(await res.text()).toContain('ok');
   });
@@ -211,8 +218,12 @@ describe('私有原型的属主读取通道', () => {
 
   test('公开原型带 token 也照常返回（不因属主通道而改变行为）', async () => {
     await seedProto('public1', 'alice');
-    const res = await serveProto(envRef, 'public1', 'index.html',
+    const r0 = await serveProto(envRef, 'public1', 'index.html',
       createRequest('GET', 'http://localhost/proto/public1/index.html'));
+    expect(r0.status).toBe(302);
+    const res = await serveProto(envRef, 'public1',
+      r0.headers.get('Location').slice('/proto/public1/'.length),
+      createRequest('GET', 'http://localhost' + r0.headers.get('Location')));
     expect(res.status).toBe(200);
   });
 });

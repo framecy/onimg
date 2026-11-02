@@ -1,5 +1,5 @@
 import { MIME_MAP } from './upload.js';
-import { bearerToken } from '../admin/auth.js';
+import { bearerToken, timingSafeEqual } from '../admin/auth.js';
 import { verifyUserToken } from '../user-auth.js';
 import { canUseAgent } from '../agent-access.js';
 import { cfBump, cfMonth } from '../admin/cfCounters.js';
@@ -21,6 +21,60 @@ function cookieName(protoId) {
 
 function esc(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ── 版本化 URL 与签名层 ───────────────────────────────────────────────────────
+//
+// 入口路径 /proto/{id}/…：回答「存在吗 / 私有吗 / 密码对吗」，然后 302 到版本化 URL。
+// 版本化路径 /proto/{id}/_s{sig}-{stamp}/…：资源热路径。
+//
+//   stamp = version          —— 只随重新上传递增。改标题 / 改标签不再让全站
+//                               边缘缓存失效（旧实现用 updatedAt 做缓存键，
+//                               改一次标题就把 120 个文件的缓存全冲掉）。
+//   sig   = '0'              —— 公开原型。资产请求零 D1：无需任何访问判定。
+//         = HMAC 前 16 hex   —— 密码 / 私有原型。HMAC 的输入是
+//                               `id|version|访问标记`，访问标记 = 当前密码或
+//                               'private'。资产请求实时读一次 meta 重算比对：
+//                               改密码、转私有、重传都会让旧签名立刻失效
+//                               （访问控制必须实时判定——与旧实现一致）。
+//
+// 为什么公开原型可以不查库：曾经公开后来转私有的窗口由资产 TTL（1 天）封顶，
+// HTML 恒为 no-store（每次都过入口的实时判定）。
+
+function versionStampOf(meta) {
+  return `${meta.version ?? 1}`;
+}
+
+/** 当前访问标记：密码（未过期）> 'private' > null（完全公开） */
+function accessMarkerOf(meta) {
+  const expired = meta.accessPassword && meta.passwordExpiry && Date.now() > meta.passwordExpiry;
+  if (meta.accessPassword && !expired) return meta.accessPassword;
+  if (meta.isPrivate) return 'private';
+  return null;
+}
+
+function hexEncode(buf) {
+  const u8 = new Uint8Array(buf);
+  let out = '';
+  for (let i = 0; i < u8.length; i++) out += u8[i].toString(16).padStart(2, '0');
+  return out;
+}
+
+async function protoSign(secret, protoId, stamp, marker) {
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(String(secret ?? '')),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
+  );
+  const mac = await crypto.subtle.sign('HMAC', key,
+    new TextEncoder().encode(`${protoId}|${stamp}|${marker}`));
+  return hexEncode(mac).slice(0, 16);
+}
+
+function redirectTo(url) {
+  return new Response(null, {
+    status: 302,
+    headers: { Location: url, 'Cache-Control': 'no-store' },
+  });
 }
 
 function servePasswordPrompt(protoId, title, wrong) {
@@ -66,10 +120,33 @@ function servePasswordPrompt(protoId, title, wrong) {
   });
 }
 
-export async function serveProto(env, protoId, filePath, request) {
+/**
+ * 原型静态服务（入口 + 版本化资源两层）。
+ *
+ * @param {object} env
+ * @param {string} protoId
+ * @param {string} filePath  URL 里 /proto/{id}/ 之后的剩余部分
+ * @param {Request} request
+ * @param {{waitUntil?: Function}} [ctx]  把缓存写入 / 统计挪出关键路径
+ */
+export async function serveProto(env, protoId, filePath, request, ctx) {
   if (!protoId) return new Response('Not Found', { status: 404 });
 
-  // Load metadata
+  const wait = (p) => { if (ctx?.waitUntil) ctx.waitUntil(p); };
+
+  // ── 版本化路径 ────────────────────────────────────────────────────────────
+  if (filePath.startsWith('_s') && filePath.length > 2) {
+    const slash = filePath.indexOf('/');
+    const token = slash === -1 ? filePath.slice(2) : filePath.slice(2, slash);
+    const rest  = slash === -1 ? '' : filePath.slice(slash + 1);
+    const dash  = token.indexOf('-');
+    if (dash <= 0) return new Response('Not Found', { status: 404 });
+    const sig   = token.slice(0, dash);
+    const stamp = token.slice(dash + 1);
+    return serveVersionedAsset(env, protoId, sig, stamp, rest, request, wait);
+  }
+
+  // ── 入口路径：一次元数据查询回答「存在吗 / 私有吗 / 密码对吗」 ──────────────
   const meta = await env.STATS.get(`proto:${protoId}`, 'json');
   if (!meta) return new Response('Prototype Not Found', { status: 404 });
 
@@ -87,8 +164,15 @@ export async function serveProto(env, protoId, filePath, request) {
 
   // ── Password protection ────────────────────────────────────────────────────
   // If password has expired, skip password check (treat as public)
-  const pwdExpired = meta.accessPassword && meta.passwordExpiry && Date.now() > meta.passwordExpiry;
-  if (meta.accessPassword && !pwdExpired && !ownerBypass) {
+  const marker = accessMarkerOf(meta);
+  const needsPwd = !!meta.accessPassword && marker === meta.accessPassword && !ownerBypass;
+
+  let sig = '0';
+  if (marker && (needsPwd || (meta.isPrivate && ownerBypass))) {
+    sig = await protoSign(env.TOKEN_SECRET, protoId, versionStampOf(meta), marker);
+  }
+
+  if (needsPwd) {
     const url     = new URL(request.url);
     const urlPwd  = url.searchParams.get('pwd');
     const cookies = parseCookies(request.headers.get('Cookie') || '');
@@ -105,6 +189,9 @@ export async function serveProto(env, protoId, filePath, request) {
         status: 302,
         headers: {
           Location: dest,
+          'Cache-Control': 'no-store',
+          // cookie 值仍是密码明文：与旧版兼容（原型内容本身不涉密），
+          // Path 限定在本原型之下，7 天有效。
           'Set-Cookie': `${cname}=${encodeURIComponent(meta.accessPassword)}; Path=/proto/${protoId}/; Max-Age=${7 * 86400}; SameSite=Lax`,
         },
       });
@@ -114,7 +201,7 @@ export async function serveProto(env, protoId, filePath, request) {
     if (!authed) {
       let fp = filePath; try { fp = decodeURIComponent(filePath); } catch {}
       const ext = fp.split('.').pop()?.toLowerCase() ?? '';
-      const isHtml = !fp || ext === 'html' || ext === 'htm';
+      const isHtml = !fp || fp === '/' || ext === 'html' || ext === 'htm';
       if (isHtml) return servePasswordPrompt(protoId, meta.title, false);
       // Asset request without auth → 403
       return new Response('Forbidden', { status: 403 });
@@ -122,12 +209,52 @@ export async function serveProto(env, protoId, filePath, request) {
   }
 
   // ── Resolve file path ──────────────────────────────────────────────────────
-  // Empty path → redirect to entry point
-  if (!filePath || filePath === '/') {
-    return Response.redirect(
-      new URL(`/proto/${protoId}/${meta.entryPoint}`, request.url).href,
-      302
-    );
+  // 解码后做一次路径检查：遍历攻击在入口就拦掉，不白做一次 302。
+  let decodedEntry = filePath;
+  try { decodedEntry = decodeURIComponent(filePath); } catch {}
+  if (decodedEntry.includes('..') || decodedEntry.startsWith('/')) {
+    return new Response('Not Found', { status: 404 });
+  }
+
+  // 浏览器落在版本化 URL 上之后，Axure 的相对路径（resources/…、files/…）
+  // 天然解析到同一版本前缀下 —— 不需要 <base> 注入。
+  const stamp  = versionStampOf(meta);
+  const verBase = `/proto/${protoId}/_s${sig}-${stamp}/`;
+
+  // 空路径 / 目录 → 302 到版本化的入口文件
+  if (!filePath || filePath === '/' || decodedEntry.endsWith('/')) {
+    const entry = meta.entryPoint || 'index.html';
+    return redirectTo(verBase + encodePath(entry));
+  }
+
+  // 入口路径上直接请求具体文件（旧链接 / Agent 拉取）：转发到版本化路径。
+  return redirectTo(verBase + filePath);
+}
+
+function encodePath(p) {
+  return encodeURIComponent(p).replace(/%2F/gi, '/');
+}
+
+// ── 版本化路径的资源服务 ─────────────────────────────────────────────────────
+async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, wait) {
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    return new Response('Method Not Allowed', { status: 405 });
+  }
+
+  // 密码 / 私有原型：实时读一次 meta，重算签名比对。
+  // 改密码 / 重传（version 变化）/ 切公开都会让旧签名立刻失效：
+  //   改密码 → marker 变 → HMAC 变；切公开 → 期望 sig 变 '0'；
+  //   重传 → version 变 → HMAC 变。失效后 302 回入口重新走访问控制。
+  let meta = null;
+  if (sig !== '0') {
+    meta = await env.STATS.get(`proto:${protoId}`, 'json');
+    const marker = meta ? accessMarkerOf(meta) : null;
+    const expect = marker
+      ? await protoSign(env.TOKEN_SECRET, protoId, versionStampOf(meta), marker)
+      : '0';
+    if (!meta || !timingSafeEqual(sig, expect)) {
+      return redirectTo(`/proto/${protoId}/`);
+    }
   }
 
   // Decode percent-encoded path (browsers encode non-ASCII chars in URLs,
@@ -137,46 +264,54 @@ export async function serveProto(env, protoId, filePath, request) {
 
   // 路径遍历防护：拒绝 .. 与绝对路径，避免跨原型读取其他 proto 的文件
   //（R2 键为 `proto/{id}/{path}`，`..` 会拼出 `proto/{id}/../other/...` 逃逸出当前原型）。
-  if (decodedPath.includes('..') || decodedPath.startsWith('/')) {
+  if (decodedPath.includes('..') || decodedPath.startsWith('/') || !decodedPath) {
     return new Response('Not Found', { status: 404 });
   }
 
-  // 缓存检查必须在读 R2 **之前**：否则命中也要先读一次对象，等于没省。
-  // 放在访问控制之后，是因为私有 / 带密码的原型不能进缓存。
-
-  // ── 边缘缓存（仅公开资源） ──────────────────────────────────────────────────
-  // 私有 / 带密码的原型一律不缓存：访问控制必须每次实时判定。
-  // 公开资源按「URL + meta.updatedAt」做缓存键 —— 改标题、切私有、换密码都会让
-  // updatedAt 变化，于是旧缓存自动失效，不需要额外的清理逻辑。
-  // 缓存键里带上 meta 的版本，也顺带覆盖了「重新上传同名文件」的情况。
+  // ── 边缘缓存（Cache API，机房本地） ────────────────────────────────────────
+  // 只缓存公开（sig='0'）资源：私有 / 密码原型的访问控制必须实时判定（与旧版一致）。
+  // 密码原型的浏览器会带 cookie、属主会带 Authorization，这里再挡一层。
+  // URL 已含内容指纹（version），缓存键不再需要额外版本参数。
   const cache = edgeCache();
-  const cacheable = cache && request.method === 'GET'
-    && !meta.isPrivate && !meta.accessPassword
-    && !request.headers.get('Authorization');
+  const cacheable = cache && request.method === 'GET' && sig === '0'
+    && !request.headers.get('Cookie') && !request.headers.get('Authorization');
   const cacheKey = cacheable
-    ? new Request(request.url.split('?')[0] + '?__v=' + (meta.updatedAt ?? 0), { method: 'GET' })
+    ? new Request(request.url.split('?')[0], { method: 'GET' })
     : null;
 
   if (cacheKey) {
     const hit = await cache.match(cacheKey);
     if (hit) {
-      const res = new Response(hit.body, hit);
+      const etag = hit.headers.get('ETag');
+      const notMod = maybe304(request, etag, hit.headers);
+      if (notMod) return notMod;
+      const res = new Response(request.method === 'HEAD' ? null : hit.body, hit);
       res.headers.set('X-Cache', 'HIT');
       return res;
     }
+    // 负缓存：这个版本里确实没有这个文件。Axure 每页固定发 2 个
+    // shouldShow*Hint 404 探测，不缓存的话每次都要跑完 D1+R2 全链路。
+    const neg = await cache.match(negKey(cacheKey));
+    if (neg) return new Response('Not Found', { status: 404, headers: { 'X-Cache': 'HIT' } });
   }
 
   // Fetch from R2
   const r2Key = `proto/${protoId}/${decodedPath}`;
   const obj   = await env.BUCKET.get(r2Key);
-  if (!obj) return new Response('Not Found', { status: 404 });
+  if (!obj) {
+    if (cacheKey) {
+      wait(cache.put(negKey(cacheKey), new Response('nf', {
+        status: 404,
+        headers: { 'Cache-Control': 'public, max-age=60' },
+      })).catch(() => {}));
+    }
+    return new Response('Not Found', { status: 404 });
+  }
 
-  const ext  = decodedPath.split('.').pop()?.toLowerCase() ?? '';
-  const ct   = MIME_MAP[ext] ?? obj.httpMetadata?.contentType ?? 'application/octet-stream';
+  const ext    = decodedPath.split('.').pop()?.toLowerCase() ?? '';
+  const ct     = MIME_MAP[ext] ?? obj.httpMetadata?.contentType ?? 'application/octet-stream';
   const isHtml = ext === 'html' || ext === 'htm';
-  // 上行压缩的文件在 R2 里存的就是 gzip 字节（见 src/proto/upload.js），
-  // 回放时带上 Content-Encoding 让浏览器自己解 —— 服务端不做解压，省 CPU。
-  //
+  // 上行压缩的文件在 R2 里存的就是 gzip 字节（见 src/proto/upload.js）。
   // 为什么不能只认元数据：线上实测发现这条流式 put 路径下 R2 的
   // customMetadata 会丢（同一条链路的图片上传却正常），于是「压缩标记在
   // 写入侧有、读取侧没有」，浏览器把 gzip 字节当 JS 解析 —— 原型直接白屏。
@@ -184,14 +319,17 @@ export async function serveProto(env, protoId, filePath, request) {
   // gzip magic（1f 8b）。最后一层顺带把历史上已经写坏的按原样救回来。
   const gz = await resolveGzip(obj, ext);
 
-  // ── Track access (HTML requests only, fire-and-forget) ─────────────────────
+  // ── Track access (HTML requests only) ──────────────────────────────────────
+  // HTML 恒 no-store（Worker 必跑），「打开原型」的统计口径不受缓存影响；
+  // 资产命中缓存后不再执行到这里——资产本来也不计访问量。
+  // 旧实现是裸 IIFE 既不 await 也不 waitUntil：Worker 一返回 promise 随时
+  // 被丢弃，访问统计一直在随机丢。现在挂 ctx.waitUntil。
   if (isHtml) {
     const statsKey = 'prstats:' + protoId;
     const country  = request.cf?.country ?? 'XX';
     const ip       = request.headers.get('CF-Connecting-IP') ?? '';
     const now      = Date.now();
-    // Non-blocking: don't await
-    (async () => {
+    wait((async () => {
       try {
         const existing = await env.STATS.getWithMetadata(statsKey, 'json');
         const count    = (existing?.metadata?.count ?? 0) + 1;
@@ -206,18 +344,30 @@ export async function serveProto(env, protoId, filePath, request) {
         // 按天计数：后台趋势图的真实数据源
         await bumpDaily(env.STATS, 'protoview');
       } catch {}
-    })();
+    })());
   }
 
+  // ETag：同一版本化 URL 下实体不变，stamp 即版本。If-None-Match 命中回 304。
+  const etag = `"${stamp}"`;
   const headers = new Headers({
     'Content-Type': ct,
-    'Cache-Control': isHtml ? 'no-cache' : 'public, max-age=31536000',
+    'ETag': etag,
+    // HTML 恒不缓存：统计与访问控制在 Worker 里。资产 1 天：
+    // 「曾经公开后来转私有」的撤销窗口与重传后旧链接的存活时间都由此封顶
+    //（重传后 version 变化 → 新 URL，浏览器/边缘都会重新拉取）。
+    'Cache-Control': isHtml
+      ? 'no-store'
+      : 'public, max-age=86400',
   });
+  // 只有「回放字节就是存储字节」时 Content-Length 才准确；
+  // gzip 存储要走解压（长度变了），HTML 字符串响应由运行时自带。
+  if (!gz.gzip && !isHtml && obj.size != null) headers.set('Content-Length', String(obj.size));
 
+  const notMod = maybe304(request, etag, headers);
+  if (notMod) return notMod;
 
   // Inject prototype title into HTML files (AxureRP exports default to "Untitled Document")
-  if (isHtml && meta.title) {
-    const safeTitle = meta.title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  if (isHtml) {
     // 必须走 gz.body：嗅探已经把 R2 的流读过一块了，再 obj.arrayBuffer() 会抛
     // 「Body has already been used」。gz.body 是已经把那一块拼回去的可读流。
     const buf = await new Response(gz.body).arrayBuffer();
@@ -239,15 +389,21 @@ export async function serveProto(env, protoId, filePath, request) {
       return new Response(bytes, { headers });
     }
 
-    if (/<title>/i.test(html)) {
-      html = html.replace(/<title>[^<]*<\/title>/i, `<title>${safeTitle}</title>`);
-    } else {
-      html = html.replace(/<head>/i, `<head><title>${safeTitle}</title></head>`);
+    // 标题来自 meta：私有 / 密码路径上已经读过了；公开路径补读一次
+    //（只有 HTML 请求读 —— 资产热路径仍然是零 D1）。
+    const title = meta?.title ?? (await env.STATS.get(`proto:${protoId}`, 'json'))?.title ?? '';
+    if (title) {
+      const safeTitle = esc(title);
+      if (/<title>/i.test(html)) {
+        html = html.replace(/<title>[^<]*<\/title>/i, `<title>${safeTitle}</title>`);
+      } else {
+        html = html.replace(/<head>/i, `<head><title>${safeTitle}</title></head>`);
+      }
     }
-    return cacheableResponse(new Response(html, { headers }), cache, cacheKey);
+    return new Response(html, { headers });
   }
 
-  if (!gz.gzip) return cacheableResponse(new Response(gz.body, { headers }), cache, cacheKey);
+  if (!gz.gzip) return finish(new Response(gz.body, { headers }), cache, cacheKey, wait);
 
   // 压缩只用于「上传上行」，回放一律给明文。
   //
@@ -258,27 +414,43 @@ export async function serveProto(env, protoId, filePath, request) {
   // 回放明文交给 Cloudflare 自己按标准协商压缩，行为可预测；
   // 代价是每次资源请求多一次解压（原生 DecompressionStream，几十 KB 级文件可忽略）。
   const src = typeof gz.body?.pipeThrough === 'function' ? gz.body : new Blob([gz.body]).stream();
-  return cacheableResponse(new Response(src.pipeThrough(new DecompressionStream('gzip')), { headers }), cache, cacheKey);
+  return finish(new Response(src.pipeThrough(new DecompressionStream('gzip')), { headers }), cache, cacheKey, wait);
+}
+
+// If-None-Match → 304（列表语义 + * + W/ 弱匹配，RFC 9110）
+function maybe304(request, etag, srcHeaders) {
+  const inm = request.headers.get('If-None-Match');
+  if (!inm || !etag) return null;
+  const tags = inm.split(',').map(s => s.trim());
+  if (tags.includes(etag) || tags.includes('*') || tags.includes(`W/${etag}`)) {
+    const headers = new Headers();
+    headers.set('ETag', etag);
+    const cc = srcHeaders?.get?.('Cache-Control');
+    if (cc) headers.set('Cache-Control', cc);
+    return new Response(null, { status: 304, headers });
+  }
+  return null;
 }
 
 /**
- * 给公开原型资源套上边缘缓存：响应带 X-Cache，副本存 1 天。
- * 缓存键已含 meta.updatedAt（见 serveProto），所以原型一改就自动换键，
- * 不存在「改了内容还在发旧版本」的问题。
+ * 给公开版本化资源套上边缘缓存：响应带 X-Cache，副本存 1 天。
+ * 缓存写入挂 ctx.waitUntil —— 不再阻塞响应。旧实现里 await cache.put()
+ * 的注释说「serveProto 没有 ctx」，实际 fetch() 一直都有，只是没传进来。
  */
-async function cacheableResponse(res, cache, cacheKey) {
+function finish(res, cache, cacheKey, wait) {
   res.headers.set('X-Cache', 'MISS');
   if (!cacheKey) return res;
-  // set 而不是 append：HTML 原本是 no-cache，append 会留下两个 Cache-Control，
-  // Cache API 取第一个 → 永远不会缓存（线上实测 HTML 一直 MISS 就是这个）。
   const storeHeaders = new Headers(res.headers);
+  // set 而不是 append：append 会留下两个 Cache-Control，Cache API 取第一个
+  //（线上实测 HTML 一直 MISS 就是这个坑）。
   storeHeaders.set('Cache-Control', 'public, max-age=86400');
-  const stored = new Response(res.clone().body, { headers: storeHeaders });
-  // 这里必须 await：serveProto 没有 ctx，不能 waitUntil；不 await 的话 Worker
-  // 一返回响应，未完成的 put 可能被丢弃，缓存永远写不进去。
-  // 代价是一次本地 Cache API 写入（毫秒级），相比省掉的 R2 读取是划算的。
-  try { await cache.put(cacheKey, stored); } catch {}
+  wait(cache.put(cacheKey, new Response(res.clone().body, { headers: storeHeaders })).catch(() => {}));
   return res;
+}
+
+// 负缓存键：加一段查询参数，与正向缓存永不冲突
+function negKey(cacheKey) {
+  return new Request(cacheKey.url + (cacheKey.url.includes('?') ? '&' : '?') + '__neg=1', { method: 'GET' });
 }
 
 function edgeCache() {
@@ -290,7 +462,7 @@ function edgeCache() {
 }
 
 // 判断一个原型对象是不是以 gzip 字节存储的；返回可安全回放的 body。
-// 见 serveProto 里关于「元数据三层兜底」的说明。
+// 见 serveVersionedAsset 里关于「元数据三层兜底」的说明。
 const GZIP_MAGIC = [0x1f, 0x8b];
 // 只对文本类做 magic 嗅探：图片/字体等二进制偶尔也可能以 1f8b 开头，
 // 而文本类被压过必然以 1f8b 开头，判错概率可以忽略。

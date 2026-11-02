@@ -62,10 +62,30 @@ describe('Proto serve: path traversal protection', () => {
     const env = createEnv();
     await seedProto(env, 'id1');
 
+    // 入口路径 302 到版本化 URL（/proto/{id}/_s0-1/…），再读才是 200
     const req = new Request('http://localhost/proto/id1/index.html');
     const res = await serveProto(env, 'id1', 'index.html', req);
-    expect(res.status).toBe(200);
-    const body = await res.text();
+    expect(res.status).toBe(302);
+    const loc = res.headers.get('Location');
+    expect(loc).toMatch(/^\/proto\/id1\/_s0-1\/index\.html$/);
+
+    const res2 = await serveProto(env, 'id1', loc.slice('/proto/id1/'.length),
+      new Request('http://localhost' + loc));
+    expect(res2.status).toBe(200);
+    const body = await res2.text();
     expect(body).toContain('ok');
+  });
+
+  test('版本化路径同样拦截遍历（不因多一层前缀而放松）', async () => {
+    const env = createEnv();
+    await seedProto(env, 'id1');
+
+    const res = await serveProto(env, 'id1', '_s0-1/../../victim/secret.html',
+      new Request('http://localhost/proto/id1/_s0-1/../../victim/secret.html'));
+    expect(res.status).toBe(404);
+
+    const res2 = await serveProto(env, 'id1', '_s0-1/%2e%2e/victim/secret.html',
+      new Request('http://localhost/proto/id1/_2e%2e%2e/x'));
+    expect(res2.status).toBe(404);
   });
 });

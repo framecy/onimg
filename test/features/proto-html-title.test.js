@@ -6,6 +6,9 @@ import { createEnv } from '../helpers/mock-env.js';
 // serveProto 会给 HTML 注入原型标题，做法是 decode → 替换 → 重新编码。
 // TextDecoder 默认有损：非 UTF-8 字节变成 U+FFFD 后再编码回去，文件就被永久改坏。
 // 900 文件回环测试就是这么发现 162 个 .html 的字节与源文件不一致的。
+//
+// 入口路径现在 302 到版本化 URL（/proto/p1/_s0-1/…），测试用 follow() 模拟
+// 浏览器跟随重定向后的那次请求。
 
 async function seed(env, { body, gzip = false }) {
   // mock 的 R2 .arrayBuffer() 只认 ArrayBuffer/TypedArray，传字符串会拿到空 buffer
@@ -22,13 +25,13 @@ async function seed(env, { body, gzip = false }) {
   return meta;
 }
 
-const req = () => new Request('http://localhost/proto/p1/index.html');
+const req = (p = '_s0-1/index.html') => new Request('http://localhost/proto/p1/' + p);
 
 describe('原型 HTML 标题注入', () => {
   test('UTF-8 的 HTML 会被注入标题', async () => {
     const env = createEnv();
     await seed(env, { body: '<html><head><title>Untitled Document</title></head><body>正文</body></html>' });
-    const res = await serveProto(env, 'p1', 'index.html', req());
+    const res = await serveProto(env, 'p1', '_s0-1/index.html', req());
     const text = await res.text();
     expect(text).toContain('<title>我的原型</title>');
     expect(text).toContain('正文');
@@ -37,7 +40,7 @@ describe('原型 HTML 标题注入', () => {
   test('没有 <title> 时插到 <head> 后面', async () => {
     const env = createEnv();
     await seed(env, { body: '<html><head><meta charset="utf-8"></head><body>x</body></html>' });
-    const text = await (await serveProto(env, 'p1', 'index.html', req())).text();
+    const text = await (await serveProto(env, 'p1', '_s0-1/index.html', req())).text();
     expect(text).toContain('<head><title>我的原型</title>');
   });
 
@@ -46,7 +49,7 @@ describe('原型 HTML 标题注入', () => {
     // GBK 的「中文」= D6 D0 CE C4，在 UTF-8 下非法
     const bytes = new Uint8Array([0x3c, 0x68, 0x74, 0x6d, 0x6c, 0x3e, 0xd6, 0xd0, 0xce, 0xc4, 0x3c, 0x2f, 0x68, 0x74, 0x6d, 0x6c, 0x3e]);
     await seed(env, { body: bytes.buffer });
-    const res = await serveProto(env, 'p1', 'index.html', req());
+    const res = await serveProto(env, 'p1', '_s0-1/index.html', req());
     expect(res.status).toBe(200);
     const got = new Uint8Array(await res.arrayBuffer());
     expect(Array.from(got)).toEqual(Array.from(bytes));
@@ -56,7 +59,7 @@ describe('原型 HTML 标题注入', () => {
     const env = createEnv();
     const bytes = new Uint8Array(256).map((_, i) => (i * 37) % 256);   // 含大量非法 UTF-8
     await seed(env, { body: bytes.buffer });
-    const got = new Uint8Array(await (await serveProto(env, 'p1', 'index.html', req())).arrayBuffer());
+    const got = new Uint8Array(await (await serveProto(env, 'p1', '_s0-1/index.html', req())).arrayBuffer());
     expect(got.length).toBe(bytes.length);
     expect(Array.from(got.slice(0, 32))).toEqual(Array.from(bytes.slice(0, 32)));
   });
