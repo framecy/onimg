@@ -81,10 +81,10 @@ describe('原型边缘缓存（版本化 URL）', () => {
     const r2 = await serveProto(env, 'p1', loc.slice('/proto/p1/'.length), new Request(u), ctx);
     expect(r2.status).toBe(200);
 
-    // HTML 恒不缓存 → 两次都回源；标题注入读 meta 但资产路径零 D1。
-    // HTML 的 meta 读是「标题注入」功能本身（每 HTML 1 次），不算热路径回归：
-    // 一页 Axure 只有 1-2 个 HTML，其余 ~118 个资产请求全部零 D1。
-    expect(metaReads).toBe(2);
+    // HTML 恒不缓存 → 两次都回源（R2 读 2 次）。
+    // D1 只读 1 次：第一次读 meta 并写策略缓存，第二次直接吃策略缓存 ——
+    // 策略缓存里带着标题，所以连标题注入都不再额外读库。
+    expect(metaReads).toBe(1);
     expect(r2Reads).toBe(2);
     expect(await r2.text()).toContain('ok');
   });
@@ -104,10 +104,13 @@ describe('原型边缘缓存（版本化 URL）', () => {
     const path = '_s0-1/app.js';
     const r1 = await serveProto(env, 'p1', path, req(path), ctx);
     expect(r1.headers.get('X-Cache')).toBe('MISS');
+    // 策略缓存与资产缓存都经 waitUntil 异步落盘，等一拍再测稳态
+    await new Promise(r => setTimeout(r, 20));
+    metaReads = 0; r2Reads = 0;       // 只统计热路径这一跳
     const r2 = await serveProto(env, 'p1', path, req(path), ctx);
     expect(r2.headers.get('X-Cache')).toBe('HIT');
-    expect(r2Reads).toBe(1);
-    expect(metaReads).toBe(0);          // 公开原型热路径零 D1
+    expect(r2Reads).toBe(0);            // 命中边缘缓存 → 不碰 R2
+    expect(metaReads).toBe(0);          // 命中策略缓存 → 不碰 D1
     expect(await r2.text()).toBe('ok()');
     expect(r2.headers.get('Cache-Control')).toBe('public, max-age=86400');
   });
@@ -263,5 +266,91 @@ describe('原型边缘缓存（版本化 URL）', () => {
     const r = await serveProto(env, 'p1', 'index.html', req('index.html'), ctx);
     expect(r.status).toBe(302);
     expect(r.headers.get('Location')).toBe('/proto/p1/_s0-1/index.html');
+  });
+});
+
+// ═══ 安全回归：sig='0' 绝不能成为私有原型的后门 ═══════════════════════════
+// 上线后实测发现的越权：版本号可以枚举（_s0-1、_s0-2…），
+// 最初实现里 sig='0' 被无条件放行 —— 于是任何人用 `_s0-1/start.html`
+// 就能读到私有原型的完整内容。下面这组用例锁死这个行为。
+describe('安全：版本化路径不得绕过私有 / 密码保护', () => {
+  test('私有原型：猜 sig=0 直连 → 302 回入口，且不缓存', async () => {
+    const env = createEnv();
+    await seed(env, { isPrivate: true });
+
+    for (const p of ['_s0-1/index.html', '_s0-2/index.html', '_s0-99/index.html']) {
+      const res = await serveProto(env, 'p1', p, req(p), ctx);
+      expect(res.status).toBe(302);
+      expect(res.headers.get('Location')).toBe('/proto/p1/');
+      expect(await res.text()).not.toContain('ok');
+    }
+    expect(globalThis.caches._store.size).toBe(0);
+  });
+
+  test('带密码原型：猜 sig=0 直连 → 302 回入口', async () => {
+    const env = createEnv();
+    await seed(env, { password: '123456' });
+
+    const res = await serveProto(env, 'p1', '_s0-1/app.js', req('_s0-1/app.js'), ctx);
+    expect(res.status).toBe(302);
+    expect(res.headers.get('Location')).toBe('/proto/p1/');
+  });
+
+  test('私有原型的策略缓存永不写入（否则 5 分钟内会持续放行）', async () => {
+    const env = createEnv();
+    await seed(env, { isPrivate: true });
+
+    await serveProto(env, 'p1', '_s0-1/index.html', req('_s0-1/index.html'), ctx);
+    await new Promise(r => setTimeout(r, 20));
+
+    // 策略缓存键形如 /__proto-policy/p1
+    const keys = [...globalThis.caches._store.keys()];
+    expect(keys.filter(k => k.includes('__proto-policy'))).toHaveLength(0);
+  });
+
+  test('公开 → 转私有：旧链接最多被策略缓存放行到 TTL 到期', async () => {
+    const env = createEnv();
+    await seed(env, { isPrivate: false });
+
+    // 公开时正常读取，同时写入策略缓存
+    const ok = await serveProto(env, 'p1', '_s0-1/index.html', req('_s0-1/index.html'), ctx);
+    expect(ok.status).toBe(200);
+    await new Promise(r => setTimeout(r, 20));
+
+    // 转私有
+    const meta = JSON.parse(await env.STATS.get('proto:p1'));
+    meta.isPrivate = true;
+    await env.STATS.put('proto:p1', JSON.stringify(meta));
+
+    // 策略缓存还在 → 仍放行（这是已知的 5 分钟窗口，HTML 本身 no-store）
+    const still = await serveProto(env, 'p1', '_s0-1/index.html', req('_s0-1/index.html'), ctx);
+    expect(still.status).toBe(200);
+
+    // 清掉策略缓存后（模拟 TTL 到期）→ 立刻落回访问控制
+    for (const k of [...globalThis.caches._store.keys()]) {
+      if (k.includes('__proto-policy')) globalThis.caches._store.delete(k);
+    }
+    const denied = await serveProto(env, 'p1', '_s0-1/index.html', req('_s0-1/index.html'), ctx);
+    expect(denied.status).toBe(302);
+    expect(denied.headers.get('Location')).toBe('/proto/p1/');
+  });
+
+  test('公开原型的资产仍走缓存（策略缓存不削弱性能收益）', async () => {
+    const env = createEnv();
+    await seed(env);
+    await env.BUCKET.put('proto/p1/app.js', new TextEncoder().encode('ok()').buffer,
+      { httpMetadata: { contentType: 'application/javascript' } });
+
+    const path = '_s0-1/app.js';
+    await serveProto(env, 'p1', path, req(path), ctx);
+    await new Promise(r => setTimeout(r, 20));
+
+    let metaReads = 0;
+    const realGet = env.STATS.get.bind(env.STATS);
+    env.STATS.get = async (k, ...a) => { if (k === 'proto:p1') metaReads++; return realGet(k, ...a); };
+
+    const hit = await serveProto(env, 'p1', path, req(path), ctx);
+    expect(hit.headers.get('X-Cache')).toBe('HIT');
+    expect(metaReads).toBe(0);
   });
 });

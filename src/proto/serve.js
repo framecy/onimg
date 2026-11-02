@@ -31,15 +31,25 @@ function esc(s) {
 //   stamp = version          —— 只随重新上传递增。改标题 / 改标签不再让全站
 //                               边缘缓存失效（旧实现用 updatedAt 做缓存键，
 //                               改一次标题就把 120 个文件的缓存全冲掉）。
-//   sig   = '0'              —— 公开原型。资产请求零 D1：无需任何访问判定。
+//   sig   = '0'              —— 公开原型。资产请求零 D1：靠机房内「策略缓存」
+//                               判定（见下）。
 //         = HMAC 前 16 hex   —— 密码 / 私有原型。HMAC 的输入是
 //                               `id|version|访问标记`，访问标记 = 当前密码或
 //                               'private'。资产请求实时读一次 meta 重算比对：
 //                               改密码、转私有、重传都会让旧签名立刻失效
 //                               （访问控制必须实时判定——与旧实现一致）。
 //
-// 为什么公开原型可以不查库：曾经公开后来转私有的窗口由资产 TTL（1 天）封顶，
-// HTML 恒为 no-store（每次都过入口的实时判定）。
+// ⚠️ sig='0' 绝不能「无条件放行」。版本号是猜得出来的（1、2、3…），
+// 一开始的实现就是无条件放行，等于任何人用 `_s0-1/` 就能读任何私有原型
+//（上线后实测确认过这条越权）。所以公开路径多加一层「策略缓存」：
+//
+//   - 只有「当前确实公开」才会往策略缓存里写，TTL 5 分钟；
+//   - sig='0' 先查策略缓存：命中则零 D1，未命中读 meta 实时判定；
+//   - 私有 / 密码原型永远进不了策略缓存 —— 盲猜 `_s{n}` 必然落到 meta 校验，
+//     当场被 302 回入口。
+//
+// 于是「转私有后已发出的链接还能用多久」被策略 TTL（5 分钟）封顶，
+// 比资产 TTL（1 天）更紧；而不是像无条件放行那样「永久可读」。
 
 function versionStampOf(meta) {
   return `${meta.version ?? 1}`;
@@ -241,12 +251,41 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
     return new Response('Method Not Allowed', { status: 405 });
   }
 
-  // 密码 / 私有原型：实时读一次 meta，重算签名比对。
-  // 改密码 / 重传（version 变化）/ 切公开都会让旧签名立刻失效：
-  //   改密码 → marker 变 → HMAC 变；切公开 → 期望 sig 变 '0'；
-  //   重传 → version 变 → HMAC 变。失效后 302 回入口重新走访问控制。
+  // ── 访问判定 ──────────────────────────────────────────────────────────────
+  // 两条路，唯一的区别是「能不能省掉这次 meta 读」：
+  //
+  //   sig ≠ '0'（私有 / 密码）→ 每次实时读 meta 重算 HMAC，一秒都不缓存。
+  //     改密码 → marker 变；转公开 → 期望值变 '0'；重传 → version 变。
+  //     任何一条都会让旧签名立刻失效，随后 302 回入口重新走访问控制。
+  //
+  //   sig = '0'（公开）→ 先查策略缓存。策略缓存里只可能有「公开」这一种
+  //     结论，所以命中即等价于「刚刚确认过是公开」，可以零 D1 放行；
+  //     未命中就老老实实读一次 meta 判定，公开才写回缓存。
+  //     私有原型从不写策略缓存 → 盲猜 `_s0-{n}` 一定落到 meta 校验被拒。
+  const cache = edgeCache();
+  const cacheable = !!cache && request.method === 'GET'
+    && !request.headers.get('Cookie') && !request.headers.get('Authorization');
+
   let meta = null;
-  if (sig !== '0') {
+  let policy = null;      // 策略缓存命中的 { title }
+  let isPublic = false;   // 当前已确认公开
+
+  if (sig === '0') {
+    if (cacheable) policy = await policyGet(cache, request, protoId);
+    if (policy) {
+      isPublic = true;
+    } else {
+      meta = await env.STATS.get(`proto:${protoId}`, 'json');
+      if (!meta) return new Response('Not Found', { status: 404 });
+      if (accessMarkerOf(meta) !== null) {
+        return redirectTo(`/proto/${protoId}/`);
+      }
+      isPublic = true;
+      if (cacheable) {
+        wait(policyPut(cache, request, protoId, meta.title).catch(() => {}));
+      }
+    }
+  } else {
     meta = await env.STATS.get(`proto:${protoId}`, 'json');
     const marker = meta ? accessMarkerOf(meta) : null;
     const expect = marker
@@ -269,13 +308,9 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
   }
 
   // ── 边缘缓存（Cache API，机房本地） ────────────────────────────────────────
-  // 只缓存公开（sig='0'）资源：私有 / 密码原型的访问控制必须实时判定（与旧版一致）。
-  // 密码原型的浏览器会带 cookie、属主会带 Authorization，这里再挡一层。
-  // URL 已含内容指纹（version），缓存键不再需要额外版本参数。
-  const cache = edgeCache();
-  const cacheable = cache && request.method === 'GET' && sig === '0'
-    && !request.headers.get('Cookie') && !request.headers.get('Authorization');
-  const cacheKey = cacheable
+  // 只缓存「当前确认为公开」的资源：私有 / 密码原型的访问控制必须实时判定
+  //（与旧版一致）。URL 已含内容指纹（version），缓存键不再需要额外版本参数。
+  const cacheKey = (isPublic && cacheable)
     ? new Request(request.url.split('?')[0], { method: 'GET' })
     : null;
 
@@ -389,9 +424,10 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
       return new Response(bytes, { headers });
     }
 
-    // 标题来自 meta：私有 / 密码路径上已经读过了；公开路径补读一次
-    //（只有 HTML 请求读 —— 资产热路径仍然是零 D1）。
-    const title = meta?.title ?? (await env.STATS.get(`proto:${protoId}`, 'json'))?.title ?? '';
+    // 标题来源：私有 / 密码路径上 meta 已读；公开路径来自策略缓存（含标题），
+    // 两者都没有时才补读一次。命中策略缓存时整个请求零 D1。
+    const title = meta?.title ?? policy?.title
+      ?? (await env.STATS.get(`proto:${protoId}`, 'json'))?.title ?? '';
     if (title) {
       const safeTitle = esc(title);
       if (/<title>/i.test(html)) {
@@ -451,6 +487,34 @@ function finish(res, cache, cacheKey, wait) {
 // 负缓存键：加一段查询参数，与正向缓存永不冲突
 function negKey(cacheKey) {
   return new Request(cacheKey.url + (cacheKey.url.includes('?') ? '&' : '?') + '__neg=1', { method: 'GET' });
+}
+
+// ── 策略缓存：只缓存「这个原型当前是公开的」这一条结论 ────────────────────
+// 存在的意义：让公开原型的资产热路径不必每个请求都读一次 meta，
+// 同时保证私有原型永远不会被这条捷径放行（私有从不写入）。
+// TTL 5 分钟 = 「转私有后旧链接还能活多久」的上限，比资产 TTL 更紧。
+const POLICY_TTL = 300;
+
+function policyKey(request, protoId) {
+  return new Request(new URL('/__proto-policy/' + encodeURIComponent(protoId),
+    request.url).href, { method: 'GET' });
+}
+
+async function policyGet(cache, request, protoId) {
+  const hit = await cache.match(policyKey(request, protoId));
+  if (!hit) return null;
+  try {
+    return { title: (await hit.json()).title ?? '' };
+  } catch {
+    return { title: '' };
+  }
+}
+
+function policyPut(cache, request, protoId, title) {
+  return cache.put(policyKey(request, protoId), new Response(
+    JSON.stringify({ title: title ?? '' }),
+    { headers: { 'Content-Type': 'application/json', 'Cache-Control': `public, max-age=${POLICY_TTL}` } },
+  ));
 }
 
 function edgeCache() {
