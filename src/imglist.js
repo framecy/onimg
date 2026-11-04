@@ -153,6 +153,21 @@ export async function listUserImgRecordKeys(env, owner) {
 const REPAIR_FETCH_BUDGET = 40;
 
 /**
+ * 自愈标记：最近一次 repair 的时间戳（按用户）。
+ *
+ * ── 为什么需要节流（2026-11-04 图库变慢）─────────────────────────────────
+ * repair 每次都要 `list` 扫一遍该用户的全部单图索引 key（465 张也要扫），
+ * 再对缺失项逐条补读。图库一大，这一趟就是固定的十几次 D1 往返，
+ * 而它在**每次 /list 都跑**，于是「打开图库」永远要等它。
+ *
+ * 自愈的意义是「上传丢了清单条目时能救回来」，这种情况是偶发的，
+ * 不需要每次浏览都体检一遍。现在改成最多每 REPAIR_MIN_INTERVAL_MS 跑一次，
+ * 并且只有「清单条目数明显少于索引数」时才真正去补 —— 正常浏览不再付这份成本。
+ */
+const REPAIR_MIN_INTERVAL_MS = 10 * 60 * 1000;   // 10 分钟
+const repairMarkKey = (owner) => `utrepair:${owner}`;
+
+/**
  * 用单图索引回补缺失的清单条目，并顺带把「胖条目」瘦回最小形态。
  *
  * 写入只在下面任一情况发生（正常情况是 1 次 get + 1 次 list，无写入、无逐项读取）：
@@ -165,11 +180,20 @@ const REPAIR_FETCH_BUDGET = 40;
  *
  * 只补不删：升级前的老图没有单图记录，但已在清单中，保持不动（只是瘦身）。
  *
+ * 节流：最近 REPAIR_MIN_INTERVAL_MS 内已经体检过就直接返回清单（见上面说明）。
+ *
  * @returns {Promise<{repaired: number, compacted: number, manifest: object[]}>}
  */
 export async function repairUserManifest(env, owner) {
   const imgsKv = 'userimgs:' + owner;
   const manifest = (await env.STATS.get(imgsKv, 'json')) ?? [];
+
+  // 节流：刚体检过就不再扫索引（新上传本来就会同步写清单，不依赖这里的兜底）
+  const last = Number(await env.STATS.get(repairMarkKey(owner))) || 0;
+  if (Date.now() - last < REPAIR_MIN_INTERVAL_MS) {
+    return { repaired: 0, compacted: 0, manifest, skipped: true };
+  }
+
   const have = new Set(manifest.map(e => e.key));
   const compacted = manifest.filter(e => e && !isMinimalEntry(e)).length;
 
@@ -190,6 +214,10 @@ export async function repairUserManifest(env, owner) {
       });
     })));
   }
+
+  // 记下体检时间：即使这次没有要补的，也算「刚体检过」
+  await env.STATS.put(repairMarkKey(owner), String(Date.now()), { expirationTtl: 7 * 86400 })
+    .catch(() => {});
 
   if (!filled.length && !compacted) return { repaired: 0, compacted: 0, manifest };
 

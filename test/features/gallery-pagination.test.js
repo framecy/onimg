@@ -133,3 +133,37 @@ describe('/list 分页', () => {
     expect(data.total).toBe(2);
   });
 });
+
+describe('/list 自愈节流（避免每次浏览都全量扫索引）', () => {
+  test('10 分钟内第二次 /list 不再扫单图索引', async () => {
+    const { env, token } = await seed(30);
+    let listCalls = 0;
+    const realList = env.STATS.list.bind(env.STATS);
+    env.STATS.list = async (opts) => {
+      if (String(opts?.prefix ?? '').startsWith('userimg:')) listCalls++;
+      return realList(opts);
+    };
+
+    await handleList(
+      new Request('http://x/list?limit=10', { headers: { Authorization: 'Bearer ' + token } }), env);
+    const afterFirst = listCalls;
+    expect(afterFirst).toBeGreaterThan(0);   // 首次会体检
+
+    await handleList(
+      new Request('http://x/list?limit=10', { headers: { Authorization: 'Bearer ' + token } }), env);
+    expect(listCalls).toBe(afterFirst);      // 第二次跳过，不再扫
+  });
+
+  test('过了节流窗口会重新体检，缺的条目仍能补回', async () => {
+    const { env, token } = await seed(5);
+    // 人为把体检标记设成很久以前
+    await env.STATS.put('utrepair:alice', String(Date.now() - 11 * 60 * 1000));
+
+    // 删掉清单，模拟「并发上传覆盖导致清单丢失」
+    await env.STATS.put('userimgs:alice', JSON.stringify([]));
+
+    const data = await (await handleList(
+      new Request('http://x/list?limit=10', { headers: { Authorization: 'Bearer ' + token } }), env)).json();
+    expect(data.items).toHaveLength(5);      // 自愈把 5 张都补回来了
+  });
+});
