@@ -47,19 +47,57 @@ export async function servePage(env, slug, ctx, request) {
     if (cookies[cookieName] !== page.accessPassword) return servePasswordPrompt(slug, page, false);
   }
 
+  // ── 边缘缓存（2026-11-04）───────────────────────────────────────────────
+  // 现状：88 个文档页每个都要回源，gzip 只有 7 KB 却要等 TTFB ~1s ——
+  // 性能报告两次都把这条列为最大短板。
+  //
+  // 只有「公开且无密码」的页能进缓存：
+  //   · 私有 / 密码页 → no-store（访问控制必须实时判定，缓存会被别人读到）
+  //   · 带 Cookie / Authorization 的请求 → 绕过缓存（可能是属主或已解锁的访客）
+  //
+  // TTL 取 1 小时 + stale-while-revalidate 1 天：编辑后最坏 1 小时可见新版，
+  // 这期间旧副本还能先返回、后台悄悄刷新，用户不必等回源。
+  const cache = edgeCache();
+  const shared = !!cache
+    && page.isPublic && !page.accessPassword
+    && request.method === 'GET'
+    && !request.headers.get('Cookie')
+    && !request.headers.get('Authorization');
+
+  const cacheKey = shared ? new Request(request.url.split('?')[0], { method: 'GET' }) : null;
+  if (cacheKey) {
+    const hit = await cache.match(cacheKey);
+    if (hit) {
+      // 命中也要记访问：计数口径与改造前一致
+      if (ctx) {
+        ctx.waitUntil(recordPageAccess(env, slug, request));
+        ctx.waitUntil(bumpDaily(env.STATS, 'pageview'));
+      }
+      const res = new Response(hit.body, hit);
+      res.headers.set('X-Cache', 'HIT');
+      return res;
+    }
+  }
+
   if (ctx && request) ctx.waitUntil(recordPageAccess(env, slug, request));
   // 按天计数：后台趋势图的真实数据源
   if (ctx) ctx.waitUntil(bumpDaily(env.STATS, 'pageview'));
 
   // Auto-detect HTML if type is ambiguous or content starts with a doctype/html tag
   const isHtml = page.type === 'html' ||
-    (page.type !== 'markdown' && /^\s*(<\s*!DOCTYPE\s+html|<\s*html[\s>])/i.test(page.content));
+    (page.type !== 'markdown' && /^\s*(<\s*!DOCTYPE html|<\s*html[\s>])/i.test(page.content));
+
+  const CACHEABLE = 'public, max-age=3600, stale-while-revalidate=86400';
+  const PLAIN     = 'public, max-age=0, must-revalidate';
 
   if (isHtml) {
     const res = serveHtmlPage(page);
     const etag = shortEtag(res.body?.toString() ?? '');
     const notMod = ifNotModified(request, etag);
     if (notMod) return notMod;
+    // HTML 页的可缓存性同样受上面的 shared 约束
+    if (shared) res.headers.set('Cache-Control', CACHEABLE);
+    if (cacheKey) storeInEdgeCache(cache, cacheKey, res, ctx);
     return res;
   }
 
@@ -69,9 +107,51 @@ export async function servePage(env, slug, ctx, request) {
   const etag = shortEtag(html);
   const notMod = ifNotModified(request, etag);
   if (notMod) return notMod;
-  return new Response(html, {
-    headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=0, must-revalidate', 'ETag': etag },
+  const res = new Response(html, {
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': shared ? CACHEABLE : PLAIN,
+      'ETag': etag,
+    },
   });
+  if (cacheKey) storeInEdgeCache(cache, cacheKey, res, ctx);
+  return res;
+}
+
+/** Cache API 只在 Workers 运行时存在；本地 node-server / 单测里没有 */
+function edgeCache() {
+  try {
+    return (typeof caches !== 'undefined' && caches.default) ? caches.default : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 把响应写进边缘缓存（不阻塞返回）。
+ *
+ * 必须先 clone 再存：响应体只能被消费一次，写缓存不能影响回给客户端的那份。
+ */
+function storeInEdgeCache(cache, cacheKey, res, ctx) {
+  if (!cache || !cacheKey) return;
+  const stored = new Response(res.clone().body, { headers: new Headers(res.headers) });
+  const p = cache.put(cacheKey, stored).catch(() => {});
+  if (ctx?.waitUntil) ctx.waitUntil(p);
+}
+
+/**
+ * 页面被编辑 / 删除 / 改了可见性时，主动清掉它的边缘缓存。
+ *
+ * 光靠 TTL 过期不够：编辑者自己改完刷新却看到旧版，会以为没保存成功。
+ * 与 proto 的版本化思路一致 —— 内容变了就让旧副本立刻失效。
+ */
+export async function invalidatePageCache(slug, request) {
+  const cache = edgeCache();
+  if (!cache || !slug) return;
+  const origin = request?.url ? new URL(request.url).origin : null;
+  if (!origin) return;
+  const key = new Request(origin + '/p/' + encodeURIComponent(slug), { method: 'GET' });
+  await cache.delete(key).catch(() => {});
 }
 
 // ── HTML page ─────────────────────────────────────────────────────────────

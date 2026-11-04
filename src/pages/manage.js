@@ -1,23 +1,49 @@
 // ── Cache purge ────────────────────────────────────────────────────────────────
 
-async function purgePageCache(env, slug) {
-  const token = env.CF_API_TOKEN;
-  if (!token) return; // no-op if CF API token unavailable
+/**
+ * 页面内容变更后清缓存：两处都要清，缺一个就会出现「改完刷新还是旧版」。
+ *
+ *   1. Cache API（本 Worker 自己的边缘副本）—— servePage 现在会缓存公开页，
+ *      不删的话编辑后最多 1 小时才能看到新版。
+ *   2. Cloudflare 的 URL purge —— 覆盖 CDN 层可能存在的副本。
+ *
+ * 域名不写死：优先用 env.SITE_ORIGIN，其次用请求来源；都没有就只清 Cache API。
+ * best-effort：任何失败都不影响主流程。
+ */
+async function purgePageCache(env, slug, origin) {
+  // ── 1. Cache API ──
   try {
-    // resolve zone ID from domain
-    const zoneRes = await fetch(`https://api.cloudflare.com/client/v4/zones?name=img.diswant.space`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const cache = (typeof caches !== 'undefined' && caches.default) ? caches.default : null;
+    if (cache && origin) {
+      await cache.delete(new Request(`${origin}/p/${encodeURIComponent(slug)}`, { method: 'GET' }));
+    }
+  } catch { /* 忽略 */ }
+
+  // ── 2. CF URL purge ──
+  const token = env.CF_API_TOKEN;
+  const base = env.SITE_ORIGIN?.replace(/\/$/, '') || origin;
+  if (!token || !base) return;
+  try {
+    const zoneName = new URL(base).hostname;
+    const zoneRes = await fetch(
+      `https://api.cloudflare.com/client/v4/zones?name=${encodeURIComponent(zoneName)}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
     const zoneData = await zoneRes.json();
     const zoneId = zoneData?.result?.[0]?.id;
     if (!zoneId) return;
-    // purge by URL
     await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}/purge_cache`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ files: [`https://img.diswant.space/p/${slug}`] }),
+      body: JSON.stringify({ files: [`${base}/p/${encodeURIComponent(slug)}`] }),
     });
   } catch { /* best-effort, never block main request */ }
+}
+
+
+/** 从请求里取站点 origin（用于拼缓存键 / purge URL） */
+function originFrom(request) {
+  try { return request?.url ? new URL(request.url).origin : undefined; } catch { return undefined; }
 }
 
 // CRUD for hosted pages (MD / HTML)
@@ -246,8 +272,8 @@ export async function handleUpdatePage(request, env, slug, callerUsername, isAdm
     await env.STATS.put('userpages:' + owner, JSON.stringify(pageIdx));
   }
 
-  // purge Cloudflare edge cache for this page (fire-and-forget)
-  purgePageCache(env, slug);
+  // 内容变了立刻失效边缘缓存，否则编辑者刷新还是旧版
+  purgePageCache(env, slug, originFrom(request));
 
   return Response.json({
     slug, title: page.title, isPublic: page.isPublic,
@@ -256,7 +282,7 @@ export async function handleUpdatePage(request, env, slug, callerUsername, isAdm
   });
 }
 
-export async function handleDeletePage(env, slug, callerUsername, isAdmin) {
+export async function handleDeletePage(env, slug, callerUsername, isAdmin, request) {
   const page = await env.STATS.get('page:' + slug, 'json');
   if (!page) return Response.json({ error: 'Page not found' }, { status: 404 });
   if (!isAdmin && page.owner !== callerUsername) return Response.json({ error: 'Forbidden' }, { status: 403 });
@@ -271,8 +297,8 @@ export async function handleDeletePage(env, slug, callerUsername, isAdmin) {
     await env.STATS.put('userpages:' + owner, JSON.stringify(newIdx));
   }
 
-  // purge Cloudflare edge cache for this page (fire-and-forget)
-  purgePageCache(env, slug);
+  // 内容变了立刻失效边缘缓存，否则编辑者刷新还是旧版
+  purgePageCache(env, slug, originFrom(request));
 
   return Response.json({ deleted: slug });
 }

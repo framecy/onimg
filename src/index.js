@@ -284,7 +284,7 @@ export default {
         if (method === 'PATCH'  && path.startsWith('/admin/pages/'))      return withCors(await handleUpdatePage(request, env, decodeURIComponent(path.slice('/admin/pages/'.length)), env.ADMIN_USERNAME, true), request);
         if (method === 'DELETE' && path.startsWith('/admin/pages/')) {
           const target = decodeURIComponent(path.slice('/admin/pages/'.length));
-          const res = await handleDeletePage(env, target, env.ADMIN_USERNAME, true);
+          const res = await handleDeletePage(env, target, env.ADMIN_USERNAME, true, request);
           ctx.waitUntil(logAudit(env.STATS, { action: 'page.delete', actor: 'admin', target, status: res.status < 400 ? 'ok' : 'fail', ip: clientIp(request) }));
           return withCors(res, request);
         }
@@ -388,7 +388,7 @@ async function userPageUpdate(request, env, slug) {
 async function userPageDelete(request, env, slug) {
   const [user, err] = await requireUser(request, env);
   if (err) return err;
-  return handleDeletePage(env, slug, user.username, false);
+  return handleDeletePage(env, slug, user.username, false, request);
 }
 async function userPageReorderHandler(request, env) {
   const [user, err] = await requireUser(request, env);
