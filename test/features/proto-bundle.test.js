@@ -207,3 +207,36 @@ describe('私有 / 密码原型：不注入、不打包', () => {
     if (html.includes('<!DOCTYPE')) expect(html).not.toContain('__bundle.json');
   });
 });
+
+describe('bundle 边缘缓存：必须真的写进去', () => {
+  test('第二次请求命中 Cache API，不再重读 R2', async () => {
+    // 反例教训：曾经把 wait 实现成 (p)=>p.catch(...)（就地执行而非 ctx.waitUntil），
+    // Worker 一返回 Promise 就被丢弃 → 缓存永远写不进去，线上 X-Cache 恒为 MISS、
+    // 每次都要重读 R2，内联后反而比不内联慢 3 倍。
+    const store = new Map();
+    globalThis.caches = {
+      default: {
+        async match(req) { const r = store.get(req.url); return r ? r.clone() : undefined; },
+        async put(req, res) { store.set(req.url, res.clone()); },
+        async delete(req) { store.delete(req.url); },
+      },
+    };
+    try {
+      const { env, protoId, version } = await seedProto({ files: CSS_FILES });
+      let r2Reads = 0;
+      const realGet = env.BUCKET.get.bind(env.BUCKET);
+      env.BUCKET.get = async (k) => { if (String(k).includes('/resources/')) r2Reads++; return realGet(k); };
+
+      // 第一次：生成并写缓存
+      await fetchProto(env, protoId, `_s0-${version}/__bundle.json`);
+      const firstReads = r2Reads;
+
+      // 第二次：应命中缓存，R2 读数不再增长
+      await fetchProto(env, protoId, `_s0-${version}/__bundle.json`);
+      expect(r2Reads).toBe(firstReads);
+      expect(store.size).toBeGreaterThan(0);
+    } finally {
+      delete globalThis.caches;
+    }
+  });
+});

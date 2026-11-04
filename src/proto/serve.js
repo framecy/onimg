@@ -157,7 +157,7 @@ export async function serveProto(env, protoId, filePath, request, ctx) {
 
     // ── 资源打包：把 HTML 里的十几个资源合成一次请求（见文件末尾说明）──────
     if (rest === '__bundle.json') {
-      return serveVersionedBundle(env, protoId, sig, stamp, request);
+      return serveVersionedBundle(env, protoId, sig, stamp, request, wait);
     }
     return serveVersionedAsset(env, protoId, sig, stamp, rest, request, wait);
   }
@@ -456,7 +456,7 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
     // 失败（R2 读不到 / 解析异常）就原样返回 HTML，退化成优化前的行为。
     if (bundlePaths.length) {
       try {
-        const files = await readBundleFilesCached(env, protoId, stamp, bundlePaths, request);
+        const files = await readBundleFilesCached(env, protoId, stamp, bundlePaths, request, wait);
         if (Object.keys(files).length) {
           const r = inlineBundleResources(html, files);
           html = r.html;
@@ -643,7 +643,7 @@ async function isProtoOwner(env, request, meta) {
  *
  * @returns {Promise<Record<string,string>>}
  */
-async function readBundleFilesCached(env, protoId, stamp, paths, request) {
+async function readBundleFilesCached(env, protoId, stamp, paths, request, wait) {
   const cache = edgeCache();
   const key = cache
     ? new Request(new URL(`/proto/${protoId}/_b${stamp}/__bundle.json`, request.url).href, { method: 'GET' })
@@ -669,7 +669,7 @@ async function readBundleFilesCached(env, protoId, stamp, paths, request) {
       },
     });
     const p = cache.put(key, stored).catch(() => {});
-    p?.catch?.(() => {});
+    if (typeof wait === 'function') wait(p); else p?.catch?.(() => {});
   }
   return files;
 }
@@ -736,7 +736,7 @@ async function readBundleFiles(env, protoId, paths, heads = null, allPaths = nul
  *   sig≠'0' → 私有/密码，实时读 meta 重算 HMAC 比对
  * 判定通过后只打 meta.bundle 里显式声明的文件（不接受任意路径）。
  */
-async function serveVersionedBundle(env, protoId, sig, stamp, request) {
+async function serveVersionedBundle(env, protoId, sig, stamp, request, wait) {
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     return new Response('Method Not Allowed', { status: 405 });
   }
@@ -794,7 +794,7 @@ async function serveVersionedBundle(env, protoId, sig, stamp, request) {
     });
   }
 
-  return serveBundle(env, protoId, stamp, paths, request);
+  return serveBundle(env, protoId, stamp, paths, request, wait);
 }
 
 /** 打包允许的扩展名（与 upload.js 的 BUNDLE_EXTS 保持一致） */
@@ -828,7 +828,7 @@ function bundleListOf(meta) {
  * @param {string[]} paths 清单里的相对路径
  * @param {Request} request
  */
-async function serveBundle(env, protoId, stamp, paths, request) {
+async function serveBundle(env, protoId, stamp, paths, request, wait) {
   const cache = edgeCache();
   const cacheable = !!cache && request.method === 'GET'
     && !request.headers.get('Cookie') && !request.headers.get('Authorization');
@@ -872,7 +872,11 @@ async function serveBundle(env, protoId, stamp, paths, request) {
   if (cacheKey) {
     // 复用 finish 的缓存写入语义：X-Cache: MISS、waitUntil 写缓存、
     // Cache-Control 覆盖为 1 天（bundle 与 stamp 绑定，重传即换 URL，可安全长缓存）
-    return finish(res, cache, cacheKey, (p) => p.catch(() => {}));
+    //
+    // ⚠️ 必须传真正的 wait（ctx.waitUntil）。曾经传了 (p)=>p.catch(...)
+    // 这种「就地执行」的假 wait —— Worker 一返回 Promise 就被丢弃，
+    // 缓存永远写不进去，线上表现为 X-Cache 永远是 MISS、每次都要重读 R2。
+    return finish(res, cache, cacheKey, wait);
   }
   res.headers.set('X-Cache', 'MISS');
   return res;
