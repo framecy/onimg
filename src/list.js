@@ -102,24 +102,27 @@ export async function handleList(request, env) {
 
   // 排除已软删除（回收站）的图片。
   //
-  // ⚠️ 必须先展开再过滤，不能反过来：清单里存的是**最小种子**，而 deletedAt
-  // 只写在单图记录里。先按清单过滤等于「看不见 deletedAt」，回收站里的图
-  // 会被当成正常图返回（历史 bug 的变体）。这里保持旧口径：展开后按
-  // 补全结果过滤。分页的 offset 也只作用在过滤后的集合上。
-  const expanded = await expandEntries(env, user.username, manifest);
-  const live = expanded.filter(e => e && !e.deletedAt);
+  // ⚠️ 顺序要求：deletedAt 只写在单图记录里，清单存的是**最小种子**，
+  // 所以「哪些图在回收站」必须先读过单图记录才知道。先按清单过滤等于
+  // 「看不见 deletedAt」，回收站里的图会被当成正常图返回（历史 bug 的变体）。
+  //
+  // ── 但要避免为此付全量展开的代价 ────────────────────────────────────────
+  // 展开的贵在于**把每条记录解析、合并成完整条目**（名字/标签/大小）。
+  // 判断「在不在回收站」只需要看 deletedAt 一个字段。所以这里只做一次
+  // 批量读取（与图库总量挂钩的仅此一次），拿到全量的存活标记，
+  // 然后**只对当前页展开**。图库 1000 张时，单次请求的解析量从 1000 → 60。
+  const { live, total } = await resolveLiveEntries(env, user.username, manifest, offset, limit);
 
   if (limit == null) {
-    return Response.json({ items: live, cursor: null, truncated: false, total: live.length });
+    return Response.json({ items: live, cursor: null, truncated: false, total });
   }
 
-  const pageItems = live.slice(offset, offset + limit);
   return Response.json({
-    items: pageItems,
-    total: live.length,
+    items: live,
+    total,
     offset,
     limit,
-    nextOffset: offset + pageItems.length < live.length ? offset + pageItems.length : null,
+    nextOffset: offset + live.length < total ? offset + live.length : null,
     cursor: null,
     truncated: false,
   });
@@ -130,6 +133,76 @@ export async function handleList(request, env) {
 // 绝不能为了省子请求直接丢条目，那正是「图片缺失」的老毛病。
 const EXPAND_LIMIT = 200;
 const EXPAND_CONCURRENCY = 10;
+
+/**
+ * 挑出「存活（不在回收站）」的条目，只对目标页做完整展开。
+ *
+ * ── 为什么分成两步 ──────────────────────────────────────────────────────────
+ * 判断存活只需要单图记录的 deletedAt 一个字段，而「补全」要把整条记录解析、
+ * 合并出名字/标签/大小。图库上千张时，全量补全等于给每张图都付一次解析成本，
+ * 而这正是分页要消掉的压力。
+ *
+ * 所以：
+ *   1. 一次批量读拿全量记录（D1 上按 99 个 key 分块，1000 张 = 11 次查询）
+ *   2. 只按 deletedAt 过滤出存活条目，并记下总数
+ *   3. 只对 `[offset, offset+limit)` 这一段做完整展开
+ *
+ * 老条目（已是完整形态、不在清单里存种子）没有可读的记录时按存活处理，
+ * 与旧口径一致：只补不删。
+ *
+ * @returns {Promise<{live: object[], total: number}>}
+ */
+async function resolveLiveEntries(env, owner, manifest, offset, limit) {
+  // 预算内的种子才需要读记录；完整条目直接算存活
+  const seedIdx = [];
+  for (let i = 0; i < manifest.length; i++) {
+    const e = manifest[i];
+    if (e && isMinimalEntry(e)) seedIdx.push(i);
+  }
+
+  let recs = null;
+  if (seedIdx.length && typeof env.STATS.getMany === 'function') {
+    recs = await env.STATS.getMany(
+      seedIdx.map(i => userImgRecordKey(owner, manifest[i].key)), 'json');
+  }
+
+  const recOf = (idx) => {
+    if (!recs) return undefined;
+    return recs.get(userImgRecordKey(owner, manifest[idx].key)) ?? null;
+  };
+
+  // 第一步：只判断存活
+  const alive = [];
+  for (let i = 0; i < manifest.length; i++) {
+    const e = manifest[i];
+    if (!e) continue;
+    if (!isMinimalEntry(e)) { alive.push(i); continue; }   // 完整条目：自带 deletedAt
+    if (!recs) { alive.push(i); continue; }                // 没有批量 API：按存活处理，下面回退展开
+    const rec = recOf(i);
+    if (rec && rec.deletedAt) continue;                    // 在回收站
+    alive.push(i);
+  }
+  const total = alive.length;
+
+  // 第二步：只展开目标页
+  const start = limit == null ? 0 : Math.max(0, offset);
+  const end   = limit == null ? alive.length : Math.min(alive.length, start + limit);
+  const slice = alive.slice(start, end);
+
+  const out = [];
+  for (const i of slice) {
+    const e = manifest[i];
+    if (!isMinimalEntry(e)) { out.push(e); continue; }
+    const rec = recOf(i);
+    if (rec === undefined) {
+      // 回退路径（KV 绑定无 getMany）：逐条读
+      out.push(mergeEntryWithRecord(e, await env.STATS.get(userImgRecordKey(owner, e.key), 'json')));
+    } else {
+      out.push(mergeEntryWithRecord(e, rec));
+    }
+  }
+  return { live: out, total };
+}
 
 /**
  * 把清单里的「最小种子」按单图记录补全（名字 / 标签 / deletedAt）。

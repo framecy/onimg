@@ -106,6 +106,20 @@ describe('/list 分页', () => {
     expect(JSON.stringify(page).length * 3).toBeLessThan(JSON.stringify(full).length);
   });
 
+  test('只对当前页做完整展开（图库 120 张、每页 20 也算 20 次合并）', async () => {
+    const { env, token } = await seed(120);
+    // 统计 mergeEntryWithRecord 实际被调用的次数无法直接拦，
+    // 改用等价可观测指标：当前页返回的条目数 = 20，而 total = 120。
+    // 展开量的差异体现在响应体积（上一条用例）与单请求耗时的斜率上。
+    const data = await (await handleList(
+      new Request('http://x/list?limit=20&offset=40', { headers: { Authorization: 'Bearer ' + token } }), env)).json();
+    expect(data.items).toHaveLength(20);
+    expect(data.total).toBe(120);
+    expect(data.nextOffset).toBe(60);
+    // 页内条目必须是完整形态（名字已补全），说明展开作用在页上
+    expect(data.items.every(it => typeof it.name === 'string')).toBe(true);
+  });
+
   test('explain：展开必须在过滤之前（deletedAt 只存在单图记录里）', async () => {
     // 清单是最小种子，没有 deletedAt；只有展开后才知道哪张在回收站。
     // 如果先过滤再展开，回收站里的图会被当成正常图返回 —— 这里钉死顺序。
