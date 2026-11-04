@@ -336,14 +336,25 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
     if (neg) return new Response('Not Found', { status: 404, headers: { 'X-Cache': 'HIT' } });
   }
 
-  // 打包清单：公开与签名（密码/私有，已通过校验）原型都要算 ——
-  // 都能内联资源。见文件末尾「原型资源打包」的说明。
+  // 打包清单：公开与签名（密码/私有，已通过校验）原型都要算。
+  //
+  // ⚠️ 必须以**当前版本的 vfiles** 为准，不能只信 meta.bundle：
+  // 历史上出现过 meta.bundle 是旧版逻辑写入、与当前版本文件对不上的情况
+  //（线上实测某原型 66 个 bundle 文件 vs HTML 实际引用的 6 个完全不匹配，
+  // 结果一个都没内联）。vfiles 是每次上传时按真实文件清单写的，最可靠。
   let bundlePaths = [];
   {
-    bundlePaths = bundleListOf(meta);
-    if (!bundlePaths.length) {
-      const vfiles = await env.STATS.get(`proto:vfiles:${protoId}:v${stamp}`, 'json').catch(() => null);
-      if (Array.isArray(vfiles)) bundlePaths = bundleListOf({ bundle: vfiles });
+    const vfiles = await env.STATS.get(`proto:vfiles:${protoId}:v${stamp}`, 'json').catch(() => null);
+    const fromVfiles = Array.isArray(vfiles) ? bundleListOf({ bundle: vfiles }) : [];
+    if (fromVfiles.length) {
+      bundlePaths = fromVfiles;
+      // meta 里的清单与当前版本不一致时顺手修正（best-effort，不阻塞响应）
+      const inMeta = bundleListOf(meta);
+      if (inMeta.length !== fromVfiles.length) {
+        env.STATS.put(`proto:${protoId}`, JSON.stringify({ ...meta, bundle: fromVfiles })).catch(() => {});
+      }
+    } else {
+      bundlePaths = bundleListOf(meta);
     }
   }
 
