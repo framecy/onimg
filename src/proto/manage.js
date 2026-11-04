@@ -17,11 +17,18 @@ export function isProtoKey(name) {
 
 export async function listProtos(env, ownerFilter, includePasswords = false) {
   const list = await env.STATS.list({ prefix: 'proto:' });
-  const protos = await Promise.all(
-    list.keys
-      .filter(k => isProtoKey(k.name))
-      .map(async k => {
-      const p = await env.STATS.get(k.name, 'json');
+  const keys = list.keys.filter(k => isProtoKey(k.name)).map(k => k.name);
+
+  // 批量读取：D1 上逐个 get 是 N 次跨区往返（每个约 20–60 ms），
+  // 原型一多，回收站和原型列表就线性变慢。getMany 把 N 次压成 ceil(N/99) 次。
+  // KV 回滚路径没有 getMany，退回并发 get（行为不变）。
+  const recMap = typeof env.STATS.getMany === 'function'
+    ? await env.STATS.getMany(keys, 'json')
+    : null;
+
+  const protos = (await Promise.all(
+    keys.map(async name => {
+      const p = recMap ? recMap.get(name) : await env.STATS.get(name, 'json');
       // 兜底：没有 protoId 的记录不是可访问的原型（历史残留 / 半成品元数据）
       if (!p || !p.protoId) return null;
       const obj = {
@@ -46,7 +53,7 @@ export async function listProtos(env, ownerFilter, includePasswords = false) {
       }
       return obj;
     })
-  );
+  ));
   // 排除已软删除（在回收站中）的原型
   const all = protos.filter(p => p && !p.deletedAt);
   return ownerFilter ? all.filter(p => p.owner === ownerFilter) : all;

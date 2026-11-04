@@ -328,6 +328,12 @@ export function renderPage(env = {}) {
       <div class="flex flex-wrap items-center gap-2 mb-4" id="mineTagFilter" style="display:none"></div>
       <div class="gallery-grid group/grid grid grid-cols-2 gap-3 md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] md:gap-5" id="mineGrid"></div>
       <div class="p-12 text-center text-md font-medium text-tx-3" id="mineEmpty" style="display:none">暂无图片，去上传吧</div>
+      <!-- 分页：图库超过一页时只加载当前页，避免一次渲染上千张卡片 -->
+      <div class="mt-6 flex items-center justify-center gap-3" id="minePager" style="display:none">
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx disabled:cursor-not-allowed disabled:opacity-40" id="minePrev">上一页</button>
+        <span class="font-mono text-sm text-tx-3" id="minePageInfo">1 / 1</span>
+        <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx disabled:cursor-not-allowed disabled:opacity-40" id="mineNext">下一页</button>
+      </div>
     </div>
 
     <!-- Pages -->
@@ -902,6 +908,9 @@ export function renderPage(env = {}) {
   let username = localStorage.getItem(USER_KEY);
   let isAdminUser = localStorage.getItem(ADMIN_KEY) === '1';
   let mineItems = [], lbKey = null, editingSlug = null, userPages = [], userProjects = [], userGroups = [], vditorInst = null, userProtos = [];
+  // 图库分页状态：服务端按 limit/offset 只返回当前页，减少一次性渲染与传输
+  const MINE_PAGE_SIZE = 60;
+  let mineOffset = 0, mineTotal = 0, mineEnd = false;
   let mineSelectMode = false; const mineSelected = new Set();
   const mineTagFilter = new Set();
   let lbList = [], lbIdx = -1;
@@ -1772,7 +1781,8 @@ export function renderPage(env = {}) {
     if (!mineItems.length) skelCards(document.getElementById('mineGrid'), 8);
     let res;
     try {
-      res = await fetch('/list', { headers: { Authorization: 'Bearer ' + token } });
+      res = await fetch('/list?limit=' + MINE_PAGE_SIZE + '&offset=' + (mineOffset || 0),
+        { headers: { Authorization: 'Bearer ' + token } });
     } catch {
       toast('图库加载失败，请重试', 'error'); return;
     }
@@ -1780,15 +1790,43 @@ export function renderPage(env = {}) {
     // 非 2xx 时不能把 mineItems 置空 —— 否则界面变成「一张都没有」，
     // 让人以为图片丢了（数据其实还在）。
     if (!res.ok) { toast('图库加载失败（' + res.status + '），请重试', 'error'); return; }
-    let items = [];
-    try { items = (await res.json()).items ?? []; } catch { items = []; }
-    mineItems = items;
+    let data = {};
+    try { data = await res.json(); } catch { data = {}; }
+    mineItems = data.items ?? [];
+    mineTotal = Number(data.total) || mineItems.length;
+    // 服务端说没有下一页，就把游标收回当前页，避免回退后页码错位
+    if (!data.nextOffset) mineEnd = true; else mineEnd = false;
     renderMineGallery();
   }
   document.getElementById('mineSearch').addEventListener('input', renderMineGallery);
   document.getElementById('mineVisFilter').addEventListener('change', renderMineGallery);
   document.getElementById('mineSort').addEventListener('change', renderMineGallery);
-  document.getElementById('refreshMine').addEventListener('click', loadMineGallery);
+  document.getElementById('refreshMine').addEventListener('click', () => { mineOffset = 0; loadMineGallery(); });
+
+  // 分页按钮：上一页 / 下一页。翻页时保留筛选与排序（它们作用在当前页上）
+  function updateMinePager() {
+    const pager = document.getElementById('minePager');
+    if (!pager) return;
+    const pages = Math.max(1, Math.ceil(mineTotal / MINE_PAGE_SIZE));
+    const cur = Math.floor(mineOffset / MINE_PAGE_SIZE) + 1;
+    // 只有一页时不显示分页条，保持界面干净
+    pager.style.display = mineTotal > MINE_PAGE_SIZE ? 'flex' : 'none';
+    document.getElementById('minePageInfo').textContent = cur + ' / ' + pages + '（共 ' + mineTotal + ' 张）';
+    document.getElementById('minePrev').disabled = mineOffset <= 0;
+    document.getElementById('mineNext').disabled = mineEnd || (mineOffset + MINE_PAGE_SIZE >= mineTotal);
+  }
+  document.getElementById('minePrev').addEventListener('click', () => {
+    if (mineOffset <= 0) return;
+    mineOffset = Math.max(0, mineOffset - MINE_PAGE_SIZE);
+    mineSelected.clear();
+    loadMineGallery();
+  });
+  document.getElementById('mineNext').addEventListener('click', () => {
+    if (mineEnd) return;
+    mineOffset += MINE_PAGE_SIZE;
+    mineSelected.clear();
+    loadMineGallery();
+  });
 
   // 所有图片用到的标签集合（用于筛选栏）
   function allMineTags() {
@@ -1870,6 +1908,7 @@ export function renderPage(env = {}) {
       </div>\`;
     }).join('');
     updateBatchUI();
+    updateMinePager();
   }
 
   // ── Batch selection ──

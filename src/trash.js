@@ -31,12 +31,17 @@ export async function handleTrashList(request, env) {
     images.push({ key: k.name.slice(8), owner: md.owner, isPublic: !!md.isPublic, deletedAt: md.deletedAt });
   }
 
-  // 原型：扫描 proto:（排除 vfiles / staging），取带 deletedAt 的
+  // 原型：扫描 proto:（排除 vfiles / staging），取带 deletedAt 的。
+  // 批量读取而不是逐个 get —— D1 上每个 get 是一次跨区往返（20–60 ms），
+  // 原型多的时候回收站会线性变慢（实测曾达 4.8 s）。
   const protoList = await env.STATS.list({ prefix: 'proto:' });
+  const protoKeys = protoList.keys.filter(k => isProtoKey(k.name)).map(k => k.name);
+  const protoRecs = typeof env.STATS.getMany === 'function'
+    ? await env.STATS.getMany(protoKeys, 'json')
+    : null;
   const protos = [];
-  for (const k of protoList.keys) {
-    if (!isProtoKey(k.name)) continue;
-    const p = await env.STATS.get(k.name, 'json');
+  for (const name of protoKeys) {
+    const p = protoRecs ? protoRecs.get(name) : await env.STATS.get(name, 'json');
     if (!p?.protoId || !p.deletedAt) continue;
     if (!actor.isAdmin && p.owner !== actor.username) continue;
     protos.push({

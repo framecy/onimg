@@ -88,10 +88,41 @@ export async function handleList(request, env) {
   //   · 最小种子：只有 key/size/uploadedAt/isPublic，名字与标签要读单图记录
   // 这里把最小种子按需补全。用并发池限流，避免一次请求打出上百个子请求
   // （免费版单请求 KV 子请求上限 50）。
-  const items = await expandEntries(env, user.username, manifest);
+  //
+  // ── 分页（2026-11-04）──────────────────────────────────────────────────────
+  // 图库变大后，一次性把上千条全展开再返回，会同时压垮 Worker（展开是 D1 往返）
+  // 和浏览器（一次渲染上千张卡片 + 图片请求）。现在支持 limit / offset：
+  //   · 只对**当前页**的条目做补全，展开成本与页大小挂钩，不再与图库总量挂钩
+  //   · 不传 limit 时行为与旧版完全一致（全量返回），CLI / Agent 不受影响
+  const url = new URL(request.url);
+  const rawLimit  = url.searchParams.get('limit');
+  const rawOffset = url.searchParams.get('offset');
+  const limit  = rawLimit == null ? null : Math.max(1, Math.min(parseInt(rawLimit, 10) || 200, 500));
+  const offset = Math.max(0, parseInt(rawOffset ?? '0', 10) || 0);
 
-  // 排除已软删除（回收站）的图片
-  return Response.json({ items: items.filter(e => !e.deletedAt), cursor: null, truncated: false });
+  // 排除已软删除（回收站）的图片。
+  //
+  // ⚠️ 必须先展开再过滤，不能反过来：清单里存的是**最小种子**，而 deletedAt
+  // 只写在单图记录里。先按清单过滤等于「看不见 deletedAt」，回收站里的图
+  // 会被当成正常图返回（历史 bug 的变体）。这里保持旧口径：展开后按
+  // 补全结果过滤。分页的 offset 也只作用在过滤后的集合上。
+  const expanded = await expandEntries(env, user.username, manifest);
+  const live = expanded.filter(e => e && !e.deletedAt);
+
+  if (limit == null) {
+    return Response.json({ items: live, cursor: null, truncated: false, total: live.length });
+  }
+
+  const pageItems = live.slice(offset, offset + limit);
+  return Response.json({
+    items: pageItems,
+    total: live.length,
+    offset,
+    limit,
+    nextOffset: offset + pageItems.length < live.length ? offset + pageItems.length : null,
+    cursor: null,
+    truncated: false,
+  });
 }
 
 // 单次 /list 最多补全多少条「最小种子」条目。超出预算的条目原样返回 ——
