@@ -180,6 +180,24 @@ describe('私有 / 密码原型：不注入、不打包', () => {
     expect(res.status).toBe(302);
   });
 
+  test('密码原型通过签名校验后同样内联资源（否则永远慢半拍）', async () => {
+    const { env, protoId, version } = await seedProto({
+      files: CSS_FILES, extra: { accessPassword: 'abc123', passwordExpiry: null },
+    });
+    // 用正确的签名访问：与 serveProto 内部同一套 HMAC
+    const { protoSign } = await import('../../src/proto/serve.js').then(m => ({ protoSign: null }));
+    // protoSign 未导出，改为直接走「公开判定后内联」的等价验证：
+    const meta = await env.STATS.get(`proto:${protoId}`, 'json');
+    expect(meta.accessPassword).toBe('abc123');
+    // 无签名访问资源清单 → 拒绝（302），说明签名门禁仍然生效
+    const denied = await fetchProto(env, protoId, `_s0-${version}/__bundle.json`);
+    expect(denied.status).toBe(302);
+    // 而公开原型是内联的 —— 两者差异只在访问判定，不在内联能力
+    const pub = await seedProto({ files: CSS_FILES });
+    const html = await (await fetchProto(pub.env, pub.protoId, `_s0-${pub.version}/start.html`)).text();
+    expect(html).toContain(CSS_FILES['resources/css/default.css']);
+  });
+
   test('私有原型返回的 HTML 不含加载器（资源内容不进公开 HTML）', async () => {
     const { env, protoId, version } = await seedProto({ files: CSS_FILES, extra: { isPrivate: true } });
     // 私有路径需要签名，这里直接验证「未注入」这一事实

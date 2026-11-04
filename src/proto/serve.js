@@ -336,9 +336,10 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
     if (neg) return new Response('Not Found', { status: 404, headers: { 'X-Cache': 'HIT' } });
   }
 
-  // 打包清单（公开原型才注入加载器；见 injectBundleLoader）
+  // 打包清单：公开与签名（密码/私有，已通过校验）原型都要算 ——
+  // 都能内联资源。见文件末尾「原型资源打包」的说明。
   let bundlePaths = [];
-  if (isPublic) {
+  {
     bundlePaths = bundleListOf(meta);
     if (!bundlePaths.length) {
       const vfiles = await env.STATS.get(`proto:vfiles:${protoId}:v${stamp}`, 'json').catch(() => null);
@@ -447,9 +448,13 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
     }
 
     // ── 资源内联（把 15 个资源请求合成 1 个 HTML 请求）────────────────────
-    // 只对公开原型做：私有/密码原型的资源不该被塞进一份可能被缓存的 HTML。
+    // 走到这里说明访问判定已经通过：公开原型（sig=0）或签名校验通过的
+    // 密码/私有原型（sig≠0）。两种都内联 —— 否则密码原型永远慢半拍。
+    //
+    // 缓存边界：签名原型本来就不进边缘缓存（cacheKey 为 null，HTML 恒 no-store），
+    // 内联内容只出现在这一次响应里，不会被别的访客取到。
     // 失败（R2 读不到 / 解析异常）就原样返回 HTML，退化成优化前的行为。
-    if (isPublic && bundlePaths.length) {
+    if (bundlePaths.length) {
       try {
         const files = await readBundleFiles(env, protoId, bundlePaths);
         if (Object.keys(files).length) {
