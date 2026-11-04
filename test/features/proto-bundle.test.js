@@ -240,3 +240,38 @@ describe('bundle 边缘缓存：必须真的写进去', () => {
     }
   });
 });
+
+describe('清单不可靠时按 HTML 实际引用兜底补齐', () => {
+  test('bundle 清单漏掉的文件，仍按 HTML 引用内联', async () => {
+    // 线上真实情况：vfiles / meta.bundle 里是 'messagecenter 2.js' 这种
+    // 历史残留名，而 HTML 引的是 messagecenter.js —— 只信清单会漏。
+    const html = '<!DOCTYPE html><html><head><title>T</title>' +
+      '<script src="resources/scripts/messagecenter.js"></script>' +
+      '<link rel="stylesheet" href="resources/css/default.css">' +
+      '</head><body></body></html>';
+    const files = {
+      'resources/css/default.css': 'body{color:#111}',
+      'resources/scripts/messagecenter.js': 'window.mc=1;',
+    };
+    const { env, protoId, version } = await seedProto({ files, html });
+    // 故意把 meta.bundle 设成错的（模拟历史脏数据）
+    const meta = await env.STATS.get(`proto:${protoId}`, 'json');
+    await env.STATS.put(`proto:${protoId}`, JSON.stringify({ ...meta, bundle: ['resources/scripts/messagecenter 2.js'] }));
+
+    const out = await (await fetchProto(env, protoId, `_s0-${version}/start.html`)).text();
+    // 两个都被内联（清单给错也不影响）
+    expect(out).toContain('window.mc=1;');
+    expect(out).toContain('body{color:#111}');
+  });
+
+  test('HTML 引用但 R2 里不存在的文件被跳过（Axure 常见多余引用）', async () => {
+    const html = '<!DOCTYPE html><html><head><title>T</title>' +
+      '<link rel="stylesheet" href="plugins/handoff/styles/handoff.css">' +
+      '</head><body></body></html>';
+    const { env, protoId, version } = await seedProto({ files: { 'resources/css/default.css': 'a{}' }, html });
+    const res = await fetchProto(env, protoId, `_s0-${version}/start.html`);
+    expect(res.status).toBe(200);                 // 不报错
+    const out = await res.text();
+    expect(out).toContain('handoff.css');         // 保持原样（本来 404）
+  });
+});

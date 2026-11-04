@@ -471,6 +471,21 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
         if (Object.keys(files).length) {
           const r = inlineBundleResources(html, files);
           html = r.html;
+
+          // 兜底补齐：清单漏掉、但 HTML 明确引用且 R2 里真实存在的 css/js，
+          // 单独再取一次并内联。
+          //
+          // 为什么需要：vfiles 记录可能不可靠（线上实测某原型的清单里是
+          // 'messagecenter 2.js' 这种历史残留名，而 HTML 引的是 messagecenter.js），
+          // 只信清单会有资源漏网，页面仍要发请求。
+          const missing = findMissingResources(r.html, files);
+          if (missing.length) {
+            const extra = await readBundleFiles(env, protoId, missing);
+            if (Object.keys(extra).length) {
+              const r2 = inlineBundleResources(r.html, extra);
+              html = r2.html;
+            }
+          }
         }
       } catch { /* 内联失败不影响页面本身 */ }
     }
@@ -683,6 +698,40 @@ async function readBundleFilesCached(env, protoId, stamp, paths, request, wait) 
     if (typeof wait === 'function') wait(p); else p?.catch?.(() => {});
   }
   return files;
+}
+
+/**
+ * 找出 HTML 里仍然引用、但还没被内联的本地 css/js。
+ *
+ * 只挑扩展名在白名单内、且不是绝对 URL 的引用；这些会交给 readBundleFiles
+ * 按真实 R2 内容取一次（拿不到的自然跳过，比如 Axure 里引用了但没导出的文件）。
+ *
+ * @param {string} html
+ * @param {Record<string,string>} already 已内联的文件
+ * @returns {string[]}
+ */
+function findMissingResources(html, already) {
+  const seen = new Set();
+  const out = [];
+  const push = (raw) => {
+    if (!raw) return;
+    const p = String(raw).trim();
+    if (!p || /^(https?:)?\/\//i.test(p)) return;
+    if (/^(about:|javascript:|data:|#)/i.test(p)) return;
+    // 模板字符串片段（Axure 内联脚本里拼的动态 URL）不是真实资源
+    if (p.includes("'") || p.includes('${') || p.includes('+')) return;
+    const key = p.replace(/^\.\//, '').split('?')[0];
+    const ext = key.split('.').pop()?.toLowerCase() ?? '';
+    if (!Object.prototype.hasOwnProperty.call(BUNDLE_TYPES, ext)) return;
+    if (Object.prototype.hasOwnProperty.call(already, key)) return;
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(key);
+  };
+
+  for (const m of html.matchAll(/<link\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>/gi)) push(m[1]);
+  for (const m of html.matchAll(/<script\b[^>]*src\s*=\s*["']([^"']+)["'][^>]*>/gi)) push(m[1]);
+  return out;
 }
 
 /**
