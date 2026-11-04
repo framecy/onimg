@@ -152,6 +152,40 @@ export function queryImageIndex(items, opts = {}) {
   return { items: page, total, nextOffset: offset + page.length < total ? offset + page.length : null };
 }
 
+/**
+ * 公开图库清单：所有 isPublic 且未进回收站的图片。
+ *
+ * ── 为什么要翻页（这是一个真 bug，不是优化）─────────────────────────────
+ * list() 单页上限就是 1000，且**默认也是 1000**。旧实现只取第一页：
+ * 图库一旦超过 1000 张，公开首页就会「凭空少掉」后面的图 —— 不报错、不提示，
+ * 只是少。实测：造 1600 条 imgmeta 时接口只返回 1000 条（list_complete=false 被忽略）。
+ * 现在翻完所有页；超过安全上限时如实带上 truncated 标记，绝不静默丢数据。
+ *
+ * @returns {Promise<{items: Array<{key:string, owner:string|null, isPublic:boolean}>, truncated: boolean}>}
+ */
+export async function listPublicImages(env) {
+  const MAX_PAGES = 20;          // 20 × 1000 = 2 万张，够当前规模用两个数量级
+  const items = [];
+  let cursor;
+  let pages = 0;
+  let truncated = false;
+  do {
+    const r = await env.STATS.list({ prefix: IMG_PREFIX, cursor, limit: 1000 });
+    for (const k of r.keys ?? []) {
+      if (!k.metadata?.isPublic || k.metadata?.deletedAt) continue;
+      items.push({
+        key: k.name.slice(IMG_PREFIX.length),
+        owner: k.metadata.owner ?? null,
+        isPublic: true,
+      });
+    }
+    cursor = r.list_complete ? undefined : r.cursor;
+    pages++;
+    if (cursor && pages >= MAX_PAGES) { truncated = true; break; }
+  } while (cursor);
+  return { items, truncated };
+}
+
 /** 供 /api/trash 补图片名用：按 key 取 imgmeta 的 value（只读少量已删除条目） */
 export async function readImageNames(env, keys) {
   const out = new Map();

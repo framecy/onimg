@@ -22,6 +22,7 @@ import { listProtos, deleteProto, updateProtoMeta, deleteProtoVersion } from './
 import { handleTrashList, handleTrashRestore, handleTrashPurge, purgeExpiredTrash } from './trash.js';
 import { logAudit, clientIp, handleAuditLog } from './admin/audit.js';
 import { createD1Kv } from './kv-d1.js';
+import { shortEtag, notModified, SHELL_CACHE_CONTROL } from './http-cache.js';
 import { ONIMG_AGENT_PY } from './agent-cli.generated.js';
 
 // ── 存储层接线 ───────────────────────────────────────────────────────────────
@@ -193,7 +194,7 @@ export default {
       if (method === 'DELETE' && path.startsWith('/api/proto-versions/')) return withCors(await protoVersionDeleteHandler(request, env, path.slice('/api/proto-versions/'.length)), request);
 
       // ── Admin panel ──────────────────────────────────────────────────────────
-      if (path === '/admin' || path === '/admin/') return addSecurityHeaders(new Response(renderAdminPage(), { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } }));
+      if (path === '/admin' || path === '/admin/') return serveShell(cachedShell('admin', renderAdminPage), request);
       if (method === 'POST' && path === '/admin/login') {
         const uname = await peekUsername(request);
         const res = await handleAdminLogin(request, env);
@@ -313,7 +314,11 @@ export default {
         return withCors(res, request);
       }
       if (method === 'GET'    && path === '/list')             return withCors(await handleList(request, env), request);
-      if (method === 'GET'    && path === '/')                 return addSecurityHeaders(new Response(renderPage(env), { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } }));
+      if (method === 'GET'    && path === '/') {
+        // SITE_NOTES 是这份壳唯一的服务端输入， memo 键带上它
+        const notes = env.SITE_NOTES ?? '';
+        return serveShell(cachedShell('home|' + notes, () => renderPage(env)), request);
+      }
       if (method === 'GET'    && path.startsWith('/static/'))  return serveStaticAsset(env, path.slice('/static/'.length));
       if (method === 'GET'    && path.startsWith('/'))         return withCors(await handleGet(env, ctx, path.slice(1), request), request);
 
@@ -630,6 +635,52 @@ function withCors(response, req) {
   // API responses should never be cached at edge
   if (!res.headers.has('Cache-Control')) res.headers.set('Cache-Control', 'no-store');
   return res;
+}
+
+// ── 静态壳（主页 / 后台）的渲染记忆与条件响应 ────────────────────────────────
+//
+// 这两份 HTML 对**所有访客逐字节相同**：renderPage 只用到 env.SITE_NOTES 这类
+// 部署期变量，renderAdminPage 不接任何参数；产物里没有 token、没有密码哈希
+//（实测连抓两次 diff 完全一致，也确认过不含凭据）。旧实现给它们打 no-store，
+// 于是每次访问都要重跑一遍 Worker、重传 372 KB / 430 KB、再重新解析。
+//
+// 现在做两件事：
+//   1. 模块级记住渲染结果 —— 同一 isolate 内后续请求不再拼那 40 万字符的模板；
+//   2. 带 If-None-Match 来时直接回 304（零 body），回源校验只花几百字节。
+//
+// 为什么不干脆缓存很久：壳里嵌着整站前端 JS，缓存过长会让刚部署完的用户
+// 继续跑旧脚本 —— 页面是新的、行为是旧的，最难排查。所以是
+// 「短 max-age + must-revalidate + 强 ETag」：过期必须回源校验，校验命中即 304。
+//
+// memo 的键带上所有会影响渲染的环境输入，换配置不会复用旧内容；条目数封顶，
+// 防止异构输入把它撑成内存泄漏。
+const SHELL_MEMO = new Map();
+const SHELL_MEMO_MAX = 16;
+
+/**
+ * @param {string} memoKey  影响渲染结果的环境输入（变了就要重渲染）
+ * @param {() => string} render
+ */
+function cachedShell(memoKey, render) {
+  const hit = SHELL_MEMO.get(memoKey);
+  if (hit !== undefined) return hit;
+  const html = render();
+  if (SHELL_MEMO.size >= SHELL_MEMO_MAX) SHELL_MEMO.clear();
+  SHELL_MEMO.set(memoKey, html);
+  return html;
+}
+
+/** 渲染 + 缓存头 + 304 判定，一步到位 */
+function serveShell(html, request) {
+  const etag = shortEtag(html);
+  const headers = new Headers({
+    'Content-Type': 'text/html; charset=utf-8',
+    'Cache-Control': SHELL_CACHE_CONTROL,
+    'ETag': etag,
+  });
+  const notMod = notModified(request, etag, headers);
+  if (notMod) return addSecurityHeaders(notMod);
+  return addSecurityHeaders(new Response(html, { headers }));
 }
 
 // ── Static asset hosting (/static/*) ──────────────────────────────────────────

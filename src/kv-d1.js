@@ -27,6 +27,15 @@ import { NO_TRACK, recordD1Usage } from './admin/d1Stats.js';
 const DEFAULT_LIMIT = 1000;   // 与真实 KV 的 list 默认上限一致
 const MAX_LIMIT = 1000;
 
+/**
+ * getMany 的分块大小：一次 `WHERE key IN (…)` 最多绑这么多个参数。
+ *
+ * 分块是给 D1 的绑定参数上限留余量；真正的意义在于把「N 张图 = N 次往返」
+ * 压成「N 张图 = N/100 次往返」。/list 展开图库时这项直接决定白屏时长
+ *（120 张图原本是 120 次串行 D1 查询，见 src/list.js 的 expandEntries）。
+ */
+const GET_MANY_CHUNK = 100;
+
 /** 存活条件：无过期时间，或尚未到期（expires_at 为 Unix 秒） */
 const LIVE = 'expires_at IS NULL OR expires_at > ?';
 
@@ -105,6 +114,37 @@ export function createD1Kv(db, { waitUntil } = {}) {
         value: decode(row.value, type),
         metadata: row.metadata ? JSON.parse(row.metadata) : null,
       };
+    },
+
+    /**
+     * 批量读 key（一次往返取多条）。
+     *
+     * 语义与逐个 get() 一致：不存在的 key 值为 null。返回 Map，调用方按原顺序取用。
+     *
+     * 为什么需要它：D1 每次查询是一次**网络往返**（跨区约 20–60 ms）。「我的图库」
+     * 展开清单时原本是每张图一次 get —— 120 张就是 120 次串行往返，实测约 3 秒。
+     * 批量之后是 2 次。这是全站最大的一处可消除延迟。
+     *
+     * @param {string[]} keys
+     * @param {'text'|'json'} [type]
+     * @returns {Promise<Map<string, any>>}
+     */
+    async getMany(keys, type = 'text') {
+      const out = new Map();
+      const uniq = [...new Set(keys)];
+      if (!uniq.length) return out;
+      for (let i = 0; i < uniq.length; i += GET_MANY_CHUNK) {
+        const chunk = uniq.slice(i, i + GET_MANY_CHUNK);
+        const placeholders = chunk.map(() => '?').join(', ');
+        const { results, meta } = await db
+          .prepare(`SELECT key, value FROM kv_store WHERE key IN (${placeholders}) AND (${LIVE})`)
+          .bind(...chunk, nowSec())
+          .all();
+        track(meta);
+        for (const row of results ?? []) out.set(row.key, decode(row.value, type));
+      }
+      for (const k of uniq) if (!out.has(k)) out.set(k, null);
+      return out;
     },
 
     /**

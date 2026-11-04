@@ -9,6 +9,9 @@ import { SCHEMA } from './schema.js';
 const DEFAULT_LIMIT = 1000;   // 真实 KV 的 list 默认上限
 const MAX_LIMIT = 1000;
 
+// 与 src/kv-d1.js 的 GET_MANY_CHUNK 同值：批量读的 IN (…) 分块大小。
+const GET_MANY_CHUNK = 100;
+
 export function createSqliteKv({ dbFile, db: shared } = {}) {
   const own = !shared;
   let db = shared;
@@ -53,6 +56,26 @@ export function createSqliteKv({ dbFile, db: shared } = {}) {
       const row = qGet.get(key, nowSec());
       if (!row) return { value: null, metadata: null };
       return { value: decode(row.value, type), metadata: row.metadata ? JSON.parse(row.metadata) : null };
+    },
+    /**
+     * 批量读 key —— 与 src/kv-d1.js 的 getMany 同语义、同返回值（Map，缺失为 null）。
+     *
+     * 本地 SQLite 没有网络往返，这里提速意义不大；保留它是为了让 /list 的展开逻辑
+     * 在两种存储上走**同一条代码路径**，不会出现「线上修了、自托管没修」。
+     */
+    async getMany(keys, type = 'text') {
+      const out = new Map();
+      const uniq = [...new Set(keys)];
+      if (!uniq.length) return out;
+      for (let i = 0; i < uniq.length; i += GET_MANY_CHUNK) {
+        const chunk = uniq.slice(i, i + GET_MANY_CHUNK);
+        const ph = chunk.map(() => '?').join(', ');
+        const rows = db.prepare(`SELECT key, value FROM kv_store WHERE key IN (${ph}) AND (${live})`)
+          .all(...chunk, nowSec());
+        for (const r of rows) out.set(r.key, decode(r.value, type));
+      }
+      for (const k of uniq) if (!out.has(k)) out.set(k, null);
+      return out;
     },
     async put(key, value, { metadata, expirationTtl } = {}) {
       const val = typeof value === 'string' ? value : JSON.stringify(value);

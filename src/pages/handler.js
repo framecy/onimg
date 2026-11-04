@@ -1,6 +1,27 @@
 import { renderMarkdown, extractHeadings } from './markdown.js';
 import { bumpDaily } from '../admin/dailyStats.js';
 
+// ── HTTP 缓存小工具 (仅服务层) ────────────────────────────────────────────────
+/** FNV-1a 32 位摘要 → ETag */
+function shortEtag(text) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return `"${(h >>> 0).toString(16)}-${text.length.toString(16)}"`;
+}
+/** If-None-Match 命中 → 304（无 body）。RFC 9110 兼容列表匹配。 */
+function ifNotModified(request, etag) {
+  const inm = request?.headers?.get('If-None-Match');
+  if (!inm || !etag) return null;
+  const tags = inm.split(',').map(s => s.trim());
+  if (tags.includes(etag) || tags.includes('*')) {
+    return new Response(null, { status: 304, headers: { ETag: etag } });
+  }
+  return null;
+}
+
 export async function servePage(env, slug, ctx, request) {
   const page = await env.STATS.get('page:' + slug, 'json');
   if (!page) return new Response('Page Not Found', { status: 404, headers: { 'Cache-Control': 'no-store' } });
@@ -34,13 +55,21 @@ export async function servePage(env, slug, ctx, request) {
     (page.type !== 'markdown' && /^\s*(<\s*!DOCTYPE\s+html|<\s*html[\s>])/i.test(page.content));
 
   if (isHtml) {
-    return serveHtmlPage(page);
+    const res = serveHtmlPage(page);
+    const etag = shortEtag(res.body?.toString() ?? '');
+    const notMod = ifNotModified(request, etag);
+    if (notMod) return notMod;
+    return res;
   }
 
   const body = renderMarkdown(page.content);
   const headings = extractHeadings(page.content);
-  return new Response(renderMdPage(page, body, headings), {
-    headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=0, must-revalidate' },
+  let html = renderMdPage(page, body, headings);
+  const etag = shortEtag(html);
+  const notMod = ifNotModified(request, etag);
+  if (notMod) return notMod;
+  return new Response(html, {
+    headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=0, must-revalidate', 'ETag': etag },
   });
 }
 
@@ -127,7 +156,10 @@ ${tocItems}
 <title>${esc(page.title || page.slug)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- 字体异步加载：与主页/后台同一写法。同步 <link> 会阻塞首屏，
+     而 fonts.googleapis.com 在部分网络不可达时会白屏数秒。 -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>
 ${mathHead}${codeHead}
 <style>
   *, *::before, *::after { box-sizing: border-box; }

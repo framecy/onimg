@@ -31,6 +31,8 @@ export async function handleGet(env, ctx, key, request) {
       ctx.waitUntil(recordAccess(env, key, request));
       ctx.waitUntil(bumpDaily(env.STATS, 'imgview'));
       const res = new Response(hit.body, hit);
+      // 这里要恢复长缓存给浏览器：边缘副本只存 1 天便于删除，但浏览器可缓存一整年（key 不可变）
+      res.headers.set('Cache-Control', 'public, max-age=31536000');
       res.headers.set('X-Cache', 'HIT');
       return res;
     }

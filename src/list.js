@@ -1,5 +1,5 @@
 import { verifyAdminToken } from './admin/auth.js';
-import { readImageIndex, queryImageIndex } from './admin/image-index.js';
+import { readImageIndex, queryImageIndex, listPublicImages } from './admin/image-index.js';
 import { verifyUserToken } from './user-auth.js';
 import {
   mergeUserImgEntry, putImageRecords, repairUserManifest,
@@ -106,23 +106,48 @@ const EXPAND_CONCURRENCY = 10;
  *
  * 预算只与**需要读取的条数**挂钩，所以图库 ≤ 200 张时一定能完整显示；
  * 更大的图库按时间倒序补前 200 张，其余条目仍完整列出（只是暂缺名字）。
+ *
+ * ── 为什么走批量读（这里是全站最大的一处可消除延迟）──────────────────────
+ * 旧实现是「每张图一次 env.STATS.get」的并发池。换成 D1 之后每个 get 是
+ * 一次**跨区网络往返**（约 20–60 ms），并发池又受子请求上限约束，实测
+ * 120 张图的图库要打 123 次查询、白屏约 3 秒；图库越大越慢。
+ * 现在一次 `getMany` 拿满一整批（D1 内部按 100 个 key 分块），
+ * 200 张图的补全从 200 次往返降到 2 次。
+ *
+ * 保留逐条读的回退路径：KV 绑定（回滚路径）没有同语义的批量 API，
+ * 检测到没有 getMany 时按老路走，行为不变。
  */
 async function expandEntries(env, owner, manifest) {
   const out = new Array(manifest.length);
-  let reads = 0;
+  // 先按预算挑出需要补全的下标，保证「补前 200 条」的口径与旧实现一致
+  const todo = [];
+  for (let idx = 0; idx < manifest.length; idx++) {
+    const e = manifest[idx];
+    if (!e) continue;
+    if (!isMinimalEntry(e) || todo.length >= EXPAND_LIMIT) { out[idx] = e; continue; }
+    todo.push(idx);
+  }
+  if (!todo.length) return out;
+
+  if (typeof env.STATS.getMany === 'function') {
+    const recs = await env.STATS.getMany(
+      todo.map(idx => userImgRecordKey(owner, manifest[idx].key)), 'json');
+    for (const idx of todo) {
+      out[idx] = mergeEntryWithRecord(manifest[idx], recs.get(userImgRecordKey(owner, manifest[idx].key)) ?? null);
+    }
+    return out;
+  }
+
+  // 回退路径（Workers KV 绑定）：没有批量 API，仍用限流并发逐条读。
   let i = 0;
   async function worker() {
-    while (i < manifest.length) {
-      const idx = i++;
-      const e = manifest[idx];
-      if (!e) continue;
-      if (!isMinimalEntry(e) || reads >= EXPAND_LIMIT) { out[idx] = e; continue; }
-      reads++;
-      const rec = await env.STATS.get(userImgRecordKey(owner, e.key), 'json');
-      out[idx] = mergeEntryWithRecord(e, rec);
+    while (i < todo.length) {
+      const idx = todo[i++];
+      const rec = await env.STATS.get(userImgRecordKey(owner, manifest[idx].key), 'json');
+      out[idx] = mergeEntryWithRecord(manifest[idx], rec);
     }
   }
-  await Promise.all(Array.from({ length: Math.min(EXPAND_CONCURRENCY, manifest.length) }, worker));
+  await Promise.all(Array.from({ length: Math.min(EXPAND_CONCURRENCY, todo.length) }, worker));
   return out;
 }
 
@@ -205,17 +230,12 @@ export async function handleGetImageMeta(request, env, key) {
   });
 }
 
-// Public gallery — no auth required
+// Public gallery — no auth required.
+// 清单来源见 image-index.js 的 listPublicImages：必须翻页（旧实现只取第一页，
+// 图库超 1000 张就静默少图），且按前缀一次扫描，不逐条读 value。
 export async function handlePublicGallery(env) {
-  const kvList = await env.STATS.list({ prefix: 'imgmeta:' });
-  const public_ = kvList.keys
-    .filter(k => k.metadata?.isPublic && !k.metadata?.deletedAt)
-    .map(k => ({
-      key: k.name.slice(8),   // strip 'imgmeta:'
-      owner: k.metadata.owner,
-      isPublic: true,
-    }));
-  return Response.json({ items: public_ });
+  const { items, truncated } = await listPublicImages(env);
+  return Response.json({ items, ...(truncated ? { truncated: true } : {}) });
 }
 
 // Toggle visibility of a single image

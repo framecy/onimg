@@ -27,6 +27,20 @@ export function createKV() {
       }
       return { value, metadata: metaStore.get(key) ?? null };
     },
+    // 与 src/kv-d1.js / src/kv-sqlite.js 的 getMany 同语义（缺失的 key 值为 null）。
+    // 有了它，/list 的批量展开路径在单测里被真实覆盖，而不是只跑回退分支。
+    async getMany(keys, type) {
+      const out = new Map();
+      for (const k of [...new Set(keys)]) {
+        const raw = store.get(k) ?? null;
+        let value = raw;
+        if (type === 'json' && raw !== null) {
+          try { value = JSON.parse(raw); } catch { value = null; }
+        }
+        out.set(k, value);
+      }
+      return out;
+    },
     async put(key, value, opts = {}) {
       store.set(key, String(value));
       if (opts.metadata !== undefined) metaStore.set(key, opts.metadata);
