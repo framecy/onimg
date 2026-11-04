@@ -42,6 +42,13 @@ const MAX_LIMIT = 1000;
 const GET_MANY_CHUNK = 99;
 
 /**
+ * getMany 并发发出的块数上限。每块已经 ≤99 个绑定参数，块之间互不依赖，
+ * 并行发送把「N 块 = N 次串行往返」压成「N/8 次往返」。
+ * 上限 8：够把 800 张图压进一次往返，又不会一次甩出几十个 D1 查询。
+ */
+const GET_MANY_PARALLEL = 8;
+
+/**
  * D1 用量自追踪的采样率（与 admin/d1Stats.js 的 SAMPLE_EVERY 保持一致）。
  * 不在这里重复 import 是为了避免 kv-d1 → d1Stats → kv-d1 的循环依赖：
  * d1Stats 的 recordD1Usage 接收的 stats 就是本适配器自身。
@@ -142,6 +149,12 @@ export function createD1Kv(db, { waitUntil } = {}) {
      * 展开清单时原本是每张图一次 get —— 120 张就是 120 次串行往返，实测约 3 秒。
      * 批量之后是 2 次。这是全站最大的一处可消除延迟。
      *
+     * ── 分块并发（2026-11-04）───────────────────────────────────────────────
+     * 分块之间**并发**发出，而不是 for + await 串行。465 张图是 5 块：
+     * 串行 = 5 × 单次往返（约 0.4 s），并发 = 1 × 单次往返。
+     * D1 对并发查询支持良好（Workers 里多个 prepare/all 可以同时在飞），
+     * 这里限一个并发上限，避免图库特别大时一次打出几十个查询。
+     *
      * @param {string[]} keys
      * @param {'text'|'json'} [type]
      * @returns {Promise<Map<string, any>>}
@@ -150,16 +163,31 @@ export function createD1Kv(db, { waitUntil } = {}) {
       const out = new Map();
       const uniq = [...new Set(keys)];
       if (!uniq.length) return out;
+
+      const chunks = [];
       for (let i = 0; i < uniq.length; i += GET_MANY_CHUNK) {
-        const chunk = uniq.slice(i, i + GET_MANY_CHUNK);
+        chunks.push(uniq.slice(i, i + GET_MANY_CHUNK));
+      }
+
+      const fetchChunk = async (chunk) => {
         const placeholders = chunk.map(() => '?').join(', ');
         const { results, meta } = await db
           .prepare(`SELECT key, value FROM kv_store WHERE key IN (${placeholders}) AND (${LIVE})`)
           .bind(...chunk, nowSec())
           .all();
         track(meta);
-        for (const row of results ?? []) out.set(row.key, decode(row.value, type));
+        return results ?? [];
+      };
+
+      // 分批并发（每批 GET_MANY_PARALLEL 个），批内并行、批间串行
+      for (let i = 0; i < chunks.length; i += GET_MANY_PARALLEL) {
+        const batch = chunks.slice(i, i + GET_MANY_PARALLEL);
+        const results = await Promise.all(batch.map(fetchChunk));
+        for (const rows of results) {
+          for (const row of rows) out.set(row.key, decode(row.value, type));
+        }
       }
+
       for (const k of uniq) if (!out.has(k)) out.set(k, null);
       return out;
     },

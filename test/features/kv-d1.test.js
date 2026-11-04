@@ -227,3 +227,66 @@ describe('createD1Kv：接线到业务 env 后能被现有代码原样使用', (
     expect(() => createD1Kv({})).toThrow(/需要 D1 绑定/);
   });
 });
+
+describe('createD1Kv：getMany 分块并发（减少串行往返）', () => {
+  test('多块同时发出，而不是一块一块串行等', async () => {
+    const d1 = createD1();
+    const kv = createD1Kv(d1);
+
+    // 250 个 key → 3 块（99 + 99 + 52）
+    const keys = Array.from({ length: 250 }, (_, i) => `k:${String(i).padStart(4, '0')}`);
+    for (const k of keys) await kv.put(k, JSON.stringify({ v: k }));
+
+    // 记录查询开始/结束的时序：并发时应有重叠
+    let inFlight = 0, maxInFlight = 0;
+    const orig = d1.prepare.bind(d1);
+    d1.prepare = (sql) => {
+      const stmt = orig(sql);
+      let bound = [];
+      const api = {
+        bind(...a) { bound = a; stmt.bind(...a); return api; },
+        async all() {
+          inFlight++; maxInFlight = Math.max(maxInFlight, inFlight);
+          try { return await stmt.all(); } finally { inFlight--; }
+        },
+        run: (...a) => stmt.run(...a),
+        first: (...a) => stmt.first(...a),
+      };
+      return api;
+    };
+
+    const recs = await kv.getMany(keys, 'json');
+    expect(recs.size).toBe(250);
+    expect(recs.get('k:0000')).toEqual({ v: 'k:0000' });
+    // 串行实现下 maxInFlight 恒为 1；并发后应 > 1
+    expect(maxInFlight).toBeGreaterThan(1);
+  });
+
+  test('超过并发上限时分批发出（不会一次性甩出几十个查询）', async () => {
+    const d1 = createD1();
+    const kv = createD1Kv(d1);
+    const keys = Array.from({ length: 99 * 20 }, (_, i) => `m:${String(i).padStart(5, '0')}`);
+    for (const k of keys) await kv.put(k, JSON.stringify({ v: 1 }));
+
+    let inFlight = 0, maxInFlight = 0;
+    const orig = d1.prepare.bind(d1);
+    d1.prepare = (sql) => {
+      const stmt = orig(sql);
+      let bound = [];
+      const api = {
+        bind(...a) { bound = a; stmt.bind(...a); return api; },
+        async all() {
+          inFlight++; maxInFlight = Math.max(maxInFlight, inFlight);
+          try { return await stmt.all(); } finally { inFlight--; }
+        },
+        run: (...a) => stmt.run(...a),
+        first: (...a) => stmt.first(...a),
+      };
+      return api;
+    };
+
+    const recs = await kv.getMany(keys, 'json');
+    expect(recs.size).toBe(99 * 20);
+    expect(maxInFlight).toBeLessThanOrEqual(8);   // 并发上限
+  });
+});
