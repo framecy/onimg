@@ -687,11 +687,15 @@ async function serveVersionedBundle(env, protoId, sig, stamp, request) {
   return serveBundle(env, protoId, stamp, paths, request);
 }
 
-/** 打包允许的扩展名与响应类型（只打资源，不打 HTML 入口） */
+/** 打包允许的扩展名（与 upload.js 的 BUNDLE_EXTS 保持一致） */
 const BUNDLE_TYPES = {
   css: 'text/css', js: 'application/javascript', mjs: 'application/javascript',
-  json: 'application/json', svg: 'image/svg+xml', txt: 'text/plain',
 };
+
+/** 打包总量上限：超过就放弃打包（走原路径），绝不让首屏拉几十 MB */
+const BUNDLE_MAX_TOTAL = 2 * 1024 * 1024;
+/** 单文件上限：超大 JS 单独走，避免拖慢首屏 */
+const BUNDLE_MAX_FILE = 1024 * 1024;
 
 /** 从原型元数据里取打包清单：只认显式声明，且过滤掉 HTML 与非文本类型 */
 function bundleListOf(meta) {
@@ -732,8 +736,22 @@ async function serveBundle(env, protoId, stamp, paths, request) {
     }
   }
 
+  // 体积闸门：先用 head 取大小，剔除超大单文件与超总量的文件组合。
+  // 老原型（bundle 清单是现算的）没有上传时的体积信息，只能在这里兜底。
+  const heads = await Promise.all(paths.map(p =>
+    env.BUCKET.head(`proto/${protoId}/${p}`).catch(() => null)));
+  const allowed = [];
+  let total = 0;
+  for (let i = 0; i < paths.length; i++) {
+    const size = heads[i]?.size ?? 0;
+    if (size > BUNDLE_MAX_FILE) continue;
+    if (total + size > BUNDLE_MAX_TOTAL) continue;
+    total += size;
+    allowed.push(paths[i]);
+  }
+
   // 并发读 R2：一个原型十几个文件，串行会白等一大截
-  const entries = await Promise.all(paths.map(async (p) => {
+  const entries = await Promise.all(allowed.map(async (p) => {
     const obj = await env.BUCKET.get(`proto/${protoId}/${p}`).catch(() => null);
     if (!obj) return null;
     const ext = p.split('.').pop()?.toLowerCase() ?? '';

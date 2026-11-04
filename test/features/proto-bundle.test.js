@@ -13,7 +13,7 @@ import { describe, test, expect } from 'vitest';
 import { createEnv, createD1, createR2 } from '../helpers/mock-env.js';
 import { createD1Kv } from '../../src/kv-d1.js';
 import { serveProto } from '../../src/proto/serve.js';
-import { computeBundleList } from '../../src/proto/upload.js';
+import { computeBundleList, pickBundleFiles } from '../../src/proto/upload.js';
 
 const HTML = '<!DOCTYPE html><html><head><title>旧标题</title></head><body>ok</body></html>';
 
@@ -59,14 +59,27 @@ const CSS_FILES = {
 };
 
 describe('computeBundleList：只挑文本类资源', () => {
-  test('css/js/svg 收录，图片与 HTML 入口排除', () => {
+  test('只收 css/js，图片（含 svg）与 HTML 入口一律排除', () => {
+    // 关键教训：曾把 .svg 收进包，某个原型有 717 个切图 → 打包成 7 MB，
+    // 比原来 16 个请求还糟。图片必须走原路径（懒加载 + 浏览器各自缓存）。
     const list = computeBundleList([
       'start.html', 'index.html',
       'resources/css/a.css', 'resources/scripts/b.js',
       'resources/images/c.svg', 'resources/images/d.png',
       'resources/other.json',
     ]);
-    expect(list).toEqual(['resources/css/a.css', 'resources/images/c.svg', 'resources/other.json', 'resources/scripts/b.js']);
+    expect(list).toEqual(['resources/css/a.css', 'resources/scripts/b.js']);
+  });
+
+  test('超过单文件上限的 JS 不打包', () => {
+    const sizes = { 'big.js': 3 * 1024 * 1024, 'small.js': 1000 };
+    expect(computeBundleList(['big.js', 'small.js'], sizes)).toEqual(['small.js']);
+  });
+
+  test('总量超限时整体放弃打包（宁可走原路径，也不让首屏拉几十 MB）', () => {
+    const sizes = { 'a.js': 1.5 * 1024 * 1024, 'b.js': 1.2 * 1024 * 1024 };
+    expect(pickBundleFiles(['a.js', 'b.js'], sizes)).toEqual([]);
+    expect(pickBundleFiles(['a.js'], { 'a.js': 1000 })).toEqual(['a.js']);
   });
 
   test('拒绝路径穿越与绝对路径', () => {

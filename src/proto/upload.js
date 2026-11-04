@@ -55,19 +55,49 @@ function stripTopFolder(files) {
 // 上传时把「哪些文件该打包」算出来存进 meta.bundle，读时一次取回。
 // 只收录文本类资源：HTML 入口会做标题注入、图片走原路径更划算（可被浏览器
 // 各自缓存、也不必 base64 塞进 JSON）。
-const BUNDLE_EXTS = new Set(['css', 'js', 'mjs', 'json', 'svg', 'txt']);
+// 只打包「启动时必须同步拿到」的脚本与样式：它们数量少、体积固定、
+// 是首屏阻塞项。图片类资源（尤其 .svg）绝不能进包 —— 实测某个原型有 717 个
+// SVG 切图，全打包成 7 MB，比原来 16 个请求还糟；图片本来就该按需、懒加载、
+// 各自被浏览器缓存。
+const BUNDLE_EXTS = new Set(['css', 'js', 'mjs']);
 
-/** 从原型文件清单里挑出可打包的资源（返回相对路径数组） */
-export function computeBundleList(paths) {
+// 打包体积上限：超过就不打包（宁可走原路径，也不能让首屏下载几十 MB）
+const BUNDLE_MAX_BYTES = 2 * 1024 * 1024;
+
+// 单个文件上限：超大 JS（如某些工具链产物）打包会拖慢首屏，留给浏览器单独取
+const BUNDLE_MAX_FILE_BYTES = 1024 * 1024;
+
+/**
+ * 从原型文件清单里挑出可打包的资源（返回相对路径数组）。
+ *
+ * @param {string[]} paths
+ * @param {Record<string, number>} [sizes] 可选：路径 → 字节数（有则按体积过滤）
+ */
+export function computeBundleList(paths, sizes = null) {
   const out = [];
   for (const p of paths ?? []) {
     if (!p || p.includes('..') || p.startsWith('/')) continue;
     const ext = p.split('.').pop()?.toLowerCase() ?? '';
     // 入口 HTML 不打包：它要单独回一份可注入标题的文档
     if (!BUNDLE_EXTS.has(ext)) continue;
+    if (sizes) {
+      const n = Number(sizes[p]) || 0;
+      if (n > BUNDLE_MAX_FILE_BYTES) continue;
+    }
     out.push(p);
   }
   return out.sort();
+}
+
+/**
+ * 打包清单的最终裁决：在 computeBundleList 之上再做总量闸门。
+ * 体积未知时（老原型）只按扩展名过滤，总量由 R2 侧兜底（超限则不打包）。
+ */
+export function pickBundleFiles(paths, sizes = null) {
+  const list = computeBundleList(paths, sizes);
+  if (!sizes || !list.length) return list;
+  const total = list.reduce((s, p) => s + (Number(sizes[p]) || 0), 0);
+  return total <= BUNDLE_MAX_BYTES ? list : [];
 }
 
 export async function handleProtoUpload(request, env, owner) {
@@ -240,7 +270,7 @@ export async function handleProtoUpload(request, env, owner) {
         updatedAt: now,
         version: newVersion,
         versions,
-        bundle: computeBundleList(safePaths),
+        bundle: pickBundleFiles(safePaths),
         ...(accessPassword ? { accessPassword, passwordExpiry } : { accessPassword: undefined, passwordExpiry: null }),
       }
     : {
@@ -254,7 +284,7 @@ export async function handleProtoUpload(request, env, owner) {
         updatedAt: now,
         version: 1,
         versions: [versionEntry],
-        bundle: computeBundleList(safePaths),
+        bundle: pickBundleFiles(safePaths),
         isPrivate: false,
         ...(accessPassword ? { accessPassword, passwordExpiry } : {}),
       };
@@ -457,7 +487,7 @@ export async function handleProtoFinalize(request, env, owner) {
 
   const meta = existingMeta
     ? { ...existingMeta, entryPoint: staging.entryPoint, fileCount: safePaths.length, totalSize: staging.totalSize, updatedAt: now, version: newVersion, versions, bundle: computeBundleList(safePaths) }
-    : { protoId, title: staging.title, owner, entryPoint: staging.entryPoint, fileCount: safePaths.length, totalSize: staging.totalSize, createdAt: now, updatedAt: now, version: 1, versions: [versionEntry], bundle: computeBundleList(safePaths), isPrivate: false };
+    : { protoId, title: staging.title, owner, entryPoint: staging.entryPoint, fileCount: safePaths.length, totalSize: staging.totalSize, createdAt: now, updatedAt: now, version: 1, versions: [versionEntry], bundle: pickBundleFiles(safePaths, manifest), isPrivate: false };
 
   if (accessPassword) { meta.accessPassword = accessPassword; meta.passwordExpiry = passwordExpiry; }
   else { delete meta.accessPassword; meta.passwordExpiry = null; }
