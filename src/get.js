@@ -1,5 +1,6 @@
 import { sanitizeOriginalName } from './upload.js';
 import { bumpDaily } from './admin/dailyStats.js';
+import { recordAccess } from './admin/access-stats.js';
 
 // ⚠️ 这里**故意没有鉴权**，不是漏了。
 //
@@ -27,8 +28,13 @@ export async function handleGet(env, ctx, key, request) {
   if (cacheKey) {
     const hit = await cache.match(cacheKey);
     if (hit) {
-      // 命中也要记访问统计：计数口径与改造前完全一致
-      ctx.waitUntil(recordAccess(env, key, request));
+      // 命中也要记访问统计：计数口径与改造前完全一致。
+      //
+      // 但这里只记「次数」，不记明细 —— 明细（IP / 城市 / 组织）对图床没有价值，
+      // 而旧实现每次访问都要把最多 200 条的整行 JSON 读出来、unshift、再写回去，
+      // 行体积随热度增长，正是「越用越慢」的根因（见 access-stats.js 文件头）。
+      // 现在每次访问固定 1 读 + 1 写，行体积恒定（几百字节）。
+      ctx.waitUntil(recordAccess(env.STATS, 'img', key, request));
       ctx.waitUntil(bumpDaily(env.STATS, 'imgview'));
       const res = new Response(hit.body, hit);
       // 这里要恢复长缓存给浏览器：边缘副本只存 1 天便于删除，但浏览器可缓存一整年（key 不可变）
@@ -42,7 +48,7 @@ export async function handleGet(env, ctx, key, request) {
   if (!object) return new Response('Image Not Found', { status: 404 });
 
   // 后台记录访问，不阻塞响应
-  ctx.waitUntil(recordAccess(env, key, request));
+  ctx.waitUntil(recordAccess(env.STATS, 'img', key, request));
   // 按天计数：后台趋势图的真实数据源（localStorage 那套模拟已废弃）
   ctx.waitUntil(bumpDaily(env.STATS, 'imgview'));
 
@@ -99,31 +105,4 @@ function contentDisposition(raw) {
 // 会因此判定整个 Content-Disposition 非法、回退成 URL 路径名。补转一次。
 function rfc5987(s) {
   return encodeURIComponent(s).replace(/[!'()]/g, c => '%' + c.charCodeAt(0).toString(16).toUpperCase());
-}
-
-async function recordAccess(env, key, request) {
-  if (!env.STATS) return;
-
-  const cf = request.cf ?? {};
-  const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
-
-  const statsKey = 'stats:' + key;
-  const existing = await env.STATS.getWithMetadata(statsKey, 'json');
-  const accesses = existing?.value ?? [];
-  const count = (existing?.metadata?.count ?? 0) + 1;
-
-  accesses.unshift({
-    ip,
-    country: cf.country ?? '—',
-    city: cf.city ?? '—',
-    region: cf.region ?? '—',
-    org: cf.asOrganization ?? '—',
-    ts: Date.now(),
-  });
-  // 最多保留 200 条访问记录
-  if (accesses.length > 200) accesses.length = 200;
-
-  await env.STATS.put(statsKey, JSON.stringify(accesses), {
-    metadata: { count, lastAccess: Date.now() },
-  });
 }

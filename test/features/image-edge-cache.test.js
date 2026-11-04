@@ -99,10 +99,29 @@ describe('图片边缘缓存', () => {
     expect(hit.headers.get('X-Cache')).toBe('HIT');
     await drain();
 
-    // recordAccess 把访问记录存成数组（value 本身），不是 { accesses: [...] }
-    const stats = await env.STATS.get('stats:c.jpg', 'json');
-    expect(Array.isArray(stats)).toBe(true);
-    expect(stats.length).toBe(2);
+    // 2026-11-04：统计从「最多 200 条的访问明细数组」改为定长计数行
+    // （astat:img:{key}），单次访问 1 读 + 1 写、行体积恒定，不再整行重写。
+    // 见 src/admin/access-stats.js 文件头。
+    const row = await env.STATS.getWithMetadata('astat:img:c.jpg', 'json');
+    expect(row?.metadata?.count).toBe(2);
+    expect(row?.metadata?.lastAccess).toBeGreaterThan(0);
+    // 旧数组 key 不再被写入（历史数据仍在，读取侧兜底）
+    expect(await env.STATS.get('stats:c.jpg')).toBe(null);
+  });
+
+  test('统计行体积恒定：访问 60 次后仍是几百字节', async () => {
+    const env = createEnv();
+    await createTestImage(env, 'hot.jpg', 'alice');
+    const { ctx, drain } = makeCtx();
+    const url = 'http://localhost/hot.jpg';
+    for (let i = 0; i < 60; i++) {
+      await handleGet(env, ctx, 'hot.jpg', req(url));
+      await drain();
+    }
+    const row = await env.STATS.getWithMetadata('astat:img:hot.jpg', 'json');
+    expect(row?.metadata?.count).toBe(60);
+    // 旧实现每张图最多存 200 条明细（约 4 KB）；新实现只有计数 + 国家分布
+    expect(JSON.stringify(row.metadata).length).toBeLessThan(1024);
   });
 
   test('没有 Cache API 时（本地 / 单测）行为不变', async () => {

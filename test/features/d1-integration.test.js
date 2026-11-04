@@ -138,11 +138,13 @@ describe('D1 接线：整条业务链路跑在 D1 上', () => {
     expect(res.status).toBe(200);
     await c.settle();
 
-    // 关键：访问统计进了 D1，而不是每次访问都写一次 KV
-    const { value, metadata } = await env.STATS.getWithMetadata('stats:' + key, 'json');
+    // 关键：访问统计进了 D1，而不是每次访问都写一次 KV。
+    // 2026-11-04 起按定长计数行存（astat:img:{key}），不再保留逐条 IP 明细：
+    // 明细数组会随热度膨胀成「每次访问重写 4 KB」，是访问变慢的根因之一。
+    const { metadata } = await env.STATS.getWithMetadata('astat:img:' + key, 'json');
     expect(metadata.count).toBe(1);
-    expect(value[0].ip).toBe('1.2.3.4');
-    expect(await kv.get('stats:' + key)).toBe(null);
+    expect(metadata.lastAccess).toBeGreaterThan(0);
+    expect(await kv.get('astat:img:' + key)).toBe(null);
   });
 
   test('走完整入口的删除链路：进回收站并在 D1 上标记', async () => {

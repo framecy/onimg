@@ -2313,9 +2313,12 @@ export function renderAdminPage() {
       document.getElementById('countryBars').innerHTML = cl.slice(0,8).map(([cc,cnt]) =>
         \`<div class="flex items-center gap-2 mb-1 text-sm"><span class="w-9 shrink-0 font-mono text-xs text-tx-2">\${cc}</span><div class="h-1 flex-1 rounded-xs bg-bd"><div class="h-1 rounded-xs bg-brand transition-[width] duration-[.4s]" style="width:\${(cnt/maxV*100).toFixed(1)}%"></div></div><span class="w-7 text-right text-xs text-tx-3">\${cnt}</span></div>\`
       ).join('') || '<span class="text-tx-3 text-sm">暂无数据</span>';
-      document.getElementById('accessLogBody').innerHTML = (data.accesses??[]).slice(0,50).map(a =>
-        \`<tr><td>\${new Date(a.ts).toLocaleString('zh-CN')}</td><td>\${a.ip}</td><td>\${a.country}</td><td>\${[a.city,a.region].filter(x=>x&&x!=='—').join(' ')}</td><td class="text-tx-3">\${a.org!=='—'?a.org:''}</td></tr>\`
-      ).join('') || '<tr><td colspan="5" class="text-tx-3 text-center">暂无记录</td></tr>';
+      document.getElementById('accessLogBody').innerHTML = (data.accesses ?? []).length
+        ? (data.accesses ?? []).slice(0,50).map(a =>
+            \`<tr><td>\${new Date(a.ts).toLocaleString('zh-CN')}</td><td>\${a.ip}</td><td>\${a.country}</td><td>\${[a.city,a.region].filter(x=>x&&x!=='—').join(' ')}</td><td class="text-tx-3">\${a.org!=='—'?a.org:''}</td></tr>\`
+          ).join('')
+        // 2026-11-04 起统计改为定长计数行（不再存逐条 IP/城市），明细表改为说明行
+        : \`<tr><td colspan="5" class="text-tx-3 text-center py-4">\${data.count ? '现按访问次数与国家分布统计（不再记录逐条明细）' : '暂无记录'}</td></tr>\`;
     } catch { document.getElementById('accessLogBody').innerHTML = '<tr><td colspan="5" class="text-tx-3 text-center">加载失败</td></tr>'; }
   }
   document.getElementById('statsModalClose').addEventListener('click', () => document.getElementById('statsModal').classList.remove('show'));
@@ -2353,9 +2356,11 @@ export function renderAdminPage() {
       ).join('') || '<span class="text-tx-3 text-sm">暂无数据</span>';
 
       // Access log
-      document.getElementById('psmLogBody').innerHTML = (data.accesses ?? []).slice(0,50).map(a =>
-        \`<tr><td>\${new Date(a.ts).toLocaleString('zh-CN')}</td><td class="font-mono">\${a.ip}</td><td>\${a.country}</td><td>\${[a.city,a.region].filter(x=>x&&x!=='—').join(' ')}</td><td class="text-tx-3">\${a.org!=='—'?a.org:''}</td></tr>\`
-      ).join('') || '<tr><td colspan="5" class="text-tx-3 text-center">暂无记录</td></tr>';
+      document.getElementById('psmLogBody').innerHTML = (data.accesses ?? []).length
+        ? (data.accesses ?? []).slice(0,50).map(a =>
+            \`<tr><td>\${new Date(a.ts).toLocaleString('zh-CN')}</td><td class="font-mono">\${a.ip}</td><td>\${a.country}</td><td>\${[a.city,a.region].filter(x=>x&&x!=='—').join(' ')}</td><td class="text-tx-3">\${a.org!=='—'?a.org:''}</td></tr>\`
+          ).join('')
+        : \`<tr><td colspan="5" class="text-tx-3 text-center py-4">\${data.count ? '现按访问次数与国家分布统计（不再记录逐条明细）' : '暂无记录'}</td></tr>\`;
     } catch {
       document.getElementById('psmLogBody').innerHTML = '<tr><td colspan="5" class="text-tx-3 text-center">加载失败</td></tr>';
     }
@@ -2384,9 +2389,11 @@ export function renderAdminPage() {
       document.getElementById('prsCountryBars').innerHTML = cl.map(([c,cnt]) =>
         \`<div class="flex items-center gap-2 mb-1 text-sm"><span class="w-9 shrink-0 font-mono text-xs text-tx-2">\${c}</span><div class="h-1 flex-1 rounded-xs bg-bd"><div class="h-1 rounded-xs bg-brand transition-[width] duration-[.4s]" style="width:\${(cnt/maxC*100).toFixed(1)}%"></div></div><span class="w-7 text-right text-xs text-tx-3">\${cnt}</span></div>\`
       ).join('') || '<span class="text-tx-3 text-sm">暂无数据</span>';
-      document.getElementById('prsLogBody').innerHTML = (data.accesses ?? []).slice(0,50).map(a =>
-        \`<tr><td>\${new Date(a.ts).toLocaleString('zh-CN')}</td><td class="font-mono text-xs">\${a.ip}</td><td>\${a.country}</td></tr>\`
-      ).join('') || '<tr><td colspan="3" class="text-tx-3 text-center">暂无记录</td></tr>';
+      document.getElementById('prsLogBody').innerHTML = (data.accesses ?? []).length
+        ? (data.accesses ?? []).slice(0,50).map(a =>
+            \`<tr><td>\${new Date(a.ts).toLocaleString('zh-CN')}</td><td class="font-mono text-xs">\${a.ip}</td><td>\${a.country}</td></tr>\`
+          ).join('')
+        : \`<tr><td colspan="3" class="text-tx-3 text-center py-4">\${data.count ? '现按访问次数与国家分布统计（不再记录逐条明细）' : '暂无记录'}</td></tr>\`;
     } catch {
       document.getElementById('prsLogBody').innerHTML = '<tr><td colspan="3" class="text-tx-3 text-center">加载失败</td></tr>';
     }

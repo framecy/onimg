@@ -2,6 +2,7 @@ import { DAILY_METRICS, readDailyRange } from './dailyStats.js';
 
 import { getGlobalStats, reconcileGlobalStats } from './gstats.js';
 import { D1_LIMITS, d1Day, d1Month, readD1Overview, readD1Usage } from './d1Stats.js';
+import { readAccessStats, readAllAccessStats, sumAccessStats } from './access-stats.js';
 
 // ── Cloudflare 免费额度 — CF Analytics API 优先，自追踪降级 ──────────────────────
 export async function handleCfQuota(env) {
@@ -254,21 +255,9 @@ export async function handleReconcileStats(env) {
   });
 }
 
-// 返回所有图片的访问次数（KV metadata，单次 list 调用）
+// 返回所有图片的访问次数（定长计数行，一次翻页 list；兼容旧数组形态）
 export async function handleAllImageStats(env) {
-  const result = { stats: {} };
-  let cursor;
-
-  do {
-    const list = await env.STATS.list({ prefix: 'stats:', cursor, limit: 1000 });
-    for (const key of list.keys) {
-      const imageKey = key.name.slice(6); // 去掉 'stats:' 前缀
-      result.stats[imageKey] = key.metadata ?? { count: 0, lastAccess: null };
-    }
-    cursor = list.list_complete ? undefined : list.cursor;
-  } while (cursor);
-
-  return Response.json(result);
+  return Response.json({ stats: await readAllAccessStats(env.STATS, 'img') });
 }
 
 /**
@@ -395,7 +384,7 @@ export async function handleR2DetailedStats(env) {
       } while (cursor);
       return { count, size };
     })(),
-    // B-class proxy: sum access counts from stats: key metadata
+    // B-class proxy: 图片访问总次数（新定长计数行 + 旧数组行，一并汇总）
     (async () => {
       let total = 0, cursor;
       do {
@@ -403,7 +392,7 @@ export async function handleR2DetailedStats(env) {
         for (const k of list.keys) total += (k.metadata?.count ?? 0);
         cursor = list.list_complete ? undefined : list.cursor;
       } while (cursor);
-      return total;
+      return total + await sumAccessStats(env.STATS, 'img');
     })(),
     // A-class proxy: sum per-user total upload counts
     (async () => {
@@ -474,101 +463,56 @@ export async function handleMemberStats(env) {
   return Response.json({ users, date: today });
 }
 
-// 返回所有页面的访问次数（KV metadata）
+// 返回所有页面的访问次数（定长计数行，兼容旧数组形态）
 export async function handleAllPageStats(env) {
-  const result = { stats: {} };
-  let cursor;
-  do {
-    const list = await env.STATS.list({ prefix: 'pstats:', cursor, limit: 1000 });
-    for (const key of list.keys) {
-      const slug = key.name.slice(7);
-      result.stats[slug] = key.metadata ?? { count: 0, lastAccess: null };
-    }
-    cursor = list.list_complete ? undefined : list.cursor;
-  } while (cursor);
-  return Response.json(result);
+  return Response.json({ stats: await readAllAccessStats(env.STATS, 'page') });
 }
 
-// 返回单个页面的详细访问记录
+// 返回单个页面的详细访问统计（计数 + 国家分布，不再有逐条明细）
 export async function handlePageStats(env, slug) {
   if (!slug) return Response.json({ error: 'Missing slug' }, { status: 400 });
-  const data = await env.STATS.getWithMetadata('pstats:' + slug, 'json');
-  if (!data?.value) return Response.json({ count: 0, lastAccess: null, accesses: [], countries: {}, ips: {} });
-  const accesses = data.value;
-  const countries = {}, ips = {};
-  for (const a of accesses) {
-    countries[a.country] = (countries[a.country] ?? 0) + 1;
-    ips[a.ip] = (ips[a.ip] ?? 0) + 1;
-  }
+  const s = await readAccessStats(env.STATS, 'page', slug);
   return Response.json({
-    count: data.metadata?.count ?? accesses.length,
-    lastAccess: data.metadata?.lastAccess ?? null,
-    uniqueIps: Object.keys(ips).length,
-    countries,
-    ips,
-    accesses: accesses.slice(0, 100),
+    count: s.count,
+    lastAccess: s.lastAccess,
+    uniqueIps: 0,
+    countries: s.countries,
+    ips: {},
+    accesses: [],
+    detail: 'aggregate',
   });
 }
 
-// 返回单张图片的详细访问记录
+// 返回单张图片的详细访问统计（计数 + 国家分布，不再有逐条明细）
 export async function handleImageStats(env, imageKey) {
   if (!imageKey) return Response.json({ error: 'Missing key' }, { status: 400 });
-
-  const statsKey = 'stats:' + imageKey;
-  const data = await env.STATS.getWithMetadata(statsKey, 'json');
-
-  if (!data?.value) {
-    return Response.json({ count: 0, lastAccess: null, accesses: [], countries: {} });
-  }
-
-  const accesses = data.value;
-  const countries = {};
-  for (const a of accesses) {
-    countries[a.country] = (countries[a.country] ?? 0) + 1;
-  }
-
+  const s = await readAccessStats(env.STATS, 'img', imageKey);
   return Response.json({
-    count: data.metadata?.count ?? accesses.length,
-    lastAccess: data.metadata?.lastAccess ?? null,
-    countries,
-    accesses: accesses.slice(0, 100), // 最多返回 100 条
+    count: s.count,
+    lastAccess: s.lastAccess,
+    countries: s.countries,
+    accesses: [],
+    detail: 'aggregate',
   });
 }
 
-// 返回所有原型的访问次数（KV metadata）
+// 返回所有原型的访问次数（定长计数行，兼容旧数组形态）
 export async function handleAllProtoStats(env) {
-  const result = { stats: {} };
-  let cursor;
-  do {
-    const list = await env.STATS.list({ prefix: 'prstats:', cursor, limit: 1000 });
-    for (const key of list.keys) {
-      const protoId = key.name.slice(8); // strip 'prstats:'（8 字符，原 slice(9) 会误删 ID 首字符）
-      result.stats[protoId] = key.metadata ?? { count: 0, lastAccess: null };
-    }
-    cursor = list.list_complete ? undefined : list.cursor;
-  } while (cursor);
-  return Response.json(result);
+  return Response.json({ stats: await readAllAccessStats(env.STATS, 'proto') });
 }
 
-// 返回单个原型的详细访问记录
+// 返回单个原型的详细访问统计（计数 + 国家分布，不再有逐条明细）
 export async function handleProtoStats(env, protoId) {
   if (!protoId) return Response.json({ error: 'Missing protoId' }, { status: 400 });
-  const statsKey = 'prstats:' + protoId;
-  const data = await env.STATS.getWithMetadata(statsKey, 'json');
-  if (!data?.value) return Response.json({ count: 0, lastAccess: null, accesses: [], countries: {}, ips: {} });
-  const accesses = Array.isArray(data.value) ? data.value : [];
-  const countries = {}, ips = {};
-  for (const a of accesses) {
-    countries[a.country] = (countries[a.country] ?? 0) + 1;
-    ips[a.ip] = (ips[a.ip] ?? 0) + 1;
-  }
+  const s = await readAccessStats(env.STATS, 'proto', protoId);
   return Response.json({
-    count: data.metadata?.count ?? accesses.length,
-    lastAccess: data.metadata?.lastAccess ?? null,
-    uniqueIps: Object.keys(ips).length,
-    countries,
-    ips,
-    accesses: accesses.slice(0, 100),
+    count: s.count,
+    lastAccess: s.lastAccess,
+    uniqueIps: 0,
+    countries: s.countries,
+    ips: {},
+    accesses: [],
+    detail: 'aggregate',
   });
 }
 

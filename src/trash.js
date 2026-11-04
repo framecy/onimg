@@ -5,6 +5,7 @@ import { cfBump, cfMonth } from './admin/cfCounters.js';
 import { bumpGlobalStats } from './admin/gstats.js';
 import { purgeProto, isProtoKey } from './proto/manage.js';
 import { readImageNames } from './admin/image-index.js';
+import { deleteAccessStats } from './admin/access-stats.js';
 
 export const TRASH_RETENTION_MS = 30 * 86400 * 1000; // 30 天保留期
 export const TRASH_RETENTION_DAYS = 30;
@@ -137,7 +138,8 @@ export async function purgeImage(env, key, owner) {
   await env.BUCKET.delete(key);
   const tasks = [
     owner ? deleteImageRecords(env, key, owner) : env.STATS.delete('imgmeta:' + key),
-    env.STATS.delete('stats:' + key),
+    // 访问统计：新旧两种 key 都清（见 admin/access-stats.js）
+    deleteAccessStats(env.STATS, 'img', key),
   ];
   if (owner) {
     tasks.push(mergeUserImgEntry(env, owner, key, {}, { remove: true }));

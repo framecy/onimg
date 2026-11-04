@@ -41,6 +41,13 @@ const MAX_LIMIT = 1000;
  */
 const GET_MANY_CHUNK = 99;
 
+/**
+ * D1 用量自追踪的采样率（与 admin/d1Stats.js 的 SAMPLE_EVERY 保持一致）。
+ * 不在这里重复 import 是为了避免 kv-d1 → d1Stats → kv-d1 的循环依赖：
+ * d1Stats 的 recordD1Usage 接收的 stats 就是本适配器自身。
+ */
+const D1_USAGE_SAMPLE = 10;
+
 /** 存活条件：无过期时间，或尚未到期（expires_at 为 Unix 秒） */
 const LIVE = 'expires_at IS NULL OR expires_at > ?';
 
@@ -64,12 +71,17 @@ export function createD1Kv(db, { waitUntil } = {}) {
 
   // 用量计数：把 D1 返回的 meta 原样交给 d1Stats。这里不做 try/catch ——
   // 计数失败绝不能影响业务，所以统一包在 reject 里交给 waitUntil 吞掉。
+  //
+  // 采样判定放在这一层（而不是 d1Stats 里）：记账本身要 2 读 2 写，
+  // 一次图片访问的业务只有 1 读 1 写 —— 不采样等于把热路径语句数翻倍。
+  // 先掷骰子，不中就直接返回，waitUntil 都不必进。
   const track = (meta) => {
     if (!waitUntil || !meta) return;
 
     const rowsRead    = Number(meta.rows_read)    || 0;
     const rowsWritten = Number(meta.rows_written) || 0;
     if (rowsRead === 0 && rowsWritten === 0) return;
+    if (Math.random() >= 1 / D1_USAGE_SAMPLE) return;
     waitUntil(recordD1Usage(adapter, { rowsRead, rowsWritten }).catch(() => {}));
   };
 

@@ -1,5 +1,6 @@
 import { renderMarkdown, extractHeadings } from './markdown.js';
 import { bumpDaily } from '../admin/dailyStats.js';
+import { recordAccess } from '../admin/access-stats.js';
 
 // ── HTTP 缓存小工具 (仅服务层) ────────────────────────────────────────────────
 /** FNV-1a 32 位摘要 → ETag */
@@ -476,22 +477,6 @@ function servePasswordPrompt(slug, page, wrong) {
 
 async function recordPageAccess(env, slug, request) {
   if (!env.STATS) return;
-  const cf = request.cf ?? {};
-  const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
-  const statsKey = 'pstats:' + slug;
-  const existing = await env.STATS.getWithMetadata(statsKey, 'json');
-  const accesses = existing?.value ?? [];
-  const count = (existing?.metadata?.count ?? 0) + 1;
-  accesses.unshift({
-    ip,
-    country: cf.country ?? '—',
-    city: cf.city ?? '—',
-    region: cf.region ?? '—',
-    org: cf.asOrganization ?? '—',
-    ts: Date.now(),
-  });
-  if (accesses.length > 200) accesses.length = 200;
-  await env.STATS.put(statsKey, JSON.stringify(accesses), {
-    metadata: { count, lastAccess: Date.now() },
-  });
+  // 定长计数行（1 读 + 1 写，不再整行重写 200 条明细）—— 见 admin/access-stats.js
+  await recordAccess(env.STATS, 'page', slug, request);
 }

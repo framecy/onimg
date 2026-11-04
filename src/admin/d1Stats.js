@@ -47,6 +47,15 @@ const bumpKey  = (kind, day) => `d1u:${kind}:${day}`;
 const BUMP_TTL = 62 * 86400;   // 62 天：够算「本月」与「最近 30 天」
 
 /**
+ * 记账采样率：每 SAMPLE_EVERY 次 D1 操作记一次，写入时 ×SAMPLE_EVERY 还原。
+ *
+ * 为什么不 1:1 记：一次图片访问只有 1 读 1 写业务，记账本身却要 2 读 2 写，
+ * 等于把热路径的语句数翻倍。观察性数据不值这个代价（详见 recordD1Usage 注释）。
+ * 取 10：日度 10 万行写额度下，采样后误差 <1%，但热路径少一半语句。
+ */
+const SAMPLE_EVERY = 10;
+
+/**
  * 「这次写是记账，别再为它记账」的标记。
  * src/kv-d1.js 的 track() 会检查 put 的第三个参数里有没有它。
  * 用 Symbol 而不是字符串键：它不会进入 metadata 的 JSON、也不会污染 KV 的惯例字段。
@@ -59,15 +68,30 @@ export const NO_TRACK = Symbol('d1.noTrack');
  *
  * 由 src/kv-d1.js 在读写成功后调用，统一走 ctx.waitUntil，不阻塞业务响应。
  *
+ * ── 为什么要采样（2026-11-04 线上变慢事故）──────────────────────────────────
+ * 旧实现「每次业务读写都记一次账」：一次图片访问 = 1 读 1 写业务，记账本身再加
+ * 2 读 2 写，单请求的 D1 语句直接翻倍。记账是**观察性数据**，不该和业务同权重。
+ *
+ * 现在按 1/SAMPLE 采样，还原时 ×SAMPLE。采样误差在几百次访问的尺度上可以忽略
+ *（日度用量的用途只是「有没有撞到 10 万行/天」），换来的是热路径上语句数减半。
+ * 配了 CF_API_TOKEN + CF_D1_DB_ID 的站点本来就走官方 Analytics，这份只是兜底。
+ *
  * @param {KVNamespace} stats  env.STATS（D1 适配器）
  * @param {{rowsRead?: number, rowsWritten?: number}} usage
  * @param {number} now         时间戳（测试可注入，便于跨日边界断言）
+ * @param {() => number} [rnd] 随机源（测试可注入为固定值）
  */
-export async function recordD1Usage(stats, usage, now = Date.now()) {
+export async function recordD1Usage(stats, usage, now = Date.now(), rnd = Math.random) {
   const read    = Number(usage?.rowsRead)    || 0;
   const written = Number(usage?.rowsWritten) || 0;
   if (read <= 0 && written <= 0) return;
+
+  // 采样：不命中的这次直接返回，一行 SQL 都不发
+  if (rnd() >= 1 / SAMPLE_EVERY) return;
+
   const day = d1Day(now);
+  const readEst    = read    * SAMPLE_EVERY;
+  const writtenEst = written * SAMPLE_EVERY;
   try {
     // 读/写落在不同的 key 上，并行累加互不影响。
     //
@@ -76,8 +100,8 @@ export async function recordD1Usage(stats, usage, now = Date.now()) {
     // 这样了：第一次上传之后第二个请求直接卡死，CPU 打满）。识别方式是给这次
     // 写打上 NO_TRACK 标记，见 src/kv-d1.js 的 track()。
     await Promise.all([
-      read    > 0 ? _addCounter(stats, bumpKey('r', day), read)    : null,
-      written > 0 ? _addCounter(stats, bumpKey('w', day), written) : null,
+      readEst    > 0 ? _addCounter(stats, bumpKey('r', day), readEst)    : null,
+      writtenEst > 0 ? _addCounter(stats, bumpKey('w', day), writtenEst) : null,
     ]);
   } catch { /* 监控用途，静默忽略 */ }
 }
@@ -158,7 +182,8 @@ export async function readD1Usage(stats, days = 30, now = Date.now()) {
  */
 export const KEY_GROUPS = [
   { prefix: 'imgmeta:',       label: '图片索引' },
-  { prefix: 'stats:',         label: '图片访问记录' },
+  { prefix: 'astat:',         label: '访问计数' },
+  { prefix: 'stats:',         label: '图片访问记录（旧）' },
   { prefix: 'userimgs:',      label: '图库清单' },
   { prefix: 'ucount:',        label: '上传计数' },
   { prefix: 'page:',          label: '托管页面' },

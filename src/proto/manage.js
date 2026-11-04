@@ -1,5 +1,6 @@
 import { cfBump, cfMonth } from '../admin/cfCounters.js';
 import { normalizeTags } from '../list.js';
+import { deleteAccessStats } from '../admin/access-stats.js';
 
 // proto: 前缀下混着两类辅助 key：版本文件清单 proto:vfiles:… 与上传暂存
 // proto:staging:…（init 写入、finalize 删除、TTL 1h）。两者都没有 protoId，
@@ -142,11 +143,11 @@ export async function purgeProto(env, protoId) {
     try { await cfBump(env.STATS, 'cf:r2a:' + cfMonth(), totalDeleted, true); } catch {}
   }
 
-  // Delete KV metadata + all version file lists + 访问计数（prstats），避免概览残留
+  // Delete KV metadata + all version file lists + 访问计数（新旧两种 key），避免概览残留
   const vList = await env.STATS.list({ prefix: `proto:vfiles:${protoId}:` });
   await Promise.all([
     env.STATS.delete(`proto:${protoId}`),
-    env.STATS.delete(`prstats:${protoId}`),
+    deleteAccessStats(env.STATS, 'proto', protoId),
     ...vList.keys.map(k => env.STATS.delete(k.name)),
   ]);
 }

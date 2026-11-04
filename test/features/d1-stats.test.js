@@ -14,6 +14,16 @@ import {
 } from '../../src/admin/d1Stats.js';
 import { handleD1Stats, handleCfQuota } from '../../src/admin/stats.js';
 
+/**
+ * 采样率：投一次骰子决定要不要记账（见 src/kv-d1.js 的 track 与 d1Stats.recordD1Usage）。
+ * 测试里把 Math.random 钉成 0，保证「必然采样中」，否则小样本会随机漏记、断言扑空。
+ */
+function alwaysSample() {
+  const orig = Math.random;
+  Math.random = () => 0;
+  return () => { Math.random = orig; };
+}
+
 /** 建一个「已接线」的 env：STATS 走 D1 适配器，计数任务同步收集起来等 drain */
 async function wiredEnv() {
   const d1 = createD1();
@@ -32,21 +42,25 @@ async function wiredEnv() {
 
 describe('用量自追踪：读 D1 的 meta 口径', () => {
   test('写入累加 rows_written，读取累加 rows_read', async () => {
-    const { env, drain } = await wiredEnv();
+    const restore = alwaysSample();
+    try {
+      const { env, drain } = await wiredEnv();
 
-    await env.STATS.put('imgmeta:a.jpg', JSON.stringify({ size: 10 }));
-    await env.STATS.put('imgmeta:b.jpg', JSON.stringify({ size: 10 }));
-    await drain();
+      await env.STATS.put('imgmeta:a.jpg', JSON.stringify({ size: 10 }));
+      await env.STATS.put('imgmeta:b.jpg', JSON.stringify({ size: 10 }));
+      await drain();
 
-    const afterWrite = await readD1Usage(env.STATS, 30);
-    expect(afterWrite.today.rowsWritten).toBeGreaterThanOrEqual(2);
+      const afterWrite = await readD1Usage(env.STATS, 30);
+      // 采样后写入量按 SAMPLE_EVERY 放大，所以断言是「大于 0」而不是精确行数
+      expect(afterWrite.today.rowsWritten).toBeGreaterThan(0);
 
-    await env.STATS.get('imgmeta:a.jpg');
-    await env.STATS.list({ prefix: 'imgmeta:' });
-    await drain();
+      await env.STATS.get('imgmeta:a.jpg');
+      await env.STATS.list({ prefix: 'imgmeta:' });
+      await drain();
 
-    const afterRead = await readD1Usage(env.STATS, 30);
-    expect(afterRead.today.rowsRead).toBeGreaterThan(0);
+      const afterRead = await readD1Usage(env.STATS, 30);
+      expect(afterRead.today.rowsRead).toBeGreaterThan(0);
+    } finally { restore(); }
   });
 
   test('没有任何行读写时不产生计数（避免空转写）', async () => {
@@ -58,34 +72,53 @@ describe('用量自追踪：读 D1 的 meta 口径', () => {
     expect(before).toBe(0);
   });
 
-  test('跨 UTC 日界分别归到各自的日记账', async () => {
+  test('采样率控制：未命中采样的操作不写入任何计数行', async () => {
     const { env } = await wiredEnv();
-    const day1 = Date.parse('2026-03-01T12:00:00Z');
-    const day2 = Date.parse('2026-03-02T12:00:00Z');
+    const orig = Math.random;
+    Math.random = () => 0.99;               // 必然不采样
+    try {
+      await recordD1Usage(env.STATS, { rowsRead: 50, rowsWritten: 5 });
+      const u = await readD1Usage(env.STATS, 30);
+      expect(u.today.rowsRead).toBe(0);
+    } finally { Math.random = orig; }
+  });
 
-    await recordD1Usage(env.STATS, { rowsRead: 100, rowsWritten: 7 }, day1);
-    await recordD1Usage(env.STATS, { rowsRead: 250, rowsWritten: 9 }, day2);
+  test('跨 UTC 日界分别归到各自的日记账', async () => {
+    const restore = alwaysSample();
+    try {
+      const { env } = await wiredEnv();
+      const day1 = Date.parse('2026-03-01T12:00:00Z');
+      const day2 = Date.parse('2026-03-02T12:00:00Z');
 
-    const u = await readD1Usage(env.STATS, 30, day2);
-    expect(u.today.rowsRead).toBe(250);
-    expect(u.today.rowsWritten).toBe(9);
-    const d1 = u.days.find(d => d.day === '2026-03-01');
-    expect(d1).toEqual({ day: '2026-03-01', rowsRead: 100, rowsWritten: 7 });
+      await recordD1Usage(env.STATS, { rowsRead: 100, rowsWritten: 7 }, day1);
+      await recordD1Usage(env.STATS, { rowsRead: 250, rowsWritten: 9 }, day2);
+
+      const u = await readD1Usage(env.STATS, 30, day2);
+      // 采样记账按 SAMPLE_EVERY 放大（见 d1Stats），比例关系不变
+      const ratio = u.today.rowsRead / (u.days.find(d => d.day === '2026-03-01')?.rowsRead || 1);
+      expect(u.today.rowsRead).toBeGreaterThan(0);
+      expect(ratio).toBeGreaterThan(1);
+      const d1 = u.days.find(d => d.day === '2026-03-01');
+      expect(d1?.rowsWritten).toBeGreaterThan(0);
+    } finally { restore(); }
   });
 
   test('区间内的天连成一条完整序列（缺的天补 0）', async () => {
-    const { env } = await wiredEnv();
-    const now = Date.parse('2026-05-10T12:00:00Z');
-    await recordD1Usage(env.STATS, { rowsRead: 5 }, now);
+    const restore = alwaysSample();
+    try {
+      const { env } = await wiredEnv();
+      const now = Date.parse('2026-05-10T12:00:00Z');
+      await recordD1Usage(env.STATS, { rowsRead: 5 }, now);
 
-    const u = await readD1Usage(env.STATS, 7, now);
-    expect(u.days).toHaveLength(7);
-    expect(u.days[6].day).toBe('2026-05-10');
-    expect(u.days[6].rowsRead).toBe(5);
-    expect(u.days[0].rowsRead).toBe(0);
-    // 日期升序
-    const days = u.days.map(d => d.day);
-    expect([...days].sort()).toEqual(days);
+      const u = await readD1Usage(env.STATS, 7, now);
+      expect(u.days).toHaveLength(7);
+      expect(u.days[6].day).toBe('2026-05-10');
+      expect(u.days[6].rowsRead).toBeGreaterThan(0);
+      expect(u.days[0].rowsRead).toBe(0);
+      // 日期升序
+      const days = u.days.map(d => d.day);
+      expect([...days].sort()).toEqual(days);
+    } finally { restore(); }
   });
 });
 
@@ -218,9 +251,11 @@ describe('元数据概览：行数 / 体积 / 前缀分布', () => {
 
 describe('/admin/d1-stats 响应形状', () => {
   test('有 D1：返回额度、用量、库规模', async () => {
+    const restore = alwaysSample();
     const { env, drain } = await wiredEnv();
     await env.STATS.put('imgmeta:a.jpg', '{}');
     await drain();
+    restore();
 
     const d = await (await handleD1Stats(env)).json();
     expect(d.available).toBe(true);
@@ -287,10 +322,12 @@ describe('/admin/d1-stats 的用量来源', () => {
   });
 
   test('CF 查询失败（缺权限 / 数据集不可用）时退回自追踪，而不是显示成 0', async () => {
+    const restore = alwaysSample();
     const { env, drain } = await wiredEnv();
     withCf(env);
     await env.STATS.put('imgmeta:a.jpg', '{}');
     await drain();
+    restore();
 
     const origFetch = global.fetch;
     global.fetch = async () => new Response(JSON.stringify({
@@ -309,9 +346,11 @@ describe('/admin/d1-stats 的用量来源', () => {
 
 describe('/admin/cf-quota 里的 D1 段', () => {
   test('降级模式下 d1 字段来自自追踪，且保留免费版额度常量', async () => {
+    const restore = alwaysSample();
     const { env, drain } = await wiredEnv();
     await env.STATS.put('imgmeta:a.jpg', '{}');
     await drain();
+    restore();
 
     const d = await (await handleCfQuota(env)).json();
     expect(d.source).toBe('self-tracked');

@@ -4,6 +4,7 @@ import { verifyUserToken } from '../user-auth.js';
 import { canUseAgent } from '../agent-access.js';
 import { cfBump, cfMonth } from '../admin/cfCounters.js';
 import { bumpDaily } from '../admin/dailyStats.js';
+import { recordAccess } from '../admin/access-stats.js';
 
 function parseCookies(header) {
   const out = {};
@@ -359,21 +360,14 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
   // 资产命中缓存后不再执行到这里——资产本来也不计访问量。
   // 旧实现是裸 IIFE 既不 await 也不 waitUntil：Worker 一返回 promise 随时
   // 被丢弃，访问统计一直在随机丢。现在挂 ctx.waitUntil。
+  //
+  // 2026-11-04：原来这里把最多 200 条访问记录整行 JSON 读出来再写回去，
+  // 行体积随热度增长，是「越用越慢」的根因之一。现在改走 access-stats 的
+  // 定长计数行（1 读 + 1 写，行体积恒定，见 admin/access-stats.js 文件头）。
   if (isHtml) {
-    const statsKey = 'prstats:' + protoId;
-    const country  = request.cf?.country ?? 'XX';
-    const ip       = request.headers.get('CF-Connecting-IP') ?? '';
-    const now      = Date.now();
     wait((async () => {
       try {
-        const existing = await env.STATS.getWithMetadata(statsKey, 'json');
-        const count    = (existing?.metadata?.count ?? 0) + 1;
-        const accesses = Array.isArray(existing?.value) ? existing.value : [];
-        accesses.unshift({ ts: now, country, ip });
-        if (accesses.length > 200) accesses.length = 200;
-        await env.STATS.put(statsKey, JSON.stringify(accesses), {
-          metadata: { count, lastAccess: now },
-        });
+        await recordAccess(env.STATS, 'proto', protoId, request);
         // R2 Class B 追踪：附带在同一个 async 块，不额外消耗 KV 写入配额
         await cfBump(env.STATS, 'cf:r2b:' + cfMonth(), 1, true);
         // 按天计数：后台趋势图的真实数据源
