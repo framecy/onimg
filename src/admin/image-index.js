@@ -191,15 +191,20 @@ export async function readImageNames(env, keys) {
   const out = new Map();
   if (!keys.length) return out;
   if (env.DB && typeof env.DB.batch === 'function') {
-    // D1：一条 SQL 拿全部（避免逐 key 一次子请求）
-    const marks = keys.map(() => '?').join(',');
-    const { results } = await env.DB
-      .prepare(`SELECT key, value FROM kv_store WHERE key IN (${marks})`)
-      .bind(...keys.map(k => IMG_PREFIX + k))
-      .all();
-    for (const r of results ?? []) {
-      const v = parseJson(r.value) ?? {};
-      out.set(String(r.key).slice(IMG_PREFIX.length), v.name || v.basename || null);
+    // D1：分块批量拿全部（避免逐 key 一次子请求）。
+    // 每块 ≤ 100 —— D1 单条查询的绑定参数硬上限（回收站图片可多于 100 张）。
+    const CHUNK = 100;
+    for (let i = 0; i < keys.length; i += CHUNK) {
+      const chunk = keys.slice(i, i + CHUNK);
+      const marks = chunk.map(() => '?').join(',');
+      const { results } = await env.DB
+        .prepare(`SELECT key, value FROM kv_store WHERE key IN (${marks})`)
+        .bind(...chunk.map(k => IMG_PREFIX + k))
+        .all();
+      for (const r of results ?? []) {
+        const v = parseJson(r.value) ?? {};
+        out.set(String(r.key).slice(IMG_PREFIX.length), v.name || v.basename || null);
+      }
     }
     return out;
   }

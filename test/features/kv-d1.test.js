@@ -165,6 +165,52 @@ describe('createD1Kv：真实 KV 有而内存 mock 没有的语义', () => {
   });
 });
 
+describe('createD1Kv：getMany 分块不超 D1 绑定参数上限', () => {
+  // 线上事故（2026-11-04）：GET_MANY_CHUNK=100 时每条查询绑 100 key + 1 时间参数
+  // = 101 > D1 上限 100，「我的图库」≥ 100 张直接 500（too many SQL variables）。
+  // 这里不依赖 mock 的宽容度——直接数 SQL 里的占位符数量断言分块上限。
+  it('每条查询的占位符 ≤ 100（100 key + 1 时间参数是 101，会 500）', async () => {
+    const statements = [];
+    const d1 = createD1();
+    const origPrepare = d1.prepare.bind(d1);
+    d1.prepare = (sql) => {
+      statements.push(sql);
+      return origPrepare(sql);
+    };
+    const kv = createD1Kv(d1);
+
+    // 250 个 key：若 chunk=100 会产生 3 条查询且首条 101 参（旧代码直接炸）；
+    // chunk=99 产生 3 条（99+99+52），每条 ≤ 100 参。
+    const keys = Array.from({ length: 250 }, (_, i) => `userimg:alice:${String(i).padStart(4, '0')}.jpg`);
+    for (const k of keys) await kv.put(k, JSON.stringify({ size: 1 }));
+
+    const recs = await kv.getMany(keys, 'json');
+    expect(recs.size).toBe(250);
+    for (const v of recs.values()) expect(v).toEqual({ size: 1 });
+
+    const inQueries = statements.filter(s => s.includes('IN ('));
+    expect(inQueries.length).toBe(Math.ceil(250 / 99));   // 3 条
+    for (const sql of inQueries) {
+      const marks = (sql.match(/\?/g) ?? []).length;
+      expect(marks).toBeLessThanOrEqual(100);             // D1 硬上限
+    }
+    // 占位符 + 时间参数恰好不超限：最大一条应是 99 + 1 = 100
+    const maxMarks = Math.max(...inQueries.map(s => (s.match(/\?/g) ?? []).length));
+    expect(maxMarks).toBeLessThanOrEqual(100);
+  });
+
+  it('getMany 去重后仍按原 key 集合返回（缺失补 null）', async () => {
+    const kv = d1Env();
+    await kv.put('userimg:alice:a.jpg', JSON.stringify({ size: 3 }));
+    const recs = await kv.getMany([
+      'userimg:alice:a.jpg', 'userimg:alice:a.jpg', 'userimg:alice:missing.jpg',
+    ], 'json');
+    expect(recs.get('userimg:alice:a.jpg')).toEqual({ size: 3 });
+    expect(recs.get('userimg:alice:missing.jpg')).toBe(null);
+    expect(recs.size).toBe(2);
+  });
+});
+
 describe('createD1Kv：接线到业务 env 后能被现有代码原样使用', () => {
   it('createEnv 里换成 D1 适配器后，createTestImage 链路可读回', async () => {
     const env = createEnv({ STATS: createD1Kv(createD1()) });

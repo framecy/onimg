@@ -28,13 +28,18 @@ const DEFAULT_LIMIT = 1000;   // 与真实 KV 的 list 默认上限一致
 const MAX_LIMIT = 1000;
 
 /**
- * getMany 的分块大小：一次 `WHERE key IN (…)` 最多绑这么多个参数。
+ * getMany 的分块大小：一次 `WHERE key IN (…)` 最多绑这么多个 key。
  *
  * 分块是给 D1 的绑定参数上限留余量；真正的意义在于把「N 张图 = N 次往返」
- * 压成「N 张图 = N/100 次往返」。/list 展开图库时这项直接决定白屏时长
+ * 压成「N 张图 = N/99 次往返」。/list 展开图库时这项直接决定白屏时长
  *（120 张图原本是 120 次串行 D1 查询，见 src/list.js 的 expandEntries）。
+ *
+ * ⚠️ 必须是 99，不能是 100：这条查询还要绑一个 `expires_at > ?` 的时间参数，
+ * D1 每条查询的绑定参数总上限是 100（100 keys + 1 time = 101 会直接 500：
+ * `D1_ERROR: too many SQL variables`，实测于 2026-11-04，/list 图库 ≥ 100 张
+ * 必炸）。同值同步到 src/kv-sqlite.js 的 GET_MANY_CHUNK（同一代码路径）。
  */
-const GET_MANY_CHUNK = 100;
+const GET_MANY_CHUNK = 99;
 
 /** 存活条件：无过期时间，或尚未到期（expires_at 为 Unix 秒） */
 const LIVE = 'expires_at IS NULL OR expires_at > ?';

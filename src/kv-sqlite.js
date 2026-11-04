@@ -10,7 +10,8 @@ const DEFAULT_LIMIT = 1000;   // 真实 KV 的 list 默认上限
 const MAX_LIMIT = 1000;
 
 // 与 src/kv-d1.js 的 GET_MANY_CHUNK 同值：批量读的 IN (…) 分块大小。
-const GET_MANY_CHUNK = 100;
+// 99 而不是 100：查询还要绑 1 个时间参数（见 kv-d1.js 的注释，D1 上限 100）。
+const GET_MANY_CHUNK = 99;
 
 export function createSqliteKv({ dbFile, db: shared } = {}) {
   const own = !shared;
