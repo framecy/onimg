@@ -446,14 +446,17 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
       }
     }
 
-    // ── 资源打包注入 ──────────────────────────────────────────────────────
-    // 只对「公开 + 可缓存」的原型注入：私有/密码原型不该把资源内容塞进 HTML。
-    // 注入的脚本在解析阶段同步铺好 XHR/fetch 拦截器，把对打包清单内资源的
-    // 请求改成从 __bundle.json 的内存副本取出 —— 一个原型从 16 次请求变 2 次。
-    // Axure 的 axplayer 用同步 XHR 加载页面片段，所以拦截必须发生在它之前，
-    // 因此脚本插在 <head> 最前面而不是 defer。
+    // ── 资源内联（把 15 个资源请求合成 1 个 HTML 请求）────────────────────
+    // 只对公开原型做：私有/密码原型的资源不该被塞进一份可能被缓存的 HTML。
+    // 失败（R2 读不到 / 解析异常）就原样返回 HTML，退化成优化前的行为。
     if (isPublic && bundlePaths.length) {
-      html = injectBundleLoader(html, protoId, stamp, bundlePaths);
+      try {
+        const files = await readBundleFiles(env, protoId, bundlePaths);
+        if (Object.keys(files).length) {
+          const r = inlineBundleResources(html, files);
+          html = r.html;
+        }
+      } catch { /* 内联失败不影响页面本身 */ }
     }
 
     return new Response(html, { headers });
@@ -619,6 +622,60 @@ async function isProtoOwner(env, request, meta) {
 // 比 16 个请求的往返开销划算得多。
 
 /**
+ * 读出一组原型资源的文本内容（并发读 R2，gzip 存储就地解压）。
+ *
+ * 体积闸门：单文件 >1MB、总量 >2MB 的文件被跳过 —— 宁可让浏览器单独去取，
+ * 也不能让首屏 HTML 膨胀到几十 MB（实测某个原型有 717 个 SVG，全打包 7 MB）。
+ *
+ * @param {object} env
+ * @param {string} protoId
+ * @param {string[]} paths     候选路径
+ * @param {Array} [heads]      可选的 R2 head 结果（已有就复用，省一轮请求）
+ * @param {string[]} [allPaths] heads 对应的完整路径数组
+ * @returns {Promise<Record<string,string>>}
+ */
+async function readBundleFiles(env, protoId, paths, heads = null, allPaths = null) {
+  if (!paths.length) return {};
+
+  // 体积闸门：先 head 取大小。已有 heads（来自 serveBundle）就复用。
+  let sizeOf;
+  if (heads) {
+    const map = new Map();
+    for (let i = 0; i < (allPaths ?? []).length; i++) map.set(allPaths[i], heads[i]?.size ?? 0);
+    sizeOf = (p) => map.get(p) ?? 0;
+  } else {
+    const h = await Promise.all(paths.map(p =>
+      env.BUCKET.head(`proto/${protoId}/${p}`).catch(() => null)));
+    sizeOf = (p) => h[paths.indexOf(p)]?.size ?? 0;
+  }
+
+  const allowed = [];
+  let total = 0;
+  for (const p of paths) {
+    const size = sizeOf(p);
+    if (size > BUNDLE_MAX_FILE) continue;
+    if (total + size > BUNDLE_MAX_TOTAL) continue;
+    total += size;
+    allowed.push(p);
+  }
+
+  const entries = await Promise.all(allowed.map(async (p) => {
+    const obj = await env.BUCKET.get(`proto/${protoId}/${p}`).catch(() => null);
+    if (!obj) return null;
+    const ext = p.split('.').pop()?.toLowerCase() ?? '';
+    const gz = await resolveGzip(obj, ext);
+    const buf = await new Response(gz.gzip
+      ? gz.body.pipeThrough(new DecompressionStream('gzip'))
+      : gz.body).arrayBuffer();
+    return [p, new TextDecoder('utf-8').decode(new Uint8Array(buf))];
+  }));
+
+  const out = {};
+  for (const e of entries) if (e) out[e[0]] = e[1];
+  return out;
+}
+
+/**
  * 版本化路径上的打包请求：先做与单文件**完全相同**的访问判定，再打包。
  *
  * 判定逻辑与 serveVersionedAsset 保持一致：
@@ -750,21 +807,7 @@ async function serveBundle(env, protoId, stamp, paths, request) {
     allowed.push(paths[i]);
   }
 
-  // 并发读 R2：一个原型十几个文件，串行会白等一大截
-  const entries = await Promise.all(allowed.map(async (p) => {
-    const obj = await env.BUCKET.get(`proto/${protoId}/${p}`).catch(() => null);
-    if (!obj) return null;
-    const ext = p.split('.').pop()?.toLowerCase() ?? '';
-    const gz = await resolveGzip(obj, ext);
-    const buf = await new Response(gz.gzip
-      ? gz.body.pipeThrough(new DecompressionStream('gzip'))
-      : gz.body).arrayBuffer();
-    const text = new TextDecoder('utf-8').decode(new Uint8Array(buf));
-    return [p, text];
-  }));
-
-  const body = {};
-  for (const e of entries) if (e) body[e[0]] = e[1];
+  const body = await readBundleFiles(env, protoId, allowed, heads, paths);
 
   const res = new Response(JSON.stringify(body), {
     headers: {
@@ -782,69 +825,69 @@ async function serveBundle(env, protoId, stamp, paths, request) {
   return res;
 }
 
-// ── 原型资源打包：浏览器端加载器 ────────────────────────────────────────────
+// ── 原型资源打包：服务端内联 ────────────────────────────────────────────────
 //
-// 注入到原型 HTML 的 <head> 最前面，在 Axure 自己的脚本之前建立拦截：
-//   · 页面里对「打包清单内的资源」的请求（XHR / fetch / <img> 写入 style）一律
-//     同步从内存副本返回，不再发网络请求
-//   · 清单外的请求（页面片段 HTML、图片、字体）原样放行
+// ── 为什么不用 JS 拦截 ──────────────────────────────────────────────────────
+// 最初想过注入脚本重写 XHR / appendChild 来拦截资源请求。实测行不通：
+// Axure 导出的 HTML 里是 6 个 <script src> + 13 个 <link href>，这些**由浏览器
+// HTML 解析器直接抓取**，既不经过 XHR，也不经过 appendChild —— JS 拿不到。
 //
-// 为什么用 XHR 而不是 fetch 拦截：Axure 的 axplayer.js 用**同步 XHR** 加载
-// 页面片段，同步 XHR 无法被 fetch 拦截器覆盖；重写 XMLHttpRequest.open/send
-// 才能同时覆盖同步与异步两种调用。
+// ── 现在的做法 ──────────────────────────────────────────────────────────────
+// 服务端把 HTML 里的 <link href="…css"> 换成 <style>…</style>、
+// <script src="…js"> 换成行内 <script>…</script>，内容取自 bundle。
+// 浏览器因此只发 1 个 HTML 请求，不再发那 15 个资源请求。
 //
-// 失败兜底：bundle 请求失败或解析异常时直接退出拦截器，页面按原路径逐个加载 ——
-// 退化成优化前的行为，不会白屏。
-function injectBundleLoader(html, protoId, stamp, bundlePaths) {
-  const bundleUrl = `/proto/${protoId}/_s${'0'}-${stamp}/__bundle.json`;
-  // 只把路径清单与 URL 传进页面，内容由运行时拉取
-  const cfg = JSON.stringify({ url: bundleUrl, paths: bundlePaths });
-  const script = `<script>(function(){` +
-    `var CFG=${cfg};` +
-    `if(!window.fetch||!window.XMLHttpRequest||!window.TextDecoder)return;` +
-    `var data=null,busy=false,queue=[];` +
-    // 把绝对/带查询串的 URL 归一成原型内的相对路径，仅保留清单内的
-    `function keyOf(u){try{var x=new URL(u,location.href);if(x.origin!==location.origin)return null;` +
-      `var m=x.pathname.match(/\\/proto\\/[^/]+\\/_s[^/]+\\/(.+)$/);if(!m)return null;return m[1];}catch(e){return null}}` +
-    `var keys=CFG.paths;var K={};for(var i=0;i<keys.length;i++)K[keys[i]]=1;` +
-    `function ready(){return data!==null}` +
-    `function hit(u){if(!ready())return null;var k=keyOf(u);if(!k||!K[k])return null;` +
-      `return Object.prototype.hasOwnProperty.call(data,k)?data[k]:null}` +
-    // 预取：一次性取回全部资源，完成后清空排队回调
-    `function load(cb){if(ready()){cb&&cb();return}if(cb)queue.push(cb);if(busy)return;busy=true;` +
-      `var x=new XMLHttpRequest();x.open('GET',CFG.url,true);` +
-      `x.onload=function(){try{data=JSON.parse(x.responseText)||{}}catch(e){data={}}` +
-        `busy=false;var q=queue;queue=[];for(var j=0;j<q.length;j++)try{q[j]()}catch(e){}};` +
-      `x.onerror=function(){busy=false;queue=[]};x.send()}` +
-    // 同步 XHR 需要在 send 里就地拿到数据：没准备好时退化为原请求（不阻塞）
-    `var XO=XMLHttpRequest.prototype.open,XS=XMLHttpRequest.prototype.send;` +
-    `XMLHttpRequest.prototype.open=function(m,u){this.__burl=u;this.__bm=m;return XO.apply(this,arguments)};` +
-    `XMLHttpRequest.prototype.send=function(){var u=this.__burl,v=hit(u);` +
-      `if(v===null)return XS.apply(this,arguments);` +
-      `var self=this;` +
-      // 用只读属性伪装成一次成功的 XHR
-      `setTimeout(function(){try{` +
-        `Object.defineProperty(self,'readyState',{value:4,configurable:true});` +
-        `Object.defineProperty(self,'status',{value:200,configurable:true});` +
-        `Object.defineProperty(self,'statusText',{value:'OK',configurable:true});` +
-        `Object.defineProperty(self,'responseText',{value:v,configurable:true});` +
-        `Object.defineProperty(self,'response',{value:v,configurable:true});` +
-        `if(self.onreadystatechange)self.onreadystatechange();` +
-        `if(self.onload)self.onload();` +
-      `}catch(e){}},0)};` +
-    // 样式/脚本被直接写进 head 的场景（Axure 的 init.js 会这么做）也走内存
-    `var OE=Element.prototype.appendChild;` +
-    `Element.prototype.appendChild=function(n){` +
-      `try{if(n&&n.tagName){var src=n.src||n.href;var v=hit(src);` +
-        `if(v!==null&&n.tagName==='SCRIPT'){var s=document.createElement('script');` +
-          `s.textContent=v;return OE.call(this,s)}` +
-        `if(v!==null&&n.tagName==='LINK'){var st=document.createElement('style');` +
-          `st.textContent=v;return OE.call(this,st)}}}catch(e){}` +
-      `return OE.apply(this,arguments)};` +
-    `load();` +
-  `})();</script>`;
+// 这些内联内容与 HTML 同源同体（都是同一个原型的资源），不改变任何暴露面；
+// 且整页仍受与单文件相同的访问判定保护（公开才内联）。
+//
+// ── 体积 ────────────────────────────────────────────────────────────────────
+// 典型原型：HTML 6.8 KB → 约 440 KB（gzip 后约 130 KB，Cloudflare 自动压缩）。
+// 换来的是「1 次请求」而不是「1 + 15 次」，这是原型打开慢的唯一大头。
+//
+// 只内联 bundle 清单内的文件（css/js，见 upload.js 的 BUNDLE_EXTS）。
+// 图片、字体、页面片段 HTML 一律保持原路径：它们要么该懒加载，
+// 要么各自被浏览器缓存，塞进 HTML 反而更慢。
 
-  // 插到 <head> 之后（越早越好，但要在文档里）
-  if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, (m) => m + script);
-  return script + html;
+/**
+ * 把 HTML 里对 bundle 资源的 <link>/<script src> 就地替换成内联内容。
+ *
+ * @param {string} html
+ * @param {Record<string,string>} files 路径 → 内容（bundle 的产物）
+ * @returns {{ html: string, inlined: number }}
+ */
+function inlineBundleResources(html, files) {
+  if (!files || !Object.keys(files).length) return { html, inlined: 0 };
+
+  // 归一化：把 HTML 里的 href/src 转成 bundle 的 key（去掉前导 ./ 与查询串）
+  const norm = (u) => String(u).replace(/^\s+|\s+$/g, '').replace(/^\.\//, '').split('?')[0];
+  let inlined = 0;
+
+  // 1) <link ... href="xxx.css" ...>  →  <style>…</style>
+  html = html.replace(/<link\b[^>]*>/gi, (tag) => {
+    const m = /href\s*=\s*["']([^"']+)["']/i.exec(tag);
+    if (!m) return tag;
+    const key = norm(m[1]);
+    const css = files[key];
+    if (css == null) return tag;
+    inlined++;
+    // 保留 media 属性语义：non-screen 的样式表不内联（避免打印样式串到屏幕）
+    if (/media\s*=\s*["'](?!all|screen)[^"']+["']/i.test(tag)) return tag;
+    return `<style data-bundled="${esc(key)}">${css}</style>`;
+  });
+
+  // 2) <script src="xxx.js"></script>  →  <script>…</script>
+  html = html.replace(/<script\b([^>]*)><\/script>/gi, (tag, attrs) => {
+    const m = /src\s*=\s*["']([^"']+)["']/i.exec(attrs);
+    if (!m) return tag;
+    const key = norm(m[1]);
+    const js = files[key];
+    if (js == null) return tag;
+    // 有 defer/async 的脚本语义不同，内联会改变执行时机 —— 保守起见跳过
+    if (/\b(defer|async)\b/i.test(attrs)) return tag;
+    inlined++;
+    // </script> 出现在 JS 字符串里会提前结束标签，必须转义
+    return `<script data-bundled="${esc(key)}">${js.replace(/<\/script/gi, '<\\/script')}</script>`;
+  });
+
+  return { html, inlined };
 }

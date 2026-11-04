@@ -15,7 +15,11 @@ import { createD1Kv } from '../../src/kv-d1.js';
 import { serveProto } from '../../src/proto/serve.js';
 import { computeBundleList, pickBundleFiles } from '../../src/proto/upload.js';
 
-const HTML = '<!DOCTYPE html><html><head><title>旧标题</title></head><body>ok</body></html>';
+// 贴近 Axure 导出形态：CSS 走 <link>、JS 走 <script src>，都由 HTML 解析器直接抓
+const HTML = '<!DOCTYPE html><html><head><title>旧标题</title>' +
+  '<link type="text/css" href="resources/css/default.css" rel="Stylesheet">' +
+  '<script src="resources/scripts/jquery-3.7.1.min.js"></script>' +
+  '</head><body>ok</body></html>';
 
 function ctxPipe() {
   const pending = [];
@@ -26,12 +30,12 @@ function ctxPipe() {
 }
 
 /** 建一个原型：files 写入 R2，meta 可选（模拟老数据无 bundle） */
-async function seedProto({ protoId = 'p1', version = 4, files = {}, withBundle = true, extra = {} } = {}) {
+async function seedProto({ protoId = 'p1', version = 4, files = {}, withBundle = true, extra = {}, html = null } = {}) {
   const d1 = createD1();
   const env = createEnv({ BUCKET: createR2(), DB: d1 });
   env.STATS = createD1Kv(d1);
 
-  const all = { 'start.html': HTML, ...files };
+  const all = { 'start.html': html ?? HTML, ...files };
   for (const [p, body] of Object.entries(all)) {
     await env.BUCKET.put(`proto/${protoId}/${p}`, new Uint8Array(Buffer.from(body)).buffer, {});
   }
@@ -93,20 +97,48 @@ describe('computeBundleList：只挑文本类资源', () => {
 });
 
 describe('公开原型：注入加载器 + bundle 接口', () => {
-  test('HTML 被注入加载器，且标题仍被正确替换', async () => {
+  test('CSS 与 JS 被内联进 HTML，不再产生资源请求', async () => {
     const { env, protoId, version } = await seedProto({ files: CSS_FILES });
-    const res = await fetchProto(env, protoId, `_s0-${version}/start.html`);
-    const html = await res.text();
-    expect(html).toContain('__bundle.json');       // 注入了加载器
-    expect(html).toContain('<title>原型</title>');  // 标题注入未被破坏
+    const html = await (await fetchProto(env, protoId, `_s0-${version}/start.html`)).text();
+
+    // 内容进了 HTML
+    expect(html).toContain(CSS_FILES['resources/css/default.css']);
+    expect(html).toContain(CSS_FILES['resources/scripts/jquery-3.7.1.min.js']);
+    // 原来的 link/script 标签没了（浏览器不会再为它们发请求）
+    expect(html).not.toContain('href="resources/css/default.css"');
+    expect(html).not.toContain('src="resources/scripts/jquery-3.7.1.min.js"');
+    // 标题注入仍生效
+    expect(html).toContain('<title>原型</title>');
   });
 
-  test('注入的脚本能被 V8 解析（语法错误会让整段脚本失效）', async () => {
+  test('内联后的所有脚本块都能被 V8 解析', async () => {
     const { env, protoId, version } = await seedProto({ files: CSS_FILES });
     const html = await (await fetchProto(env, protoId, `_s0-${version}/start.html`)).text();
     const blocks = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi)].map(m => m[1]);
     expect(blocks.length).toBeGreaterThan(0);
     for (const b of blocks) expect(() => new Function(b)).not.toThrow();
+  });
+
+  test('外部资源与图片保持原路径（只内联本原型内的 css/js）', async () => {
+    const htmlWithExt = '<!DOCTYPE html><html><head>' +
+      '<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=X">' +
+      '<link rel="stylesheet" href="resources/css/default.css">' +
+      '<img src="resources/images/logo.png">' +
+      '</head><body></body></html>';
+    const { env, protoId } = await seedProto({ files: CSS_FILES, html: htmlWithExt });
+    const html = await (await fetchProto(env, protoId, '_s0-4/start.html')).text();
+    expect(html).toContain('fonts.googleapis.com');      // 外部保持
+    expect(html).toContain('resources/images/logo.png'); // 图片保持
+    expect(html).not.toContain('href="resources/css/default.css"'); // 本地 css 内联
+  });
+
+  test('带 defer/async 的脚本不内联（会改变执行时机）', async () => {
+    const htmlDefer = '<!DOCTYPE html><html><head>' +
+      '<script defer src="resources/scripts/jquery-3.7.1.min.js"></script>' +
+      '</head><body></body></html>';
+    const { env, protoId } = await seedProto({ files: CSS_FILES, html: htmlDefer });
+    const html = await (await fetchProto(env, protoId, '_s0-4/start.html')).text();
+    expect(html).toContain('src="resources/scripts/jquery-3.7.1.min.js"');
   });
 
   test('__bundle.json 返回清单内文件正文，图片不打包', async () => {
