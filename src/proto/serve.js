@@ -456,7 +456,7 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
     // 失败（R2 读不到 / 解析异常）就原样返回 HTML，退化成优化前的行为。
     if (bundlePaths.length) {
       try {
-        const files = await readBundleFiles(env, protoId, bundlePaths);
+        const files = await readBundleFilesCached(env, protoId, stamp, bundlePaths, request);
         if (Object.keys(files).length) {
           const r = inlineBundleResources(html, files);
           html = r.html;
@@ -625,6 +625,54 @@ async function isProtoOwner(env, request, meta) {
 // ── 体积 ────────────────────────────────────────────────────────────────────
 // 典型原型 633 KB，gzip 后约 180 KB（Cloudflare 自动协商压缩）。
 // 比 16 个请求的往返开销划算得多。
+
+/**
+ * 带边缘缓存的资源读取 —— 内联 HTML 用。
+ *
+ * ── 为什么必须走缓存（实测教训）────────────────────────────────────────────
+ * 第一版直接 readBundleFiles：每次 HTML 请求都要 head + get 各 9 次，
+ * 合计 18 次 R2 往返。线上实测内联后反而从 2.4s 涨到 7-8s ——
+ * 「少发 15 个请求」省下的那点时间，远不够填 18 次 R2 往返。
+ *
+ * 所以复用 __bundle.json 的 Cache API 副本：
+ *   · 命中 → 零 R2 往返，直接拿整包
+ *   · 未命中 → 读一次 R2 并写入缓存，后续同版本请求全部命中
+ * 缓存键含 stamp（版本号），重传即换键，内容不会串版本。
+ *
+ * 这正是「一次生成、多次命中」该有的样子：贵的部分只在首个访客付一次。
+ *
+ * @returns {Promise<Record<string,string>>}
+ */
+async function readBundleFilesCached(env, protoId, stamp, paths, request) {
+  const cache = edgeCache();
+  const key = cache
+    ? new Request(new URL(`/proto/${protoId}/_b${stamp}/__bundle.json`, request.url).href, { method: 'GET' })
+    : null;
+
+  if (key) {
+    const hit = await cache.match(key);
+    if (hit) {
+      try { return await hit.json(); } catch { /* 损坏就当未命中 */ }
+    }
+  }
+
+  const files = await readBundleFiles(env, protoId, paths);
+
+  // 只缓存成功且有内容的包（空包缓存住会让一次失败的影响留很久）
+  if (key && Object.keys(files).length) {
+    const body = JSON.stringify(files);
+    const stored = new Response(body, {
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        // 与 stamp 绑定：重传换 URL，所以可以长缓存
+        'Cache-Control': 'public, max-age=86400',
+      },
+    });
+    const p = cache.put(key, stored).catch(() => {});
+    p?.catch?.(() => {});
+  }
+  return files;
+}
 
 /**
  * 读出一组原型资源的文本内容（并发读 R2，gzip 存储就地解压）。
