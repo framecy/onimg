@@ -154,6 +154,11 @@ export async function serveProto(env, protoId, filePath, request, ctx) {
     if (dash <= 0) return new Response('Not Found', { status: 404 });
     const sig   = token.slice(0, dash);
     const stamp = token.slice(dash + 1);
+
+    // ── 资源打包：把 HTML 里的十几个资源合成一次请求（见文件末尾说明）──────
+    if (rest === '__bundle.json') {
+      return serveVersionedBundle(env, protoId, sig, stamp, request);
+    }
     return serveVersionedAsset(env, protoId, sig, stamp, rest, request, wait);
   }
 
@@ -331,6 +336,16 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
     if (neg) return new Response('Not Found', { status: 404, headers: { 'X-Cache': 'HIT' } });
   }
 
+  // 打包清单（公开原型才注入加载器；见 injectBundleLoader）
+  let bundlePaths = [];
+  if (isPublic) {
+    bundlePaths = bundleListOf(meta);
+    if (!bundlePaths.length) {
+      const vfiles = await env.STATS.get(`proto:vfiles:${protoId}:v${stamp}`, 'json').catch(() => null);
+      if (Array.isArray(vfiles)) bundlePaths = bundleListOf({ bundle: vfiles });
+    }
+  }
+
   // Fetch from R2
   const r2Key = `proto/${protoId}/${decodedPath}`;
   const obj   = await env.BUCKET.get(r2Key);
@@ -430,6 +445,17 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
         html = html.replace(/<head>/i, `<head><title>${safeTitle}</title></head>`);
       }
     }
+
+    // ── 资源打包注入 ──────────────────────────────────────────────────────
+    // 只对「公开 + 可缓存」的原型注入：私有/密码原型不该把资源内容塞进 HTML。
+    // 注入的脚本在解析阶段同步铺好 XHR/fetch 拦截器，把对打包清单内资源的
+    // 请求改成从 __bundle.json 的内存副本取出 —— 一个原型从 16 次请求变 2 次。
+    // Axure 的 axplayer 用同步 XHR 加载页面片段，所以拦截必须发生在它之前，
+    // 因此脚本插在 <head> 最前面而不是 defer。
+    if (isPublic && bundlePaths.length) {
+      html = injectBundleLoader(html, protoId, stamp, bundlePaths);
+    }
+
     return new Response(html, { headers });
   }
 
@@ -567,4 +593,240 @@ async function isProtoOwner(env, request, meta) {
   const user = await verifyUserToken(request, env);
   if (!user || user.username !== meta.owner) return false;
   return canUseAgent(user);
+}
+
+// ── 资源打包（bundle）────────────────────────────────────────────────────────
+//
+// ── 为什么需要它 ────────────────────────────────────────────────────────────
+// Axure 导出的原型，一个页面就要发 16 个资源请求（jQuery、axplayer、7 个 CSS、
+// 若干插件样式……）。每个请求都要进 Worker 做一次访问判定（policy 缓存或 D1），
+// 再回源 R2 —— 即使边缘全都 HIT，也要为每个请求付一次「进 Worker + 判定」的
+// 开销。浏览器对同域名并发只有 6 路，16 个资源 = 至少 3 轮，实测一个原型
+// 打开要 2–9 秒，是全站最慢的一类页面（2026-11-04 性能报告的结论）。
+//
+// 打包把「16 次请求 × 每次一次判定」压成「1 次请求 × 一次判定」：
+//   GET /proto/{id}/_s{sig}-{stamp}/__bundle.json
+// 回包是 { "resources/css/default.css": "<内容>", ... }，前端一次取回、
+// 注入 <style>/<script>，不再发那 16 个请求。
+//
+// ── 安全 ────────────────────────────────────────────────────────────────────
+// 复用与单文件完全相同的访问判定（sig 校验 / 私有原型拒绝），并且只接受
+// 显式列在 meta.bundle 里的路径 —— 不接受调用方传任意路径列表，
+// 否则就成了「读任意文件」的接口。
+//
+// ── 体积 ────────────────────────────────────────────────────────────────────
+// 典型原型 633 KB，gzip 后约 180 KB（Cloudflare 自动协商压缩）。
+// 比 16 个请求的往返开销划算得多。
+
+/**
+ * 版本化路径上的打包请求：先做与单文件**完全相同**的访问判定，再打包。
+ *
+ * 判定逻辑与 serveVersionedAsset 保持一致：
+ *   sig='0' → 公开，查策略缓存判定（零 D1）
+ *   sig≠'0' → 私有/密码，实时读 meta 重算 HMAC 比对
+ * 判定通过后只打 meta.bundle 里显式声明的文件（不接受任意路径）。
+ */
+async function serveVersionedBundle(env, protoId, sig, stamp, request) {
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    return new Response('Method Not Allowed', { status: 405 });
+  }
+  const cache = edgeCache();
+  const cacheable = !!cache && request.method === 'GET'
+    && !request.headers.get('Cookie') && !request.headers.get('Authorization');
+
+  let meta = null;
+  if (sig === '0') {
+    if (cacheable) {
+      const policy = await policyGet(cache, request, protoId);
+      if (policy) {
+        // 策略缓存只有结论（公开 + 标题），没有 bundle 清单 —— 仍要读一次 meta
+        meta = await env.STATS.get(`proto:${protoId}`, 'json');
+      }
+    }
+    if (!meta) {
+      meta = await env.STATS.get(`proto:${protoId}`, 'json');
+      if (!meta) return new Response('Not Found', { status: 404 });
+      if (accessMarkerOf(meta) !== null) return redirectTo(`/proto/${protoId}/`);
+      if (cacheable) {
+        const p = policyPut(cache, request, protoId, meta.title);
+        p.catch?.(() => {});
+      }
+    }
+  } else {
+    meta = await env.STATS.get(`proto:${protoId}`, 'json');
+    const marker = meta ? accessMarkerOf(meta) : null;
+    const expect = marker
+      ? await protoSign(env.TOKEN_SECRET, protoId, versionStampOf(meta), marker)
+      : '0';
+    if (!meta || !timingSafeEqual(sig, expect)) {
+      return redirectTo(`/proto/${protoId}/`);
+    }
+  }
+
+  let paths = bundleListOf(meta);
+  if (!paths.length) {
+    // 老原型（本次升级前上传的）没有 bundle 清单：用该版本的 vfiles 现算一次并落盘，
+    // 之后同一版本直接命中。vfiles 本身就是当初上传的文件清单，不需要扫 R2。
+    const vfiles = await env.STATS.get(`proto:vfiles:${protoId}:v${versionStampOf(meta)}`, 'json')
+      .catch(() => null);
+    if (Array.isArray(vfiles) && vfiles.length) {
+      paths = bundleListOf({ bundle: vfiles });
+      // 写回 meta，避免每次打开都重算（best-effort，失败不影响本次响应）
+      if (paths.length) {
+        env.STATS.put(`proto:${protoId}`, JSON.stringify({ ...meta, bundle: paths }))
+          .catch(() => {});
+      }
+    }
+  }
+  if (!paths.length) {
+    return new Response('{}', {
+      headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
+    });
+  }
+
+  return serveBundle(env, protoId, stamp, paths, request);
+}
+
+/** 打包允许的扩展名与响应类型（只打资源，不打 HTML 入口） */
+const BUNDLE_TYPES = {
+  css: 'text/css', js: 'application/javascript', mjs: 'application/javascript',
+  json: 'application/json', svg: 'image/svg+xml', txt: 'text/plain',
+};
+
+/** 从原型元数据里取打包清单：只认显式声明，且过滤掉 HTML 与非文本类型 */
+function bundleListOf(meta) {
+  const list = Array.isArray(meta?.bundle) ? meta.bundle : [];
+  return list
+    .map(p => String(p))
+    .filter(p => {
+      if (!p || p.includes('..') || p.startsWith('/')) return false;
+      const ext = p.split('.').pop()?.toLowerCase() ?? '';
+      return Object.prototype.hasOwnProperty.call(BUNDLE_TYPES, ext);
+    });
+}
+
+/**
+ * 产出打包响应。调用方已完成访问判定（与单文件同一套）。
+ *
+ * @param {object} env
+ * @param {string} protoId
+ * @param {string} stamp   版本戳，作为缓存键的一部分
+ * @param {string[]} paths 清单里的相对路径
+ * @param {Request} request
+ */
+async function serveBundle(env, protoId, stamp, paths, request) {
+  const cache = edgeCache();
+  const cacheable = !!cache && request.method === 'GET'
+    && !request.headers.get('Cookie') && !request.headers.get('Authorization');
+
+  const cacheKey = cacheable
+    ? new Request(new URL(`/proto/${protoId}/_b${stamp}/__bundle.json`, request.url).href, { method: 'GET' })
+    : null;
+
+  if (cacheKey) {
+    const hit = await cache.match(cacheKey);
+    if (hit) {
+      const res = new Response(request.method === 'HEAD' ? null : hit.body, hit);
+      res.headers.set('X-Cache', 'HIT');
+      return res;
+    }
+  }
+
+  // 并发读 R2：一个原型十几个文件，串行会白等一大截
+  const entries = await Promise.all(paths.map(async (p) => {
+    const obj = await env.BUCKET.get(`proto/${protoId}/${p}`).catch(() => null);
+    if (!obj) return null;
+    const ext = p.split('.').pop()?.toLowerCase() ?? '';
+    const gz = await resolveGzip(obj, ext);
+    const buf = await new Response(gz.gzip
+      ? gz.body.pipeThrough(new DecompressionStream('gzip'))
+      : gz.body).arrayBuffer();
+    const text = new TextDecoder('utf-8').decode(new Uint8Array(buf));
+    return [p, text];
+  }));
+
+  const body = {};
+  for (const e of entries) if (e) body[e[0]] = e[1];
+
+  const res = new Response(JSON.stringify(body), {
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'public, max-age=86400',
+    },
+  });
+
+  if (cacheKey) {
+    // 复用 finish 的缓存写入语义：X-Cache: MISS、waitUntil 写缓存、
+    // Cache-Control 覆盖为 1 天（bundle 与 stamp 绑定，重传即换 URL，可安全长缓存）
+    return finish(res, cache, cacheKey, (p) => p.catch(() => {}));
+  }
+  res.headers.set('X-Cache', 'MISS');
+  return res;
+}
+
+// ── 原型资源打包：浏览器端加载器 ────────────────────────────────────────────
+//
+// 注入到原型 HTML 的 <head> 最前面，在 Axure 自己的脚本之前建立拦截：
+//   · 页面里对「打包清单内的资源」的请求（XHR / fetch / <img> 写入 style）一律
+//     同步从内存副本返回，不再发网络请求
+//   · 清单外的请求（页面片段 HTML、图片、字体）原样放行
+//
+// 为什么用 XHR 而不是 fetch 拦截：Axure 的 axplayer.js 用**同步 XHR** 加载
+// 页面片段，同步 XHR 无法被 fetch 拦截器覆盖；重写 XMLHttpRequest.open/send
+// 才能同时覆盖同步与异步两种调用。
+//
+// 失败兜底：bundle 请求失败或解析异常时直接退出拦截器，页面按原路径逐个加载 ——
+// 退化成优化前的行为，不会白屏。
+function injectBundleLoader(html, protoId, stamp, bundlePaths) {
+  const bundleUrl = `/proto/${protoId}/_s${'0'}-${stamp}/__bundle.json`;
+  // 只把路径清单与 URL 传进页面，内容由运行时拉取
+  const cfg = JSON.stringify({ url: bundleUrl, paths: bundlePaths });
+  const script = `<script>(function(){` +
+    `var CFG=${cfg};` +
+    `if(!window.fetch||!window.XMLHttpRequest||!window.TextDecoder)return;` +
+    `var data=null,busy=false,queue=[];` +
+    // 把绝对/带查询串的 URL 归一成原型内的相对路径，仅保留清单内的
+    `function keyOf(u){try{var x=new URL(u,location.href);if(x.origin!==location.origin)return null;` +
+      `var m=x.pathname.match(/\\/proto\\/[^/]+\\/_s[^/]+\\/(.+)$/);if(!m)return null;return m[1];}catch(e){return null}}` +
+    `var keys=CFG.paths;var K={};for(var i=0;i<keys.length;i++)K[keys[i]]=1;` +
+    `function ready(){return data!==null}` +
+    `function hit(u){if(!ready())return null;var k=keyOf(u);if(!k||!K[k])return null;` +
+      `return Object.prototype.hasOwnProperty.call(data,k)?data[k]:null}` +
+    // 预取：一次性取回全部资源，完成后清空排队回调
+    `function load(cb){if(ready()){cb&&cb();return}if(cb)queue.push(cb);if(busy)return;busy=true;` +
+      `var x=new XMLHttpRequest();x.open('GET',CFG.url,true);` +
+      `x.onload=function(){try{data=JSON.parse(x.responseText)||{}}catch(e){data={}}` +
+        `busy=false;var q=queue;queue=[];for(var j=0;j<q.length;j++)try{q[j]()}catch(e){}};` +
+      `x.onerror=function(){busy=false;queue=[]};x.send()}` +
+    // 同步 XHR 需要在 send 里就地拿到数据：没准备好时退化为原请求（不阻塞）
+    `var XO=XMLHttpRequest.prototype.open,XS=XMLHttpRequest.prototype.send;` +
+    `XMLHttpRequest.prototype.open=function(m,u){this.__burl=u;this.__bm=m;return XO.apply(this,arguments)};` +
+    `XMLHttpRequest.prototype.send=function(){var u=this.__burl,v=hit(u);` +
+      `if(v===null)return XS.apply(this,arguments);` +
+      `var self=this;` +
+      // 用只读属性伪装成一次成功的 XHR
+      `setTimeout(function(){try{` +
+        `Object.defineProperty(self,'readyState',{value:4,configurable:true});` +
+        `Object.defineProperty(self,'status',{value:200,configurable:true});` +
+        `Object.defineProperty(self,'statusText',{value:'OK',configurable:true});` +
+        `Object.defineProperty(self,'responseText',{value:v,configurable:true});` +
+        `Object.defineProperty(self,'response',{value:v,configurable:true});` +
+        `if(self.onreadystatechange)self.onreadystatechange();` +
+        `if(self.onload)self.onload();` +
+      `}catch(e){}},0)};` +
+    // 样式/脚本被直接写进 head 的场景（Axure 的 init.js 会这么做）也走内存
+    `var OE=Element.prototype.appendChild;` +
+    `Element.prototype.appendChild=function(n){` +
+      `try{if(n&&n.tagName){var src=n.src||n.href;var v=hit(src);` +
+        `if(v!==null&&n.tagName==='SCRIPT'){var s=document.createElement('script');` +
+          `s.textContent=v;return OE.call(this,s)}` +
+        `if(v!==null&&n.tagName==='LINK'){var st=document.createElement('style');` +
+          `st.textContent=v;return OE.call(this,st)}}}catch(e){}` +
+      `return OE.apply(this,arguments)};` +
+    `load();` +
+  `})();</script>`;
+
+  // 插到 <head> 之后（越早越好，但要在文档里）
+  if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, (m) => m + script);
+  return script + html;
 }

@@ -46,6 +46,30 @@ function stripTopFolder(files) {
   return files;
 }
 
+
+// ── 资源打包清单 ────────────────────────────────────────────────────────────
+// 一个 Axure 原型要发十几个资源请求，每个都要进 Worker 做一次访问判定，
+// 浏览器同域并发只有 6 路 —— 这就是「原型打开 2–9 秒」的根因
+//（见 src/proto/serve.js 末尾的 bundle 说明）。
+//
+// 上传时把「哪些文件该打包」算出来存进 meta.bundle，读时一次取回。
+// 只收录文本类资源：HTML 入口会做标题注入、图片走原路径更划算（可被浏览器
+// 各自缓存、也不必 base64 塞进 JSON）。
+const BUNDLE_EXTS = new Set(['css', 'js', 'mjs', 'json', 'svg', 'txt']);
+
+/** 从原型文件清单里挑出可打包的资源（返回相对路径数组） */
+export function computeBundleList(paths) {
+  const out = [];
+  for (const p of paths ?? []) {
+    if (!p || p.includes('..') || p.startsWith('/')) continue;
+    const ext = p.split('.').pop()?.toLowerCase() ?? '';
+    // 入口 HTML 不打包：它要单独回一份可注入标题的文档
+    if (!BUNDLE_EXTS.has(ext)) continue;
+    out.push(p);
+  }
+  return out.sort();
+}
+
 export async function handleProtoUpload(request, env, owner) {
   const maxSize = parseInt(env.PROTO_MAX_SIZE ?? PROTO_MAX_SIZE_DEFAULT);
 
@@ -216,6 +240,7 @@ export async function handleProtoUpload(request, env, owner) {
         updatedAt: now,
         version: newVersion,
         versions,
+        bundle: computeBundleList(safePaths),
         ...(accessPassword ? { accessPassword, passwordExpiry } : { accessPassword: undefined, passwordExpiry: null }),
       }
     : {
@@ -229,6 +254,7 @@ export async function handleProtoUpload(request, env, owner) {
         updatedAt: now,
         version: 1,
         versions: [versionEntry],
+        bundle: computeBundleList(safePaths),
         isPrivate: false,
         ...(accessPassword ? { accessPassword, passwordExpiry } : {}),
       };
@@ -430,8 +456,8 @@ export async function handleProtoFinalize(request, env, owner) {
   }
 
   const meta = existingMeta
-    ? { ...existingMeta, entryPoint: staging.entryPoint, fileCount: safePaths.length, totalSize: staging.totalSize, updatedAt: now, version: newVersion, versions }
-    : { protoId, title: staging.title, owner, entryPoint: staging.entryPoint, fileCount: safePaths.length, totalSize: staging.totalSize, createdAt: now, updatedAt: now, version: 1, versions: [versionEntry], isPrivate: false };
+    ? { ...existingMeta, entryPoint: staging.entryPoint, fileCount: safePaths.length, totalSize: staging.totalSize, updatedAt: now, version: newVersion, versions, bundle: computeBundleList(safePaths) }
+    : { protoId, title: staging.title, owner, entryPoint: staging.entryPoint, fileCount: safePaths.length, totalSize: staging.totalSize, createdAt: now, updatedAt: now, version: 1, versions: [versionEntry], bundle: computeBundleList(safePaths), isPrivate: false };
 
   if (accessPassword) { meta.accessPassword = accessPassword; meta.passwordExpiry = passwordExpiry; }
   else { delete meta.accessPassword; meta.passwordExpiry = null; }
