@@ -141,6 +141,33 @@ describe('公开原型：注入加载器 + bundle 接口', () => {
     expect(html).toContain('src="resources/scripts/jquery-3.7.1.min.js"');
   });
 
+  test('P1：第二次 __bundle.json 请求策略命中清单 → 零 D1', async () => {
+    const originalCaches = globalThis.caches;
+    const store = new Map();
+    globalThis.caches = {
+      default: {
+        async match(req) { const r = store.get(req.url); return r ? r.clone() : undefined; },
+        async put(req, res) { store.set(req.url, res.clone()); },
+        async delete(req) { store.delete(req.url); },
+      },
+    };
+    try {
+      const { env, protoId, version } = await seedProto({ files: CSS_FILES });
+      await fetchProto(env, protoId, `_s0-${version}/__bundle.json`);   // 填策略缓存（含清单）
+      await new Promise(r => setTimeout(r, 20));
+      let metaReads = 0;
+      const realGet = env.STATS.get.bind(env.STATS);
+      env.STATS.get = async (k, ...a) => { if (k === `proto:${protoId}`) metaReads++; return realGet(k, ...a); };
+      const res = await fetchProto(env, protoId, `_s0-${version}/__bundle.json`);
+      expect(res.status).toBe(200);
+      expect(res.headers.get('X-Cache')).toBe('HIT');
+      expect(metaReads).toBe(0);
+    } finally {
+      if (originalCaches === undefined) delete globalThis.caches;
+      else globalThis.caches = originalCaches;
+    }
+  });
+
   test('__bundle.json 返回清单内文件正文，图片不打包', async () => {
     const { env, protoId, version } = await seedProto({ files: CSS_FILES });
     const res = await fetchProto(env, protoId, `_s0-${version}/__bundle.json`);

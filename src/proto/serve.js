@@ -272,7 +272,7 @@ export async function serveProto(env, protoId, filePath, request, ctx) {
     const cacheE = edgeCache();
     if (cacheE && !request.headers.get('Cookie') && !request.headers.get('Authorization')) {
       wait(policyPut(cacheE, request, protoId, meta.title, versionStampOf(meta),
-        meta.entryPoint || 'index.html').catch(() => {}));
+        meta.entryPoint || 'index.html', bundleListOf(meta)).catch(() => {}));
     }
   }
 
@@ -328,7 +328,7 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
       isPublic = true;
       if (cacheable) {
         wait(policyPut(cache, request, protoId, meta.title,
-          versionStampOf(meta), meta.entryPoint || 'index.html').catch(() => {}));
+          versionStampOf(meta), meta.entryPoint || 'index.html', bundleListOf(meta)).catch(() => {}));
       }
     }
   } else {
@@ -405,7 +405,7 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
   // 实时判定，不走提前 304（它们的 ETag 也不进缓存）。
   if (isHtml && isPublic) {
     const early304 = maybe304(request, htmlEtag, new Headers({
-      'Cache-Control': 'public, max-age=300, must-revalidate',
+      'Cache-Control': 'public, max-age=300, s-maxage=300, must-revalidate',
     }));
     // 缓存命中已在上面处理，这里处理「缓存未命中/无缓存但 ETag 匹配」：
     // 同样回 304，不必回源拼装。
@@ -421,6 +421,10 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
   // 历史上出现过 meta.bundle 是旧版逻辑写入、与当前版本文件对不上的情况
   //（线上实测某原型 66 个 bundle 文件 vs HTML 实际引用的 6 个完全不匹配，
   // 结果一个都没内联）。vfiles 是每次上传时按真实文件清单写的，最可靠。
+  // P1：vfiles（D1）与目标文件（R2）无依赖，并行发起，省一轮往返
+  const r2Key = `proto/${protoId}/${decodedPath}`;
+  const r2Promise = env.BUCKET.get(r2Key);
+
   let bundlePaths = [];
   {
     const vfiles = await env.STATS.get(`proto:vfiles:${protoId}:v${stamp}`, 'json').catch(() => null);
@@ -441,9 +445,8 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
     }
   }
 
-  // Fetch from R2
-  const r2Key = `proto/${protoId}/${decodedPath}`;
-  const obj   = await env.BUCKET.get(r2Key);
+  // Fetch from R2（已在上面并行发起）
+  const obj   = await r2Promise;
   if (!obj) {
     if (cacheKey) {
       wait(cache.put(negKey(cacheKey), new Response('nf', {
@@ -474,9 +477,10 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
     'Content-Type': ct,
     'ETag': etag,
     // 公开 HTML 缓存 300s（= 策略 TTL）：转私有后的撤销窗口由此封顶；
+    // s-maxage 钳制 Cloudflare 边缘层 TTL（实测它会把 max-age 放大到 4h）。
     // 私有/密码 HTML 恒 no-store（实时判定）；资产 1 天（重传换 URL 自失效）。
     'Cache-Control': isHtml
-      ? (isPublic ? 'public, max-age=300, must-revalidate' : 'no-store')
+      ? (isPublic ? 'public, max-age=300, s-maxage=300, must-revalidate' : 'no-store')
       : 'public, max-age=86400',
   });
   // 只有「回放字节就是存储字节」时 Content-Length 才准确；
@@ -570,7 +574,7 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
     if (cacheKey) {
       res.headers.set('X-Cache', 'MISS');
       const storeHeaders = new Headers(res.headers);
-      storeHeaders.set('Cache-Control', 'public, max-age=300, must-revalidate');
+      storeHeaders.set('Cache-Control', 'public, max-age=300, s-maxage=300, must-revalidate');
       wait(cache.put(cacheKey,
         new Response(html, { headers: storeHeaders })).catch(() => {}));
     }
@@ -643,17 +647,23 @@ async function policyGet(cache, request, protoId) {
   if (!hit) return null;
   try {
     const j = await hit.json();
-    return { title: j.title ?? '', stamp: j.stamp ?? null, entry: j.entry ?? null };
+    return {
+      title: j.title ?? '', stamp: j.stamp ?? null, entry: j.entry ?? null,
+      bundle: Array.isArray(j.bundle) && j.bundle.length ? j.bundle : null,
+    };
   } catch {
-    return { title: '', stamp: null, entry: null };
+    return { title: '', stamp: null, entry: null, bundle: null };
   }
 }
 
-// 策略缓存存三样：title（HTML 标题注入/ETag）、stamp（入口 302 快路径）、
-// entry（入口文件）。旧条目只有 title，读到 stamp=null 时调用方回退慢路径。
-function policyPut(cache, request, protoId, title, stamp, entry) {
+// 策略缓存存四样：title（HTML 标题注入/ETag）、stamp（入口 302 快路径）、
+// entry（入口文件）、bundle（__bundle.json 零 D1）。旧条目缺字段时调用方回退慢路径。
+function policyPut(cache, request, protoId, title, stamp, entry, bundle) {
   return cache.put(policyKey(request, protoId), new Response(
-    JSON.stringify({ title: title ?? '', stamp: stamp ?? null, entry: entry ?? null }),
+    JSON.stringify({
+      title: title ?? '', stamp: stamp ?? null, entry: entry ?? null,
+      bundle: Array.isArray(bundle) && bundle.length ? bundle : null,
+    }),
     { headers: { 'Content-Type': 'application/json', 'Cache-Control': `public, max-age=${POLICY_TTL}` } },
   ));
 }
@@ -892,21 +902,20 @@ async function serveVersionedBundle(env, protoId, sig, stamp, request, wait) {
     && !request.headers.get('Cookie') && !request.headers.get('Authorization');
 
   let meta = null;
+  let policyPaths = null;   // 策略缓存里的 bundle 清单（P1：命中即零 D1）
   if (sig === '0') {
     if (cacheable) {
       const policy = await policyGet(cache, request, protoId);
-      if (policy) {
-        // 策略缓存只有结论（公开 + 标题），没有 bundle 清单 —— 仍要读一次 meta
-        meta = await env.STATS.get(`proto:${protoId}`, 'json');
-      }
+      // 清单只在 stamp 一致时可信（重传换 stamp，旧清单作废）
+      if (policy?.bundle && policy.stamp === stamp) policyPaths = policy.bundle;
     }
-    if (!meta) {
+    if (!policyPaths) {
       meta = await env.STATS.get(`proto:${protoId}`, 'json');
       if (!meta) return new Response('Not Found', { status: 404 });
       if (accessMarkerOf(meta) !== null) return redirectTo(`/proto/${protoId}/`);
       if (cacheable) {
         const p = policyPut(cache, request, protoId, meta.title,
-          versionStampOf(meta), meta.entryPoint || 'index.html');
+          versionStampOf(meta), meta.entryPoint || 'index.html', bundleListOf(meta));
         p.catch?.(() => {});
       }
     }
@@ -921,7 +930,7 @@ async function serveVersionedBundle(env, protoId, sig, stamp, request, wait) {
     }
   }
 
-  let paths = bundleListOf(meta);
+  let paths = policyPaths ?? bundleListOf(meta);
   if (!paths.length) {
     // 老原型（本次升级前上传的）没有 bundle 清单：用该版本的 vfiles 现算一次并落盘，
     // 之后同一版本直接命中。vfiles 本身就是当初上传的文件清单，不需要扫 R2。
@@ -935,6 +944,12 @@ async function serveVersionedBundle(env, protoId, sig, stamp, request, wait) {
           .catch(() => {});
       }
     }
+  }
+  // 现算/回填得到的清单顺手填进策略缓存：下次 bundle 请求零 D1
+  if (!policyPaths && paths.length && cacheable && meta) {
+    const p = policyPut(cache, request, protoId, meta.title,
+      versionStampOf(meta), meta.entryPoint || 'index.html', paths);
+    p.catch?.(() => {});
   }
   if (!paths.length) {
     return new Response('{}', {

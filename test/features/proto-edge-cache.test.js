@@ -78,7 +78,7 @@ describe('原型边缘缓存（版本化 URL）', () => {
     const r1 = await serveProto(env, 'p1', loc.slice('/proto/p1/'.length), new Request(u), ctx);
     expect(r1.status).toBe(200);
     // P0-1：公开 HTML 进 300s 缓存（= 策略 TTL），撤销窗口与资产策略同口径
-    expect(r1.headers.get('Cache-Control')).toBe('public, max-age=300, must-revalidate');
+    expect(r1.headers.get('Cache-Control')).toBe('public, max-age=300, s-maxage=300, must-revalidate');
     await new Promise(r => setTimeout(r, 20));   // 等缓存写入落盘
     const r2 = await serveProto(env, 'p1', loc.slice('/proto/p1/'.length), new Request(u), ctx);
     expect(r2.status).toBe(200);
