@@ -5,6 +5,7 @@ import { canUseAgent } from '../agent-access.js';
 import { cfBump, cfMonth } from '../admin/cfCounters.js';
 import { bumpDaily } from '../admin/dailyStats.js';
 import { recordAccess } from '../admin/access-stats.js';
+import { shortEtag } from '../http-cache.js';
 
 function parseCookies(header) {
   const out = {};
@@ -162,6 +163,34 @@ export async function serveProto(env, protoId, filePath, request, ctx) {
     return serveVersionedAsset(env, protoId, sig, stamp, rest, request, wait);
   }
 
+  // ── 入口快路径（P0-3）：策略缓存命中 = 已确认公开，零 D1 直接 302 ─────────
+  // 只在「无 Cookie/Authorization、无 ?pwd、GET」时生效；带票据的请求（属主
+  // 通道 / 密码流程）一律走慢路径。策略里没有 stamp（旧条目）也回退慢路径。
+  // 302 对公开原型缓存 60s：重传后旧跳转最多 stale 60 秒，与策略 TTL（300s）
+  // 同口径；转私有后由策略 TTL 封顶（快路径本身不绕过策略失效）。
+  if (request.method === 'GET'
+    && !request.headers.get('Cookie') && !request.headers.get('Authorization')) {
+    let hasPwd = false;
+    try { hasPwd = new URL(request.url).searchParams.has('pwd'); } catch {}
+    if (!hasPwd) {
+      const cache0 = edgeCache();
+      const policy0 = cache0 ? await policyGet(cache0, request, protoId) : null;
+      if (policy0?.stamp) {
+        let dec = filePath;
+        try { dec = decodeURIComponent(filePath); } catch {}
+        if (!dec.includes('..') && !dec.startsWith('/')) {
+          const verBase0 = `/proto/${protoId}/_s0-${policy0.stamp}/`;
+          const entry0 = (!filePath || filePath === '/' || dec.endsWith('/'))
+            ? (policy0.entry || 'index.html') : filePath;
+          return new Response(null, {
+            status: 302,
+            headers: { Location: verBase0 + encodePath(entry0), 'Cache-Control': 'public, max-age=60' },
+          });
+        }
+      }
+    }
+  }
+
   // ── 入口路径：一次元数据查询回答「存在吗 / 私有吗 / 密码对吗」 ──────────────
   const meta = await env.STATS.get(`proto:${protoId}`, 'json');
   if (!meta) return new Response('Prototype Not Found', { status: 404 });
@@ -237,6 +266,16 @@ export async function serveProto(env, protoId, filePath, request, ctx) {
   const stamp  = versionStampOf(meta);
   const verBase = `/proto/${protoId}/_s${sig}-${stamp}/`;
 
+  // 完全公开（无访问标记）时写策略缓存：供版本化路径与入口快路径复用。
+  // 私有/密码原型（accessMarkerOf 非 null）永不写 —— 这是 sig='0' 不越权的前提。
+  if (!accessMarkerOf(meta)) {
+    const cacheE = edgeCache();
+    if (cacheE && !request.headers.get('Cookie') && !request.headers.get('Authorization')) {
+      wait(policyPut(cacheE, request, protoId, meta.title, versionStampOf(meta),
+        meta.entryPoint || 'index.html').catch(() => {}));
+    }
+  }
+
   // 空路径 / 目录 → 302 到版本化的入口文件
   if (!filePath || filePath === '/' || decodedEntry.endsWith('/')) {
     const entry = meta.entryPoint || 'index.html';
@@ -288,7 +327,8 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
       }
       isPublic = true;
       if (cacheable) {
-        wait(policyPut(cache, request, protoId, meta.title).catch(() => {}));
+        wait(policyPut(cache, request, protoId, meta.title,
+          versionStampOf(meta), meta.entryPoint || 'index.html').catch(() => {}));
       }
     }
   } else {
@@ -313,6 +353,28 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
     return new Response('Not Found', { status: 404 });
   }
 
+  const ext    = decodedPath.split('.').pop()?.toLowerCase() ?? '';
+  const isHtml = ext === 'html' || ext === 'htm';
+
+  // HTML 打开统计：缓存命中 / 304 / 首次渲染三条路都要记（挂 waitUntil，
+  // 不阻塞响应）。以前 HTML 恒 no-store 所以只在首次渲染处记一次；
+  // 现在公开 HTML 进缓存，命中路径必须自己记，否则访问量会被缓存吞掉。
+  const trackHtmlAccess = () => {
+    if (!isHtml) return;
+    wait((async () => {
+      try {
+        await recordAccess(env.STATS, 'proto', protoId, request);
+        await cfBump(env.STATS, 'cf:r2b:' + cfMonth(), 1, true);
+        await bumpDaily(env.STATS, 'protoview');
+      } catch {}
+    })());
+  };
+
+  // HTML 的 ETag 含标题：只改标题（version 不变）时，旧缓存/旧 304 立刻失效。
+  // 标题随判定已就位（meta 或策略缓存），零额外 D1 即可算出。
+  const htmlTitle = meta?.title ?? policy?.title ?? '';
+  const htmlEtag = shortEtag(`${stamp}\0${htmlTitle}`);
+
   // ── 边缘缓存（Cache API，机房本地） ────────────────────────────────────────
   // 只缓存「当前确认为公开」的资源：私有 / 密码原型的访问控制必须实时判定
   //（与旧版一致）。URL 已含内容指纹（version），缓存键不再需要额外版本参数。
@@ -323,6 +385,7 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
   if (cacheKey) {
     const hit = await cache.match(cacheKey);
     if (hit) {
+      trackHtmlAccess();
       const etag = hit.headers.get('ETag');
       const notMod = maybe304(request, etag, hit.headers);
       if (notMod) return notMod;
@@ -334,6 +397,22 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
     // shouldShow*Hint 404 探测，不缓存的话每次都要跑完 D1+R2 全链路。
     const neg = await cache.match(negKey(cacheKey));
     if (neg) return new Response('Not Found', { status: 404, headers: { 'X-Cache': 'HIT' } });
+  }
+
+  // ── HTML 提前 304（P0-1）────────────────────────────────────────────────
+  // 只对公开 HTML：ETag 由 stamp+标题算出，判定已过策略缓存，零 D1/R2 即可
+  // 回 304，跳过 vfiles、R2、解压、bundle 全部重活。私有/密码 HTML 维持
+  // 实时判定，不走提前 304（它们的 ETag 也不进缓存）。
+  if (isHtml && isPublic) {
+    const early304 = maybe304(request, htmlEtag, new Headers({
+      'Cache-Control': 'public, max-age=300, must-revalidate',
+    }));
+    // 缓存命中已在上面处理，这里处理「缓存未命中/无缓存但 ETag 匹配」：
+    // 同样回 304，不必回源拼装。
+    if (early304) {
+      trackHtmlAccess();
+      return early304;
+    }
   }
 
   // 打包清单：公开与签名（密码/私有，已通过校验）原型都要算。
@@ -375,9 +454,7 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
     return new Response('Not Found', { status: 404 });
   }
 
-  const ext    = decodedPath.split('.').pop()?.toLowerCase() ?? '';
   const ct     = MIME_MAP[ext] ?? obj.httpMetadata?.contentType ?? 'application/octet-stream';
-  const isHtml = ext === 'html' || ext === 'htm';
   // 上行压缩的文件在 R2 里存的就是 gzip 字节（见 src/proto/upload.js）。
   // 为什么不能只认元数据：线上实测发现这条流式 put 路径下 R2 的
   // customMetadata 会丢（同一条链路的图片上传却正常），于是「压缩标记在
@@ -386,37 +463,20 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
   // gzip magic（1f 8b）。最后一层顺带把历史上已经写坏的按原样救回来。
   const gz = await resolveGzip(obj, ext);
 
-  // ── Track access (HTML requests only) ──────────────────────────────────────
-  // HTML 恒 no-store（Worker 必跑），「打开原型」的统计口径不受缓存影响；
-  // 资产命中缓存后不再执行到这里——资产本来也不计访问量。
-  // 旧实现是裸 IIFE 既不 await 也不 waitUntil：Worker 一返回 promise 随时
-  // 被丢弃，访问统计一直在随机丢。现在挂 ctx.waitUntil。
-  //
-  // 2026-11-04：原来这里把最多 200 条访问记录整行 JSON 读出来再写回去，
-  // 行体积随热度增长，是「越用越慢」的根因之一。现在改走 access-stats 的
-  // 定长计数行（1 读 + 1 写，行体积恒定，见 admin/access-stats.js 文件头）。
-  if (isHtml) {
-    wait((async () => {
-      try {
-        await recordAccess(env.STATS, 'proto', protoId, request);
-        // R2 Class B 追踪：附带在同一个 async 块，不额外消耗 KV 写入配额
-        await cfBump(env.STATS, 'cf:r2b:' + cfMonth(), 1, true);
-        // 按天计数：后台趋势图的真实数据源
-        await bumpDaily(env.STATS, 'protoview');
-      } catch {}
-    })());
-  }
+  // 打开统计走 trackHtmlAccess（见上）：首次渲染、缓存命中、304 三条路共用。
+  // 定长计数行（1 读 + 1 写），行体积恒定，见 admin/access-stats.js 文件头。
+  trackHtmlAccess();
 
-  // ETag：同一版本化 URL 下实体不变，stamp 即版本。If-None-Match 命中回 304。
-  const etag = `"${stamp}"`;
+  // ETag：资产以 stamp 为版本；HTML 另含标题（见 htmlEtag），保证「只改标题」
+  // 时 304/缓存立刻失效。
+  const etag = isHtml ? htmlEtag : `"${stamp}"`;
   const headers = new Headers({
     'Content-Type': ct,
     'ETag': etag,
-    // HTML 恒不缓存：统计与访问控制在 Worker 里。资产 1 天：
-    // 「曾经公开后来转私有」的撤销窗口与重传后旧链接的存活时间都由此封顶
-    //（重传后 version 变化 → 新 URL，浏览器/边缘都会重新拉取）。
+    // 公开 HTML 缓存 300s（= 策略 TTL）：转私有后的撤销窗口由此封顶；
+    // 私有/密码 HTML 恒 no-store（实时判定）；资产 1 天（重传换 URL 自失效）。
     'Cache-Control': isHtml
-      ? 'no-store'
+      ? (isPublic ? 'public, max-age=300, must-revalidate' : 'no-store')
       : 'public, max-age=86400',
   });
   // 只有「回放字节就是存储字节」时 Content-Length 才准确；
@@ -466,8 +526,9 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
     // 走到这里说明访问判定已经通过：公开原型（sig=0）或签名校验通过的
     // 密码/私有原型（sig≠0）。两种都内联 —— 否则密码原型永远慢半拍。
     //
-    // 缓存边界：签名原型本来就不进边缘缓存（cacheKey 为 null，HTML 恒 no-store），
-    // 内联内容只出现在这一次响应里，不会被别的访客取到。
+    // 缓存边界：签名（私有/密码）原型不进边缘缓存（cacheKey 为 null），
+    // 内联内容只出现在这一次响应里，不会被别的访客取到；公开 HTML 的内联
+    // 产物随整页进 300s 缓存（见上 P0-1），键含 stamp，内容指纹已绑定。
     // 失败（R2 读不到 / 解析异常）就原样返回 HTML，退化成优化前的行为。
     if (bundlePaths.length) {
       try {
@@ -488,13 +549,32 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
             if (Object.keys(extra).length) {
               const r2 = inlineBundleResources(r.html, extra);
               html = r2.html;
+              // P0-2：把补齐发现写回 meta.bundle，下次 bundlePaths 直接含它们，
+              // 命中 bundle 缓存即零 R2（meta 为 null 时绝不写，见 vfiles 分支注释）。
+              if (meta) {
+                const merged = [...new Set([...bundlePaths, ...missing])];
+                if (merged.length !== bundlePaths.length) {
+                  env.STATS.put(`proto:${protoId}`,
+                    JSON.stringify({ ...meta, bundle: merged })).catch(() => {});
+                }
+              }
             }
           }
         }
       } catch { /* 内联失败不影响页面本身 */ }
     }
 
-    return new Response(html, { headers });
+    // P0-1：公开 HTML 的最终产物（含标题+内联）写入边缘缓存，300s。
+    // cacheKey 非空即「已判定公开 + 可缓存请求」；私有/密码 HTML 永不进这里。
+    const res = new Response(html, { headers });
+    if (cacheKey) {
+      res.headers.set('X-Cache', 'MISS');
+      const storeHeaders = new Headers(res.headers);
+      storeHeaders.set('Cache-Control', 'public, max-age=300, must-revalidate');
+      wait(cache.put(cacheKey,
+        new Response(html, { headers: storeHeaders })).catch(() => {}));
+    }
+    return res;
   }
 
   if (!gz.gzip) return finish(new Response(gz.body, { headers }), cache, cacheKey, wait);
@@ -562,15 +642,18 @@ async function policyGet(cache, request, protoId) {
   const hit = await cache.match(policyKey(request, protoId));
   if (!hit) return null;
   try {
-    return { title: (await hit.json()).title ?? '' };
+    const j = await hit.json();
+    return { title: j.title ?? '', stamp: j.stamp ?? null, entry: j.entry ?? null };
   } catch {
-    return { title: '' };
+    return { title: '', stamp: null, entry: null };
   }
 }
 
-function policyPut(cache, request, protoId, title) {
+// 策略缓存存三样：title（HTML 标题注入/ETag）、stamp（入口 302 快路径）、
+// entry（入口文件）。旧条目只有 title，读到 stamp=null 时调用方回退慢路径。
+function policyPut(cache, request, protoId, title, stamp, entry) {
   return cache.put(policyKey(request, protoId), new Response(
-    JSON.stringify({ title: title ?? '' }),
+    JSON.stringify({ title: title ?? '', stamp: stamp ?? null, entry: entry ?? null }),
     { headers: { 'Content-Type': 'application/json', 'Cache-Control': `public, max-age=${POLICY_TTL}` } },
   ));
 }
@@ -822,7 +905,8 @@ async function serveVersionedBundle(env, protoId, sig, stamp, request, wait) {
       if (!meta) return new Response('Not Found', { status: 404 });
       if (accessMarkerOf(meta) !== null) return redirectTo(`/proto/${protoId}/`);
       if (cacheable) {
-        const p = policyPut(cache, request, protoId, meta.title);
+        const p = policyPut(cache, request, protoId, meta.title,
+          versionStampOf(meta), meta.entryPoint || 'index.html');
         p.catch?.(() => {});
       }
     }

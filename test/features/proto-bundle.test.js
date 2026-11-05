@@ -297,6 +297,22 @@ describe('清单不可靠时按 HTML 实际引用兜底补齐', () => {
     expect(out).toContain('body{color:#111}');
   });
 
+  test('P0-2：补齐发现的文件写回 meta.bundle（下次命中 bundle 缓存）', async () => {
+    const html = '<!DOCTYPE html><html><head><title>T</title>' +
+      '<script src="resources/scripts/messagecenter.js"></script>' +
+      '</head><body></body></html>';
+    const files = { 'resources/scripts/messagecenter.js': 'window.mc=1;' };
+    const { env, protoId, version } = await seedProto({ files, html });
+    const meta = await env.STATS.get(`proto:${protoId}`, 'json');
+    await env.STATS.put(`proto:${protoId}`, JSON.stringify({ ...meta, bundle: [] }));
+
+    await fetchProto(env, protoId, `_s0-${version}/start.html`);
+    // waitUntil 异步写回，等一拍
+    await new Promise(r => setTimeout(r, 20));
+    const after = await env.STATS.get(`proto:${protoId}`, 'json');
+    expect(after.bundle).toContain('resources/scripts/messagecenter.js');
+  });
+
   test('HTML 引用但 R2 里不存在的文件被跳过（Axure 常见多余引用）', async () => {
     const html = '<!DOCTYPE html><html><head><title>T</title>' +
       '<link rel="stylesheet" href="plugins/handoff/styles/handoff.css">' +

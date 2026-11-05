@@ -77,15 +77,17 @@ describe('原型边缘缓存（版本化 URL）', () => {
     const u = 'http://localhost' + loc;
     const r1 = await serveProto(env, 'p1', loc.slice('/proto/p1/'.length), new Request(u), ctx);
     expect(r1.status).toBe(200);
-    expect(r1.headers.get('Cache-Control')).toBe('no-store');   // HTML 不缓存
+    // P0-1：公开 HTML 进 300s 缓存（= 策略 TTL），撤销窗口与资产策略同口径
+    expect(r1.headers.get('Cache-Control')).toBe('public, max-age=300, must-revalidate');
+    await new Promise(r => setTimeout(r, 20));   // 等缓存写入落盘
     const r2 = await serveProto(env, 'p1', loc.slice('/proto/p1/'.length), new Request(u), ctx);
     expect(r2.status).toBe(200);
+    expect(r2.headers.get('X-Cache')).toBe('HIT');
 
-    // HTML 恒不缓存 → 两次都回源（R2 读 2 次）。
-    // D1 只读 1 次：第一次读 meta 并写策略缓存，第二次直接吃策略缓存 ——
-    // 策略缓存里带着标题，所以连标题注入都不再额外读库。
-    expect(metaReads).toBe(1);
-    expect(r2Reads).toBe(2);
+    // 入口已在 versionUrl 时写好策略缓存（P0-3），版本化路径两次都零 D1；
+    // R2 只读 1 次（第一次），第二次 HTML 命中边缘缓存。
+    expect(metaReads).toBe(0);
+    expect(r2Reads).toBe(1);
     expect(await r2.text()).toContain('ok');
   });
 
@@ -181,6 +183,12 @@ describe('原型边缘缓存（版本化 URL）', () => {
     expect(loc1).toContain('_s0-1/');
 
     await seed(env, { updatedAt: 2000, version: 2, body: '<html><body>新</body></html>' });
+    // 直接改 meta 是绕过上传通道的模拟：真实重传由 handleProtoUpload /
+    // handleProtoFinalize 作废策略缓存（src/proto/upload.js），这里手动清掉
+    // 模拟那一步，入口快路径才能按新 stamp 判定。
+    for (const k of [...globalThis.caches._store.keys()]) {
+      if (k.includes('__proto-policy')) globalThis.caches._store.delete(k);
+    }
     const loc2 = await versionUrl(env);
     expect(loc2).toContain('_s0-2/');
     expect(loc2).not.toBe(loc1);
@@ -267,6 +275,86 @@ describe('原型边缘缓存（版本化 URL）', () => {
     expect(r.status).toBe(302);
     expect(r.headers.get('Location')).toBe('/proto/p1/_s0-1/index.html');
   });
+
+  test('P0-1：HTML 缓存未命中但 If-None-Match 匹配 → 提前 304，不读 R2/D1', async () => {
+    const env = createEnv();
+    await seed(env);
+    const path = '_s0-1/index.html';
+    const r1 = await serveProto(env, 'p1', path, req(path), ctx);
+    const etag = r1.headers.get('ETag');
+    expect(etag).toBeTruthy();
+    await new Promise(r => setTimeout(r, 20));
+    // 清掉 HTML 副本，保留策略缓存 → 走「提前 304」分支（而非缓存命中）
+    for (const k of [...globalThis.caches._store.keys()]) {
+      if (k.includes('/index.html') && !k.includes('__proto-policy')) {
+        globalThis.caches._store.delete(k);
+      }
+    }
+    let metaReads = 0, r2Reads = 0;
+    const realGet = env.STATS.get.bind(env.STATS);
+    env.STATS.get = async (k, ...a) => { if (k === 'proto:p1') metaReads++; return realGet(k, ...a); };
+    const realR2 = env.BUCKET.get.bind(env.BUCKET);
+    env.BUCKET.get = async (k) => { r2Reads++; return realR2(k); };
+
+    const r2 = await serveProto(env, 'p1', path, req(path, { headers: { 'If-None-Match': etag } }), ctx);
+    expect(r2.status).toBe(304);
+    expect(r2Reads).toBe(0);
+    expect(metaReads).toBe(0);
+  });
+
+  test('P0-1：缓存过期后改标题 → HTML ETag 变化，旧 If-None-Match 不再命中', async () => {
+    const env = createEnv();
+    await seed(env, { body: '<html><head><title>原型</title></head><body>ok</body></html>' });
+    const path = '_s0-1/index.html';
+    const r1 = await serveProto(env, 'p1', path, req(path), ctx);
+    const etag1 = r1.headers.get('ETag');
+    await new Promise(r => setTimeout(r, 20));
+    const meta = JSON.parse(await env.STATS.get('proto:p1'));
+    meta.title = '新标题';
+    await env.STATS.put('proto:p1', JSON.stringify(meta));
+    // 模拟 300s 缓存过期：策略与 HTML 副本都清掉（窗口内旧标题仍会被缓存
+    // 服务，这是与策略 TTL 同口径的已知代价，不是 ETag 失效）
+    globalThis.caches._store.clear();
+    const r2 = await serveProto(env, 'p1', path, req(path, { headers: { 'If-None-Match': etag1 } }), ctx);
+    expect(r2.status).toBe(200);
+    expect(r2.headers.get('ETag')).not.toBe(etag1);
+    expect(await r2.text()).toContain('新标题');
+  });
+
+  test('P0-3：第二次入口请求策略命中 → 零 D1 直接 302', async () => {
+    const env = createEnv();
+    await seed(env);
+    const loc1 = await versionUrl(env);
+    expect(loc1).toContain('_s0-1/');
+    await new Promise(r => setTimeout(r, 20));   // 等策略缓存写入
+
+    let metaReads = 0;
+    const realGet = env.STATS.get.bind(env.STATS);
+    env.STATS.get = async (k, ...a) => { if (k === 'proto:p1') metaReads++; return realGet(k, ...a); };
+
+    const r2 = await serveProto(env, 'p1', '', req(''), ctx);
+    expect(r2.status).toBe(302);
+    expect(r2.headers.get('Location')).toBe(loc1);
+    expect(r2.headers.get('Cache-Control')).toBe('public, max-age=60');
+    expect(metaReads).toBe(0);
+  });
+
+  test('P0-3：带 Cookie 的入口不走快路径（属主/密码流程不受影响）', async () => {
+    const env = createEnv();
+    await seed(env);
+    await versionUrl(env);
+    await new Promise(r => setTimeout(r, 20));
+
+    let metaReads = 0;
+    const realGet = env.STATS.get.bind(env.STATS);
+    env.STATS.get = async (k, ...a) => { if (k === 'proto:p1') metaReads++; return realGet(k, ...a); };
+
+    const r = await serveProto(env, 'p1', '', new Request('http://localhost/proto/p1/', {
+      headers: { Cookie: 'onimg_proto_p1=whatever' },
+    }), ctx);
+    expect(r.status).toBe(302);
+    expect(metaReads).toBe(1);   // 回退慢路径读 meta
+  });
 });
 
 // ═══ 安全回归：sig='0' 绝不能成为私有原型的后门 ═══════════════════════════
@@ -322,7 +410,8 @@ describe('安全：版本化路径不得绕过私有 / 密码保护', () => {
     meta.isPrivate = true;
     await env.STATS.put('proto:p1', JSON.stringify(meta));
 
-    // 策略缓存还在 → 仍放行（这是已知的 5 分钟窗口，HTML 本身 no-store）
+    // 策略缓存还在 → 仍放行（这是已知的 5 分钟窗口；HTML 缓存顺序在判定之后，
+    // 策略失效后先被判定拦下，HTML 缓存救不回来）
     const still = await serveProto(env, 'p1', '_s0-1/index.html', req('_s0-1/index.html'), ctx);
     expect(still.status).toBe(200);
 

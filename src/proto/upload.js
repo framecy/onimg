@@ -3,6 +3,19 @@ import { cfBump, cfMonth } from '../admin/cfCounters.js';
 
 const PROTO_MAX_SIZE_DEFAULT = 50 * 1024 * 1024; // 50 MB
 
+// 查询策略缓存（src/proto/serve.js 里的 __proto-policy 键）：重传后必须作废，
+// 否则入口快路径/版本化资产会继续按旧 stamp 服务最长 300 秒。
+// 键构造与 serve.js 的 policyKey 保持一致（同源同路径），best-effort 失败不影响上传。
+async function invalidateProtoPolicy(request, protoId) {
+  try {
+    const cache = (typeof caches !== 'undefined' && caches.default) ? caches.default : null;
+    if (!cache) return;
+    const key = new Request(new URL('/__proto-policy/' + encodeURIComponent(protoId),
+      request.url).href, { method: 'GET' });
+    await cache.delete(key);
+  } catch {}
+}
+
 function randomId() {
   return Math.random().toString(36).slice(2, 9);
 }
@@ -305,6 +318,9 @@ export async function handleProtoUpload(request, env, owner) {
   // Key is kept separate to stay within KV 25KB per-value limit
   await env.STATS.put(`proto:vfiles:${protoId}:v${newVersion}`, JSON.stringify(safePaths));
 
+  // 版本已变：作废策略缓存，下一次入口/资产请求按新 stamp 判定
+  await invalidateProtoPolicy(request, protoId);
+
   return Response.json({
     protoId,
     title: meta.title,
@@ -512,6 +528,9 @@ export async function handleProtoFinalize(request, env, owner) {
     }));
   }
   await Promise.all(tasks);
+
+  // 版本已变：作废策略缓存（与 ZIP 单包通道一致）
+  await invalidateProtoPolicy(request, protoId);
 
   return Response.json({
     protoId, title: meta.title, url: `/proto/${protoId}/`,
