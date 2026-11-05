@@ -54,6 +54,7 @@
 - **概览页的 Workers KV 用量面板**：底层早已不再读写 KV，那组读 / 写 / 列表 / 删除指标恒为 0 或不存在，只会误导。一并移除 `CF_KV_STATS_ID` 变量与 `kvOperationsAdaptiveGroups` 查询（配了也不再生效，可顺手从 `wrangler.toml` 删掉）
 
 ### Fixed
+- **原型元数据被 serve 路径覆盖导致从列表消失**：策略缓存命中时 `serveVersionedAsset` 里的 `meta` 为 `null`，bundle 修正分支不判空直接 `{...meta, bundle}` 写回，把整条元数据覆盖成只剩 bundle，`protoId/title/owner` 全部丢失（直链仍可开、所有列表查不到）。写回前判空，命中时跳过修正；加回归用例。事故记录与后续优化方案见 `docs/incident-2026-11-04-proto-meta-clobber.md`
 - **公开图库空白**：骨架屏样式常量用 `const` 声明在文件后段，首屏初始化早于它执行，命中暂时性死区抛 ReferenceError 导致整个初始化链中断。改为 `var` 提升
 - **上传勾选公开后图库不刷新**：上传完成后只刷新结果列表，未刷新图库
 - **单张删除不检查响应**：后端失败也提示「已移至回收站」，刷新后图片复现
