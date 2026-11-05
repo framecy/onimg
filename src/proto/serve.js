@@ -349,8 +349,12 @@ async function serveVersionedAsset(env, protoId, sig, stamp, filePath, request, 
     if (fromVfiles.length) {
       bundlePaths = fromVfiles;
       // meta 里的清单与当前版本不一致时顺手修正（best-effort，不阻塞响应）
+      // ⚠️ meta 为 null 时（sig='0' 策略缓存命中，见上）绝不能写回：
+      //    {...null, bundle} 会把整条元数据覆盖成只剩 bundle，
+      //    protoId/title/owner 全部丢失，原型随即从所有列表消失
+      //    （线上实测 2026-11-04 两条原型被此路径写坏）。
       const inMeta = bundleListOf(meta);
-      if (inMeta.length !== fromVfiles.length) {
+      if (meta && inMeta.length !== fromVfiles.length) {
         env.STATS.put(`proto:${protoId}`, JSON.stringify({ ...meta, bundle: fromVfiles })).catch(() => {});
       }
     } else {

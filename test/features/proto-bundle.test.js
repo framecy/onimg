@@ -241,6 +241,39 @@ describe('bundle 边缘缓存：必须真的写进去', () => {
   });
 });
 
+describe('策略缓存命中时不得覆盖元数据', () => {
+  test('第二次 HTML 请求（策略缓存命中、meta 为 null）不再把 meta 写成只剩 bundle', async () => {
+    const originalCaches = globalThis.caches;
+    const store = new Map();
+    globalThis.caches = {
+      default: {
+        async match(req) { const r = store.get(req.url); return r ? r.clone() : undefined; },
+        async put(req, res) { store.set(req.url, res.clone()); },
+        async delete(req) { store.delete(req.url); },
+      },
+    };
+    try {
+      const { env, protoId, version } = await seedProto({ files: CSS_FILES });
+      // 第一次：策略缓存未命中，读 meta 并写入策略缓存
+      await fetchProto(env, protoId, `_s0-${version}/start.html`);
+      await new Promise(r => setTimeout(r, 20));
+      // 第二次：策略缓存命中，serveVersionedAsset 里 meta 为 null，
+      // bundle 修正分支若不判空就会 {...null, bundle} 覆盖整条 meta
+      await fetchProto(env, protoId, `_s0-${version}/start.html`);
+
+      const meta = await env.STATS.get(`proto:${protoId}`, 'json');
+      expect(meta.protoId).toBe(protoId);
+      expect(meta.title).toBe('原型');
+      expect(meta.owner).toBe('admin');
+      expect(meta.entryPoint).toBe('start.html');
+      expect(Array.isArray(meta.bundle)).toBe(true);
+    } finally {
+      if (originalCaches === undefined) delete globalThis.caches;
+      else globalThis.caches = originalCaches;
+    }
+  });
+});
+
 describe('清单不可靠时按 HTML 实际引用兜底补齐', () => {
   test('bundle 清单漏掉的文件，仍按 HTML 引用内联', async () => {
     // 线上真实情况：vfiles / meta.bundle 里是 'messagecenter 2.js' 这种
