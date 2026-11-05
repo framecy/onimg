@@ -17,14 +17,43 @@ description: >-
 **不要手写 curl 去拼接口**：分片上传、增量覆盖、token 续期、并发下载都已经在
 CLI 里做对了。Agent 的职责是选命令、看结果、决定下一步。
 
-## 0. 装（只做一次）
+## 0. 装（只做一次，AI 可自助完成）
+
+用户只给仓库地址 `https://github.com/framecy/onimg` 时，Agent 自己按下图装完，
+不要让用户手动复制命令、不要先问「装没装」——能自助就自助。
+
+**前置（缺一不可，缺了就地补，不要直接报错）**：`python3`、`curl`、可写目录
+`~/.local/bin`、能打开浏览器的环境（仅授权和登录那一步需要）、一个已开通
+Agent 访问的 Onimg 账号（管理员在后台「用户管理 → Agent / API」设为只读/读写；
+未开通时 `auth login` 会被服务端拒绝，要告诉用户找管理员开）。
 
 ```bash
+command -v python3 curl          # 缺哪个先装哪个（单文件、纯标准库，无 pip 依赖）
+mkdir -p ~/.local/bin
+# 方式 A（有线上实例时优先）：从服务器下发
 curl -fsSL https://img.diswant.space/scripts/onimg-agent.py -o ~/.local/bin/onimg-agent
+# 方式 B（只有仓库地址、或服务器不可达时）：AI 直接从 GitHub 仓库取
+curl -fsSL https://raw.githubusercontent.com/framecy/onimg/main/scripts/onimg-agent.py -o ~/.local/bin/onimg-agent
 chmod +x ~/.local/bin/onimg-agent
 ```
 
-自建实例把域名换成自己的。装完 `onimg-agent --help` 能出帮助即可。
+Skill 文本本身也从仓库取，保存到 Agent 的技能目录后按本文执行：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/framecy/onimg/main/skills/onimg/SKILL.md -o /tmp/onimg-SKILL.md
+```
+
+装完立刻验（`~/.local/bin` 不在 PATH 时用全路径 `~/.local/bin/onimg-agent`）：
+
+```bash
+onimg-agent --help        # 能出帮助即装好
+onimg-agent --version
+```
+
+**配置（默认不用配）**：未写配置时默认连 `https://img.diswant.space`，自建实例
+用环境变量 `ONIMG_URL=<你的域名>` 或写 `~/.config/onimg/config`（一行
+`ONIMG_URL=<域名>`）。`onimg-agent auth status --json` 能返回 JSON 即通路正常；
+未登录按 §1 授权（浏览器回调，用户自己登录，不要索要密码）。
 
 **保持最新**：脚本本身就是服务器下发的静态资源，一条命令自更新（会先校验语法，
 再原子替换，半截文件不会覆盖掉自己）：
@@ -34,8 +63,8 @@ onimg-agent update --json      # {"changed": true, "from": "1.0.0", "to": "1.1.0
 onimg-agent --version
 ```
 
-Skill 文本本身不会自动更新——它只是本地的一份说明书。命令有变化时重新安装
-（或从仓库 `skills/onimg/SKILL.md` 复制）。
+Skill 文本本身不会自动更新——它只是本地的一份说明书。命令有变化时重新拉取
+（仓库路径即上文的 raw 链接，`skills/onimg/SKILL.md`）。
 
 ## 1. 黄金原则（先读这三条，路径都从这来）
 

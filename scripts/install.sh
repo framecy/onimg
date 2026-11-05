@@ -8,6 +8,7 @@ set -euo pipefail
 ONIMG_URL="${ONIMG_URL:-}"
 INSTALL_DIR="${ONIMG_INSTALL_DIR:-$HOME/.local/bin}"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/onimg"
+TOKEN_FILE="$CONFIG_DIR/token"
 REPO_RAW="https://raw.githubusercontent.com/framecy/onimg/main/scripts"
 
 # ── 解析参数 ──────────────────────────────────────────────────────────────────
@@ -57,11 +58,15 @@ if [[ -z "$ONIMG_URL" ]]; then
 fi
 
 if [[ -z "$ONIMG_URL" ]]; then
-  echo ""
-  echo -e "  ${YLW}请输入 Onimg 服务器地址${RST}"
-  echo -e "  ${DIM}回车使用默认线上实例；自建部署请填你自己的域名${RST}"
-  read -rp "  URL [https://img.diswant.space]: " input_url
-  ONIMG_URL="${input_url:-https://img.diswant.space}"
+  if [[ -t 0 ]]; then
+    echo ""
+    echo -e "  ${YLW}请输入 Onimg 服务器地址${RST}"
+    echo -e "  ${DIM}回车使用默认线上实例；自建部署请填你自己的域名${RST}"
+    read -rp "  URL [https://img.diswant.space]: " input_url || input_url=""
+    ONIMG_URL="${input_url:-https://img.diswant.space}"
+  else
+    ONIMG_URL="https://img.diswant.space"
+  fi
 fi
 
 ONIMG_URL="${ONIMG_URL%/}"
@@ -71,13 +76,17 @@ inf "服务器：${CYN}${ONIMG_URL}${RST}"
 
 mkdir -p "$INSTALL_DIR"
 
-# 下载脚本（优先本地 repo，否则从 raw.githubusercontent.com）
+# 下载脚本（优先本地 repo，其次从当前服务器，最后从 raw.githubusercontent.com）
+# 优先走服务器：curl | bash 时服务器就是用户刚访问的那个 origin，
+# 不依赖 GitHub 可达性。raw 只作兜底。
 SCRIPT_SRC="$(dirname "${BASH_SOURCE[0]}" 2>/dev/null || echo '')"
 
 download_or_copy() {
   local name="$1" dest="$2"
   if [[ -n "$SCRIPT_SRC" && -f "$SCRIPT_SRC/$name" ]]; then
     cp "$SCRIPT_SRC/$name" "$dest"
+  elif curl -fsSL "$ONIMG_URL/scripts/$name" -o "$dest"; then
+    :
   else
     curl -fsSL "$REPO_RAW/$name" -o "$dest"
   fi
@@ -89,6 +98,8 @@ download_or_copy "onimg-cli.py"       "$INSTALL_DIR/onimg-cli.py"
 ok "onimg-cli.py"
 download_or_copy "typora-upload.sh"   "$INSTALL_DIR/onimg-upload"
 ok "onimg-upload  (Typora 上传脚本)"
+download_or_copy "onimg-agent.py"     "$INSTALL_DIR/onimg-agent"
+ok "onimg-agent   (Agent / Skill 非交互 CLI)"
 
 # 写入 onimg 入口包装
 cat > "$INSTALL_DIR/onimg" <<WRAPPER

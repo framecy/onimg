@@ -342,10 +342,31 @@ GET /auth/device?callback=http://localhost:<PORT>/cb
 
 ### 安装
 
+前置：`python3`、`curl`、可写目录 `~/.local/bin`、能打开浏览器的环境（仅授权时需要）、
+一个已开通 Agent 访问的账号（管理员在后台「用户管理 → Agent / API」设为只读/读写）。
+
+最省事的一条（`onimg`、`onimg-upload`、`onimg-agent` 三个一起装）：
+
 ```bash
-curl -fsSL https://img.diswant.space/scripts/onimg-agent.py -o ~/.local/bin/onimg-agent
-chmod +x ~/.local/bin/onimg-agent
+curl -fsSL https://img.diswant.space/install.sh | bash
 ```
+
+只装 `onimg-agent` 时：
+
+```bash
+mkdir -p ~/.local/bin
+# 从线上服务器取（有实例时优先）
+curl -fsSL https://img.diswant.space/scripts/onimg-agent.py -o ~/.local/bin/onimg-agent
+# 或从 GitHub 仓库取（AI 只拿到仓库地址 https://github.com/framecy/onimg 时用）
+curl -fsSL https://raw.githubusercontent.com/framecy/onimg/main/scripts/onimg-agent.py -o ~/.local/bin/onimg-agent
+chmod +x ~/.local/bin/onimg-agent
+onimg-agent --help    # 能出帮助即装好；未写配置时默认连 https://img.diswant.space
+```
+
+把仓库地址 `https://github.com/framecy/onimg` 直接交给 AI 时，AI 按
+[`skills/onimg/SKILL.md`](https://github.com/framecy/onimg/blob/main/skills/onimg/SKILL.md)
+第 0 节自助安装：查前置 → 从仓库 raw 拉 `SKILL.md` 和 `scripts/onimg-agent.py` →
+装到 `~/.local/bin` → `onimg-agent --help` 自检 → 走下面的浏览器授权。
 
 ### 授权（只读 / 读写）
 
