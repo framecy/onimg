@@ -17,7 +17,7 @@ import os, sys, json, time, base64, argparse, mimetypes, webbrowser, threading
 import urllib.request, urllib.parse, urllib.error, http.server, http.client, socket, zipfile, tempfile
 from concurrent.futures import ThreadPoolExecutor
 
-AGENT_VERSION = '1.1.0'
+AGENT_VERSION = '1.3.0'
 
 EXIT_OK, EXIT_ERR, EXIT_USAGE, EXIT_AUTH, EXIT_PARTIAL = 0, 1, 2, 3, 4
 
@@ -390,7 +390,24 @@ def cmd_update(args):
 
 # ── 索引 / 检索 ──────────────────────────────────────────────────────────────
 
-def load_index():
+def load_index(index_file=None):
+    """拉索引。传 --index-file 时直接读本地文件（同会话缓存复用，零网络）。
+
+    /api/index 是全量索引、生成慢且偶发断流（实测 2–60s），同一次会话里
+    多次 ls/tree 最优解是第一次落盘、之后读文件。显式传文件 = 调用方自担
+    缓存新鲜度（写操作后要么重拉、要么用响应补齐），CLI 不做隐式缓存。
+    """
+    if index_file:
+        try:
+            with open(index_file, encoding='utf-8') as f:
+                idx = json.load(f)
+        except FileNotFoundError:
+            raise SystemExit('索引文件不存在：%s（先跑一次不带 --index-file 的 ls/tree 落盘）' % index_file)
+        except json.JSONDecodeError as e:
+            raise SystemExit('索引文件不是合法 JSON：%s（%s）' % (index_file, e))
+        if not isinstance(idx, dict) or not all(k in idx for k in ('images', 'pages', 'protos', 'projects', 'groups', 'counts')):
+            raise SystemExit('索引文件结构不对（缺 images/pages/protos/projects/groups/counts）：%s' % index_file)
+        return idx
     return api('GET', '/api/index')
 
 
@@ -401,9 +418,20 @@ def ref_split(ref):
     return kind, ident
 
 
+def _save_index(idx, path):
+    """把原始索引落盘，供后续 --index-file 复用（ls/tree 共用同一份原始索引，
+    只拉一次；ls/tree 的输出格式推不出原始索引，所以必须在在线拉取时存）。"""
+    if not path:
+        return
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(idx, f, ensure_ascii=False, indent=2)
+
+
 def cmd_ls(args):
     def run():
-        idx = load_index()
+        idx = load_index(getattr(args, 'index_file', None))
+        if not getattr(args, 'index_file', None):
+            _save_index(idx, getattr(args, 'save_index', None))
         kind = args.kind
         rows = []
         if kind in ('img', 'image'):
@@ -420,9 +448,15 @@ def cmd_ls(args):
             key = 'projects' if kind == 'project' else 'groups'
             rows = [{'ref': '%s:%s' % (kind, r['id']), 'name': r.get('name')} for r in idx[key]]
         else:
-            rows = ([{'ref': 'img:' + i['key'], 'name': i.get('name') or i['key'], 'kind': 'img'} for i in idx['images']]
-                    + [{'ref': 'page:' + p['slug'], 'name': p.get('title') or p['slug'], 'kind': 'page'} for p in idx['pages']]
-                    + [{'ref': 'proto:' + p['protoId'], 'name': p.get('title') or p['protoId'], 'kind': 'proto'} for p in idx['protos']])
+            # all 与单 kind 的字段口径一致（之前 all 每行只有 ref/name/kind，
+            # 查大小/版本要再拉一次索引）。新增字段是加法，老消费方不受影响。
+            rows = ([{'ref': 'img:' + i['key'], 'name': i.get('name') or i['key'], 'kind': 'img',
+                      'size': i.get('size'), 'public': i.get('isPublic'), 'tags': i.get('tags') or []} for i in idx['images']]
+                    + [{'ref': 'page:' + p['slug'], 'name': p.get('title') or p['slug'], 'kind': 'page',
+                        'type': p.get('type'), 'public': p.get('isPublic')} for p in idx['pages']]
+                    + [{'ref': 'proto:' + p['protoId'], 'name': p.get('title') or p['protoId'], 'kind': 'proto',
+                        'files': p.get('fileCount'), 'size': p.get('totalSize'), 'version': p.get('version'),
+                        'private': p.get('isPrivate')} for p in idx['protos']])
         q = (args.q or '').lower()
         if q:
             rows = [r for r in rows if q in json.dumps(r, ensure_ascii=False).lower()]
@@ -433,7 +467,9 @@ def cmd_ls(args):
 
 def cmd_tree(args):
     def run():
-        idx = load_index()
+        idx = load_index(getattr(args, 'index_file', None))
+        if not getattr(args, 'index_file', None):
+            _save_index(idx, getattr(args, 'save_index', None))
         out, lines = [], []
         by_group = {}
         for p in idx['pages']:
@@ -525,20 +561,6 @@ def cmd_pull(args):
     TIMEOUT = max(5, args.timeout)
 
     def run():
-        idx = load_index()
-        out_dir = args.output or 'onimg-backup'
-        os.makedirs(out_dir, exist_ok=True)
-        with open(os.path.join(out_dir, 'index.json'), 'w') as f:
-            json.dump(idx, f, ensure_ascii=False, indent=2)
-
-        want = args.kind or ('all' if args.all or not args.ref else None)
-        kinds = {'all': ['img', 'page', 'proto'], 'img': ['img'], 'page': ['page'], 'proto': ['proto']}
-        if args.ref:
-            k, ident = ref_split(args.ref)
-            kinds = {'img': ['img'], 'image': ['img'], 'page': ['page'], 'proto': ['proto']}
-            want = k
-        plan = kinds.get(want or 'all', ['img', 'page', 'proto'])
-
         # 指定了 ref（pull proto:<id> / img:<key> / page:<slug>）时只拉那一个对象。
         # 早期版本只用了 ref 的类型、没用 id，导致「拉一个原型」实际把账号下所有
         # 原型都拉了一遍（900 文件压测时 planned=903 才暴露）。
@@ -548,16 +570,48 @@ def cmd_pull(args):
             if ref_kind == 'image':
                 ref_kind = 'img'
 
+        # 单拉 img / page 不需要索引：图片走直链、页面走 /api/pages/<slug>，
+        # 之前也要先拉一遍全量 /api/index（2–60s），纯属浪费。
+        # 单拉 proto 仍需要索引（要 version / isPrivate 才能拼文件列表），保持原路径。
+        direct_single = ref_kind in ('img', 'page')
+        idx = None
+        if not direct_single:
+            idx = load_index(getattr(args, 'index_file', None))
+        out_dir = args.output or 'onimg-backup'
+        os.makedirs(out_dir, exist_ok=True)
+        if idx is not None:
+            with open(os.path.join(out_dir, 'index.json'), 'w') as f:
+                json.dump(idx, f, ensure_ascii=False, indent=2)
+
+        want = args.kind or ('all' if args.all or not args.ref else None)
+        kinds = {'all': ['img', 'page', 'proto'], 'img': ['img'], 'page': ['page'], 'proto': ['proto']}
+        if args.ref:
+            k, ident = ref_split(args.ref)
+            kinds = {'img': ['img'], 'image': ['img'], 'page': ['page'], 'proto': ['proto']}
+            want = k
+        plan = kinds.get(want or 'all', ['img', 'page', 'proto'])
+
         jobs, errors = [], []
         base = load_config()['ONIMG_URL']
         if 'img' in plan:
-            for img in (idx['images'] if not ref_id else [i for i in idx['images'] if i['key'] == ref_id]):
+            if direct_single:
                 # 图片按 key 直出，不带 token 走边缘缓存（见 download 的说明）
-                jobs.append(('img', os.path.join(out_dir, 'images', img['key']),
-                             base + '/' + urllib.parse.quote(img['key']), False))
+                jobs.append(('img', os.path.join(out_dir, 'images', ref_id),
+                             base + '/' + urllib.parse.quote(ref_id), False))
+            else:
+                for img in (idx['images'] if not ref_id else [i for i in idx['images'] if i['key'] == ref_id]):
+                    jobs.append(('img', os.path.join(out_dir, 'images', img['key']),
+                                 base + '/' + urllib.parse.quote(img['key']), False))
         if 'page' in plan:
-            for p in (idx['pages'] if not ref_id else [x for x in idx['pages'] if x['slug'] == ref_id]):
-                jobs.append(('page', os.path.join(out_dir, 'pages', p['slug'] + ('.md' if p.get('type') == 'markdown' else '.html')), p['slug'], True))
+            if direct_single:
+                # 先取一次正文定扩展名（markdown→.md 否则 .html）；work() 会再取一次正文落盘，
+                # 两次单页请求仍远便宜过一次全量索引。
+                page = api('GET', '/api/pages/' + urllib.parse.quote(ref_id))
+                ext = '.md' if page.get('type') == 'markdown' else '.html'
+                jobs.append(('page', os.path.join(out_dir, 'pages', ref_id + ext), ref_id, True))
+            else:
+                for p in (idx['pages'] if not ref_id else [x for x in idx['pages'] if x['slug'] == ref_id]):
+                    jobs.append(('page', os.path.join(out_dir, 'pages', p['slug'] + ('.md' if p.get('type') == 'markdown' else '.html')), p['slug'], True))
         if 'proto' in plan:
             for proto in (idx['protos'] if not ref_id else [x for x in idx['protos'] if x['protoId'] == ref_id]):
                 try:
@@ -568,8 +622,9 @@ def cmd_pull(args):
                 except ApiError as e:
                     errors.append({'proto': proto['protoId'], 'error': str(e)})
 
-        with open(os.path.join(out_dir, 'tree.json'), 'w') as f:
-            json.dump({k: idx[k] for k in ('projects', 'groups', 'counts', 'account')}, f, ensure_ascii=False, indent=2)
+        if idx is not None:
+            with open(os.path.join(out_dir, 'tree.json'), 'w') as f:
+                json.dump({k: idx[k] for k in ('projects', 'groups', 'counts', 'account')}, f, ensure_ascii=False, indent=2)
 
         # 计数器要加锁：+= 是「读-改-写」，8 个线程并发会丢更新。
         # 之前 901 个文件只报 4.9MB（实际 46MB）就是被这个吃掉的。
@@ -622,8 +677,14 @@ def cmd_pull(args):
         if not args.json:
             sys.stderr.write('\n')
 
+        # 单拉直取（无索引）时 counts 按本次 jobs 记，不伪造全账号计数。
+        counts = idx['counts'] if idx is not None else {
+            'images': sum(1 for j in jobs if j[0] == 'img'),
+            'pages': sum(1 for j in jobs if j[0] == 'page'),
+            'protos': sum(1 for j in jobs if j[0] == 'proto'),
+            'projects': 0, 'groups': 0}
         summary = {'ok': not errors, 'dir': os.path.abspath(out_dir), 'planned': total_jobs, 'files': done[0],
-                   'skipped': skipped[0], 'bytes': total_bytes[0], 'errors': errors, 'counts': idx['counts']}
+                   'skipped': skipped[0], 'bytes': total_bytes[0], 'errors': errors, 'counts': counts}
         lines = ['拉取完成：%d 个文件（跳过已存在 %d），%.1f MB'
                  % (done[0], skipped[0], total_bytes[0] / 1048576.0),
                  '输出目录：%s' % os.path.abspath(out_dir)]
@@ -674,8 +735,9 @@ def slugify(name):
             out.append(ch)
         elif ch in ' _':
             out.append('-')
-    slug = ''.join(out).strip('-')[:120]
-    return slug or 'page-' + str(int(time.time()))
+    # 注意：Python 的 isalnum 对中文返回 True，中文文件名 slug 里会保留中文。
+    # 调用方（push page）对空结果 fail-fast，不再静默生成 page-<时间戳>。
+    return ''.join(out).strip('-')[:120]
 
 
 # ── 写操作 ───────────────────────────────────────────────────────────────────
@@ -683,24 +745,34 @@ def slugify(name):
 def cmd_push(args):
     if args.what == 'img':
         def run():
-            results = []
-            for path in args.files:
+            # 批量传图并发（之前逐个串行 POST）。结果按输入顺序回填，
+            # 401/403 仍是账号级错误：有任一命中就整体按授权错误退出，
+            # 不伪装成「部分成功」让 Agent 以为可以重试。
+            auth_errors = []
+
+            def one(path):
                 if not os.path.isfile(path):
-                    results.append({'file': path, 'error': '文件不存在'})
-                    continue
+                    return {'file': path, 'error': '文件不存在'}
                 data = open(path, 'rb').read()
                 ctype = mimetypes.guess_type(path)[0] or 'application/octet-stream'
                 name = urllib.parse.quote(os.path.basename(path))
                 try:
                     r = api('POST', '/upload', raw=data,
                             headers={'Content-Type': ctype, 'X-File-Name': name})
-                    results.append({'file': path, 'url': r.get('url'), 'key': r.get('key')})
+                    return {'file': path, 'url': r.get('url'), 'key': r.get('key')}
                 except ApiError as e:
-                    # 401/403 是账号级问题，后续文件也一定失败：直接按授权错误退出，
-                    # 不要伪装成「部分成功」让 Agent 以为可以重试。
                     if e.status in (401, 403):
-                        translate_error(e, args)
-                    results.append({'file': path, 'error': str(e)})
+                        auth_errors.append(e)
+                    return {'file': path, 'error': str(e)}
+
+            workers = max(1, min(getattr(args, 'concurrency', 4) or 4, 16))
+            if workers == 1 or len(args.files) == 1:
+                results = [one(p) for p in args.files]
+            else:
+                with ThreadPoolExecutor(max_workers=workers) as pool:
+                    results = list(pool.map(one, args.files))
+            if auth_errors:
+                translate_error(auth_errors[0], args)
             ok = [r for r in results if r.get('url')]
             emit(args, {'ok': len(ok) == len(results), 'uploaded': len(ok), 'results': results},
                  ['%s -> %s' % (r['file'], r['url']) for r in ok] + ['%s 失败：%s' % (r['file'], r['error']) for r in results if r.get('error')],
@@ -718,6 +790,8 @@ def cmd_push(args):
                 with open(path, encoding='utf-8') as f:
                     content = f.read()
             slug = args.slug or slugify(path)
+            if not slug:
+                fail(args, '文件名无法生成 slug（没有可用字符），请显式传 --slug', EXIT_USAGE)
             body = {
                 'slug': slug,
                 'title': args.title or os.path.splitext(os.path.basename(path))[0],
@@ -799,6 +873,38 @@ def cmd_edit(args):
                 body['accessPassword'] = args.password
             if args.type:
                 body['type'] = args.type
+            # 项目/分组归属（移动页面）：--project/--group 传 id，传 none 清除。
+            # 服务端 PATCH 不校验归属一致性，只给 --group 时 CLI 在有索引时
+            # 自动补上 group 所属的 projectId（与新建页面时的 auto-fill 一致），
+            # 避免出现「group 属于 A 项目、projectId 却是 B」的不一致状态。
+            want_project = getattr(args, 'project', None)
+            want_group = getattr(args, 'group', None)
+            if want_project is not None or want_group is not None:
+                def _pid(v):
+                    return None if v.lower() == 'none' else v
+                proj_id = _pid(want_project) if want_project is not None else None
+                grp_id = _pid(want_group) if want_group is not None else None
+                idx_file = getattr(args, 'index_file', None)
+                if idx_file:
+                    idx = load_index(idx_file)
+                    groups = {g['id']: g for g in idx.get('groups', [])}
+                    projects = {p['id']: p for p in idx.get('projects', [])}
+                    if grp_id is not None and grp_id not in groups:
+                        fail(args, '分组 %s 不在索引缓存里（缓存可能已过期，先重拉索引）' % grp_id, EXIT_USAGE)
+                    if proj_id is not None and proj_id not in projects:
+                        fail(args, '项目 %s 不在索引缓存里（缓存可能已过期，先重拉索引）' % proj_id, EXIT_USAGE)
+                    if grp_id is not None:
+                        gproj = groups[grp_id].get('projectId') or None
+                        if proj_id is not None and gproj != proj_id:
+                            fail(args, '分组 %s 属于项目 %s，与 --project %s 不一致' % (grp_id, gproj, proj_id), EXIT_USAGE)
+                        if want_project is None:
+                            proj_id = gproj
+                if want_project is not None:
+                    body['projectId'] = proj_id
+                elif grp_id is not None:
+                    body['projectId'] = proj_id
+                if want_group is not None:
+                    body['groupId'] = grp_id
 
             content = read_content(args)
             if args.replace:
@@ -853,6 +959,22 @@ def cmd_edit(args):
             api('PATCH', path, body)
             emit(args, {'ok': True, 'ref': args.ref, 'changed': body}, ['%s 已更新' % args.ref])
         fail(args, '不支持的引用类型：%s' % kind, EXIT_USAGE)
+    guard(run, args)
+
+
+def cmd_group_create(args):
+    """新建分组（可挂在项目下，或独立分组）。服务端：POST /api/groups。"""
+    def run():
+        name = (args.name or '').strip()
+        if not name or len(name) > 64:
+            fail(args, '分组名称必填，最长 64 字符', EXIT_USAGE)
+        body = {'name': name}
+        if args.project:
+            body['projectId'] = args.project
+        r = api('POST', '/api/groups', body)
+        emit(args, {'ok': True, 'ref': 'group:' + r.get('id', ''), 'id': r.get('id'),
+                    'name': r.get('name'), 'projectId': r.get('projectId')},
+             ['已创建分组：%s  [group:%s]  项目 %s' % (r.get('name'), r.get('id'), r.get('projectId') or '（独立）')])
     guard(run, args)
 
 
@@ -923,9 +1045,13 @@ def build_parser():
     ls = sub.add_parser('ls', help='列出索引内容', parents=[common])
     ls.add_argument('kind', nargs='?', default='all', choices=['all', 'img', 'page', 'proto', 'project', 'group'])
     ls.add_argument('--q', help='本地关键字过滤')
+    ls.add_argument('--index-file', help='读本地索引文件（同会话缓存复用，零网络；不给则在线拉 /api/index）')
+    ls.add_argument('--save-index', metavar='PATH', help='在线拉取后把原始索引存到 PATH，供后续 --index-file 复用')
     ls.set_defaults(func=cmd_ls)
 
     t = sub.add_parser('tree', help='目录树（项目 / 分组 → 页面）', parents=[common])
+    t.add_argument('--index-file', help='读本地索引文件（同会话缓存复用，零网络；不给则在线拉 /api/index）')
+    t.add_argument('--save-index', metavar='PATH', help='在线拉取后把原始索引存到 PATH，供后续 --index-file 复用')
     t.set_defaults(func=cmd_tree)
 
     g = sub.add_parser('get', help='取单个对象（img / page / proto）', parents=[common])
@@ -940,6 +1066,7 @@ def build_parser():
     pl.add_argument('-o', '--output', default='onimg-backup')
     pl.add_argument('--concurrency', type=int, default=8)
     pl.add_argument('--timeout', type=int, default=20, help='单次请求超时秒数（默认 20）')
+    pl.add_argument('--index-file', help='读本地索引文件（同会话缓存复用，零网络；单拉 img/page 时不需要索引）')
     pl.add_argument('--force', action='store_true', help='重新下载已存在的文件（默认跳过，用于断点续传）')
     pl.set_defaults(func=cmd_pull)
 
@@ -955,6 +1082,7 @@ def build_parser():
     ps.add_argument('--group', help='页面所属分组 ID')
     ps.add_argument('--public', action='store_true', help='页面公开（默认）')
     ps.add_argument('--private', action='store_true', help='页面私有（不进公开列表）')
+    ps.add_argument('--concurrency', type=int, default=4, help='push img 并发数（默认 4，1=串行；仅 img 生效）')
     ps.set_defaults(func=cmd_push)
 
     e = sub.add_parser('edit', help='改元数据或文档正文（标题 / 标签 / 可见性 / 密码 / 内容）', parents=[common])
@@ -970,7 +1098,16 @@ def build_parser():
     e.add_argument('--replace', action='append', metavar='OLD=NEW',
                    help='定点替换：把原文里的 OLD 换成 NEW，可重复')
     e.add_argument('--type', choices=['markdown', 'html'], help='改页面类型')
+    e.add_argument('--project', help='页面所属项目 ID（none=清除；仅 page）')
+    e.add_argument('--group', help='页面所属分组 ID（none=清除；仅 page；只给它时自动补所属项目）')
+    e.add_argument('--index-file', help='本地索引文件（校验 --project/--group 归属一致性）')
     e.set_defaults(func=cmd_edit)
+
+    gc = sub.add_parser('group', help='分组管理', parents=[common])
+    gc.add_argument('action', choices=['create'])
+    gc.add_argument('--name', required=True, help='分组名称（1–64 字符）')
+    gc.add_argument('--project', help='所属项目 ID（不给则建独立分组）')
+    gc.set_defaults(func=cmd_group_create)
 
     r = sub.add_parser('rm', help='删除（默认 dry-run）', parents=[common])
     r.add_argument('refs', nargs='+')
