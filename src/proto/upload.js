@@ -294,6 +294,10 @@ export async function handleProtoUpload(request, env, owner) {
     delete meta.accessPassword;
     meta.passwordExpiry = null;
   }
+  // 更新内容即视为复活：清除回收站标记，避免更新后仍被列表过滤而「消失」
+  // （与分片通道 handleProtoFinalize 的处理保持一致；Agent 走本单 ZIP 通道，
+  // 漏清会：返回新地址、直链可开、但所有列表都查不到）
+  if (meta.deletedAt) delete meta.deletedAt;
 
   await env.STATS.put(`proto:${protoId}`, JSON.stringify(meta));
 

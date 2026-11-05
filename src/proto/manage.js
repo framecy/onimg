@@ -16,8 +16,19 @@ export function isProtoKey(name) {
 }
 
 export async function listProtos(env, ownerFilter, includePasswords = false) {
-  const list = await env.STATS.list({ prefix: 'proto:' });
-  const keys = list.keys.filter(k => isProtoKey(k.name)).map(k => k.name);
+  // list 只返回第一页（1000 key 上限，含 proto:vfiles:/proto:staging: 辅助 key）。
+  // 必须跟 cursor 翻完，否则 key 总数超限后静默丢弃其余条目 —— 新原型
+  // protoId 以时间戳开头、排序靠后，最先被丢（表现为「上传返回地址、列表查不到」）。
+  const keys = [];
+  let cursor;
+  do {
+    const page = await env.STATS.list({ prefix: 'proto:', cursor });
+    for (const k of page.keys) {
+      if (isProtoKey(k.name)) keys.push(k.name);
+    }
+    // 无 cursor 即断（防御 list_complete 异常，避免死循环）
+    cursor = page.list_complete ? undefined : page.cursor || undefined;
+  } while (cursor);
 
   // 批量读取：D1 上逐个 get 是 N 次跨区往返（每个约 20–60 ms），
   // 原型一多，回收站和原型列表就线性变慢。getMany 把 N 次压成 ceil(N/99) 次。
