@@ -54,6 +54,7 @@
 - **概览页的 Workers KV 用量面板**：底层早已不再读写 KV，那组读 / 写 / 列表 / 删除指标恒为 0 或不存在，只会误导。一并移除 `CF_KV_STATS_ID` 变量与 `kvOperationsAdaptiveGroups` 查询（配了也不再生效，可顺手从 `wrangler.toml` 删掉）
 
 ### Fixed
+- **页面编辑 / 删除后同 slug 重推，`/p/` 静态下发不刷新（只更新存储，仍吐旧文件）**：根因有两处——① edit / delete 里的 `purgePageCache(...)` 没有 `await`，在 Cloudflare Workers 中游离 Promise 会随响应返回被冻结，Cache API 删除与 CF URL purge 都没跑完（实测等 80 秒仍是旧版）；② 新建路径（删除后同 slug 重推）完全没调缓存清理，旧边缘副本永远在。修复为「同步重写静态下发」：新增 `refreshPageStatic` —— 先 `await` 清 Cache API + CF URL purge，再由 Worker 内部自取一次 `/p/<slug>` 回源，把新内容立刻写回边缘缓存；edit / create / delete 全部同步执行。自取带 `X-Onimg-Warm` 头，`servePage` 对其跳过访问统计，不污染浏览量。新增 3 个回归用例（edit 同步失效 + 重暖写回、重暖不计统计、删除后同 slug 重推刷新）
 - **原型元数据被 serve 路径覆盖导致从列表消失**：策略缓存命中时 `serveVersionedAsset` 里的 `meta` 为 `null`，bundle 修正分支不判空直接 `{...meta, bundle}` 写回，把整条元数据覆盖成只剩 bundle，`protoId/title/owner` 全部丢失（直链仍可开、所有列表查不到）。写回前判空，命中时跳过修正；加回归用例。事故记录与后续优化方案见 `docs/incident-2026-11-04-proto-meta-clobber.md`
 - **单 ZIP 原型更新后从列表消失**：`onimg-agent` 用的 `/upload/proto` 更新分支保留了旧元数据里的 `deletedAt`，导致已删除过的原型重传后有新地址、直链可开，但所有列表过滤回收站而查不到；现与分片通道保持一致，更新内容时清除回收站标记。`listProtos` 改为按 cursor 翻完全部 `proto:` key，避免第一页截断静默丢条目
 - **公开图库空白**：骨架屏样式常量用 `const` 声明在文件后段，首屏初始化早于它执行，命中暂时性死区抛 ReferenceError 导致整个初始化链中断。改为 `var` 提升

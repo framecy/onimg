@@ -7,10 +7,17 @@
 //   2. 私有 / 密码页 → 绝不进缓存，Header 保持 no-store / max-age=0
 //   3. 带 Cookie / Authorization → 绕过缓存（可能是属主或已解锁的访客）
 //   4. 改内容后主动失效，编辑者立即看到新版
+//
+// 5–7 是 2026-11-16 线上 bug 的回归：edit / 删除后同 slug 重推此前只更新存储，
+// /p/ 静态下发不刷新（等 80 秒仍吐旧文件）。根因是 purge 没 await（Workers 里
+// 游离 Promise 随响应被冻结）+ 新建路径完全没清。修复后要求「同步重写静态下发」：
+//   5. edit 时缓存清理在响应返回前完成，且自取重暖把新内容写回边缘
+//   6. 删除后同 slug 重推，旧边缘缓存被清掉并换成新内容
+//   7. 自取重暖请求不计入访问统计
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { createEnv, createTestUser } from '../helpers/mock-env.js';
 import { servePage } from '../../src/pages/handler.js';
-import { handleUpdatePage } from '../../src/pages/manage.js';
+import { handleUpdatePage, handleCreatePage, handleDeletePage } from '../../src/pages/manage.js';
 import { createToken } from '../../src/admin/auth.js';
 
 const SECRET = 'test-secret-at-least-32-bytes!!';
@@ -28,10 +35,18 @@ function fakeCaches() {
 }
 
 let origCaches;
-beforeEach(() => { origCaches = globalThis.caches; globalThis.caches = fakeCaches(); });
+let origFetch;
+beforeEach(() => {
+  origCaches = globalThis.caches; globalThis.caches = fakeCaches();
+  // 默认禁止真实网络：refreshPageStatic 的自取重暖必须是 best-effort，
+  // 单测里要么被路由到本地 servePage，要么失败后静默跳过
+  origFetch = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error('tests must not hit the network'); };
+});
 afterEach(() => {
   if (origCaches === undefined) delete globalThis.caches;
   else globalThis.caches = origCaches;
+  globalThis.fetch = origFetch;
 });
 
 function makeCtx() {
@@ -148,6 +163,111 @@ describe('/p/* 边缘缓存', () => {
     const after = await servePage(env, 'edit', ctx, req('edit'));
     expect(after.headers.get('X-Cache')).toBe(null);
     expect(await after.text()).toContain('改过的标题');
+  });
+
+  /** 把服务端自取重暖路由回本地 servePage，模拟 Worker 内部 fetch 回源 */
+  function stubWarmFetch(env, ctx, calls) {
+    globalThis.fetch = async (url, init) => {
+      calls.push({ url: String(url), init });
+      const u = new URL(String(url));
+      return servePage(env, decodeURIComponent(u.pathname.slice(3)), ctx, new Request(String(url), init));
+    };
+  }
+
+  test('edit：缓存清理在响应返回前同步完成，自取重暖写回新内容', async () => {
+    const env = createEnv();
+    await seedPage(env, 'sync', { content: '# 旧版本' });
+    const { ctx, drain } = makeCtx();
+
+    // 先让旧内容进边缘缓存
+    await servePage(env, 'sync', ctx, req('sync'));
+    await drain();
+    expect(globalThis.caches._store.size).toBe(1);
+
+    await createTestUser(env, 'admin', 'pw123456', { canUpload: true });
+    const token = await createToken({ type: 'admin', username: 'admin' }, 3600_000, SECRET);
+    const calls = [];
+    stubWarmFetch(env, ctx, calls);
+
+    const res = await handleUpdatePage(
+      new Request('https://img.diswant.space/admin/pages/sync', {
+        method: 'PATCH',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: '# 新版本' }),
+      }), env, 'sync', 'admin', true);
+    expect(res.status).toBe(200);
+
+    // 同步保证：响应返回这一刻，旧缓存副本已经不存在
+    // （修复前 purge 是游离 Promise，在 Workers 里随响应被冻结，旧副本一直留着）
+    const stored = globalThis.caches._store.get('https://img.diswant.space/p/sync');
+    if (stored) expect(await stored.clone().text()).toContain('新版本');
+
+    // 自取重暖被发起一次，且带 X-Onimg-Warm 头
+    expect(calls).toHaveLength(1);
+    expect(calls[0].url).toBe('https://img.diswant.space/p/sync');
+    const h = calls[0].init?.headers;
+    expect(h?.get ? h.get('X-Onimg-Warm') : h?.['X-Onimg-Warm']).toBe('1');
+
+    await drain();
+    // 重暖完成后，访客立刻命中新内容
+    const after = await servePage(env, 'sync', ctx, req('sync'));
+    expect(after.headers.get('X-Cache')).toBe('HIT');
+    expect(await after.text()).toContain('新版本');
+  });
+
+  test('edit 的自取重暖不污染访问统计', async () => {
+    const env = createEnv();
+    await seedPage(env, 'warm');
+    const { ctx, drain } = makeCtx();
+
+    await servePage(env, 'warm', ctx, req('warm'));
+    await drain();
+
+    await createTestUser(env, 'admin', 'pw123456', { canUpload: true });
+    const token = await createToken({ type: 'admin', username: 'admin' }, 3600_000, SECRET);
+    stubWarmFetch(env, ctx, []);
+
+    await handleUpdatePage(
+      new Request('https://img.diswant.space/admin/pages/warm', {
+        method: 'PATCH',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: '新标题' }),
+      }), env, 'warm', 'admin', true);
+    await drain();
+
+    // 只有最初那一次真实访问被计数，重暖的回源不算
+    const row = await env.STATS.getWithMetadata('astat:page:warm', 'json');
+    expect(row?.metadata?.count).toBe(1);
+  });
+
+  test('删除后同 slug 重推：旧边缘缓存被清掉并换成新内容', async () => {
+    const env = createEnv();
+    await seedPage(env, 'redo', { content: '# 旧页面' });
+    const { ctx, drain } = makeCtx();
+
+    await servePage(env, 'redo', ctx, req('redo'));
+    await drain();
+    expect(globalThis.caches._store.size).toBe(1);
+
+    await createTestUser(env, 'admin', 'pw123456', { canUpload: true });
+    const token = await createToken({ type: 'admin', username: 'admin' }, 3600_000, SECRET);
+    stubWarmFetch(env, ctx, []);
+
+    // 删除 → 同 slug 重推（handleCreatePage 此前完全没清缓存，旧副本永远在）
+    await handleDeletePage(
+      env, 'redo', 'admin', true,
+      new Request('https://img.diswant.space/admin/pages/redo', { method: 'DELETE' }));
+    await handleCreatePage(
+      new Request('https://img.diswant.space/api/pages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: 'redo', title: '重推页', content: '# 新推送', type: 'markdown', isPublic: true }),
+      }), env, 'admin');
+    await drain();
+
+    const after = await servePage(env, 'redo', ctx, req('redo'));
+    expect(after.headers.get('X-Cache')).toBe('HIT');
+    expect(await after.text()).toContain('新推送');
   });
 
   test('没有 Cache API 时（本地 / 单测）行为不变', async () => {

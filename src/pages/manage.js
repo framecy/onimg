@@ -46,6 +46,30 @@ function originFrom(request) {
   try { return request?.url ? new URL(request.url).origin : undefined; } catch { return undefined; }
 }
 
+/**
+ * 页面内容变更后「同步重写静态下发」：先清缓存，再自取一次回源重暖。
+ *
+ * 为什么不能只调 purgePageCache 就完事（2026-11-16 修复的线上 bug）：
+ *   · 此前 edit / delete 都是 `purgePageCache(...)` 不加 await —— 在 Cloudflare
+ *     Workers 里，没挂在响应上的游离 Promise 会随响应返回被冻结，Cache API 删除
+ *     和 CF URL purge 根本没跑完，/p/ 继续吐旧文件（实测等 80 秒仍是旧版）。
+ *   · 新建（删除后同 slug 重推）此前完全没调清理，旧缓存永远在。
+ *   · 只清不暖，下一个访客要吃一次 MISS 回源；自取一次把新内容立刻写回边缘。
+ *
+ * 自取从 Worker 内部直达源站，不经过 CDN 边缘副本；带 X-Onimg-Warm 头让
+ * servePage 跳过访问统计，避免给编辑动作记一次假浏览量。
+ * best-effort：整体失败不影响主写流程（此时至少 D1 已是新内容，等 TTL 自然过期）。
+ */
+export async function refreshPageStatic(env, slug, origin) {
+  await purgePageCache(env, slug, origin);
+  if (!origin || !slug) return;
+  try {
+    await fetch(`${origin}/p/${encodeURIComponent(slug)}`, {
+      headers: { 'X-Onimg-Warm': '1' },
+    });
+  } catch { /* best-effort, never block main request */ }
+}
+
 // CRUD for hosted pages (MD / HTML)
 
 const SLUG_RE = /^[a-zA-Z0-9_\-][a-zA-Z0-9_\-/]{0,119}$/;
@@ -201,6 +225,10 @@ export async function handleCreatePage(request, env, owner) {
   });
   await env.STATS.put('userpages:' + owner, JSON.stringify(pageIdx));
 
+  // 同步重写静态下发：删除后同 slug 重推走的就是这条路径，
+  // 不刷新的话边缘还留着被删页面的旧副本
+  await refreshPageStatic(env, slug, originFrom(request));
+
   return Response.json({
     slug, title: page.title, type, isPublic: page.isPublic,
     projectId: page.projectId, groupId: page.groupId, sort: page.sort,
@@ -272,8 +300,9 @@ export async function handleUpdatePage(request, env, slug, callerUsername, isAdm
     await env.STATS.put('userpages:' + owner, JSON.stringify(pageIdx));
   }
 
-  // 内容变了立刻失效边缘缓存，否则编辑者刷新还是旧版
-  purgePageCache(env, slug, originFrom(request));
+  // 内容变了立刻失效边缘缓存并同步重写，否则编辑者刷新还是旧版。
+  // 必须 await：游离的 Promise 在 Workers 里会随响应返回被冻结（线上 bug 根因）。
+  await refreshPageStatic(env, slug, originFrom(request));
 
   return Response.json({
     slug, title: page.title, isPublic: page.isPublic,
@@ -297,8 +326,8 @@ export async function handleDeletePage(env, slug, callerUsername, isAdmin, reque
     await env.STATS.put('userpages:' + owner, JSON.stringify(newIdx));
   }
 
-  // 内容变了立刻失效边缘缓存，否则编辑者刷新还是旧版
-  purgePageCache(env, slug, originFrom(request));
+  // 内容变了立刻失效边缘缓存，否则编辑者刷新还是旧版。同样要 await。
+  await purgePageCache(env, slug, originFrom(request));
 
   return Response.json({ deleted: slug });
 }
@@ -363,8 +392,8 @@ export async function handleImportPage(request, env, owner) {
 
   const body = { slug, title, content, type, isPublic, projectId, groupId };
 
-  // reuse create handler logic
-  return handleCreatePage({ json: async () => body }, env, owner);
+  // reuse create handler logic（保留 request.url，让刷新时能拿到站点 origin）
+  return handleCreatePage({ json: async () => body, url: request?.url }, env, owner);
 }
 
 // ── Helpers ──────────────────────────────────────────────

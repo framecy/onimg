@@ -58,6 +58,9 @@ export async function servePage(env, slug, ctx, request) {
   // TTL 取 1 小时 + stale-while-revalidate 1 天：编辑后最坏 1 小时可见新版，
   // 这期间旧副本还能先返回、后台悄悄刷新，用户不必等回源。
   const cache = edgeCache();
+  // 内容变更后的「同步重写静态下发」自取请求（见 manage.js refreshPageStatic）：
+  // 它是服务端发起的回源，不是真实访客，不能计入访问统计
+  const isWarm = request?.headers?.get('X-Onimg-Warm') === '1';
   const shared = !!cache
     && page.isPublic && !page.accessPassword
     && request.method === 'GET'
@@ -68,8 +71,8 @@ export async function servePage(env, slug, ctx, request) {
   if (cacheKey) {
     const hit = await cache.match(cacheKey);
     if (hit) {
-      // 命中也要记访问：计数口径与改造前一致
-      if (ctx) {
+      // 命中也要记访问：计数口径与改造前一致（自取重暖请求除外）
+      if (ctx && !isWarm) {
         ctx.waitUntil(recordPageAccess(env, slug, request));
         ctx.waitUntil(bumpDaily(env.STATS, 'pageview'));
       }
@@ -79,9 +82,9 @@ export async function servePage(env, slug, ctx, request) {
     }
   }
 
-  if (ctx && request) ctx.waitUntil(recordPageAccess(env, slug, request));
-  // 按天计数：后台趋势图的真实数据源
-  if (ctx) ctx.waitUntil(bumpDaily(env.STATS, 'pageview'));
+  if (ctx && request && !isWarm) ctx.waitUntil(recordPageAccess(env, slug, request));
+  // 按天计数：后台趋势图的真实数据源（自取重暖请求不计入）
+  if (ctx && !isWarm) ctx.waitUntil(bumpDaily(env.STATS, 'pageview'));
 
   // Auto-detect HTML if type is ambiguous or content starts with a doctype/html tag
   const isHtml = page.type === 'html' ||

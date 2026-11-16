@@ -11,8 +11,9 @@ export async function handleList(request, env) {
 
   if (isAdmin) {
     const url = new URL(request.url);
-    const cursor = url.searchParams.get('cursor') ?? undefined;
-    const limit  = Math.min(parseInt(url.searchParams.get('limit') ?? '50'), 200);
+    const limit  = Math.min(parseInt(url.searchParams.get('limit') ?? '50') || 50, 200);
+    const offset = Math.max(0, parseInt(url.searchParams.get('offset') ?? '0', 10) || 0);
+    const asc    = (url.searchParams.get('order') ?? 'desc') === 'asc';
 
     // 查询参数（管理端）：搜索 / 筛选 / 排序 / 分页。
     // 用户端不认这些参数（它只看自己的清单），所以不会因为这里多出参数而变行为。
@@ -22,7 +23,6 @@ export async function handleList(request, env) {
     const visibility = url.searchParams.get('visibility') ?? '';
     const sort       = url.searchParams.get('sort') ?? 'uploaded';
     const order      = url.searchParams.get('order') ?? 'desc';
-    const offset     = Math.max(0, parseInt(url.searchParams.get('offset') ?? '0', 10) || 0);
 
     // 索引视图：一次读出 imgmeta 的 name / tags / owner / 大小 / 访问次数。
     // 有 D1 时是一条 SQL；KV 回滚路径降级为只有 metadata（name/tags 为空）。
@@ -47,28 +47,49 @@ export async function handleList(request, env) {
       });
     }
 
-    // 默认视图：R2 列表（能带出未索引的裸对象），再用索引补名字 / 标签 / 访问次数
+    // 默认视图（sort=uploaded，无搜索/筛选）：同样要真正按上传时间排序。
+    //
+    // ⚠️ 这里曾是一个排序 bug（2026-11-06 修复）：R2 list 只按 key 词序返回，
+    // 直接把第一页当「最新上传」—— 显示的是词序最靠前（≈最老）的一批图，
+    // 新上传的图反而不在第一页；order 参数也被完全忽略，「最早上传」与
+    // 「最新上传」返回同一份列表。内存 mock 的 list() 不排序也不翻页，
+    // 所以单测一直没抓到（回归见 test/features/admin-gallery-sort.test.js）。
+    //
+    // 现在：翻全 R2 分页（安全上限与 listPublicImages 同款），合并索引里的
+    // 名字/标签/访问次数后，按 uploadedAt（裸对象退回 R2 的 uploaded）全局
+    // 排序再切页；分页走 offset（前端把管理端默认视图的 nextOffset 回填成 offset），
+    // total 一并给出，回收站与 proto/manifests 前缀的排除逻辑不变。
     const trashed = new Set(idx.items.filter(it => it.deletedAt).map(it => it.key));
-    const result = await env.BUCKET.list({ limit, cursor });
+    const scanned = await listAllBucketObjects(env);
+    const rows = scanned.objects
+      .filter(o => !o.key.startsWith('proto/') && !o.key.startsWith('manifests/') && !trashed.has(o.key))
+      .map(o => {
+        const rec = byKey.get(o.key);
+        return {
+          key: o.key, size: o.size, uploaded: o.uploaded, etag: o.etag,
+          name: rec?.name ?? null,
+          tags: rec?.tags ?? [],
+          views: rec?.views ?? 0,
+          uploadedAt: rec?.uploadedAt ?? null,
+          // 未索引的裸对象（老数据/手工上传）rec 为 undefined，前端按私密处理
+          isPublic: rec ? rec.isPublic : false,
+          owner: rec?.owner ?? null,
+          indexed: !!rec,
+          // 排序键（不下发）：索引的 uploadedAt 优先，裸对象用 R2 uploaded
+          _t: rec?.uploadedAt ?? (o.uploaded ? new Date(o.uploaded).getTime() || 0 : 0),
+        };
+      });
+    // 同时间戳按 key 决出稳定顺序，保证逐页翻页不重不漏
+    const byKeyOrder = (a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0);
+    rows.sort(asc ? (a, b) => (a._t - b._t) || byKeyOrder(a, b) : (a, b) => (b._t - a._t) || byKeyOrder(a, b));
+    const total = rows.length;
+    const page = rows.slice(offset, offset + limit);
     return Response.json({
-      items: result.objects
-        .filter(o => !o.key.startsWith('proto/') && !o.key.startsWith('manifests/') && !trashed.has(o.key))
-        .map(o => {
-          const rec = byKey.get(o.key);
-          return {
-            key: o.key, size: o.size, uploaded: o.uploaded, etag: o.etag,
-            name: rec?.name ?? null,
-            tags: rec?.tags ?? [],
-            views: rec?.views ?? 0,
-            uploadedAt: rec?.uploadedAt ?? null,
-            // 未索引的裸对象（老数据/手工上传）rec 为 undefined，前端按私密处理
-            isPublic: rec ? rec.isPublic : false,
-            owner: rec?.owner ?? null,
-            indexed: !!rec,
-          };
-        }),
-      cursor: result.truncated ? result.cursor : null,
-      truncated: result.truncated,
+      items: page.map(({ _t, ...it }) => it),
+      total,
+      nextOffset: offset + page.length < total ? offset + page.length : null,
+      cursor: null,
+      truncated: scanned.truncated,
       source: idx.source,
       degraded: idx.degraded,
     });
@@ -126,6 +147,24 @@ export async function handleList(request, env) {
     cursor: null,
     truncated: false,
   });
+}
+
+// R2 分页翻全：默认视图要按上传时间全局排序，而 R2 只能给词序，所以必须
+// 先拿全量对象。单次 list 上限 1000，最多 20 页 = 2 万个对象，与
+// listPublicImages 的安全上限一致；超出时如实带 truncated 标记，绝不静默吞。
+const R2_SCAN_PAGES = 20;
+
+async function listAllBucketObjects(env) {
+  const objects = [];
+  let cursor, pages = 0, truncated = false;
+  do {
+    const r = await env.BUCKET.list({ limit: 1000, cursor });
+    for (const o of r.objects ?? []) objects.push(o);
+    cursor = r.truncated ? r.cursor : undefined;
+    pages++;
+    if (cursor && pages >= R2_SCAN_PAGES) { truncated = true; break; }
+  } while (cursor);
+  return { objects, truncated };
 }
 
 // 单次 /list 最多补全多少条「最小种子」条目。超出预算的条目原样返回 ——
