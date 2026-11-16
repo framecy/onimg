@@ -6,8 +6,8 @@
 //
 // 注意：字符串内不使用反引号与 ${（用 + 拼接），避免与页面外层模板字面量冲突。
 //
-// 引擎特性：双约束切批（文件数 ≤ 45 且单批 ≤ 24 MB）、3 路批间并发、
-// 单批 3 次指数退避重试（4xx 除 429 不重试）、增量上传（内容指纹 diff）。
+// 引擎特性：双约束切批（文件数 ≤ 45 且单批 ≤ 24 MB）、批间并发（上限见引擎内
+// CONCURRENCY）、单批 3 次指数退避重试（4xx 除 429 不重试）、增量上传（内容指纹 diff）。
 // 认证与解压通过参数注入：authToken + fetchImpl（用户端传 fetch，
 // 管理端传 adminFetch 以复用 401 处理），unzip（用户端传 Worker 解压，
 // 管理端传同步解压）。
@@ -80,10 +80,17 @@ function _protoFilter(files) {
 }
 
 // ── 文本资源 gzip（上行压缩） ───────────────────────────────────────────────
-// 为什么要压：原型上传的瓶颈是「跨境上行带宽」，不是服务端 CPU（实测 535 文件
-// 走本机磁盘桶只需 0.17s）。浏览器对同一域名只开一条 TCP，HTTP/2 多路复用共享
-// 同一个拥塞窗口，所以在 300ms 往返下加并发不会变快 —— 只能少传字节。
+// 为什么要压：跨境上行是原型上传的主要成本之一，能少传字节就少传。
 // Axure 导出的 js/css/html 压缩比很高（75%/94%/92%），PNG 等已压缩格式完全跳过。
+// 注意：gzip 是纯 CPU 计算，在浏览器主线程单线程执行，并行压缩不会更快，所以这里
+// 保持逐文件串行（配合下方的进度回调，避免界面卡在 15% 无反馈）。
+//
+// 「省字节」和「加并发」是两件独立的事，别混淆：
+//   · 省字节靠 gzip（本段）。
+//   · 加并发靠批间并发（见下方 CONCURRENCY）。实测线上：同样一份 332 文件 / 7.9MB
+//     的原型，批间并发 3 路时上传 20.1s，提到 8 路（=批数满并行）降到 10.7s ——
+//     HTTP/2 多路复用下批间并发确实有效，直到批数打满。早期「同域一条 TCP、加并发
+//     不会变快」的结论对批间并发不成立，已于 2026-11-16 用真实链路实测修正。
 var PROTO_TEXT_EXT = { html: 1, htm: 1, js: 1, mjs: 1, css: 1, json: 1, xml: 1, svg: 1, txt: 1, md: 1, map: 1 };
 var PROTO_GZ_MIN_BYTES = 1024;  // 太小反而压大，且有 20 字节 gzip 头开销
 
@@ -137,7 +144,10 @@ async function _protoChunkedUpload(opts) {
   var doFetch = opts.fetchImpl || fetch;
   var setStatus = opts.setStatus || function () {};
   var initUrl = opts.initUrl, filesUrl = opts.filesUrl, finalizeUrl = opts.finalizeUrl;
-  var CONCURRENCY = 3;  // 批间并发：多个独立 Worker 调用并行，各自独立预算
+  // 批间并发：多个独立 Worker 调用并行，各自独立子请求预算。
+  // 实测线上（2026-11-16，332 文件 / 7.9MB）：3 路 20.1s → 6 路 12.8s → 8 路 10.7s。
+  // 取 8 已接近「批数满并行」的上限，再高也不会更快（没有更多批次可并行）。
+  var CONCURRENCY = 8;
 
   var files;
   if (filesMap) {
