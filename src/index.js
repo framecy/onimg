@@ -262,10 +262,8 @@ export default {
           const files = await env.STATS.get(`proto:vfiles:${protoId}:${verToken}`, 'json');
           return withCors(Response.json({ files: files ?? null, version: verToken }), request);
         }
-        // Admin prototype upload (chunked)
-        if (method === 'POST'   && path === '/admin/proto/init')           return withCors(await handleProtoUploadInit(request, env, env.ADMIN_USERNAME ?? 'admin'), request);
-        if (method === 'POST'   && path === '/admin/proto/files')          return withCors(await handleProtoFileBatch(request, env, env.ADMIN_USERNAME ?? 'admin'), request);
-        if (method === 'POST'   && path === '/admin/proto/finalize')       return withCors(await handleProtoFinalize(request, env, env.ADMIN_USERNAME ?? 'admin'), request);
+        // 后台原型仅作管理（列表 / 删除 / 改元信息 / 统计 / 版本），不提供上传：
+        // 上传走用户端 /upload/proto 通道。
         // Admin prototypes
         if (method === 'GET'    && path === '/admin/protos')               return withCors(await adminProtoListHandler(env), request);
         if (method === 'DELETE' && path.startsWith('/admin/protos/')) {

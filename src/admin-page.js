@@ -1,5 +1,3 @@
-import { FFLATE_UMD } from './fflate-inline.js';
-import { PROTO_ENGINE_JS } from './proto-upload-engine.js';
 import { CLIENT_SHARED_JS } from './ui/client/shared.js';
 import apertureCss from './ui/aperture.generated.js';
 
@@ -627,32 +625,7 @@ export function renderAdminPage() {
           <div class="text-sm font-medium text-tx-3">AxureRP / HTML 原型文件托管</div>
         </div>
 
-        <!-- Upload UI -->
-        <div class="proto-upload-card mb-4 rounded-md border border-bd bg-bg-3 p-5">
-          <h3 class="mb-4 border-b border-bd pb-2 text-2xs font-bold uppercase tracking-[.12em] text-tx-3">上传新原型</h3>
-          <div id="adminProtoDropZone" class="proto-drop-zone flex cursor-pointer flex-col items-center gap-2 rounded-md border border-dashed border-bd-2 bg-bg-2 px-5 py-5 text-center transition mb-2 hover:border-brand hover:bg-brand-muted" onclick="document.getElementById('adminProtoFileInput').click()">
-            <svg class="h-6 w-6 text-tx-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7v10l10 5 10-5V7L12 2z"/><polyline points="2,7 12,12 22,7"/><line x1="12" y1="12" x2="12" y2="22"/></svg>
-            <div class="text-sm font-medium text-tx-2" id="adminProtoDropText">点击选择 ZIP 文件，或拖拽文件夹到此处</div>
-            <div class="text-xs text-tx-3">支持 ZIP / 文件夹 · 最大 50 MB</div>
-          </div>
-          <input class="hidden" type="file" id="adminProtoFileInput" accept=".zip,application/zip">
-          <input class="hidden" type="file" id="adminProtoFolderInput" webkitdirectory>
-          <div class="proto-field-row grid grid-cols-2 gap-2 mb-2">
-            <div class="flex flex-col gap-1 mb-4 !m-0"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">原型名称</label><input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)]" type="text" id="adminProtoTitle" placeholder="My Prototype"></div>
-            <div class="flex flex-col gap-1 mb-4 !m-0"><label class="text-2xs font-bold uppercase tracking-[.1em] text-tx-3">访问密码（可选，6位）</label><input class="w-full rounded-sm border border-bd bg-bg-2 px-3 py-2 font-sans text-sm text-tx outline-none transition focus:border-bd-focus focus:shadow-[var(--focus-ring)] font-mono tracking-[.12em]" type="text" id="adminProtoPassword" placeholder="留空则公开访问" maxlength="6"></div>
-          </div>
-          <div class="proto-prog hidden h-1 overflow-hidden rounded-xs bg-bd [&.show]:block" id="adminProtoProgress"><div class="proto-prog-bar h-1 w-0 rounded-xs bg-[linear-gradient(90deg,var(--color-brand-d),var(--color-brand))] transition-[width] duration-[.4s]" id="adminProtoProgressBar"></div></div>
-          <div class="proto-prog-info hidden items-center justify-between mt-1 text-xs text-tx-3 [&.show]:flex" id="adminProtoProgressInfo">
-            <span class="hidden" id="adminProtoStatusText"></span>
-            <span id="adminProtoProgressPct">0%</span>
-          </div>
-          <div class="proto-err mt-1 min-h-4 text-sm text-red" id="adminProtoErr"></div>
-          <div class="proto-upload-actions flex flex-wrap items-center gap-2">
-            <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-transparent bg-accent px-3 py-2 text-sm font-semibold leading-tight text-tx-inv transition hover:bg-accent-hover  disabled:cursor-not-allowed disabled:bg-bg-5 disabled:text-tx-3 disabled:shadow-none" id="adminProtoUploadBtn" disabled>上传原型</button>
-            <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="document.getElementById('adminProtoFileInput').click()">选择 ZIP 文件</button>
-            <button class="inline-flex min-h-8 items-center justify-center gap-2 rounded-sm border border-bd bg-bg-4 px-3 py-2 text-sm font-semibold leading-tight text-tx-2 transition hover:border-bd-2 hover:bg-bg-hover hover:text-tx" onclick="document.getElementById('adminProtoFolderInput').click()">选择文件夹</button>
-          </div>
-        </div>
+        <!-- 原型管理：后台仅作管理（列表 / 删除 / 改元信息），上传走用户端 -->
 
         <h3 class="mb-3 text-sm font-semibold text-tx-2">所有原型</h3>
         <div class="toolbar flex flex-wrap items-center gap-2 mb-3">
@@ -1120,7 +1093,6 @@ export function renderAdminPage() {
 <div class="toast fixed bottom-20 md:bottom-6 left-1/2 z-[70] -translate-x-1/2 translate-y-20 w-max max-w-[calc(100vw-32px)] whitespace-normal break-words text-center rounded-sm border border-bd-2 bg-bg-3 px-4 py-2 font-sans text-sm font-medium text-tx shadow-sm transition-transform duration-300 ease-[cubic-bezier(.34,1.56,.64,1)] [&.show]:translate-y-0 [&.t-success]:border-green-r [&.t-success]:text-green [&.t-warn]:border-amber-r [&.t-warn]:text-amber [&.t-error]:border-red-r [&.t-error]:text-red" id="toast"></div>
 
 <script>
-  ${PROTO_ENGINE_JS}
   ${CLIENT_SHARED_JS}
   // Tailwind utility-class constants for elements whose className is fully
   // reassigned at runtime (className=, not classList.add) — declared once
@@ -1203,20 +1175,6 @@ export function renderAdminPage() {
     syncLabel();
   }
 
-  function _fflate() {
-    // Lazy-execute the inlined fflate bundle on first use (zip/unzip).
-    // Inline <script> exec is CSP-allowed (unsafe-inline); avoids parsing 32KB on every page load.
-    if (!window.fflate) {
-      const src = document.getElementById('fflateSrc');
-      if (src && src.textContent) {
-        const s = document.createElement('script');
-        s.textContent = src.textContent;
-        document.head.appendChild(s); // executes synchronously on append
-      }
-    }
-    if (!window.fflate) throw new Error('压缩库未加载，请刷新页面后重试');
-    return window.fflate;
-  }
   const TOKEN_KEY = 'onimg_admin_token';
   const USER_KEY  = 'onimg_admin_user';
   const ALL_TYPES = ['image/jpeg','image/png','image/gif','image/webp','image/svg+xml','image/avif','image/bmp','image/tiff'];
@@ -3588,172 +3546,8 @@ export function renderAdminPage() {
 
   document.getElementById('refreshAdminProtos').addEventListener('click', loadAdminProtos);
 
-  // ── Admin Proto Upload ────────────────────────────────────────────────────────
-  let adminPendingProtoFile = null;
-  // client-side utilities（_protoDetectEntry/_protoFixEnc/_protoStrip/
-  // _protoFilter/_fnv1a/_protoPlanBatches）与上传引擎 _protoChunkedUpload
-  // 由服务端注入的共享引擎提供，见 src/proto-upload-engine.js ——
-  // 与用户端上传共用同一份实现（双约束切批 + 3 路并发 + 增量 + 重试）。
-
-  async function _adminProtoChunkedUpload(zipFile) {
-    const title    = document.getElementById('adminProtoTitle').value.trim();
-    const password = document.getElementById('adminProtoPassword').value.trim().replace(/[^A-Za-z0-9]/g,'').slice(0,6);
-    const prog     = document.getElementById('adminProtoProgress');     prog.classList.add('show');
-    const bar      = document.getElementById('adminProtoProgressBar');  bar.style.width = '0%';
-    const info     = document.getElementById('adminProtoProgressInfo'); info.classList.add('show');
-    const pctEl    = document.getElementById('adminProtoProgressPct');  pctEl.textContent = '0%';
-    const statusEl = document.getElementById('adminProtoStatusText');   statusEl.classList.remove('hidden'); statusEl.textContent = '';
-    const errEl    = document.getElementById('adminProtoErr');          errEl.textContent = '';
-
-    function setStatus(msg, pct) {
-      const icon = pct === 100
-        ? '<svg class="inline-block h-4 w-4 -mt-1 mr-1 text-green" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 6.5,12 13,4"/></svg>'
-        : '<svg class="inline-block h-4 w-4 -mt-1 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="5.5" stroke-dasharray="26" stroke-dashoffset="8"/></svg>';
-      statusEl.style.display = '';
-      statusEl.innerHTML = icon + msg;
-      if (pct !== undefined) { bar.style.width = pct + '%'; pctEl.textContent = pct + '%'; }
-    }
-    function resetProg() {
-      setTimeout(() => {
-        prog.classList.remove('show'); bar.style.width = '0%';
-        info.classList.remove('show'); statusEl.classList.add('hidden'); statusEl.style.display = ''; statusEl.textContent = '';
-      }, 1200);
-    }
-
-    try {
-      // 共享引擎：解压/认证由本页注入；引擎内部含双约束切批、
-      // 3 路批间并发、单批 3 次退避重试、增量上传（内容指纹 diff）
-      const result = await _protoChunkedUpload({
-        zipFile,
-        title, password, existingProtoId: null,
-        setStatus,
-        unzip: async (bytes) => _fflate().unzipSync(bytes),
-        authToken: adminToken, fetchImpl: adminFetch,
-        initUrl: '/admin/proto/init', filesUrl: '/admin/proto/files', finalizeUrl: '/admin/proto/finalize',
-      });
-
-      setTimeout(() => {
-        bar.style.width = '0%'; resetProg();
-        document.getElementById('adminProtoTitle').value = '';
-        document.getElementById('adminProtoPassword').value = '';
-        document.getElementById('adminProtoDropText').textContent = '点击选择 ZIP 文件，或拖拽文件夹到此处';
-        document.getElementById('adminProtoUploadBtn').disabled = true;
-        adminPendingProtoFile = null;
-        toast(result.safePaths ? ('原型上传成功：' + result.safePaths.length + ' 个文件') : '原型上传成功');
-        loadAdminProtos();
-      }, 900);
-
-      setTimeout(() => {
-        bar.style.width = '0%'; resetProg();
-        document.getElementById('adminProtoTitle').value = '';
-        document.getElementById('adminProtoPassword').value = '';
-        document.getElementById('adminProtoDropText').textContent = '点击选择 ZIP 文件，或拖拽文件夹到此处';
-        document.getElementById('adminProtoUploadBtn').disabled = true;
-        adminPendingProtoFile = null;
-        toast('原型上传成功');
-        loadAdminProtos();
-      }, 900);
-    } catch(e) {
-      resetProg();
-      errEl.textContent = e.message || '上传失败';
-      document.getElementById('adminProtoUploadBtn').disabled = false;
-    }
-  }
-
-  // drag-drop for admin proto
-  const adminProtoDropZone = document.getElementById('adminProtoDropZone');
-  adminProtoDropZone.addEventListener('dragover', e => { e.preventDefault(); adminProtoDropZone.style.borderColor = 'var(--accent)'; adminProtoDropZone.style.color = 'var(--accent)'; });
-  adminProtoDropZone.addEventListener('dragleave', () => { adminProtoDropZone.style.borderColor = ''; adminProtoDropZone.style.color = ''; });
-  adminProtoDropZone.addEventListener('drop', async e => {
-    e.preventDefault(); adminProtoDropZone.style.borderColor = ''; adminProtoDropZone.style.color = '';
-    const items = e.dataTransfer.items;
-    // 文件夹拖拽：与前台一致，优先按目录读取
-    if (items && items.length && items[0].webkitGetAsEntry) {
-      const entry = items[0].webkitGetAsEntry();
-      if (entry && entry.isDirectory) { await adminProtoPackEntry(entry); return; }
-    }
-    const f = e.dataTransfer.files[0];
-    if (f && (f.name.toLowerCase().endsWith('.zip') || f.type.includes('zip'))) setAdminProtoFile(f);
-    else toast('请拖拽 ZIP 文件或文件夹', 'error');
-  });
-  document.getElementById('adminProtoFileInput').addEventListener('change', e => { if (e.target.files[0]) { setAdminProtoFile(e.target.files[0]); e.target.value=''; } });
-  document.getElementById('adminProtoFolderInput').addEventListener('change', e => {
-    if (e.target.files && e.target.files.length) adminProtoPackFolder(e.target.files);
-  });
-
-  function setAdminProtoFile(f) {
-    adminPendingProtoFile = f;
-    document.getElementById('adminProtoDropText').textContent = f.name + ' (' + fmtSize(f.size) + ')';
-    document.getElementById('adminProtoErr').textContent = '';
-    document.getElementById('adminProtoUploadBtn').disabled = false;
-  }
-
-  function adminProtoZipFiles(filesData, topFolder) {
-    if (!Object.keys(filesData).length) throw new Error('文件夹为空');
-    const zipped = _fflate().zipSync(filesData);
-    const zipFile = new File([new Blob([zipped],{type:'application/zip'})], (topFolder||'prototype')+'.zip', {type:'application/zip'});
-    setAdminProtoFile(zipFile);
-    if (!document.getElementById('adminProtoTitle').value) document.getElementById('adminProtoTitle').value = topFolder || '';
-  }
-
-  async function adminProtoPackFolder(fileList) {
-    const files = [...fileList]; if (!files.length) return;
-    document.getElementById('adminProtoDropText').textContent = '正在打包文件夹…';
-    document.getElementById('adminProtoUploadBtn').disabled = true;
-    try {
-      const filesData = {}; let topFolder = '';
-      for (const file of files) {
-        const parts = file.webkitRelativePath.split('/');
-        if (!topFolder) topFolder = parts[0];
-        const rel = parts.slice(1).join('/');
-        if (!rel || rel === '.DS_Store' || rel.endsWith('/.DS_Store')) continue;
-        const buf = await file.arrayBuffer();
-        filesData[rel] = [new Uint8Array(buf), { level: 0 }];
-      }
-      adminProtoZipFiles(filesData, topFolder || 'prototype');
-    } catch(e) {
-      document.getElementById('adminProtoDropText').textContent = '点击选择 ZIP 文件，或拖拽文件夹到此处';
-      document.getElementById('adminProtoErr').textContent = '打包失败: ' + e.message;
-    }
-    document.getElementById('adminProtoFolderInput').value = '';
-  }
-
-  async function adminProtoPackEntry(dirEntry) {
-    document.getElementById('adminProtoDropText').textContent = '正在打包文件夹…';
-    document.getElementById('adminProtoUploadBtn').disabled = true;
-    document.getElementById('adminProtoErr').textContent = '';
-    try {
-      const filesData = {};
-      async function readDir(entry, prefix) {
-        const reader = entry.createReader();
-        const entries = await new Promise((res, rej) => {
-          const all = [];
-          function read() { reader.readEntries(e => { if (!e.length) res(all); else { all.push(...e); read(); } }, rej); }
-          read();
-        });
-        for (const e of entries) {
-          if (e.isDirectory) { await readDir(e, prefix + e.name + '/'); }
-          else {
-            if (e.name === '.DS_Store') continue;
-            const file = await new Promise((res, rej) => e.file(res, rej));
-            const buf = await file.arrayBuffer();
-            filesData[prefix + e.name] = [new Uint8Array(buf), { level: 0 }];
-          }
-        }
-      }
-      await readDir(dirEntry, '');
-      adminProtoZipFiles(filesData, dirEntry.name);
-    } catch(e) {
-      document.getElementById('adminProtoDropText').textContent = '点击选择 ZIP 文件，或拖拽文件夹到此处';
-      document.getElementById('adminProtoErr').textContent = '读取文件夹失败: ' + e.message;
-    }
-  }
-
-  document.getElementById('adminProtoUploadBtn').addEventListener('click', () => {
-    if (!adminPendingProtoFile) return;
-    document.getElementById('adminProtoUploadBtn').disabled = true;
-    _adminProtoChunkedUpload(adminPendingProtoFile);
-  });
+  // 后台原型仅作管理（列表 / 删除 / 改元信息 / 统计 / 版本），上传走用户端，
+  // 故后台不再含上传逻辑，也无需注入原型上传引擎或 fflate。
 
   // ── R2 Stats ─────────────────────────────────────────────────────────────────
   // ── CF 额度面板 ───────────────────────────────────────────────────────────────
@@ -4240,7 +4034,6 @@ export function renderAdminPage() {
     }
   });
 </script>
-<script type="text/plain" id="fflateSrc">${FFLATE_UMD}</script>
 </body>
 </html>`;
 }
